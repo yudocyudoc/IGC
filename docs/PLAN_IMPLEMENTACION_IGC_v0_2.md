@@ -40,6 +40,31 @@ El desarrollo y las verificaciones se realizan en GitHub mediante commits al PR 
 
 La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin reemplazarlos: `Source → Web Annotation → CRMinf/PROV → SPARQL → ATMS → SystemModelCandidate → handoff → OpenModelica → artefacto/evento`. Si un componente no puede ejecutarse todavía, el resultado debe etiquetarse como stub y su gate permanecer pendiente.
 
+
+### 3.1 Secuencia propuesta de PRs F1–F9
+
+La secuencia conserva todo el alcance y ejecuta validaciones e integraciones mediante GitHub Actions. Cada PR debe ser revisable por separado; una fase puede abrirse cuando sus contratos y artefactos de entrada estén versionados. Los recursos Cloudflare reales se ejercitan desde workflows únicamente después de configurar secretos, límites y autorización.
+
+| PR / fase | Contenido aislado | Depende de | Gate de salida | Riesgo principal |
+|---|---|---|---|---|
+| PR F1a — contrato y ledger | LinkML, entidades/versiones, eventos, migraciones D1 local/SQLite y API de journal | F0 contratos y ERD | T01–T08 aplicables, T21/T22 en modo local, round-trip as-of | Diseñar esquema demasiado pronto o romper historia |
+| PR F1b — objetos y temporalidad | R2 adapter, hashes, borrado, outbox/projection interfaces y consulta temporal | F1a | T06/T21/T22/T27 | Consistencia de proyecciones y borrado verificable |
+| PR F2a — fuentes ontológicas | Manifiesto versionado, descarga verificable en CI y cierre de hashes de CRM/CRMinf/CRMsci/PROV-O | Inventario F0; revisión final de licencias antes de distribuir fuentes | Grafos parsean, clases/versiones esperadas y provenance de la descarga | Fuentes web cambiantes, imports incompletos, incompatibilidad de releases |
+| PR F2b — perfiles semánticos | Importación/conjunto de ontologías, mappings, JSON-LD/RDF, SHACL y SPARQL | F2a | CQ-01/02/11, T08/T24/T27 positivos y negativos; entailment delimitado | Confundir entailment con validación empírica |
+| PR F3a — motor ATMS | Selección tras benchmark o implementación fiel propia; labels, justificaciones, nogoods | F1a, DECISION_ATMS_F0 | T11/T12 y retractación/versionado/conformance | Explosión de entornos o semántica incompleta |
+| PR F3b — investigación/candidatos | SystemInvestigation, frontera, revisión estructural, candidatos rivales y diffs | F1a + F3a | T11/T18/T26/T29 | Modelo de datos confundido con causalidad |
+| PR F4a — recuperación textual | SQLite FTS5/adapters, manifests y búsqueda temporal | F1b + F2a | CQ-06, T09/T14 con holdout temporal | Fuga futura y falsos positivos de similitud |
+| PR F4b — KGE y firmas | PyKEEN (o candidato medido), embeddings de texto/grafo/dinámica y ablaciones | F4a + snapshot semántico F2b | T13/T14/T28; reportar abstención y negativos | Grafo pequeño, sesgo de entrenamiento y espacios incompatibles |
+| PR F5a — IGC-SL y linter | AST tipado, catálogo, reglas L0–L6, diagnósticos y adaptador de moléculas | F1a, F3b; inventario/licencias concluido antes de adoptar moléculas | T04/T05/T15/T16/T17 negativos y controles positivos | Ejecutabilidad aparente sin conservación ni fundamento |
+| PR F5b — backend y modelos rivales | OpenModelica, dos candidatos, compile/simulate, sensibilidad y artefactos | F5a + librerías admitidas | T18/T19/T30, GATE-INT-5 | Compilación confundida con fidelidad del sistema |
+| PR F6 — ciclo investigador | consultas, pruebas discriminantes, observaciones y revisiones | F2b + F3b + F5b | CQ-08–10/14, T19/T20/T25/T26 | Permisos o mediciones no justificadas |
+| PR F7 — evaluación E0–E7 | Protocolo ciego, datasets separados, métricas, costos y replicación | F4b + F5b + F6 | T23/T30 y reporte reproducible | Filtración de gold o confusión de efectos |
+| PR F8a — adapters cloud | Workers/API, D1/R2/Vectorize, configuración y observabilidad, desplegados desde Actions | F1b, F4b, decisión/secretos/límites aprobados | T21/T22 + pruebas de seguridad/carga y reconciliación | Costos, secretos y divergencia de datos |
+| PR F8b — operación/escala | Jobs, reintentos, runner de cómputo y límites operacionales | F8a + F5b | Recuperación y presupuesto de operación verificados | Runtime pesado fuera de límites de Workers |
+| PR F9 — caso y transferencia | B4 autorizado, replicación y revisión metodológica independiente | F7 + F8 + aprobación de datos | gates integrales §21 y auditoría independiente | Generalizar desde un dominio o fuente no autorizada |
+
+La aceptación de cada PR requiere su propio workflow de Actions verde, artefactos descargables, revisión del diff y limitaciones registradas. El estado verde de una fase no promueve a `main`; la promoción sigue bajo revisión del investigador.
+
 ## 4. Orden de trabajo de F0
 
 1. **Aislar el trabajo:** crear y usar una rama de desarrollo; mantener `main` intacta. Confirmar el estado real del repo antes de importar o modificar código.
