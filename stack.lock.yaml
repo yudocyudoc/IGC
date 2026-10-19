@@ -46,7 +46,17 @@ semantic_capabilities:
   - name: sparql
     status: CI_PASS_SYNTHETIC_QUERY
   - name: crminf_crmsci
-    status: PENDING_ONTOLOGY_VERSION_AND_MAPPING_ADMISSION
+    status: PROFILE_PINNED_AND_CI_PENDING
+    crminf: 1.2.1
+    crmsci: 3.2
+    compatible_cidoc_crm: 7.1.3
+    profile: igc-f0-crminf-minimal/0.1
+    limitation: >-
+      Uses I1, I2, I4, J2, J4 for a synthetic assessment record. I5 inference
+      and CRMsci observation classes are deliberately not asserted because the
+      fixture declares no measurement or causal evidence. Official ontology
+      declarations are referenced; full ontology graph import and entailment
+      testing are not claimed.
   - name: atms
     status: NOT_SELECTED
 
