@@ -20,7 +20,7 @@
 | Cloudflare Vectorize | Recuperación vectorial | https://developers.cloudflare.com/vectorize/ | Diseñar adapter; no hay índice configurado. Versiones/límites vigentes por verificar. |
 | PyKEEN u otro KGE | Embeddings de grafos | https://pykeen.readthedocs.io/ | Candidato no seleccionado; evaluación y licencia pendientes. |
 
-| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39339123071 | Runner Ubuntu 24.04, Python 3.13.16; diez pruebas y los gates sintéticos de JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan. El artefacto `f0-spike-evidence` adjunta reporte de resolución y freeze; falta lock completo con hashes transitivos. |
+| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39340078943 | Runner Ubuntu 24.04, Python 3.13.16; diez pruebas y gates sintéticos pasan; `requirements-f0.lock.txt` fija los ocho paquetes Python con hashes y se valida en un venv limpio con `--require-hashes`. La plataforma completa aún requiere SBOM y revisión de licencias. |
 
 ## Reglas de admisión
 
