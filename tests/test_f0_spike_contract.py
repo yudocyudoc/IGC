@@ -5,10 +5,28 @@ from pathlib import Path
 
 from scripts.lock_from_pip_report import render_lock
 from scripts.f0_atms_probe import AtmsProbe, run_atms_probe
+from scripts.sbom_from_lock import render_spdx
 from scripts.f0_spike import overall_status, run_semantic_pipeline, source_and_annotation
 
 
 class F0SpikeContractTests(unittest.TestCase):
+    def test_sbom_contains_lock_hash_and_unasserted_license(self):
+        digest = "b" * 64
+        lock_text = (
+            "# synthetic lock\\n"
+            "demo-pkg==2.0.0 \\\\n"
+            f"    --hash=sha256:{digest}\\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            lock_path = Path(directory) / "requirements.lock"
+            lock_path.write_text(lock_text, encoding="utf-8")
+            document = render_spdx(lock_path)
+        self.assertEqual(document["spdxVersion"], "SPDX-2.3")
+        self.assertEqual(len(document["packages"]), 1)
+        package = document["packages"][0]
+        self.assertEqual(package["licenseDeclared"], "NOASSERTION")
+        self.assertEqual(package["checksums"][0]["checksumValue"], digest)
+
     def test_pip_report_renders_normalized_hashed_lock(self):
         digest = "a" * 64
         report = {
