@@ -1,46 +1,79 @@
 schema_version: 1
 project: igc
-specification: IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md
-lock_status: UNLOCKED
+specification: docs/IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md
+lock_status: PARTIAL_DIRECT_PINS
 generated_at: 2026-10-19
 note: >-
-  Candidate inventory only. No external package has been admitted, installed, or
-  verified for this project. Do not treat observed machine tools as project pins.
+  F0 direct Python dependencies and the OpenModelica image are pinned and passed
+  in GitHub Actions. The Actions artifact contains the resolved Python install
+  report and environment freeze. Transitive hashes and full platform/SBOM review
+  are not yet committed, so this is not a complete dependency lock.
 
-observed_environment:
+execution_environment:
+  provider: GitHub Actions
+  runner: ubuntu-24.04
   python:
-    version: 3.13.1
-    project_pin: false
-  node:
-    version: 22.13.1
-    project_pin: false
-  git:
-    version: 2.51.0.windows.1
-    project_pin: false
-  openmodelica:
-    command_found: false
-    version: null
+    version: 3.13.16
+    source: actions/setup-python@v7
   docker:
-    command_found: false
-    version: null
+    version_observed: 28.0.4
+  openmodelica:
+    version: 1.27.1
+    image: openmodelica/openmodelica:v1.27.1-minimal
+    digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    license: OSMC-PL-1.8-or-AGPL-3.0-as-distributed
+    status: COMPILE_SIMULATE_PASS
+
+python_direct_dependencies:
+  - package: rdflib
+    version: 7.6.0
+    license: BSD-3-Clause
+    requirement: requirements-f0.txt
+    status: PINNED_DIRECT_CI_PASS
+  - package: pyshacl
+    version: 0.40.1
+    license: Apache-2.0
+    requirement: requirements-f0.txt
+    status: PINNED_DIRECT_CI_PASS
+
+semantic_capabilities:
+  - name: web_annotation_jsonld_roundtrip
+    status: CI_PASS_SYNTHETIC_FIXTURE
+  - name: rdf_prov_mapping
+    status: CI_PASS_MINIMAL_PROV_O_PROFILE
+  - name: shacl
+    status: CI_PASS_POSITIVE_AND_NEGATIVE_FIXTURE
+  - name: sparql
+    status: CI_PASS_SYNTHETIC_QUERY
+  - name: crminf_crmsci
+    status: PENDING_ONTOLOGY_VERSION_AND_MAPPING_ADMISSION
+  - name: atms
+    status: NOT_SELECTED
+
+resolution_evidence:
+  workflow: .github/workflows/f0-ci.yml
+  latest_successful_run: https://github.com/yudocyudoc/IGC/actions/runs/39337591683
+  artifact: f0-spike-evidence
+  artifact_id: 12228045441
+  contains:
+    - pip-install-report.json
+    - python-environment.txt
+    - run.json
+    - annotation-graph.ttl
+    - shacl-report.ttl
+    - shacl-negative-report.txt
+    - omc.log
+    - f0_toy_stock_res.csv
 
 candidates:
   semantic:
     - name: linkml
       version: null
-      status: NOT_INSTALLED_NOT_LOCKED
-    - name: rdf_engine
-      package: TBD
-      version: null
-      status: NOT_SELECTED
-    - name: sparql_engine
-      package: TBD
-      version: null
-      status: NOT_SELECTED
-    - name: shacl_engine
-      package: TBD
-      version: null
-      status: NOT_SELECTED
+      status: NOT_SELECTED_NOT_LOCKED
+    - name: jsonld_validation
+      package: rdflib JSON-LD parser plus project SHACL profile
+      version: rdflib 7.6.0
+      status: SYNTHETIC_PROFILE_ONLY_NOT_FULL_W3C_CONFORMANCE
   reasoning:
     - name: atms
       implementation: TBD
@@ -48,8 +81,9 @@ candidates:
       status: NOT_SELECTED
   dynamic_modeling:
     - name: openmodelica
-      version: null
-      status: COMMAND_NOT_FOUND
+      version: 1.27.1
+      image_digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+      status: COMPILE_SIMULATE_PASS_SYNTHETIC
     - name: system_dynamics_modelica_library
       version: null
       status: NOT_VERIFIED
@@ -64,6 +98,8 @@ candidates:
     - name: cloudflare_vectorize
       status: DESIGN_ONLY_NO_BINDING
 
-hashes: []
+hashes:
+  - artifact: openmodelica/openmodelica:v1.27.1-minimal
+    sha256: ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
 licenses_verified: false
 compatibility_verified: false
