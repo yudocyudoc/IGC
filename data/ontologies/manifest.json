@@ -8,6 +8,7 @@
       "version": "7.1.3",
       "source": "https://cidoc-crm.org/rdfs/7.1.3/CIDOC_CRM_v7.1.3.rdf",
       "format": "xml",
+      "sha256": "05074c0e3010fcef5fae70ae8c80e0428d7cab251e30657737d2475db0bcf07d",
       "required_terms": [
         "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
         "http://www.cidoc-crm.org/cidoc-crm/E16_Measurement"
@@ -18,6 +19,7 @@
       "version": "1.2.1",
       "source": "https://cidoc-crm.org/extensions/crminf/rdfs/1.2.1/CRMinf_v1.2.1.rdf",
       "format": "xml",
+      "sha256": "d7d9bb51339380abf56acdcc7229f529c65c547b467dc913b1c8d31bccf95298",
       "required_terms": [
         "http://www.cidoc-crm.org/extensions/crminf/I1_Argumentation",
         "http://www.cidoc-crm.org/extensions/crminf/I2_Belief",
@@ -31,6 +33,7 @@
       "version": "3.2",
       "source": "https://cidoc-crm.org/extensions/crmsci/rdfs/3.2/CRMsci_v3.2.rdf",
       "format": "xml",
+      "sha256": "0b00e2c08b2dc14d8859764462e3f5448fc55eca16a0d586cbb5e1a4665bdffd",
       "required_terms": [
         "http://www.cidoc-crm.org/extensions/crmsci/S4_Single_Observation",
         "http://www.cidoc-crm.org/extensions/crmsci/S21_Measurement",
@@ -42,6 +45,7 @@
       "version": "2013-04-30",
       "source": "https://www.w3.org/ns/prov.ttl",
       "format": "turtle",
+      "sha256": "d7ea634dbcd31347eba38157197f69d314077ef7f88fd4f90e4f24a78bfe1097",
       "required_terms": [
         "http://www.w3.org/ns/prov#Entity",
         "http://www.w3.org/ns/prov#wasGeneratedBy"
