@@ -61,11 +61,11 @@ class F0SpikeContractTests(unittest.TestCase):
             lock = root / "requirements.lock"
             lock.write_text(lock_text, encoding="utf-8")
             runner = root / "runner.tsv"
-            runner.write_text("libc\\t2.0\\tamd64\\n", encoding="utf-8")
+            runner.write_text("libc\t2.0\tamd64\n", encoding="utf-8")
             container = root / "container.tsv"
-            container.write_text("omc-lib\\t1.0\\tamd64\\n", encoding="utf-8")
+            container.write_text("omc-lib\t1.0\tamd64\n", encoding="utf-8")
             workflow = root / "workflow.yml"
-            workflow.write_text(f"      uses: actions/checkout@{commit} # v6\\n", encoding="utf-8")
+            workflow.write_text(f"      uses: actions/checkout@{commit} # v6\n", encoding="utf-8")
             extras = root / "extras.json"
             record = {
                 "name": "SystemDynamics",
