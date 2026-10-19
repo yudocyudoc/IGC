@@ -11,7 +11,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-from scripts.f0_atms_probe import run_atms_probe
+if __package__:
+    from .f0_atms_probe import run_atms_probe
+else:
+    from f0_atms_probe import run_atms_probe
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATH = ROOT / "data" / "synthetic" / "source.txt"
