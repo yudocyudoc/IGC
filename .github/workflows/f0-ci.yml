@@ -82,6 +82,7 @@ jobs:
               "shacl_positive_and_negative": "PASS",
               "sparql_query": "PASS",
               "crminf_crmsci_mapping": "PASS",
+              "atms_reasoning": "PASS",
               "openmodelica_compile_and_simulate": "PASS",
           }
           failures = {
