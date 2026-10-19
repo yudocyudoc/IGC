@@ -7,7 +7,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4
+
 
 from scripts.sbom_from_lock import parse_lock
 
@@ -38,13 +38,13 @@ def read_dpkg_inventory(path: Path, scope: str) -> list[dict]:
 
 
 def read_pinned_actions(workflow_path: Path) -> list[dict]:
-    pattern = re.compile(r"^\\s*uses:\\s+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([0-9a-f]{40})\\s+#\\s*(v[0-9][A-Za-z0-9_.-]*)\\s*$")
+    pattern = re.compile(r"^[ \t]*uses:[ \t]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([0-9a-f]{40})[ \t]+#[ \t]*(v[0-9][A-Za-z0-9_.-]*)[ \t]*$")
     actions = []
     for number, line in enumerate(workflow_path.read_text(encoding="utf-8").splitlines(), 1):
         match = pattern.fullmatch(line)
         if match:
             actions.append({"name": match.group(1), "commit": match.group(2), "version": match.group(3)})
-        elif re.search(r"^\\s*uses:\\s+[^#]+", line):
+        elif re.search(r"^[ \t]*uses:[ \t]+[^#]+", line):
             raise ValueError(f"{workflow_path}:{number}: action is not pinned by a full commit SHA with version comment")
     if not actions:
         raise ValueError(f"{workflow_path}: no pinned actions found")
