@@ -1,0 +1,4 @@
+# Direct dependencies for the F0 semantic spike.
+# Versions were checked against upstream release metadata on 2026-10-19.
+rdflib==7.6.0
+pyshacl==0.40.1
