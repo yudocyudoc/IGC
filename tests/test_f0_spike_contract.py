@@ -13,9 +13,9 @@ class F0SpikeContractTests(unittest.TestCase):
     def test_sbom_contains_lock_hash_and_unasserted_license(self):
         digest = "b" * 64
         lock_text = (
-            "# synthetic lock\\n"
-            "demo-pkg==2.0.0 \\\\n"
-            f"    --hash=sha256:{digest}\\n"
+            "# synthetic lock\n"
+            "demo-pkg==2.0.0 \\\n"
+            f"    --hash=sha256:{digest}\n"
         )
         with tempfile.TemporaryDirectory() as directory:
             lock_path = Path(directory) / "requirements.lock"
