@@ -12,6 +12,7 @@ on:
       - requirements-f0.lock.txt
       - spike/**
       - data/synthetic/**
+      - data/ontologies/**
   pull_request:
     branches:
       - main
