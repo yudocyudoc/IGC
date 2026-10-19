@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scope": "official ontology graph snapshots used for F0 compatibility and entailment checks",
+  "license_review": "deferred_to_final_inventory_step",
+  "ontologies": [
+    {
+      "name": "CIDOC CRM",
+      "version": "7.1.3",
+      "source": "https://cidoc-crm.org/rdfs/7.1.3/CIDOC_CRM_v7.1.3.rdf",
+      "format": "xml",
+      "required_terms": [
+        "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
+        "http://www.cidoc-crm.org/cidoc-crm/E16_Measurement"
+      ]
+    },
+    {
+      "name": "CRMinf",
+      "version": "1.2.1",
+      "source": "https://cidoc-crm.org/extensions/crminf/rdfs/1.2.1/CRMinf_v1.2.1.rdf",
+      "format": "xml",
+      "required_terms": [
+        "http://www.cidoc-crm.org/extensions/crminf/I1_Argumentation",
+        "http://www.cidoc-crm.org/extensions/crminf/I2_Belief",
+        "http://www.cidoc-crm.org/extensions/crminf/I4_Proposition_Set",
+        "http://www.cidoc-crm.org/extensions/crminf/J2_concluded_that",
+        "http://www.cidoc-crm.org/extensions/crminf/J4_that"
+      ]
+    },
+    {
+      "name": "CRMsci",
+      "version": "3.2",
+      "source": "https://cidoc-crm.org/extensions/crmsci/rdfs/3.2/CRMsci_v3.2.rdf",
+      "format": "xml",
+      "required_terms": [
+        "http://www.cidoc-crm.org/extensions/crmsci/S4_Single_Observation",
+        "http://www.cidoc-crm.org/extensions/crmsci/S21_Measurement",
+        "http://www.cidoc-crm.org/extensions/crmsci/S27_Observation"
+      ]
+    },
+    {
+      "name": "PROV-O",
+      "version": "2013-04-30",
+      "source": "https://www.w3.org/ns/prov.ttl",
+      "format": "turtle",
+      "required_terms": [
+        "http://www.w3.org/ns/prov#Entity",
+        "http://www.w3.org/ns/prov#wasGeneratedBy"
+      ]
+    }
+  ]
+}
