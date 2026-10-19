@@ -46,10 +46,13 @@ jobs:
         with:
           python-version: "3.13.16"
 
-      - name: Install pinned F0 dependencies and record resolution
+      - name: Resolve F0 dependencies and verify generated hash lock
         run: |
           mkdir -p artifacts/f0
           python -m pip install --requirement requirements-f0.txt --report artifacts/f0/pip-install-report.json
+          python scripts/lock_from_pip_report.py artifacts/f0/pip-install-report.json --output artifacts/f0/requirements-f0.resolved.lock.txt
+          python -m venv /tmp/igc-f0-lock-verify
+          /tmp/igc-f0-lock-verify/bin/python -m pip install --require-hashes --no-deps --requirement artifacts/f0/requirements-f0.resolved.lock.txt --report artifacts/f0/lock-verification-report.json
           python -m pip freeze > artifacts/f0/python-environment.txt
 
       - name: Record tool versions
