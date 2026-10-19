@@ -110,9 +110,6 @@ def run_semantic_pipeline(annotation: dict) -> list[dict]:
         graph.add((activity_id, prov.generated, annotation_id))
         graph.add((annotation_id, prov.wasGeneratedBy, activity_id))
 
-        roundtrip = Graph()
-        roundtrip.parse(data=graph.serialize(format="turtle"), format="turtle")
-        roundtrip_ok = isomorphic(graph, roundtrip)
         prov_ok = (
             (activity_id, prov.used, source_id) in graph
             and (activity_id, prov.generated, annotation_id) in graph
@@ -138,6 +135,9 @@ def run_semantic_pipeline(annotation: dict) -> list[dict]:
             (belief_id, crminf.J4_that, proposition_id) in graph,
             (activity_id, RDF.type, crminf.I5_Inference_Making) not in graph,
         ))
+        roundtrip = Graph()
+        roundtrip.parse(data=graph.serialize(format="turtle"), format="turtle")
+        roundtrip_ok = isomorphic(graph, roundtrip)
         (OUTPUT_DIR / "annotation-graph.ttl").write_text(
             graph.serialize(format="turtle"), encoding="utf-8"
         )
