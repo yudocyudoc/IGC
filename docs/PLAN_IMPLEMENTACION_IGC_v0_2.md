@@ -1,0 +1,78 @@
+# Plan de implementación IGC v0.2
+
+**Estado:** plan de trabajo derivado de la especificación integral v0.2; no constituye aprobación científica ni certifica implementación.  
+**Fecha:** 2026-10-19  
+**Especificación normativa:** [`IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md`](IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md)  
+**Repositorio:** `https://github.com/yudocyudoc/IGC.git`
+
+## 1. Propósito
+
+Convertir la especificación IGC v0.2 en entregas verificables, preservando todo el alcance F0–F9. Cada fase debe dejar artefactos reproducibles, declarar limitaciones y enlazar sus resultados con contratos y criterios de aceptación. La secuencia permite trabajo incremental; no elimina capacidades ni convierte una integración técnica en evidencia científica.
+
+La primera autorización de implementación se limita a **F0 y a una spike vertical sintética**, según el Apéndice A de la especificación. El resto de las fases se detalla aquí como hoja de ruta; iniciar trabajo que use recursos cloud reales, incorporar datos reales o publicar/mergear resultados requiere las decisiones y autorizaciones señaladas en la especificación.
+
+## 2. Estado inicial verificado
+
+- El checkout local contiene la especificación IGC v0.2 en `docs/`.
+- El remoto `origin` apunta a `https://github.com/yudocyudoc/IGC.git`.
+- GitHub informa que `yudocyudoc/IGC` existe, está vacío, usa `main` como rama predeterminada y la cuenta conectada cuenta con permisos de lectura y escritura.
+- El árbol local aún no tiene commits de proyecto. La especificación local aparece sin seguimiento.
+- No se ha auditado aquí ningún código, dependencia, PR, runtime de OpenModelica ni configuración de Cloudflare. Estos son elementos de F0, no hechos asumidos.
+
+## 3. Secuencia de entregas
+
+| Fase | Entrega verificable | Criterio de salida resumido |
+|---|---|---|
+| **F0 — Inventario y laboratorio** | Auditoría del repo y PR relevantes; inventario de librerías Modelica y dependencias; `STATUS.md`, `THIRD_PARTY.md`, `stack.lock.yaml`, decisiones de arquitectura y ERD conceptual; entorno local reproducible; spike vertical sintética. | Construcción local reproducible; límites y contratos registrados. La spike informa qué componentes son reales, cuáles son stubs y qué gates siguen pendientes. |
+| **F1 — Esquema y ledger** | Esquema LinkML del dominio, artefactos derivados, migraciones D1, journal, temporalidad bitemporal, almacenamiento R2, API/CLI y seeds sintéticos. | T01–T08, T21, T22 y T27; consulta `as-of` reproducible. |
+| **F2 — Semántica ejecutable** | Modelos y mappings auditados para CIDOC CRM, CRMinf, CRMsci, PROV-O y Web Annotation; RDF, SPARQL, SHACL y round-trip. | CQ-01, CQ-02, CQ-11, T24 y suite RDF. |
+| **F3 — ATMS y modelos rivales** | Motor de etiquetas de supuestos/nogoods; investigaciones, fronteras, campos y candidatos versionados; diferencias estructurales y pruebas. | CQ-03, CQ-04, CQ-05, CQ-10, T11, T12 y T26. |
+| **F4 — Vectores íntegros** | FTS y recuperación vectorial de texto, KGE, firmas dinámicas, manifests, cortes temporales y ablaciones. | T09, T13, T14 y T28; benchmarks que reportan falsos positivos y resultados negativos. |
+| **F5 — Puente SD completo** | Adaptador P2, roles y moléculas, linter L0–L6, backend OpenModelica reproducible y dos modelos candidatos rivales. | T04, T05, T15–T19, T29 y T30; compilación y simulación real con trazabilidad. |
+| **F6 — Ciclo investigador** | Diseño de pruebas, consultas discriminantes, observaciones, revisiones e informes; separación campo percibido/reconstruido. | CQ-06–CQ-10 y CQ-14; ciclo completo en B1/B2/B3. |
+| **F7 — Matriz experimental** | Perfiles E0–E7, costos, cegamiento, ablaciones, replicaciones y auditoría independiente. | Reporte con métricas separadas, resultados negativos y sin declarar una victoria anticipada. |
+| **F8 — Integración cloud y escala** | Workers/API, D1, R2, Vectorize, runner Linux, seguridad, privacidad, conciliación y costos. | Recuperación ante fallos, pruebas de carga/seguridad y operación dentro del presupuesto aprobado. |
+| **F9 — Transferencia y caso real** | B4 con datos autorizados, extensión a otros dominios y revisión metodológica. | Evidencia independiente sobre utilidad y fidelidad; datos y permisos documentados. |
+
+La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin reemplazarlos: `Source → Web Annotation → CRMinf/PROV → SPARQL → ATMS → SystemModelCandidate → handoff → OpenModelica → artefacto/evento`. Si un componente no puede ejecutarse todavía, el resultado debe etiquetarse como stub y su gate permanecer pendiente.
+
+## 4. Orden de trabajo de F0
+
+1. **Aislar el trabajo:** crear y usar una rama de desarrollo; mantener `main` intacta. Confirmar el estado real del repo antes de importar o modificar código.
+2. **Auditar:** inventariar archivos, dependencias, librerías Modelica y los PR #20, #39 y #40 mencionados por la especificación. Registrar refs y hashes consultados; no inferir que un PR está fusionado o ejecutable.
+3. **Fijar decisiones e interfaces:** producir ADR de responsabilidades, ERD conceptual, matriz existente/documentado/faltante y contratos mínimos de la spike.
+4. **Verificar terceros:** identificar versiones, licencias, fuentes oficiales y compatibilidades de ontologías, RDF/SPARQL/SHACL, ATMS, OpenModelica y herramientas auxiliares. Fijar el resultado en `stack.lock.yaml`/manifiestos, con los límites conocidos.
+5. **Levantar entorno local:** automatizar los componentes de prueba y las migraciones locales con Docker/Compose o Makefile, según la auditoría. Cloud real queda fuera de F0.
+6. **Ejecutar spike sintética:** recorrer el flujo vertical, conservar entradas, salidas, logs, hashes y pasos de reproducción. Incluir fallos negativos y distinguir pruebas contractuales de capacidades integradas.
+7. **Cerrar F0:** actualizar `STATUS.md`, proponer secuencia PR F1–F9 con dependencias/riesgos y preparar PR draft con resultados revisables. No hacer merge, despliegue, gasto cloud ni publicar afirmaciones de éxito sin autorización expresa.
+
+### Paquete mínimo de F0
+
+- `STATUS.md`
+- `THIRD_PARTY.md`
+- `stack.lock.yaml`
+- `ARCHITECTURE_DECISIONS.md`
+- ERD conceptual
+- matriz existente/documentado/faltante
+- manifiesto de ontologías y licencias
+- configuración del laboratorio local
+- fixtures sintéticos, comandos de reproducción y salidas de la spike
+- reporte de limitaciones, gates pendientes y pruebas negativas
+- propuesta de pull requests para F1–F9
+
+## 5. Reglas de avance y aceptación
+
+- Cada fase se trabaja en rama aislada y entrega un diff revisable, comandos de reproducción, pruebas ejecutables, resultados y limitaciones. La promoción a `main` se hace mediante revisión y autorización del investigador.
+- Un gate solo se marca como aprobado si se ejecutó con el componente real requerido y se conservaron evidencias reproducibles. Stubs, mocks y contratos pendientes se identifican como tales.
+- SD permanece como lente de investigación y OpenModelica como destino y motor de simulación obligatorio. Un resultado de simulación no identifica por sí mismo un mecanismo real.
+- Se conservan modelos rivales, desacuerdos, fallos, resultados negativos, versiones y procedencia. No se promueven relaciones vectoriales a causalidad sin el proceso de evaluación definido.
+- D1/R2/Vectorize se diseñan desde F0 y se integran incrementalmente; la plataforma debe tener modo local reproducible. Los recursos cloud reales, datos reales y gastos quedan sujetos a las decisiones reservadas al investigador.
+- La integración técnica y la evidencia de H-IGC se reportan por separado.
+
+## 6. Decisiones reservadas
+
+Antes de usar datos reales, operar recursos cloud reales, incurrir en gasto, aprobar promoción causal automática, publicar resultados o fusionar cambios, registrar la decisión correspondiente del investigador conforme a §22 de la especificación. Estas decisiones no impiden inventariar ni construir el laboratorio local con datos sintéticos.
+
+## 7. Próximo paso
+
+Iniciar **F0 solamente** en una rama aislada. Primero confirmar el checkout y refs disponibles del repo; después completar la auditoría, contratos, entorno local y spike. Al cierre de F0, presentar resultados y una secuencia revisada de PRs F1–F9 antes de ampliar la implementación.
