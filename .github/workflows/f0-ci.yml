@@ -117,6 +117,7 @@ jobs:
       - name: Check SystemDynamics with its declared MSL version in pinned OpenModelica
         run: |
           cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
+          setModelicaPath("/opt/modelica:/opt/systemdynamics");
           loadModel(Modelica, {"4.0.0"});
           print(getErrorString());
           loadFile("/opt/systemdynamics/SystemDynamics/package.mo");
