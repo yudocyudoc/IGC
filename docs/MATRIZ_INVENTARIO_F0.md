@@ -7,7 +7,7 @@
 | Especificación IGC v0.2 | Sí, `docs/` | Normativa de arquitectura y experimentación | Revisión/adjudicación de decisiones reservadas. |
 | Plan F0–F9 | Sí, `docs/PLAN_IMPLEMENTACION_IGC_v0_2.md` | Oleadas y gates | Revisión al cerrar F0. |
 | Ledger/temporalidad bitemporal | No | Contratos en especificación | LinkML, esquema, migraciones, eventos y consulta as-of reproducible. |
-| Web Annotation | No | Requerido por CQ/GATE | Instancias válidas y round-trip. |
+| Web Annotation | Spike sintético | Requerido por CQ/GATE | JSON-LD fixture se parsea a RDF/Turtle y verifica isomorfismo; falta suite completa de conformidad W3C. |
 | CRMinf/CRMsci/PROV-O | No | Ontologías objetivo | Versiones, mappings, datos RDF, motor, SPARQL y SHACL ejecutados. |
 | LinkML | No | Fuente de esquemas prevista | Dependencia fijada, generación y validación. |
 | ATMS | No | Contrato funcional en §10 | Biblioteca o implementación seleccionada, nogoods, retractación y conformance. |
