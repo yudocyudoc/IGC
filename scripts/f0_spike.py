@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import os
 import shutil
@@ -17,7 +16,9 @@ SOURCE_PATH = ROOT / "data" / "synthetic" / "source.txt"
 CLAIM_PATH = ROOT / "data" / "synthetic" / "claim.json"
 MODEL_PATH = ROOT / "spike" / "f0_vertical" / "F0ToyStock.mo"
 CANDIDATE_PATH = ROOT / "spike" / "f0_vertical" / "candidate-stub.json"
+SHAPES_PATH = ROOT / "spike" / "f0_vertical" / "f0_shapes.ttl"
 OUTPUT_DIR = ROOT / "artifacts" / "f0"
+SYNTHETIC_BASE = "https://example.invalid/igc/"
 
 
 def overall_status(stages: list[dict]) -> str:
@@ -36,14 +37,14 @@ def source_and_annotation() -> tuple[list[dict], dict]:
     quote = claim["quote"]
     offset = source_text.find(quote)
     if offset < 0:
-        return ([{"stage": "source_ingest", "status": "FAIL",
+        return ([{"stage": "source_ingest_and_anchor", "status": "FAIL",
                   "reason": "claim quote is not present in source"}], {})
 
     source_hash = hashlib.sha256(source_bytes).hexdigest()
     source_stage = {
         "stage": "source_ingest_and_anchor",
         "status": "PASS",
-        "source_id": claim["source_id"],
+        "source_id": SYNTHETIC_BASE + claim["source_id"],
         "source_sha256": source_hash,
         "quote_start": offset,
         "quote_end": offset + len(quote),
@@ -51,37 +52,161 @@ def source_and_annotation() -> tuple[list[dict], dict]:
     }
     annotation = {
         "@context": "http://www.w3.org/ns/anno.jsonld",
-        "id": "annotation-synthetic-001",
+        "id": SYNTHETIC_BASE + "annotation-001",
         "type": "Annotation",
         "motivation": "assessing",
-        "body": {"id": claim["claim_id"], "type": "TextualBody",
-                 "value": quote, "purpose": "tagging"},
+        "body": {
+            "id": SYNTHETIC_BASE + claim["claim_id"],
+            "type": "TextualBody",
+            "value": quote,
+            "purpose": "tagging",
+        },
         "target": {
-            "source": claim["source_id"],
+            "source": SYNTHETIC_BASE + claim["source_id"],
             "selector": {"type": "TextQuoteSelector", "exact": quote},
         },
-        "_fixture": {"synthetic": True, "source_sha256": source_hash},
     }
-    annotation_stage = {
-        "stage": "web_annotation_shape",
-        "status": "PENDING",
-        "reason": "JSON shape emitted, but no Web Annotation validator is installed or run",
-        "draft_artifact": "annotation-draft.json",
-    }
-    return [source_stage, annotation_stage], annotation
+    return [source_stage], annotation
 
 
-def dependency_stage(stage: str, modules: list[str], commands: list[str] | None = None) -> dict:
-    missing_modules = [name for name in modules if importlib.util.find_spec(name) is None]
-    missing_commands = [name for name in (commands or []) if shutil.which(name) is None]
-    missing = missing_modules + missing_commands
-    return {
-        "stage": stage,
-        "status": "PENDING" if missing else "NOT_RUN",
-        "reason": ("required component(s) unavailable: " + ", ".join(missing))
-        if missing else "components are present, but this spike has no configured adapter",
-        "missing": missing,
-    }
+def _pending_semantic_stages(reason: str) -> list[dict]:
+    return [
+        {"stage": "web_annotation_jsonld_roundtrip", "status": "PENDING", "reason": reason},
+        {"stage": "rdf_prov_mapping", "status": "PENDING", "reason": reason},
+        {"stage": "shacl_positive_and_negative", "status": "PENDING", "reason": reason},
+        {"stage": "sparql_query", "status": "PENDING", "reason": reason},
+    ]
+
+
+def run_semantic_pipeline(annotation: dict) -> list[dict]:
+    """Parse Web Annotation JSON-LD, add PROV-O links, validate SHACL, and query RDF."""
+    try:
+        from pyshacl import validate
+        from rdflib import Graph, Namespace, RDF, URIRef
+        from rdflib.compare import isomorphic
+    except ImportError as exc:
+        return _pending_semantic_stages(f"semantic dependency unavailable: {exc.name}")
+
+    try:
+        import json as json_module
+        from rdflib import Literal
+
+        graph = Graph()
+        graph.parse(data=json_module.dumps(annotation), format="json-ld")
+        annotation_id = URIRef(annotation["id"])
+        body_id = URIRef(annotation["body"]["id"])
+        source_id = URIRef(annotation["target"]["source"])
+        activity_id = URIRef(SYNTHETIC_BASE + "activity-anchor-001")
+        oa = Namespace("http://www.w3.org/ns/oa#")
+        prov = Namespace("http://www.w3.org/ns/prov#")
+
+        graph.add((annotation_id, RDF.type, oa.Annotation))
+        graph.add((source_id, RDF.type, prov.Entity))
+        graph.add((annotation_id, RDF.type, prov.Entity))
+        graph.add((activity_id, RDF.type, prov.Activity))
+        graph.add((activity_id, prov.used, source_id))
+        graph.add((activity_id, prov.generated, annotation_id))
+        graph.add((annotation_id, prov.wasGeneratedBy, activity_id))
+
+        roundtrip = Graph()
+        roundtrip.parse(data=graph.serialize(format="turtle"), format="turtle")
+        roundtrip_ok = isomorphic(graph, roundtrip)
+        (OUTPUT_DIR / "annotation-graph.ttl").write_text(
+            graph.serialize(format="turtle"), encoding="utf-8"
+        )
+
+        prov_ok = (
+            (activity_id, prov.used, source_id) in graph
+            and (activity_id, prov.generated, annotation_id) in graph
+            and (annotation_id, prov.wasGeneratedBy, activity_id) in graph
+        )
+
+        shapes = Graph().parse(str(SHAPES_PATH), format="turtle")
+        conforms, report_graph, report_text = validate(
+            data_graph=graph,
+            shacl_graph=shapes,
+            inference="none",
+            abort_on_first=False,
+            allow_infos=False,
+            allow_warnings=False,
+        )
+        (OUTPUT_DIR / "shacl-report.ttl").write_text(
+            report_graph.serialize(format="turtle"), encoding="utf-8"
+        )
+        body_nodes = list(graph.objects(annotation_id, oa.hasBody))
+        negative_graph = Graph()
+        for triple in graph:
+            negative_graph.add(triple)
+        if body_nodes:
+            negative_graph.remove((annotation_id, oa.hasBody, body_nodes[0]))
+        negative_conforms, _, negative_report = validate(
+            data_graph=negative_graph,
+            shacl_graph=shapes,
+            inference="none",
+            abort_on_first=False,
+            allow_infos=False,
+            allow_warnings=False,
+        )
+        shacl_ok = bool(conforms) and not bool(negative_conforms)
+        (OUTPUT_DIR / "shacl-negative-report.txt").write_text(
+            str(negative_report), encoding="utf-8"
+        )
+
+        query = """
+            PREFIX oa: <http://www.w3.org/ns/oa#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            SELECT ?annotation ?source ?activity
+            WHERE {
+              ?annotation a oa:Annotation ;
+                          oa:hasBody ?body ;
+                          oa:hasTarget ?target ;
+                          oa:motivatedBy oa:assessing ;
+                          prov:wasGeneratedBy ?activity .
+              ?body a oa:TextualBody ; rdf:value ?quote .
+              ?target oa:hasSource ?source ; oa:hasSelector ?selector .
+              ?selector a oa:TextQuoteSelector ; oa:exact ?quote .
+              ?activity prov:used ?source ; prov:generated ?annotation .
+            }
+        """
+        query_rows = list(graph.query(query))
+        sparql_ok = any(str(row.annotation) == str(annotation_id) for row in query_rows)
+
+        stages = [
+            {"stage": "web_annotation_jsonld_roundtrip",
+             "status": "PASS" if roundtrip_ok else "FAIL",
+             "triples": len(graph),
+             "artifact": "annotation-graph.ttl"},
+            {"stage": "rdf_prov_mapping",
+             "status": "PASS" if prov_ok else "FAIL",
+             "activity": str(activity_id),
+             "source": str(source_id),
+             "annotation": str(annotation_id)},
+            {"stage": "shacl_positive_and_negative",
+             "status": "PASS" if shacl_ok else "FAIL",
+             "positive_conforms": bool(conforms),
+             "negative_conforms": bool(negative_conforms),
+             "report": "shacl-report.ttl",
+             "negative_report": "shacl-negative-report.txt",
+             "details": str(report_text)},
+            {"stage": "sparql_query",
+             "status": "PASS" if sparql_ok else "FAIL",
+             "matching_rows": len(query_rows)},
+            {"stage": "crminf_crmsci_mapping", "status": "PENDING",
+             "reason": "no ontology versions or mapping profile have been admitted"},
+        ]
+        return stages
+    except Exception as exc:
+        return [
+            {"stage": "web_annotation_jsonld_roundtrip", "status": "FAIL",
+             "reason": f"{type(exc).__name__}: {exc}"},
+            {"stage": "rdf_prov_mapping", "status": "PENDING",
+             "reason": "semantic pipeline stopped before provenance checks"},
+            {"stage": "shacl_positive_and_negative", "status": "PENDING",
+             "reason": "semantic pipeline stopped before SHACL checks"},
+            {"stage": "sparql_query", "status": "PENDING",
+             "reason": "semantic pipeline stopped before SPARQL query"},
+        ]
 
 
 def run_openmodelica() -> dict:
@@ -160,10 +285,11 @@ def main() -> int:
         (OUTPUT_DIR / "annotation-draft.json").write_text(
             json.dumps(annotation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        stages.extend(run_semantic_pipeline(annotation))
+    else:
+        stages.extend(_pending_semantic_stages("synthetic annotation could not be created"))
 
     stages.extend([
-        dependency_stage("rdf_crminf_prov_and_shacl", ["rdflib", "pyshacl"]),
-        dependency_stage("sparql_query", ["rdflib"]),
         {"stage": "atms_reasoning", "status": "PENDING",
          "reason": "no ATMS implementation selected or installed"},
         {"stage": "system_model_candidate_and_handoff", "status": "STUB",
