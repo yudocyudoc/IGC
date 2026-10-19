@@ -124,7 +124,7 @@ jobs:
           sources = []
           for path in ("artifacts/f0/modelica-libraries.json", "artifacts/f0/ontology-packages.json"):
               sources.extend(json.loads(Path(path).read_text(encoding="utf-8")))
-          Path("artifacts/f0/platform-extra-packages.json").write_text(json.dumps(sources, indent=2) + "\\n", encoding="utf-8")
+          Path("artifacts/f0/platform-extra-packages.json").write_text(json.dumps(sources, indent=2) + "\n", encoding="utf-8")
           PY
 
       - name: Check SystemDynamics with its declared MSL version in pinned OpenModelica
