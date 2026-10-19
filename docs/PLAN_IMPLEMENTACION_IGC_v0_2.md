@@ -19,11 +19,15 @@ La primera autorización de implementación se limita a **F0 y a una spike verti
 - El árbol local aún no tiene commits de proyecto. La especificación local aparece sin seguimiento.
 - No se ha auditado aquí ningún código, dependencia, PR, runtime de OpenModelica ni configuración de Cloudflare. Estos son elementos de F0, no hechos asumidos.
 
+## 2.1 Decisión de entorno (actualización del investigador)
+
+El desarrollo y las verificaciones se realizan en GitHub mediante commits al PR y GitHub Actions. La corrida de F0 instala y ejecuta sus dependencias únicamente en el runner Ubuntu; no depende del entorno local. Los recursos Cloudflare reales quedan fuera de las corridas sintéticas.
+
 ## 3. Secuencia de entregas
 
 | Fase | Entrega verificable | Criterio de salida resumido |
 |---|---|---|
-| **F0 — Inventario y laboratorio** | Auditoría del repo y PR relevantes; inventario de librerías Modelica y dependencias; `STATUS.md`, `THIRD_PARTY.md`, `stack.lock.yaml`, decisiones de arquitectura y ERD conceptual; entorno local reproducible; spike vertical sintética. | Construcción local reproducible; límites y contratos registrados. La spike informa qué componentes son reales, cuáles son stubs y qué gates siguen pendientes. |
+| **F0 — Inventario y laboratorio** | Auditoría del repo y PR relevantes; inventario de librerías Modelica y dependencias; `STATUS.md`, `THIRD_PARTY.md`, `stack.lock.yaml`, decisiones de arquitectura y ERD conceptual; ejecución reproducible en GitHub Actions; spike vertical sintética. | Workflow de GitHub Actions reproducible; límites y contratos registrados. La spike informa qué componentes son reales, cuáles son prototipos/stubs y qué gates siguen pendientes. |
 | **F1 — Esquema y ledger** | Esquema LinkML del dominio, artefactos derivados, migraciones D1, journal, temporalidad bitemporal, almacenamiento R2, API/CLI y seeds sintéticos. | T01–T08, T21, T22 y T27; consulta `as-of` reproducible. |
 | **F2 — Semántica ejecutable** | Modelos y mappings auditados para CIDOC CRM, CRMinf, CRMsci, PROV-O y Web Annotation; RDF, SPARQL, SHACL y round-trip. | CQ-01, CQ-02, CQ-11, T24 y suite RDF. |
 | **F3 — ATMS y modelos rivales** | Motor de etiquetas de supuestos/nogoods; investigaciones, fronteras, campos y candidatos versionados; diferencias estructurales y pruebas. | CQ-03, CQ-04, CQ-05, CQ-10, T11, T12 y T26. |
