@@ -63,15 +63,15 @@ semantic_capabilities:
       declarations are referenced; full ontology graph import and entailment
       testing are not claimed.
   - name: atms
-    status: F0_PROTOTYPE_CI_PENDING_PRODUCTION_SELECTION
+    status: F0_PROTOTYPE_CI_PASS_PRODUCTION_SELECTION_PENDING
     implementation: scripts/f0_atms_probe.py
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39338634022
-  verified_commit: 3538c8f7c339e5a869322cc62a37d917deb81324
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39339123071
+  verified_commit: f71bf3ddbe3882915c9635b7561aac5ddff4f249
   artifact: f0-spike-evidence
-  artifact_id: 12227452916
+  artifact_id: 12227903017
   contains:
     - pip-install-report.json
     - python-environment.txt
