@@ -13,7 +13,7 @@
 
 ## Evidencia ejecutada
 
-- Workflow `F0 synthetic spike`, ejecución #115: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39340746230). Run exitoso sobre el commit `66368ad9e9ddc0f91eaa56acfc2fea13891ec17a`; artefacto ID `12228263784`.
+- Workflow `F0 synthetic spike`, ejecución #115: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39340917945). Run exitoso sobre el commit `b7930916e36e30501b8fb698d3ae1b7deeb6d17c`; artefacto ID `12229215772`.
 - Doce pruebas contractuales/de integración cubren el perfil CRMinf y el prototipo ATMS.
 - Python 3.13.16; RDFLib 7.6.0 (BSD-3-Clause) y pySHACL 0.40.1 (Apache-2.0) se instalan desde `requirements-f0.lock.txt`, que fija los ocho paquetes de la resolución con SHA-256. Actions instala en un venv limpio con `--require-hashes`, compara la resolución resultante con el lock y conserva reportes y freeze en el artefacto.
 - OpenModelica 1.27.1 corre desde la imagen oficial `openmodelica/openmodelica:v1.27.1-minimal`, fijada por digest en el workflow. El modelo sintético compila y simula; se genera CSV.
