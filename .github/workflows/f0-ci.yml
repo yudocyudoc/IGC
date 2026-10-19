@@ -67,6 +67,7 @@ jobs:
               "rdf_prov_mapping": "PASS",
               "shacl_positive_and_negative": "PASS",
               "sparql_query": "PASS",
+              "crminf_crmsci_mapping": "PASS",
               "openmodelica_compile_and_simulate": "PASS",
           }
           failures = {
