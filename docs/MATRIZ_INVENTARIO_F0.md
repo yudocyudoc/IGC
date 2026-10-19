@@ -21,12 +21,12 @@
 | D1 / R2 / Vectorize | No hay bindings ni recursos | Persistencia/cloud previstos | Adapters locales, pruebas y posterior decisión de recursos reales/costos. |
 | Docker | Sí, en runner Actions | Laboratorio reproducible propuesto | Docker 28.0.4 observado y contenedor OpenModelica fijado por digest; no existe aún Compose de servicios IGC. |
 | Spike vertical | Parcial y sintético | Recorrido detallado en Apéndice A | Source→Annotation→RDF/PROV/CRMinf/SPARQL/SHACL/ATMS-prototype→OpenModelica ejecutado; CRMsci no aplica a este fixture y el candidato sigue como stub. Estado global BLOCKED. |
-| Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Seis pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
-| Datos sintéticos | No incorporados | Permitidos y requeridos para spikes | Fixtures versionados, hashes y procedencia sintética declarada. |
+| Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Diez pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
+| Datos sintéticos | Sí, fixtures de F0 | Permitidos y requeridos para spikes | Ampliar fixtures con escenarios orientados a T01–T30 y mantener hashes/procedencia. |
 | CI / PR | Sí, PR draft #1 | PR draft previsto por mandato F0 | Workflow de Actions con artefactos; no sustituye revisión independiente. |
 
 ## Estado de los entornos
 
 - El entorno local consultado conserva su inventario histórico: Python 3.13.1, Node.js 22.13.1, Git 2.51.0.windows.1; no detectó `omc`, Docker, RDFLib, pySHACL ni LinkML.
-- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; seis pruebas y las etapas sintéticas mínimas de JSON-LD/RDF/PROV/SHACL/SPARQL/OpenModelica pasan.
+- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; diez pruebas y las etapas sintéticas de JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan.
 - La validación del proyecto se hace en Actions por decisión vigente; los entornos son distintos.
