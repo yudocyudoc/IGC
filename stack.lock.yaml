@@ -67,10 +67,10 @@ semantic_capabilities:
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  latest_successful_run: https://github.com/yudocyudoc/IGC/actions/runs/39338475359
-  verified_commit: 4671d837d6cd160dbe7ee967147a696a67a9e909
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39338634022
+  verified_commit: 3538c8f7c339e5a869322cc62a37d917deb81324
   artifact: f0-spike-evidence
-  artifact_id: 12227777239
+  artifact_id: 12227452916
   contains:
     - pip-install-report.json
     - python-environment.txt
