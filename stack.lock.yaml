@@ -7,7 +7,7 @@ note: >-
   F0 Python dependencies and the OpenModelica image are pinned and passed in
   GitHub Actions. requirements-f0.lock.txt contains the eight-package Python
   closure with SHA-256 hashes for ubuntu-24.04 CPython 3.13.16 x86_64.
-  A full platform lock, SBOM, and license review remain outstanding.
+  A Python-only SPDX 2.3 SBOM is emitted with license fields set to NOASSERTION. The full platform inventory (runner, Actions, container) and license review remain outstanding.
 
 execution_environment:
   provider: GitHub Actions
@@ -40,6 +40,14 @@ python_dependency_lock:
   target: ubuntu-24.04 / CPython 3.13.16 / x86_64
   resolved_package_count: 8
   validation: CI_REQUIRE_HASHES_PASS
+
+python_sbom:
+  file: artifacts/f0/python-dependencies.spdx.json
+  format: SPDX-2.3-JSON
+  package_count: 8
+  scope: PYTHON_DEPENDENCY_CLOSURE_ONLY
+  license_assertions: NOASSERTION
+  status: GENERATED_IN_CI
 
 python_direct_dependencies:
   - package: rdflib
@@ -86,10 +94,10 @@ semantic_capabilities:
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39340078943
-  verified_commit: ce647fc2c87ac6b2228dd614253d5928a34c4d42
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39340746230
+  verified_commit: 66368ad9e9ddc0f91eaa56acfc2fea13891ec17a
   artifact: f0-spike-evidence
-  artifact_id: 12228870162
+  artifact_id: 12228263784
   contains:
     - pip-install-report.json
     - requirements-f0.resolved.lock.txt
@@ -101,6 +109,8 @@ resolution_evidence:
     - shacl-negative-report.txt
     - omc.log
     - f0_toy_stock_res.csv
+    - python-dependencies.spdx.json
+    - pip-freeze.txt
 
 candidates:
   semantic:
