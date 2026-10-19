@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   synthetic-spike:
-    name: Synthetic spike (Python + OpenModelica)
+    name: Synthetic spike (Python + RDF + OpenModelica)
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
@@ -30,7 +30,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.13.16"
+
+      - name: Install pinned F0 dependencies and record resolution
+        run: |
+          mkdir -p artifacts/f0
+          python -m pip install --requirement requirements-f0.txt --report artifacts/f0/pip-install-report.json
+          python -m pip freeze > artifacts/f0/python-environment.txt
 
       - name: Record tool versions
         run: |
@@ -38,7 +44,7 @@ jobs:
           docker --version
           docker run --rm "${{ env.IGC_OMC_DOCKER_IMAGE }}" omc --version
 
-      - name: Run contract tests
+      - name: Run contract and semantic integration tests
         run: python -m unittest discover -s tests -v
 
       - name: Run synthetic spike
@@ -46,7 +52,7 @@ jobs:
         continue-on-error: true
         run: python scripts/f0_spike.py
 
-      - name: Require source and OpenModelica stages to pass
+      - name: Require source, semantic, and OpenModelica stages to pass
         if: always()
         run: |
           python - <<'PY'
@@ -57,6 +63,10 @@ jobs:
           stages = {item["stage"]: item["status"] for item in report["stages"]}
           required = {
               "source_ingest_and_anchor": "PASS",
+              "web_annotation_jsonld_roundtrip": "PASS",
+              "rdf_prov_mapping": "PASS",
+              "shacl_positive_and_negative": "PASS",
+              "sparql_query": "PASS",
               "openmodelica_compile_and_simulate": "PASS",
           }
           failures = {
