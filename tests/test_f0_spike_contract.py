@@ -84,6 +84,15 @@ class F0SpikeContractTests(unittest.TestCase):
         package = next(item for item in document["packages"] if item["name"] == "SystemDynamics")
         self.assertIn("2.1.2+b986a2ea", package["versionInfo"])
         self.assertEqual(package["checksums"][0]["checksumValue"], "e" * 64)
+        self.assertIn("additional package records: 1", document["comment"])
+        namespace_with_extra = document["documentNamespace"]
+        extras.write_text(json.dumps([{**json.loads(extras.read_text(encoding="utf-8"))[0], "comment": "changed"}]), encoding="utf-8")
+        changed = render_platform_spdx(
+            lock, runner, container, workflow, "ubuntu-24.04",
+            "openmodelica/openmodelica:v1.27.1-minimal",
+            "sha256:" + "c" * 64, extras,
+        )
+        self.assertNotEqual(namespace_with_extra, changed["documentNamespace"])
 
     def test_sbom_contains_lock_hash_and_unasserted_license(self):
         digest = "b" * 64
