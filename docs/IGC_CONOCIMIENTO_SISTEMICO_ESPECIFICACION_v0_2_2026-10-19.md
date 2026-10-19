@@ -3,7 +3,7 @@
 ## Especificación integral de arquitectura y experimentación · v0.2 · 2026-10-19
 
 **Estado:** PROPUESTA COMPLETA PARA ADJUDICACIÓN DEL INVESTIGADOR. **No es una implementación, no certifica compatibilidad ni aprueba automáticamente cambios del repositorio.**  
-**Repositorio de destino:** [`yudocyudoc/short`](https://github.com/yudocyudoc/short); subproyecto aislado, integración mediante contratos versionados.  
+**Repositorio de destino:** [`yudocyudoc/IGC`](https://github.com/yudocyudoc/IGC); repositorio dedicado, cambios por ramas y contratos versionados. Los PR #20, #39 y #40 citados en esta especificación pertenecen al repositorio histórico `yudocyudoc/short` y son antecedentes, no estado del repositorio IGC.  
 **Responsabilidades:** investigador decide alcance y adjudica resultados; coder implementa y demuestra; revisor independiente inspecciona pruebas y contratos.  
 **Sustituye como propuesta:** la orientación de *IGC Declarativo v0.1* limitada a expediente de afirmaciones. Conserva sus principios de procedencia, temporalidad, incertidumbre y no filtración de respuestas.  
 **Decisión del investigador incorporada el 19 de octubre de 2026:** todos los estudios del IGC usan **Dinámica de Sistemas como lente rector**; **OpenModelica es destino de formalización y motor de simulación obligatorio**, aun si algunas hipótesis iniciales son parciales y no ejecutables. No se acepta sustituir el programa de investigación por análisis lineales o tablas de Excel.  
