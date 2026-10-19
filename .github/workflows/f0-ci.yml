@@ -58,10 +58,10 @@ jobs:
           def pins(path):
               result = {}
               for line in Path(path).read_text(encoding="utf-8").splitlines():
-                  line = line.strip()
+                  line = line.strip().rstrip(chr(92)).strip()
                   if not line or line.startswith("#"):
                       continue
-                  match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\\s]+)", line)
+                  match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s]+)", line)
                   if match:
                       name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
                       result[name] = match.group(2)
