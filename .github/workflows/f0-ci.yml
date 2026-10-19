@@ -114,6 +114,19 @@ jobs:
           Path("artifacts/f0/modelica-libraries.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
           PY
 
+      - name: Verify official ontology graphs and bounded entailment
+        run: |
+          /tmp/igc-f0-locked/bin/python scripts/verify_ontologies.py --manifest data/ontologies/manifest.json --report artifacts/f0/ontology-verification.json --packages artifacts/f0/ontology-packages.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          sources = []
+          for path in ("artifacts/f0/modelica-libraries.json", "artifacts/f0/ontology-packages.json"):
+              sources.extend(json.loads(Path(path).read_text(encoding="utf-8")))
+          Path("artifacts/f0/platform-extra-packages.json").write_text(json.dumps(sources, indent=2) + "\\n", encoding="utf-8")
+          PY
+
       - name: Check SystemDynamics with its declared MSL version in pinned OpenModelica
         run: |
           cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
@@ -134,7 +147,7 @@ jobs:
         run: |
           dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/runner-packages.tsv
           docker run --rm --entrypoint sh -e 'DPKG_FORMAT=${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' "${{ env.IGC_OMC_DOCKER_IMAGE }}" -c 'dpkg-query -W -f="$DPKG_FORMAT"' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/openmodelica-packages.tsv
-          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --extra-packages artifacts/f0/modelica-libraries.json             --output artifacts/f0/platform.spdx.json
+          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --extra-packages artifacts/f0/platform-extra-packages.json             --output artifacts/f0/platform.spdx.json
 
       - name: Record tool versions
         run: |
