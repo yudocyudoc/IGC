@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -85,40 +86,69 @@ def dependency_stage(stage: str, modules: list[str], commands: list[str] | None 
 
 def run_openmodelica() -> dict:
     omc = shutil.which("omc")
-    if not omc:
+    docker = shutil.which("docker")
+    docker_image = os.environ.get("IGC_OMC_DOCKER_IMAGE")
+    use_docker = bool(docker_image)
+
+    if use_docker and not docker:
         return {"stage": "openmodelica_compile_and_simulate", "status": "PENDING",
-                "reason": "omc was not found on PATH; no compilation or simulation was run"}
+                "reason": "IGC_OMC_DOCKER_IMAGE is configured but docker is unavailable"}
+    if not use_docker and not omc:
+        return {"stage": "openmodelica_compile_and_simulate", "status": "PENDING",
+                "reason": "omc was not found on PATH and no Docker image was configured"}
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    model_file = json.dumps(MODEL_PATH.as_posix())
     prefix = "f0_toy_stock"
     mos_path = OUTPUT_DIR / "simulate.mos"
+    if use_docker:
+        model_path = "/workspace/" + MODEL_PATH.relative_to(ROOT).as_posix()
+        mos_container_path = "/workspace/" + mos_path.relative_to(ROOT).as_posix()
+    else:
+        model_path = MODEL_PATH.as_posix()
+        mos_container_path = str(mos_path)
+
     mos_path.write_text(
-        f"loadFile({model_file});\n"
+        f"loadFile({json.dumps(model_path)});\n"
         "getErrorString();\n"
         f"simulate(F0ToyStock, startTime=0.0, stopTime=10.0, numberOfIntervals=100, outputFormat=\"csv\", fileNamePrefix=\"{prefix}\");\n"
         "getErrorString();\n",
         encoding="utf-8",
     )
+    if use_docker:
+        relative_cwd = OUTPUT_DIR.relative_to(ROOT).as_posix()
+        command = [
+            docker, "run", "--rm", "--volume", f"{ROOT}:/workspace",
+            "--workdir", f"/workspace/{relative_cwd}", docker_image,
+            "omc", mos_container_path,
+        ]
+    else:
+        command = [omc, str(mos_path)]
+
     try:
         completed = subprocess.run(
-            [omc, str(mos_path)], cwd=OUTPUT_DIR, capture_output=True,
-            text=True, timeout=120, check=False,
+            command, cwd=OUTPUT_DIR, capture_output=True, text=True,
+            timeout=600 if use_docker else 120, check=False,
         )
     except subprocess.TimeoutExpired as exc:
         (OUTPUT_DIR / "omc.log").write_text(str(exc), encoding="utf-8")
         return {"stage": "openmodelica_compile_and_simulate", "status": "FAIL",
-                "reason": "omc timed out after 120 seconds"}
+                "reason": "OpenModelica compilation/simulation timed out"}
+    except OSError as exc:
+        (OUTPUT_DIR / "omc.log").write_text(str(exc), encoding="utf-8")
+        return {"stage": "openmodelica_compile_and_simulate", "status": "FAIL",
+                "reason": "failed to launch OpenModelica command"}
 
     log = completed.stdout + "\n--- STDERR ---\n" + completed.stderr
     (OUTPUT_DIR / "omc.log").write_text(log, encoding="utf-8")
     csv_path = OUTPUT_DIR / f"{prefix}_res.csv"
-    errors = "Error:" in log or "Error:" in completed.stderr
+    errors = "Error:" in log
     if completed.returncode != 0 or errors or not csv_path.is_file():
         return {"stage": "openmodelica_compile_and_simulate", "status": "FAIL",
                 "reason": "omc did not produce a successful result CSV",
                 "return_code": completed.returncode, "log": "omc.log"}
     return {"stage": "openmodelica_compile_and_simulate", "status": "PASS",
+            "engine": "Docker image" if use_docker else "PATH executable",
+            "engine_version": docker_image if use_docker else None,
             "model": str(MODEL_PATH.relative_to(ROOT)), "log": "omc.log",
             "csv": str(csv_path.relative_to(ROOT))}
 
@@ -141,7 +171,7 @@ def main() -> int:
          "stub_artifact": str(CANDIDATE_PATH.relative_to(ROOT))},
         run_openmodelica(),
         {"stage": "cloudflare_d1_r2_persistence", "status": "NOT_RUN",
-         "reason": "cloud resources are out of scope for this local synthetic spike"},
+         "reason": "cloud resources are out of scope for this synthetic spike"},
     ])
     report = {
         "schema": "igc-f0-spike-report/0.1",
