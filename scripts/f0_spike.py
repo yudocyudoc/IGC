@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+from scripts.f0_atms_probe import run_atms_probe
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATH = ROOT / "data" / "synthetic" / "source.txt"
 CLAIM_PATH = ROOT / "data" / "synthetic" / "claim.json"
@@ -317,8 +319,7 @@ def main() -> int:
         stages.extend(_pending_semantic_stages("synthetic annotation could not be created"))
 
     stages.extend([
-        {"stage": "atms_reasoning", "status": "PENDING",
-         "reason": "no ATMS implementation selected or installed"},
+        run_atms_probe(),
         {"stage": "system_model_candidate_and_handoff", "status": "STUB",
          "reason": "candidate is a labeled contract stub; no candidate is promoted",
          "stub_artifact": str(CANDIDATE_PATH.relative_to(ROOT))},
