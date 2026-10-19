@@ -19,7 +19,7 @@ concurrency:
 jobs:
   synthetic-spike:
     name: Synthetic spike (Python + OpenModelica)
-    runs-on: ubuntu-24.04
+    runs-on: windows-latest
     timeout-minutes: 35
     steps:
       - name: Check out repository
@@ -34,24 +34,26 @@ jobs:
         uses: OpenModelica/setup-openmodelica@v1.2.0
         with:
           version: "1.27.1"
-          packages: |
-            omc
 
       - name: Record tool versions
+        shell: bash
         run: |
           python --version
           omc --version
 
       - name: Run contract tests
+        shell: bash
         run: python -m unittest discover -s tests -v
 
       - name: Run synthetic spike
         id: spike
         continue-on-error: true
+        shell: bash
         run: python scripts/f0_spike.py
 
       - name: Require source and OpenModelica stages to pass
         if: always()
+        shell: bash
         run: |
           python - <<'PY'
           import json
