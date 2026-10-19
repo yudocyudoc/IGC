@@ -88,7 +88,7 @@ jobs:
           sha256sum artifacts/f0/systemdynamics.tar.gz | awk '{print $1}' > artifacts/f0/systemdynamics.archive.sha256
           mkdir -p artifacts/f0/SystemDynamics
           tar -xzf artifacts/f0/systemdynamics.tar.gz --strip-components=1 -C artifacts/f0/SystemDynamics
-          test -s artifacts/f0/SystemDynamics/package.mo
+          test -f artifacts/f0/SystemDynamics/SystemDynamics/package.mo
           python - <<'PY'
           import json
           from pathlib import Path
@@ -108,7 +108,7 @@ jobs:
       - name: Check SystemDynamics in pinned OpenModelica image
         run: |
           cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
-          loadFile("/opt/systemdynamics/package.mo");
+          loadFile("/opt/systemdynamics/SystemDynamics/package.mo");
           print(getErrorString());
           checkModel(SystemDynamics.Levels.Level);
           print(getErrorString());
