@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
-      IGC_OMC_DOCKER_IMAGE: openmodelica/openmodelica:v1.27.1-minimal
+      IGC_OMC_DOCKER_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
