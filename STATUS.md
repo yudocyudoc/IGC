@@ -13,14 +13,14 @@
 
 ## Evidencia ejecutada
 
-- Workflow `F0 synthetic spike`, ejecución #32: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39337951127).
-- Seis pruebas contractuales/de integración pasan.
+- Workflow `F0 synthetic spike`, ejecución #58: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39338475359). Run exitoso sobre el commit `4671d837d6cd160dbe7ee967147a696a67a9e909`; artefacto ID `12227777239`.
+- Seis pruebas contractuales/de integración pasan, incluida la validación del perfil CRMinf mínimo.
 - Python 3.13.16; RDFLib 7.6.0 (BSD-3-Clause) y pySHACL 0.40.1 (Apache-2.0) instalados desde los pins directos de `requirements-f0.txt`. El reporte de resolución de pip y `pip freeze` están en el artefacto.
 - OpenModelica 1.27.1 corre desde la imagen oficial `openmodelica/openmodelica:v1.27.1-minimal`, fijada por digest en el workflow. El modelo sintético compila y simula; se genera CSV.
 - El anclaje de fuente pasa con SHA-256 `d1f9ff1422b8283e6ada4bd8bbf28ef6582039a380b13435e9048df09cb7e25e`.
 - El fixture Web Annotation se parsea como JSON-LD, se serializa a RDF/Turtle y se verifica por isomorfismo.
 - El perfil SHACL IGC pasa el fixture positivo y rechaza el negativo.
-- La traza PROV-O mínima y la consulta SPARQL sintética encuentran una fila.
+- La traza PROV-O mínima, el perfil CRMinf I1/I2/I4/J2/J4 y la consulta SPARQL sintética pasan en Actions. CRMsci no aplica al fixture, según su declaración de que no contiene observaciones ni mediciones.
 - Artefactos: `run.json`, `annotation-graph.ttl`, reportes SHACL, `omc.log`, CSV del modelo, reporte pip y entorno resuelto.
 
 ## Límites y pendientes
@@ -36,6 +36,6 @@
 
 ## Veredicto de fase
 
-`F0_PARTIAL — SOURCE/OA/RDF/PROV/SHACL/SPARQL/OPENMODELICA_SYNTHETIC_PASS — ATMS/LOCK/CANDIDATE/CLOUD_PENDING`.
+`F0_PARTIAL — SOURCE/OA/RDF/PROV/CRMINF/SHACL/SPARQL/OPENMODELICA_SYNTHETIC_PASS — CRMSCI_NOT_APPLICABLE_TO_FIXTURE — ATMS/LOCK/CANDIDATE/CLOUD_PENDING`.
 
 No se declara completado F0, gate científico ni hipótesis alguna.
