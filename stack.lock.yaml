@@ -132,11 +132,22 @@ candidates:
       image_digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
       status: COMPILE_SIMULATE_PASS_SYNTHETIC
     - name: system_dynamics_modelica_library
-      version: null
-      status: NOT_VERIFIED
+      version: 2.1.2
+      source: https://github.com/modelica-3rdparty/SystemDynamics
+      source_ref: v2.1.2
+      source_commit: b986a2ea354ab550d627a392f857ad7c9997d961
+      declared_license: BSD-3-Clause
+      declared_msl_compatibility: 4.0.0
+      status: UPSTREAM_METADATA_VERIFIED_NOT_LOCKED_OR_TESTED_IN_IGC
     - name: business_simulation_library
-      version: null
-      status: NOT_VERIFIED
+      version: 2.2.0
+      source: https://github.com/bslMS/BusinessSimulation
+      source_ref: v2.2.0
+      source_commit: 608cf499af56233766130afe2cfa0a7b80d5cc6d
+      declared_license: EUPL-1.2-or-later
+      declared_msl_compatibility: 4.0.0
+      upstream_om_support: RELEASE_TARGETS_OPENMODELICA_TESTED_OMEDIT_1.23.0_DEV
+      status: UPSTREAM_METADATA_VERIFIED_NOT_LOCKED_OR_TESTED_IN_IGC
   cloud:
     - name: cloudflare_d1
       status: DESIGN_ONLY_NO_BINDING
