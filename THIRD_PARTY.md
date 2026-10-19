@@ -20,7 +20,7 @@
 | Cloudflare Vectorize | Recuperación vectorial | https://developers.cloudflare.com/vectorize/ | Diseñar adapter; no hay índice configurado. Versiones/límites vigentes por verificar. |
 | PyKEEN u otro KGE | Embeddings de grafos | https://pykeen.readthedocs.io/ | Candidato no seleccionado; evaluación y licencia pendientes. |
 
-| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39337591683 | Runner Ubuntu 24.04, Python 3.13.16, seis pruebas pasan y artefacto `f0-spike-evidence` disponible. La resolución transitiva de pip se adjunta como reporte del run; no hay todavía un lock completo con hashes de todos los paquetes. |
+| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39337951127 | Runner Ubuntu 24.04, Python 3.13.16, seis pruebas pasan y artefacto `f0-spike-evidence` disponible. La resolución transitiva de pip se adjunta como reporte del run; no hay todavía un lock completo con hashes de todos los paquetes. |
 
 ## Reglas de admisión
 
