@@ -28,5 +28,5 @@
 ## Estado de los entornos
 
 - El entorno local consultado conserva su inventario histórico: Python 3.13.1, Node.js 22.13.1, Git 2.51.0.windows.1; no detectó `omc`, Docker, RDFLib, pySHACL ni LinkML.
-- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; diez pruebas y las etapas sintéticas de JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan.
+- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; diez pruebas pasan y el lock Python de ocho paquetes con SHA-256 se instala con `--require-hashes`. Las etapas JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan.
 - La validación del proyecto se hace en Actions por decisión vigente; los entornos son distintos.
