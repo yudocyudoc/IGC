@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-from scripts.sbom_from_lock import parse_lock
+if __package__:
+    from .sbom_from_lock import parse_lock
+else:
+    from sbom_from_lock import parse_lock
 
 
 def _slug(value: str) -> str:
