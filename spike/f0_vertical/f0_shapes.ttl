@@ -1,0 +1,56 @@
+@prefix igc: <https://example.invalid/igc/shapes/> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+igc:AnnotationShape
+    a sh:NodeShape ;
+    sh:targetClass oa:Annotation ;
+    sh:property [
+        sh:path oa:motivatedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:hasValue oa:assessing
+    ] ;
+    sh:property [
+        sh:path oa:hasBody ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node [
+            sh:class oa:TextualBody ;
+            sh:property [
+                sh:path rdf:value ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:datatype xsd:string
+            ]
+        ]
+    ] ;
+    sh:property [
+        sh:path oa:hasTarget ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node [
+            sh:property [
+                sh:path oa:hasSource ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:nodeKind sh:IRI
+            ] ;
+            sh:property [
+                sh:path oa:hasSelector ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:node [
+                    sh:class oa:TextQuoteSelector ;
+                    sh:property [
+                        sh:path oa:exact ;
+                        sh:minCount 1 ;
+                        sh:maxCount 1 ;
+                        sh:datatype xsd:string
+                    ]
+                ]
+            ]
+        ]
+    ] .
