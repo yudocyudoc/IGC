@@ -85,6 +85,7 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
                          workflow_path: Path, runner_label: str, image_ref: str,
                          image_digest: str, extras_path: Path | None = None) -> dict:
     packages = []
+    extra_package_count = 0
     for item in parse_lock(lock_path):
         packages.append({
             "name": item["name"],
@@ -115,6 +116,7 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
             if extra.get("checksums") and any(item.get("algorithm") != "SHA256" for item in extra["checksums"]):
                 raise ValueError(f"{extras_path}: only SHA256 package checksums are supported")
             packages.append(extra)
+        extra_package_count = len(extras)
     packages.extend([
         {
             "name": "GitHub-hosted runner image",
@@ -138,6 +140,7 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
     content_hash = hashlib.sha256(
         lock_path.read_bytes() + runner_path.read_bytes() + container_path.read_bytes()
         + workflow_path.read_bytes() + image_digest.encode()
+        + (extras_path.read_bytes() if extras_path is not None else b"")
     ).hexdigest()
     document_namespace = f"https://example.invalid/igc/sbom/platform/{content_hash}"
     spdx_packages = [_package(item, index) for index, item in enumerate(packages, 1)]
@@ -162,7 +165,7 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
             f"Snapshot content hash: {content_hash}. Covers {len(parse_lock(lock_path))} Python lock packages, "
             f"{len(read_dpkg_inventory(runner_path, 'github-runner-dpkg'))} runner dpkg packages, "
             f"{len(read_dpkg_inventory(container_path, 'openmodelica-image-dpkg'))} OpenModelica image dpkg packages, "
-            f"{len(read_pinned_actions(workflow_path))} pinned GitHub Actions, runner image label, and OpenModelica image digest. "
+            f"{len(read_pinned_actions(workflow_path))} pinned GitHub Actions, {extra_package_count} additional package records, runner image label, and OpenModelica image digest. "
             "All license and copyright fields are NOASSERTION pending the separately scheduled license review. "
             "The GitHub runner label is mutable; this is an inventory snapshot, not a claim that the runner image is immutable."
         ),
