@@ -21,12 +21,12 @@
 | D1 / R2 / Vectorize | No hay bindings ni recursos | Persistencia/cloud previstos | Adapters locales, pruebas y posterior decisión de recursos reales/costos. |
 | Docker | Sí, en runner Actions | Laboratorio reproducible propuesto | Docker 28.0.4 observado y contenedor OpenModelica fijado por digest; no existe aún Compose de servicios IGC. |
 | Spike vertical | Parcial y sintético | Recorrido detallado en Apéndice A | Source→Annotation→RDF/PROV/CRMinf/SPARQL/SHACL/ATMS-prototype→OpenModelica ejecutado; CRMsci no aplica a este fixture y el candidato sigue como stub. Estado global BLOCKED. |
-| Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Doce pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
+| Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Trece pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
 | Datos sintéticos | Sí, fixtures de F0 | Permitidos y requeridos para spikes | Ampliar fixtures con escenarios orientados a T01–T30 y mantener hashes/procedencia. |
 | CI / PR | Sí, PR draft #1 en IGC | PRs antecedentes consultados en `yudocyudoc/short`: #20 cerrado sin merge; #39/#40 abiertos en draft | Sus estados y claims están anotados en `THIRD_PARTY.md`; no son código integrado ni revisión independiente de IGC. Workflow de Actions con artefactos; no sustituye revisión independiente. |
 
 ## Estado de los entornos
 
 - El entorno local consultado conserva su inventario histórico: Python 3.13.1, Node.js 22.13.1, Git 2.51.0.windows.1; no detectó `omc`, Docker, RDFLib, pySHACL ni LinkML.
-- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; doce pruebas pasan y el lock Python de ocho paquetes con SHA-256 se instala con `--require-hashes`; Actions genera SBOM SPDX 2.3 parcial de esas dependencias con licencias `NOASSERTION`. Falta el SBOM de la plataforma completa. Las etapas JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan.
+- GitHub Actions: Ubuntu 24.04, Python 3.13.16 y Docker 28.0.4; trece pruebas pasan y el lock Python de ocho paquetes con SHA-256 se instala con `--require-hashes`; Actions adjunta SBOM SPDX 2.3 de 1,445 registros (Python, dpkg del runner/contenedor y acciones fijadas). Las licencias quedan `NOASSERTION`; faltan herramientas no-dpkg y revisión de licencias. Las etapas JSON-LD/RDF/PROV/CRMinf/SHACL/SPARQL/ATMS-prototype/OpenModelica pasan.
 - La validación del proyecto se hace en Actions por decisión vigente; los entornos son distintos.
