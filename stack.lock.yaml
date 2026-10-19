@@ -51,6 +51,11 @@ semantic_capabilities:
     crmsci: 3.2
     compatible_cidoc_crm: 7.1.3
     profile: igc-f0-crminf-minimal/0.1
+    official_sources:
+      crminf_release: https://cidoc-crm.org/crminf/ModelVersion/crminf-1.2.1
+      crminf_declarations: https://cidoc-crm.org/extensions/crminf/html/CRMinf_v1.2.1.html
+      crmsci_releases: https://cidoc-crm.org/crmsci/fm_releases
+      crmsci_declarations: https://cidoc-crm.org/extensions/crmsci/html/CRMsci_v3.2.html
     limitation: >-
       Uses I1, I2, I4, J2, J4 for a synthetic assessment record. I5 inference
       and CRMsci observation classes are deliberately not asserted because the
