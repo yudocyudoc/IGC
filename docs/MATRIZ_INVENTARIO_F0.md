@@ -17,13 +17,13 @@
 | Candidatos de modelo rivales | No | `SystemInvestigation` / `SystemModelCandidate` | Persistencia, diff estructural, relaciones y evidencia trazable. |
 | IGC-SL / linter L0–L6 | No | Contrato y gate definidos | AST, tipos, adapters, diagnósticos y tests negativos. |
 | OpenModelica | Sí, en GitHub Actions | Destino y simulador obligatorio | Imagen oficial 1.27.1 fijada por digest; el toy Modelica compila/simula y genera CSV. No demuestra integración de un candidato de sistema. |
-| Librerías Modelica | No inventariadas localmente | PR #20 las cita como antecedentes | Fuente/versión/licencia/adaptadores y ejecución exacta en OMC. |
+| Librerías Modelica | No integradas en IGC; spike OMC sintética separada | PR histórico #20 de `short` cerrado sin merge; #39/#40 siguen borradores | PR #20 reporta BSL 2.2.0 inspeccionada, sin compilación BSL; #39/#40 son antecedentes de diseño/IR, no integración en IGC. Verificar fuente, versión, licencia, puertos y ejecución exacta en OMC antes de admitir componentes. |
 | D1 / R2 / Vectorize | No hay bindings ni recursos | Persistencia/cloud previstos | Adapters locales, pruebas y posterior decisión de recursos reales/costos. |
 | Docker | Sí, en runner Actions | Laboratorio reproducible propuesto | Docker 28.0.4 observado y contenedor OpenModelica fijado por digest; no existe aún Compose de servicios IGC. |
 | Spike vertical | Parcial y sintético | Recorrido detallado en Apéndice A | Source→Annotation→RDF/PROV/CRMinf/SPARQL/SHACL/ATMS-prototype→OpenModelica ejecutado; CRMsci no aplica a este fixture y el candidato sigue como stub. Estado global BLOCKED. |
 | Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Doce pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
 | Datos sintéticos | Sí, fixtures de F0 | Permitidos y requeridos para spikes | Ampliar fixtures con escenarios orientados a T01–T30 y mantener hashes/procedencia. |
-| CI / PR | Sí, PR draft #1 | PR draft previsto por mandato F0 | Workflow de Actions con artefactos; no sustituye revisión independiente. |
+| CI / PR | Sí, PR draft #1 en IGC | PRs antecedentes consultados en `yudocyudoc/short`: #20 cerrado sin merge; #39/#40 abiertos en draft | Sus estados y claims están anotados en `THIRD_PARTY.md`; no son código integrado ni revisión independiente de IGC. Workflow de Actions con artefactos; no sustituye revisión independiente. |
 
 ## Estado de los entornos
 
