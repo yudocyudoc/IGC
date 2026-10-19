@@ -13,15 +13,16 @@
 
 ## Evidencia ejecutada
 
-- Workflow `F0 synthetic spike`, ejecución #136: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39342207170). Run exitoso sobre el commit `8712cbbcf80afb4f1b37a30a04881a86c9fef01f`; artefacto ID `12229666705`.
-- Trece pruebas contractuales/de integración cubren el perfil CRMinf y el prototipo ATMS.
+- Workflow `F0 synthetic spike`, ejecución #179: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39344398983). Todos los pasos y 14 pruebas pasan; artefacto ID `12230756168`. El reporte funcional sigue `BLOCKED` deliberadamente por capacidades de fases futuras.
+- Catorce pruebas contractuales/de integración cubren perfiles sintéticos, SBOM, lock de dependencias, etiquetas ATMS y estados bloqueados; no equivalen a la suite T01–T30 integral.
 - Python 3.13.16; RDFLib 7.6.0 (BSD-3-Clause) y pySHACL 0.40.1 (Apache-2.0) se instalan desde `requirements-f0.lock.txt`, que fija los ocho paquetes de la resolución con SHA-256. Actions instala en un venv limpio con `--require-hashes`, compara la resolución resultante con el lock y conserva reportes y freeze en el artefacto.
-- OpenModelica 1.27.1 corre desde la imagen oficial `openmodelica/openmodelica:v1.27.1-minimal`, fijada por digest en el workflow. El modelo sintético compila y simula; se genera CSV.
+- OpenModelica 1.27.1 corre desde la imagen oficial `openmodelica/openmodelica:v1.27.1-minimal`, fijada por digest. El modelo sintético compila y simula; SystemDynamics 2.1.2 más MSL 4.0.0 carga `SystemDynamics.Levels.Level` y pasa `checkModel`. No se simula un ejemplo de la librería ni se integra a un candidato IGC.
 - El anclaje de fuente pasa con SHA-256 `d1f9ff1422b8283e6ada4bd8bbf28ef6582039a380b13435e9048df09cb7e25e`.
 - El fixture Web Annotation se parsea como JSON-LD, se serializa a RDF/Turtle y se verifica por isomorfismo.
 - El perfil SHACL IGC pasa el fixture positivo y rechaza el negativo.
 - La traza PROV-O mínima, el perfil CRMinf I1/I2/I4/J2/J4, la consulta SPARQL y el prototipo ATMS pasan en Actions. El ATMS conserva etiquetas mínimas para alternativas compatibles y poda el nogood explícito; no es un motor de producción. CRMsci no aplica al fixture, que no contiene observaciones ni mediciones.
-- Artefactos: `run.json`, `annotation-graph.ttl`, reportes SHACL, `omc.log`, CSV del modelo, reporte pip, lock resuelto, entorno, `python-dependencies.spdx.json` y `platform.spdx.json`.
+- Ontologías oficiales: CIDOC CRM 7.1.3, CRMinf 1.2.1, CRMsci 3.2 y PROV-O parsean y pasan términos requeridos. OWL-RL infiere E16 Measurement → S4 Single Observation sobre el set cargado. SHA-256 y reporte quedan en el artefacto; `owl:imports` closure completa no está expandida.
+- Artefactos: `run.json`, grafo sintético y reportes SHACL, CSV, logs OpenModelica, chequeo SystemDynamics, hashes de librerías/ontologías, reporte de entailment, reportes de pip, locks, entorno y SBOMs SPDX 2.3.
 
 ## Límites y pendientes
 
@@ -29,13 +30,13 @@
 - El perfil Web Annotation y shapes SHACL son mínimos y sintéticos; no son una certificación de conformidad completa W3C.
 - PROV-O solo cubre el vínculo de generación/uso de la fixture.
 - CRMinf 1.2.1 / CRMsci 3.2 / CIDOC CRM 7.1.3: perfil mínimo de argumentación I1/I2/I4/J2/J4 añadido al fixture sintético y puesto como gate de CI. El fixture declara explícitamente que no contiene medición; por eso no se tipa como S4/S27 y tampoco se afirma I5 (inferencia). El grafo completo de las ontologías no se importa ni se declara conformidad OWL.
-- El lock hash cubre el cierre Python para Ubuntu 24.04/CPython 3.13.16 x86_64. El SBOM SPDX 2.3 de plataforma enumera los 8 paquetes Python, 1,210 paquetes dpkg del runner, 222 paquetes dpkg del contenedor, 3 acciones fijadas, la etiqueta del runner y el digest de imagen. Las licencias siguen `NOASSERTION`. El inventario no desglosa herramientas del runner instaladas fuera de dpkg ni dependencias internas de las acciones; revisar ese alcance y licencias antes del cierre. Las acciones están fijadas por commit SHA y la imagen OpenModelica por digest; la etiqueta `ubuntu-24.04` sigue siendo una imagen alojada administrada por GitHub, no una imagen inmutable del runner.
+- El lock hash cubre el cierre Python para Ubuntu 24.04/CPython 3.13.16 x86_64. El SBOM SPDX 2.3 de plataforma enumera 1,451 registros: 8 paquetes Python, 1,210 dpkg del runner, 222 dpkg del contenedor, 3 acciones, 2 fuentes Modelica y 4 grafos ontológicos, además de runner e imagen. Snapshot hash `60bef95ddb7e3c1811b2af9201ef73240bfe183ac206038e1846dee35e0c98dd`. Las licencias SPDX siguen `NOASSERTION` para revisarlas al final. El inventario no desglosa herramientas del runner instaladas fuera de dpkg ni dependencias internas de las acciones. Las acciones están fijadas por commit SHA y la imagen OpenModelica por digest; la etiqueta `ubuntu-24.04` sigue siendo una imagen alojada administrada por GitHub, no una imagen inmutable del runner.
 - El prototipo ATMS de `scripts/f0_atms_probe.py` cubre solo propagación Horn básica, minimalidad y poda por nogood. La selección de motor y la semántica completa quedan para F3. El candidato del sistema sigue como stub.
-- LinkML, D1/R2/Vectorize, recuperación y librerías Modelica adicionales no están implementados ni integrados.
+- LinkML, D1/R2/Vectorize, recuperación, motor ATMS de producción y BSL siguen pendientes. No se expande la closure `owl:imports`; SystemDynamics pasa un check básico, pero no hay modelo integrado ni simulación de su ejemplo.
 - Cloudflare no fue accedido. No se creó ni modificó ningún recurso cloud.
 
 ## Veredicto de fase
 
-`F0_PARTIAL — SOURCE/OA/RDF/PROV/CRMINF/ATMS_PROTOTYPE/SHACL/SPARQL/OPENMODELICA_SYNTHETIC_PASS — CRMSCI_NOT_APPLICABLE_TO_FIXTURE — ATMS_ENGINE/SBOM_SCOPE_AND_LICENSE_REVIEW/CANDIDATE/CLOUD_PENDING`.
+`F0_PARTIAL — SOURCE/OA/RDF/PROV/CRMINF_PROFILE/CRMSCI_BOUNDED_ENTAILMENT/ATMS_PROTOTYPE/SHACL/SPARQL/OPENMODELICA_SYNTHETIC_PASS/SYSTEMDYNAMICS_CHECKMODEL_PASS — T01_T30_PARTIAL — ATMS_ENGINE/LINKML/CANDIDATE/CLOUD/LICENSE_REVIEW_PENDING`.
 
 No se declara completado F0, gate científico ni hipótesis alguna.
