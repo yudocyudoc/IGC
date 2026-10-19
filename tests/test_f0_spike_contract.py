@@ -39,6 +39,7 @@ class F0SpikeContractTests(unittest.TestCase):
             "rdf_prov_mapping",
             "shacl_positive_and_negative",
             "sparql_query",
+            "crminf_crmsci_mapping",
         ]
         self.assertEqual({name: statuses.get(name) for name in required},
                          {name: "PASS" for name in required})
