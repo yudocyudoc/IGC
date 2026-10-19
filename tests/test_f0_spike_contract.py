@@ -1,9 +1,41 @@
 import unittest
 
+from scripts.f0_atms_probe import AtmsProbe, run_atms_probe
 from scripts.f0_spike import overall_status, run_semantic_pipeline, source_and_annotation
 
 
 class F0SpikeContractTests(unittest.TestCase):
+    def test_atms_alternatives_can_coexist(self):
+        atms = AtmsProbe()
+        atms.assume("m1")
+        atms.assume("m2")
+        atms.justify(("m1",), "supports_m1")
+        atms.justify(("m2",), "supports_m2")
+        context = frozenset({"m1", "m2"})
+        self.assertTrue(atms.supported_in("supports_m1", context))
+        self.assertTrue(atms.supported_in("supports_m2", context))
+
+    def test_atms_nogood_prunes_inconsistent_environment(self):
+        atms = AtmsProbe()
+        atms.assume("p")
+        atms.assume("not_p")
+        atms.justify(("p", "not_p"), "contradiction")
+        atms.add_nogood(frozenset({"p", "not_p"}))
+        self.assertEqual(atms.labels["contradiction"], set())
+
+    def test_atms_labels_keep_only_minimal_environments(self):
+        atms = AtmsProbe()
+        atms.assume("a")
+        atms.assume("b")
+        atms.justify(("a",), "q")
+        atms.justify(("a", "b"), "q")
+        self.assertEqual(atms.labels["q"], {frozenset({"a"})})
+
+    def test_atms_f0_probe_is_explicitly_prototype(self):
+        result = run_atms_probe()
+        self.assertEqual(result["status"], "PASS")
+        self.assertFalse(result["production_engine_selected"])
+
     def test_pending_component_cannot_be_reported_as_pass(self):
         stages = [{"stage": "source", "status": "PASS"},
                   {"stage": "openmodelica", "status": "PENDING"}]
