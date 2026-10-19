@@ -79,6 +79,9 @@ jobs:
           diff -u requirements-f0.lock.txt artifacts/f0/requirements-f0.resolved.lock.txt
           /tmp/igc-f0-locked/bin/python -m pip freeze > artifacts/f0/python-environment.txt
 
+      - name: Generate Python dependency SPDX inventory
+        run: /tmp/igc-f0-locked/bin/python scripts/sbom_from_lock.py requirements-f0.lock.txt --output artifacts/f0/python-dependencies.spdx.json
+
       - name: Record tool versions
         run: |
           python --version
