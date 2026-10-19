@@ -4,9 +4,23 @@ on:
   push:
     branches:
       - f0-inventario-spike
+    paths:
+      - .github/workflows/f0-ci.yml
+      - scripts/**
+      - tests/**
+      - requirements-f0.txt
+      - spike/**
+      - data/synthetic/**
   pull_request:
     branches:
       - main
+    paths:
+      - .github/workflows/f0-ci.yml
+      - scripts/**
+      - tests/**
+      - requirements-f0.txt
+      - spike/**
+      - data/synthetic/**
   workflow_dispatch:
 
 permissions:
