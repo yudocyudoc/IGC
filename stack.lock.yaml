@@ -14,7 +14,7 @@ execution_environment:
   runner: ubuntu-24.04
   python:
     version: 3.13.16
-    source: actions/setup-python@v7
+    source: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
   docker:
     version_observed: 28.0.4
   openmodelica:
@@ -23,6 +23,17 @@ execution_environment:
     digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
     license: OSMC-PL-1.8-or-AGPL-3.0-as-distributed
     status: COMPILE_SIMULATE_PASS
+
+github_actions:
+  - action: actions/checkout
+    version: v6
+    commit: d23441a48e516b6c34aea4fa41551a30e30af803
+  - action: actions/setup-python
+    version: v7
+    commit: 5fda3b95a4ea91299a34e894583c3862153e4b97
+  - action: actions/upload-artifact
+    version: v4
+    commit: ea165f8d65b6e75b540449e92b4886f43607fa02
 
 python_dependency_lock:
   file: requirements-f0.lock.txt
