@@ -28,7 +28,7 @@
 - El resultado agregado del runner sigue `BLOCKED` deliberadamente: quedan pasos fuera de este corte.
 - El perfil Web Annotation y shapes SHACL son mínimos y sintéticos; no son una certificación de conformidad completa W3C.
 - PROV-O solo cubre el vínculo de generación/uso de la fixture.
-- CRMinf/CRMsci: faltan versiones oficiales fijadas, perfil/mapeos y fixtures.
+- CRMinf 1.2.1 / CRMsci 3.2 / CIDOC CRM 7.1.3: perfil mínimo de argumentación I1/I2/I4/J2/J4 añadido al fixture sintético y puesto como gate de CI. El fixture declara explícitamente que no contiene medición; por eso no se tipa como S4/S27 y tampoco se afirma I5 (inferencia). El grafo completo de las ontologías no se importa ni se declara conformidad OWL.
 - RDFLib/pySHACL tienen pins directos; la resolución de dependencias transitivas está en el artefacto CI, pero aún falta consolidar un lock completo con hashes en el repositorio.
 - ATMS sigue sin implementación seleccionada; candidato del sistema sigue como stub.
 - LinkML, D1/R2/Vectorize, recuperación y librerías Modelica adicionales no están implementados ni integrados.
