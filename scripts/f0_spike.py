@@ -121,6 +121,26 @@ def run_semantic_pipeline(annotation: dict) -> list[dict]:
             and (annotation_id, prov.wasGeneratedBy, activity_id) in graph
         )
 
+        # Minimal, fixture-scoped CRMinf profile. The source explicitly says it
+        # contains no real measurement, inference, or causal evidence, so CRMsci
+        # observation and CRMinf inference classes must not be asserted here.
+        crminf = Namespace("http://www.cidoc-crm.org/extensions/crminf/")
+        belief_id = URIRef(SYNTHETIC_BASE + "belief-synthetic-001")
+        proposition_id = URIRef(SYNTHETIC_BASE + "proposition-set-synthetic-001")
+        graph.add((activity_id, RDF.type, crminf.I1_Argumentation))
+        graph.add((belief_id, RDF.type, crminf.I2_Belief))
+        graph.add((proposition_id, RDF.type, crminf.I4_Proposition_Set))
+        graph.add((activity_id, crminf.J2_concluded_that, belief_id))
+        graph.add((belief_id, crminf.J4_that, proposition_id))
+        crminf_mapping_ok = all((
+            (activity_id, RDF.type, crminf.I1_Argumentation) in graph,
+            (belief_id, RDF.type, crminf.I2_Belief) in graph,
+            (proposition_id, RDF.type, crminf.I4_Proposition_Set) in graph,
+            (activity_id, crminf.J2_concluded_that, belief_id) in graph,
+            (belief_id, crminf.J4_that, proposition_id) in graph,
+            (activity_id, RDF.type, crminf.I5_Inference_Making) not in graph,
+        ))
+
         shapes = Graph().parse(str(SHAPES_PATH), format="turtle")
         conforms, report_graph, report_text = validate(
             data_graph=graph,
@@ -192,8 +212,16 @@ def run_semantic_pipeline(annotation: dict) -> list[dict]:
             {"stage": "sparql_query",
              "status": "PASS" if sparql_ok else "FAIL",
              "matching_rows": len(query_rows)},
-            {"stage": "crminf_crmsci_mapping", "status": "PENDING",
-             "reason": "no ontology versions or mapping profile have been admitted"},
+            {"stage": "crminf_crmsci_mapping",
+             "status": "PASS" if crminf_mapping_ok else "FAIL",
+             "profile": "igc-f0-crminf-minimal/0.1",
+             "crminf_version": "1.2.1",
+             "crmsci_version": "3.2",
+             "crm_compatible_version": "7.1.3",
+             "crminf_terms": ["I1", "I2", "I4", "J2", "J4"],
+             "crminf_inference_asserted": False,
+             "crmsci_observation_applicable": False,
+             "reason": "fixture explicitly contains no measurement or causal evidence"},
         ]
         return stages
     except Exception as exc:
