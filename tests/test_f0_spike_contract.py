@@ -43,6 +43,11 @@ class F0SpikeContractTests(unittest.TestCase):
         ]
         self.assertEqual({name: statuses.get(name) for name in required},
                          {name: "PASS" for name in required})
+        mapping = next(stage for stage in stages if stage["stage"] == "crminf_crmsci_mapping")
+        self.assertEqual(mapping["crminf_version"], "1.2.1")
+        self.assertEqual(mapping["crmsci_version"], "3.2")
+        self.assertFalse(mapping["crminf_inference_asserted"])
+        self.assertFalse(mapping["crmsci_observation_applicable"])
 
 
 if __name__ == "__main__":
