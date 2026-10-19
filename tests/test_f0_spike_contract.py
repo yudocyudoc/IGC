@@ -6,10 +6,48 @@ from pathlib import Path
 from scripts.lock_from_pip_report import render_lock
 from scripts.f0_atms_probe import AtmsProbe, run_atms_probe
 from scripts.sbom_from_lock import render_spdx
+from scripts.sbom_from_inventory import render_platform_spdx
 from scripts.f0_spike import overall_status, run_semantic_pipeline, source_and_annotation
 
 
 class F0SpikeContractTests(unittest.TestCase):
+
+    def test_platform_sbom_includes_runner_container_actions_and_python(self):
+        digest = "b" * 64
+        commit = "a" * 40
+        lock_text = (
+            "# synthetic lock\n"
+            "demo-pkg==2.0.0 \\\n"
+            f"    --hash=sha256:{digest}\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lock = root / "requirements.lock"
+            lock.write_text(lock_text, encoding="utf-8")
+            runner = root / "runner.tsv"
+            runner.write_text("libc\t2.0\tamd64\n", encoding="utf-8")
+            container = root / "container.tsv"
+            container.write_text("omc-lib\t1.0\tamd64\n", encoding="utf-8")
+            workflow = root / "workflow.yml"
+            workflow.write_text(
+                f"      uses: actions/checkout@{commit} # v6\n"
+                f"      uses: actions/setup-python@{commit} # v7\n"
+                f"      uses: actions/upload-artifact@{commit} # v4\n",
+                encoding="utf-8",
+            )
+            document = render_platform_spdx(
+                lock, runner, container, workflow, "ubuntu-24.04",
+                "openmodelica/openmodelica:v1.27.1-minimal",
+                "sha256:" + "c" * 64,
+            )
+        scopes = [package["SPDXID"].split("-")[1] for package in document["packages"]]
+        self.assertEqual(len(document["packages"]), 8)
+        self.assertTrue(all(package["licenseDeclared"] == "NOASSERTION"
+                            for package in document["packages"]))
+        self.assertIn("runner", document["comment"])
+        self.assertIn("OpenModelica image", document["comment"])
+        self.assertIn("3 pinned GitHub Actions", document["comment"])
+
     def test_sbom_contains_lock_hash_and_unasserted_license(self):
         digest = "b" * 64
         lock_text = (
