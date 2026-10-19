@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.f0_spike import overall_status, source_and_annotation
+from scripts.f0_spike import overall_status, run_semantic_pipeline, source_and_annotation
 
 
 class F0SpikeContractTests(unittest.TestCase):
@@ -27,7 +27,21 @@ class F0SpikeContractTests(unittest.TestCase):
         self.assertTrue(stages[0]["synthetic"])
         self.assertEqual(annotation["target"]["selector"]["exact"],
                          annotation["body"]["value"])
-        self.assertEqual(stages[1]["status"], "PENDING")
+        self.assertTrue(annotation["id"].startswith("https://"))
+        self.assertEqual(len(stages), 1)
+
+    def test_semantic_spike_roundtrip_provenance_shacl_and_sparql(self):
+        _, annotation = source_and_annotation()
+        stages = run_semantic_pipeline(annotation)
+        statuses = {stage["stage"]: stage["status"] for stage in stages}
+        required = [
+            "web_annotation_jsonld_roundtrip",
+            "rdf_prov_mapping",
+            "shacl_positive_and_negative",
+            "sparql_query",
+        ]
+        self.assertEqual({name: statuses.get(name) for name in required},
+                         {name: "PASS" for name in required})
 
 
 if __name__ == "__main__":
