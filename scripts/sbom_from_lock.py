@@ -27,7 +27,7 @@ def parse_lock(path: Path) -> list[dict]:
             packages.append(current)
             current = None
             continue
-        match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\\s]+)\\s*\\\\?", line)
+        match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s]+)", line)
         if not match or current is not None:
             raise ValueError(f"unsupported or malformed lock entry: {line}")
         name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
