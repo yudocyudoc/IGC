@@ -1,10 +1,32 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
+from scripts.lock_from_pip_report import render_lock
 from scripts.f0_atms_probe import AtmsProbe, run_atms_probe
 from scripts.f0_spike import overall_status, run_semantic_pipeline, source_and_annotation
 
 
 class F0SpikeContractTests(unittest.TestCase):
+    def test_pip_report_renders_normalized_hashed_lock(self):
+        digest = "a" * 64
+        report = {
+            "install": [{
+                "metadata": {"name": "Demo_Pkg", "version": "1.2.3"},
+                "download_info": {
+                    "url": "https://example.invalid/demo.whl",
+                    "archive_info": {"hashes": {"sha256": digest}},
+                },
+            }]
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report_path = Path(directory) / "report.json"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            lock = render_lock(report_path)
+        self.assertIn("demo-pkg==1.2.3", lock)
+        self.assertIn(f"--hash=sha256:{digest}", lock)
+
     def test_atms_alternatives_can_coexist(self):
         atms = AtmsProbe()
         atms.assume("m1")
