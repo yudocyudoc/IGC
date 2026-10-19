@@ -165,7 +165,7 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
             f"Snapshot content hash: {content_hash}. Covers {len(parse_lock(lock_path))} Python lock packages, "
             f"{len(read_dpkg_inventory(runner_path, 'github-runner-dpkg'))} runner dpkg packages, "
             f"{len(read_dpkg_inventory(container_path, 'openmodelica-image-dpkg'))} OpenModelica image dpkg packages, "
-            f"{len(read_pinned_actions(workflow_path))} pinned GitHub Actions, {extra_package_count} additional package records, runner image label, and OpenModelica image digest. "
+            f"{len(read_pinned_actions(workflow_path))} pinned GitHub Actions, additional package records: {extra_package_count}, runner image label, and OpenModelica image digest. "
             "All license and copyright fields are NOASSERTION pending the separately scheduled license review. "
             "The GitHub runner label is mutable; this is an inventory snapshot, not a claim that the runner image is immutable."
         ),
