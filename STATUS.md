@@ -13,7 +13,7 @@
 
 ## Evidencia ejecutada
 
-- Workflow `F0 synthetic spike`, ejecución #18: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39337591683).
+- Workflow `F0 synthetic spike`, ejecución #32: [resultado y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39337951127).
 - Seis pruebas contractuales/de integración pasan.
 - Python 3.13.16; RDFLib 7.6.0 (BSD-3-Clause) y pySHACL 0.40.1 (Apache-2.0) instalados desde los pins directos de `requirements-f0.txt`. El reporte de resolución de pip y `pip freeze` están en el artefacto.
 - OpenModelica 1.27.1 corre desde la imagen oficial `openmodelica/openmodelica:v1.27.1-minimal`, fijada por digest en el workflow. El modelo sintético compila y simula; se genera CSV.
