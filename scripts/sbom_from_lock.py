@@ -14,7 +14,7 @@ def parse_lock(path: Path) -> list[dict]:
     packages = []
     current = None
     for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
+        line = raw_line.strip().rstrip(chr(92)).strip()
         if not line or line.startswith("#"):
             continue
         if line.startswith("--hash="):
