@@ -46,7 +46,7 @@ semantic_capabilities:
   - name: sparql
     status: CI_PASS_SYNTHETIC_QUERY
   - name: crminf_crmsci
-    status: PROFILE_PINNED_AND_CI_PENDING
+    status: MINIMAL_PROFILE_CI_PASS
     crminf: 1.2.1
     crmsci: 3.2
     compatible_cidoc_crm: 7.1.3
@@ -67,9 +67,10 @@ semantic_capabilities:
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  latest_successful_run: https://github.com/yudocyudoc/IGC/actions/runs/39337951127
+  latest_successful_run: https://github.com/yudocyudoc/IGC/actions/runs/39338475359
+  verified_commit: 4671d837d6cd160dbe7ee967147a696a67a9e909
   artifact: f0-spike-evidence
-  artifact_id: 12226839570
+  artifact_id: 12227777239
   contains:
     - pip-install-report.json
     - python-environment.txt
