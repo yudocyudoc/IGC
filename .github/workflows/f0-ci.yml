@@ -82,6 +82,12 @@ jobs:
       - name: Generate Python dependency SPDX inventory
         run: /tmp/igc-f0-locked/bin/python scripts/sbom_from_lock.py requirements-f0.lock.txt --output artifacts/f0/python-dependencies.spdx.json
 
+      - name: Snapshot CI platform and generate full SPDX inventory
+        run: |
+          dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/runner-packages.tsv
+          docker run --rm --entrypoint sh "${{ env.IGC_OMC_DOCKER_IMAGE }}" -c 'dpkg-query -W -f="${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n"' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/openmodelica-packages.tsv
+          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --output artifacts/f0/platform.spdx.json
+
       - name: Record tool versions
         run: |
           python --version
