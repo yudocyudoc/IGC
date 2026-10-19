@@ -86,12 +86,23 @@ class F0SpikeContractTests(unittest.TestCase):
         self.assertEqual(package["checksums"][0]["checksumValue"], "e" * 64)
         self.assertIn("additional package records: 1", document["comment"])
         namespace_with_extra = document["documentNamespace"]
-        extras.write_text(json.dumps([{**json.loads(extras.read_text(encoding="utf-8"))[0], "comment": "changed"}]), encoding="utf-8")
-        changed = render_platform_spdx(
-            lock, runner, container, workflow, "ubuntu-24.04",
-            "openmodelica/openmodelica:v1.27.1-minimal",
-            "sha256:" + "c" * 64, extras,
-        )
+        with tempfile.TemporaryDirectory() as changed_directory:
+            changed_extras = Path(changed_directory) / "extras.json"
+            changed_record = json.loads(json.dumps({
+                "name": "SystemDynamics",
+                "version": "2.1.2+" + "a" * 40,
+                "scope": "modelica-source",
+                "purl": "pkg:github/modelica-3rdparty/SystemDynamics@" + "a" * 40,
+                "downloadLocation": "https://example.invalid/SystemDynamics.tar.gz",
+                "checksums": [{"algorithm": "SHA256", "checksumValue": "f" * 64}],
+                "comment": "Changed package manifest.",
+            }))
+            changed_extras.write_text(json.dumps([changed_record]), encoding="utf-8")
+            changed = render_platform_spdx(
+                lock, runner, container, workflow, "ubuntu-24.04",
+                "openmodelica/openmodelica:v1.27.1-minimal",
+                "sha256:" + "c" * 64, changed_extras,
+            )
         self.assertNotEqual(namespace_with_extra, changed["documentNamespace"])
 
     def test_sbom_contains_lock_hash_and_unasserted_license(self):
