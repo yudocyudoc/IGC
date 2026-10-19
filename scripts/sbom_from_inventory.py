@@ -83,7 +83,7 @@ def _package(record: dict, index: int) -> dict:
 
 def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Path,
                          workflow_path: Path, runner_label: str, image_ref: str,
-                         image_digest: str) -> dict:
+                         image_digest: str, extras_path: Path | None = None) -> dict:
     packages = []
     for item in parse_lock(lock_path):
         packages.append({
@@ -105,6 +105,16 @@ def render_platform_spdx(lock_path: Path, runner_path: Path, container_path: Pat
             "purl": f"pkg:github/{action['name']}@{action['commit']}",
             "comment": "Action source pinned by full commit SHA in the workflow.",
         })
+    if extras_path is not None:
+        extras = json.loads(extras_path.read_text(encoding="utf-8"))
+        if not isinstance(extras, list):
+            raise ValueError(f"{extras_path}: expected a JSON list of package records")
+        for extra in extras:
+            if not all(extra.get(key) for key in ("name", "version", "scope")):
+                raise ValueError(f"{extras_path}: each package requires name, version, and scope")
+            if extra.get("checksums") and any(item.get("algorithm") != "SHA256" for item in extra["checksums"]):
+                raise ValueError(f"{extras_path}: only SHA256 package checksums are supported")
+            packages.append(extra)
     packages.extend([
         {
             "name": "GitHub-hosted runner image",
@@ -168,13 +178,14 @@ def main() -> int:
     parser.add_argument("--runner-label", required=True)
     parser.add_argument("--image-ref", required=True)
     parser.add_argument("--image-digest", required=True)
+    parser.add_argument("--extra-packages", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", args.image_digest):
         parser.error("--image-digest must be sha256:<64 lowercase hex characters>")
     document = render_platform_spdx(
         args.lock, args.runner_packages, args.container_packages, args.workflow,
-        args.runner_label, args.image_ref, args.image_digest,
+        args.runner_label, args.image_ref, args.image_digest, args.extra_packages,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
