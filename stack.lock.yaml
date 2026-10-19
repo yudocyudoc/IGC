@@ -63,7 +63,8 @@ semantic_capabilities:
       declarations are referenced; full ontology graph import and entailment
       testing are not claimed.
   - name: atms
-    status: NOT_SELECTED
+    status: F0_PROTOTYPE_CI_PENDING_PRODUCTION_SELECTION
+    implementation: scripts/f0_atms_probe.py
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
@@ -92,9 +93,9 @@ candidates:
       status: SYNTHETIC_PROFILE_ONLY_NOT_FULL_W3C_CONFORMANCE
   reasoning:
     - name: atms
-      implementation: TBD
-      version: null
-      status: NOT_SELECTED
+      implementation: scripts/f0_atms_probe.py
+      version: project prototype 0.1
+      status: F0_FEASIBILITY_ONLY_NOT_PRODUCTION_ENGINE
   dynamic_modeling:
     - name: openmodelica
       version: 1.27.1
