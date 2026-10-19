@@ -82,11 +82,48 @@ jobs:
       - name: Generate Python dependency SPDX inventory
         run: /tmp/igc-f0-locked/bin/python scripts/sbom_from_lock.py requirements-f0.lock.txt --output artifacts/f0/python-dependencies.spdx.json
 
+      - name: Fetch immutable SystemDynamics source
+        run: |
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output artifacts/f0/systemdynamics.tar.gz
+          sha256sum artifacts/f0/systemdynamics.tar.gz | awk '{print $1}' > artifacts/f0/systemdynamics.archive.sha256
+          mkdir -p artifacts/f0/SystemDynamics
+          tar -xzf artifacts/f0/systemdynamics.tar.gz --strip-components=1 -C artifacts/f0/SystemDynamics
+          test -s artifacts/f0/SystemDynamics/package.mo
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          digest = Path("artifacts/f0/systemdynamics.archive.sha256").read_text().strip()
+          Path("artifacts/f0/modelica-libraries.json").write_text(json.dumps([{
+              "name": "SystemDynamics",
+              "version": "2.1.2",
+              "scope": "modelica-library-source",
+              "purl": "pkg:github/modelica-3rdparty/SystemDynamics@b986a2ea354ab550d627a392f857ad7c9997d961",
+              "downloadLocation": "https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz",
+              "checksums": [{"algorithm": "SHA256", "checksumValue": digest}],
+              "comment": "Immutable upstream commit archive; source metadata only. License review is intentionally pending."
+          }], indent=2) + "\\n", encoding="utf-8")
+          PY
+
+      - name: Check SystemDynamics in pinned OpenModelica image
+        run: |
+          cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
+          loadFile("/opt/systemdynamics/package.mo");
+          print(getErrorString());
+          checkModel(SystemDynamics.Levels.Level);
+          print(getErrorString());
+          MOS
+          docker run --rm -v "$PWD/artifacts/f0/SystemDynamics:/opt/systemdynamics:ro" -v "$PWD/artifacts/f0:/evidence" "${{ env.IGC_OMC_DOCKER_IMAGE }}" omc /evidence/check-systemdynamics.mos 2>&1 | tee artifacts/f0/systemdynamics-omc.log
+          grep -q "Check of SystemDynamics.Levels.Level completed successfully" artifacts/f0/systemdynamics-omc.log
+          ! grep -Eq "Error:|Failed to load|Class .* not found" artifacts/f0/systemdynamics-omc.log
+          printf 'source_commit=b986a2ea354ab550d627a392f857ad7c9997d961\\n' > artifacts/f0/systemdynamics-test.txt
+          printf 'archive_sha256=%s\\n' "$(cat artifacts/f0/systemdynamics.archive.sha256)" >> artifacts/f0/systemdynamics-test.txt
+
       - name: Snapshot CI platform and generate full SPDX inventory
         run: |
           dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/runner-packages.tsv
           docker run --rm --entrypoint sh -e 'DPKG_FORMAT=${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' "${{ env.IGC_OMC_DOCKER_IMAGE }}" -c 'dpkg-query -W -f="$DPKG_FORMAT"' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/openmodelica-packages.tsv
-          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --output artifacts/f0/platform.spdx.json
+          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --extra-packages artifacts/f0/modelica-libraries.json             --output artifacts/f0/platform.spdx.json
 
       - name: Record tool versions
         run: |
