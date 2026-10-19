@@ -1,13 +1,13 @@
 schema_version: 1
 project: igc
 specification: docs/IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md
-lock_status: PARTIAL_DIRECT_PINS
+lock_status: PYTHON_HASH_LOCKED_PLATFORM_SPECIFIC
 generated_at: 2026-10-19
 note: >-
-  F0 direct Python dependencies and the OpenModelica image are pinned and passed
-  in GitHub Actions. The Actions artifact contains the resolved Python install
-  report and environment freeze. Transitive hashes and full platform/SBOM review
-  are not yet committed, so this is not a complete dependency lock.
+  F0 Python dependencies and the OpenModelica image are pinned and passed in
+  GitHub Actions. requirements-f0.lock.txt contains the eight-package Python
+  closure with SHA-256 hashes for ubuntu-24.04 CPython 3.13.16 x86_64.
+  A full platform lock, SBOM, and license review remain outstanding.
 
 execution_environment:
   provider: GitHub Actions
@@ -24,12 +24,19 @@ execution_environment:
     license: OSMC-PL-1.8-or-AGPL-3.0-as-distributed
     status: COMPILE_SIMULATE_PASS
 
+python_dependency_lock:
+  file: requirements-f0.lock.txt
+  target: ubuntu-24.04 / CPython 3.13.16 / x86_64
+  resolved_package_count: 8
+  validation: CI_REQUIRE_HASHES_PASS
+
 python_direct_dependencies:
   - package: rdflib
     version: 7.6.0
     license: BSD-3-Clause
     requirement: requirements-f0.txt
-    status: PINNED_DIRECT_CI_PASS
+    hash_lock: requirements-f0.lock.txt
+    status: PINNED_DIRECT_HASH_LOCK_CI_PASS
   - package: pyshacl
     version: 0.40.1
     license: Apache-2.0
@@ -68,12 +75,14 @@ semantic_capabilities:
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39339123071
-  verified_commit: f71bf3ddbe3882915c9635b7561aac5ddff4f249
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39340078943
+  verified_commit: ce647fc2c87ac6b2228dd614253d5928a34c4d42
   artifact: f0-spike-evidence
-  artifact_id: 12227903017
+  artifact_id: 12228870162
   contains:
     - pip-install-report.json
+    - requirements-f0.resolved.lock.txt
+    - lock-verification-report.json
     - python-environment.txt
     - run.json
     - annotation-graph.ttl
