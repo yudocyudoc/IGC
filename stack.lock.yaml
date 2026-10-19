@@ -94,10 +94,10 @@ semantic_capabilities:
 
 resolution_evidence:
   workflow: .github/workflows/f0-ci.yml
-  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39340746230
-  verified_commit: 66368ad9e9ddc0f91eaa56acfc2fea13891ec17a
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39340917945
+  verified_commit: b7930916e36e30501b8fb698d3ae1b7deeb6d17c
   artifact: f0-spike-evidence
-  artifact_id: 12228263784
+  artifact_id: 12229215772
   contains:
     - pip-install-report.json
     - requirements-f0.resolved.lock.txt
