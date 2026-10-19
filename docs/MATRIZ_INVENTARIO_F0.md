@@ -12,7 +12,7 @@
 | CRMinf/CRMsci | Perfil mínimo en fixture sintético | CRMinf 1.2.1, CRMsci 3.2, compatibles con CIDOC CRM 7.1.3 según declaraciones oficiales | I1/I2/I4/J2/J4 se verifican en el grafo y son gate de CI; I5 y clases de observación CRMsci no se afirman para esta fixture. Falta importar los grafos oficiales, probar entailment y ampliar mapeos con fixtures de observación/inferencia apropiados. |
 | RDF/JSON-LD/SPARQL/SHACL | Parcial, fixture sintético | Estándares objetivo | RDFLib 7.6.0 y pySHACL 0.40.1 pasan en Actions; shapes y consulta cubren solo este fixture. OWL/entailment y suites generales pendientes. |
 | LinkML | No | Fuente de esquemas prevista | Dependencia fijada, generación y validación. |
-| ATMS | No | Contrato funcional en §10 | Biblioteca o implementación seleccionada, nogoods, retractación y conformance. |
+| ATMS | Prototipo sintético F0 | Contrato funcional en §10; motor de producción para F3 | Verifica etiquetas mínimas para alternativas compatibles y poda de un nogood; faltan selección/admisión de motor, retractación/versionado, ciclos y suite de conformidad. |
 | Búsqueda semántica/FTS | No | Texto, KGE y firmas dinámicas previstas | Motores, manifests, evaluación temporal, negativos y ablaciones. |
 | Candidatos de modelo rivales | No | `SystemInvestigation` / `SystemModelCandidate` | Persistencia, diff estructural, relaciones y evidencia trazable. |
 | IGC-SL / linter L0–L6 | No | Contrato y gate definidos | AST, tipos, adapters, diagnósticos y tests negativos. |
@@ -20,7 +20,7 @@
 | Librerías Modelica | No inventariadas localmente | PR #20 las cita como antecedentes | Fuente/versión/licencia/adaptadores y ejecución exacta en OMC. |
 | D1 / R2 / Vectorize | No hay bindings ni recursos | Persistencia/cloud previstos | Adapters locales, pruebas y posterior decisión de recursos reales/costos. |
 | Docker | Sí, en runner Actions | Laboratorio reproducible propuesto | Docker 28.0.4 observado y contenedor OpenModelica fijado por digest; no existe aún Compose de servicios IGC. |
-| Spike vertical | Parcial y sintético | Recorrido detallado en Apéndice A | Source→Annotation→RDF/PROV/CRMinf/SPARQL/SHACL→OpenModelica ejecutado; CRMsci se declara no aplicable a este fixture; ATMS y candidato siguen pendientes/stub. Estado global BLOCKED. |
+| Spike vertical | Parcial y sintético | Recorrido detallado en Apéndice A | Source→Annotation→RDF/PROV/CRMinf/SPARQL/SHACL/ATMS-prototype→OpenModelica ejecutado; CRMsci no aplica a este fixture y el candidato sigue como stub. Estado global BLOCKED. |
 | Suite de aceptación | Parcial | T01–T30 / suite adversativa en especificación | Seis pruebas contractuales/de integración versionadas; falta incorporar suite integral T01–T30. |
 | Datos sintéticos | No incorporados | Permitidos y requeridos para spikes | Fixtures versionados, hashes y procedencia sintética declarada. |
 | CI / PR | Sí, PR draft #1 | PR draft previsto por mandato F0 | Workflow de Actions con artefactos; no sustituye revisión independiente. |
