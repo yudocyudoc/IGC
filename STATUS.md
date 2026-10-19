@@ -29,7 +29,7 @@
 - El perfil Web Annotation y shapes SHACL son mínimos y sintéticos; no son una certificación de conformidad completa W3C.
 - PROV-O solo cubre el vínculo de generación/uso de la fixture.
 - CRMinf 1.2.1 / CRMsci 3.2 / CIDOC CRM 7.1.3: perfil mínimo de argumentación I1/I2/I4/J2/J4 añadido al fixture sintético y puesto como gate de CI. El fixture declara explícitamente que no contiene medición; por eso no se tipa como S4/S27 y tampoco se afirma I5 (inferencia). El grafo completo de las ontologías no se importa ni se declara conformidad OWL.
-- El lock hash cubre el cierre Python para Ubuntu 24.04/CPython 3.13.16 x86_64. Quedan pendientes un SBOM de toda la plataforma, revisión completa de licencias y hashes de acciones/imágenes aparte de OpenModelica.
+- El lock hash cubre el cierre Python para Ubuntu 24.04/CPython 3.13.16 x86_64. Quedan pendientes un SBOM de toda la plataforma y la revisión completa de licencias. Las acciones están fijadas por commit SHA y la imagen OpenModelica por digest; la etiqueta `ubuntu-24.04` sigue siendo una imagen alojada administrada por GitHub, no una imagen inmutable del runner.
 - El prototipo ATMS de `scripts/f0_atms_probe.py` cubre solo propagación Horn básica, minimalidad y poda por nogood. La selección de motor y la semántica completa quedan para F3. El candidato del sistema sigue como stub.
 - LinkML, D1/R2/Vectorize, recuperación y librerías Modelica adicionales no están implementados ni integrados.
 - Cloudflare no fue accedido. No se creó ni modificó ningún recurso cloud.
