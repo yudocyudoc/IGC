@@ -1,0 +1,23 @@
+{
+  "@context": "http://www.w3.org/ns/anno.jsonld",
+  "id": "annotation-synthetic-001",
+  "type": "Annotation",
+  "motivation": "assessing",
+  "body": {
+    "id": "claim-synthetic-001",
+    "type": "TextualBody",
+    "value": "During a promotion, the number of incoming orders may increase.",
+    "purpose": "tagging"
+  },
+  "target": {
+    "source": "source-synthetic-001",
+    "selector": {
+      "type": "TextQuoteSelector",
+      "exact": "During a promotion, the number of incoming orders may increase."
+    }
+  },
+  "_fixture": {
+    "synthetic": true,
+    "source_sha256": "d1f9ff1422b8283e6ada4bd8bbf28ef6582039a380b13435e9048df09cb7e25e"
+  }
+}

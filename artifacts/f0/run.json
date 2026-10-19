@@ -1,0 +1,61 @@
+{
+  "schema": "igc-f0-spike-report/0.1",
+  "generated_at": "2026-10-19T22:18:59.260079+00:00",
+  "overall_status": "BLOCKED",
+  "claim": "Synthetic wiring probe only; not evidence about a real system.",
+  "stages": [
+    {
+      "stage": "source_ingest_and_anchor",
+      "status": "PASS",
+      "source_id": "source-synthetic-001",
+      "source_sha256": "d1f9ff1422b8283e6ada4bd8bbf28ef6582039a380b13435e9048df09cb7e25e",
+      "quote_start": 76,
+      "quote_end": 139,
+      "synthetic": true
+    },
+    {
+      "stage": "web_annotation_shape",
+      "status": "PENDING",
+      "reason": "JSON shape emitted, but no Web Annotation validator is installed or run",
+      "draft_artifact": "annotation-draft.json"
+    },
+    {
+      "stage": "rdf_crminf_prov_and_shacl",
+      "status": "PENDING",
+      "reason": "required component(s) unavailable: rdflib, pyshacl",
+      "missing": [
+        "rdflib",
+        "pyshacl"
+      ]
+    },
+    {
+      "stage": "sparql_query",
+      "status": "PENDING",
+      "reason": "required component(s) unavailable: rdflib",
+      "missing": [
+        "rdflib"
+      ]
+    },
+    {
+      "stage": "atms_reasoning",
+      "status": "PENDING",
+      "reason": "no ATMS implementation selected or installed"
+    },
+    {
+      "stage": "system_model_candidate_and_handoff",
+      "status": "STUB",
+      "reason": "candidate is a labeled contract stub; no candidate is promoted",
+      "stub_artifact": "spike\\f0_vertical\\candidate-stub.json"
+    },
+    {
+      "stage": "openmodelica_compile_and_simulate",
+      "status": "PENDING",
+      "reason": "omc was not found on PATH; no compilation or simulation was run"
+    },
+    {
+      "stage": "cloudflare_d1_r2_persistence",
+      "status": "NOT_RUN",
+      "reason": "cloud resources are out of scope for this local synthetic spike"
+    }
+  ]
+}

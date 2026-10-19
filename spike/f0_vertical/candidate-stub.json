@@ -1,0 +1,17 @@
+{
+  "schema": "igc-system-model-candidate/0.1",
+  "candidate_id": "candidate-synthetic-001",
+  "investigation_id": "investigation-synthetic-001",
+  "status": "PARTIAL_NOT_EXECUTABLE",
+  "synthetic": true,
+  "source_claim_ids": ["claim-synthetic-001"],
+  "structure": {
+    "kind": "single_stock_toy",
+    "modelica_source": "F0ToyStock.mo",
+    "formalized": false
+  },
+  "assumptions": ["synthetic_constant_arrival", "synthetic_constant_completion"],
+  "evidence_status": "UNVALIDATED_FIXTURE_ONLY",
+  "causal_status": "NOT_ASSESSED",
+  "simulation_status": "PENDING_OPENMODELICA"
+}

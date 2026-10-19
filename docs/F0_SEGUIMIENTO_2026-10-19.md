@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-19  
 **Rama de trabajo prevista:** `f0-inventario-spike`  
-**Estado:** rama remota creada; checkout local sin sincronizar; spike no iniciada.
+**Estado:** checkout local sincronizado en rama F0; spike sintética ejecutada, integración real pendiente.
 
 ## Inicialización remota autorizada
 
@@ -27,12 +27,20 @@ Después se creó `f0-inventario-spike` desde `main` mediante GitHub Connector. 
 
 Este inventario sólo refleja el PATH del entorno actual; no acredita inexistencia del software fuera de él.
 
-## Bloqueo restante
+## Bloqueo restante de la primera auditoría
 
-El checkout conectado a esta sesión sigue siendo un repositorio local no relacionado con los commits remotos. GitHub Connector puede leer y escribir por API, pero la consola no puede conectar a `github.com:443`, y este entorno no permite escribir refs/locks en el `.git` local. El gestor de worktrees tampoco pudo resolver `f0-inventario-spike` desde su clon local (`Needed a single revision`). Por ello no pude abrir la rama remota como checkout local ni ejecutar una spike reproducible.
+Este bloqueo quedó resuelto al clonar el repositorio en `IGC-f0` dentro del workspace actual. El clon está limpio en `f0-inventario-spike` y sigue `origin/f0-inventario-spike`. Los fallos del checkout anterior y del gestor de worktrees explican por qué se usó este clon; no describen ya el estado de la rama actual.
 
-**Resultado actual:** `REMOTE_BASELINE_CREATED`, `REMOTE_F0_BRANCH_CREATED`, `LOCAL_CHECKOUT_NOT_SYNCED`, `SPIKE_NOT_STARTED`.
+## Corrida de spike sintética
+
+- La fixture de texto y la afirmación están marcadas sintéticas. La verificación local encuentra el fragmento exacto y calcula SHA-256 `d1f9ff1422b8283e6ada4bd8bbf28ef6582039a380b13435e9048df09cb7e25e`.
+- Cinco pruebas contractuales cubren estados incompletos y anclaje; las cinco pasaron.
+- `python scripts/f0_spike.py` escribe `artifacts/f0/run.json`; la corrida confirmó `BLOCKED` y devuelve código 2 por componentes faltantes. El reporte y el borrador de anotación de esta corrida se conservan en la rama.
+- El objeto Web Annotation es sólo un borrador de forma; no se ha validado contra el modelo W3C. RDF/CRMinf/PROV/SHACL, SPARQL y ATMS siguen pendientes.
+- `F0ToyStock.mo` y `candidate-stub.json` son fixtures sintéticos. No se ejecutó `omc` porque no está en PATH. No existe handoff formal ni simulación registrada.
+
+**Resultado actual:** `REMOTE_BASELINE_CREATED`, `REMOTE_F0_BRANCH_CREATED`, `LOCAL_CHECKOUT_READY`, `SOURCE_ANCHOR_PASS`, `VERTICAL_SPIKE_BLOCKED`.
 
 ## Próximo paso operativo
 
-Abrir o montar un checkout de `yudocyudoc/IGC` en la rama `f0-inventario-spike` con Git local escribible y conectividad a GitHub, o proveer un worktree administrado sincronizado con esa rama. Después continuar la auditoría de dependencias y Modelica, preparar entorno local y ejecutar la spike según el plan. No instalar dependencias ni reemplazar `omc`/Docker por stubs sin registrar expresamente esa limitación.
+Repetir las pruebas contractuales, conservar el reporte bloqueado como evidencia local y acordar/instalar desde fuentes verificadas los motores RDF/SHACL/SPARQL, ATMS y OpenModelica antes de ampliar la spike. No presentar stubs como integración ni ejecutar gasto cloud.

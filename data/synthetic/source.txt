@@ -1,0 +1,6 @@
+Synthetic observation note for the IGC F0 vertical spike.
+
+Synthetic claim: During a promotion, the number of incoming orders may increase.
+
+This fixture is invented for software wiring only. It describes no real business,
+person, measurement, causal mechanism, or validated system behavior.
