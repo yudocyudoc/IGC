@@ -20,7 +20,7 @@
 | Cloudflare Vectorize | Recuperación vectorial | https://developers.cloudflare.com/vectorize/ | Diseñar adapter; no hay índice configurado. Versiones/límites vigentes por verificar. |
 | PyKEEN u otro KGE | Embeddings de grafos | https://pykeen.readthedocs.io/ | Candidato no seleccionado; evaluación y licencia pendientes. |
 
-| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39340078943 | Runner Ubuntu 24.04, Python 3.13.16; acciones checkout/setup-python/upload-artifact fijadas por SHA en `stack.lock.yaml`; diez pruebas y gates sintéticos pasan. El lock Python de ocho paquetes valida con `--require-hashes`. SBOM y revisión completa de licencias pendientes. |
+| GitHub Actions | Instalación/ejecución reproducible de F0 | https://github.com/yudocyudoc/IGC/actions/runs/39340746230 | Runner Ubuntu 24.04, Python 3.13.16; acciones checkout/setup-python/upload-artifact fijadas por SHA en `stack.lock.yaml`; doce pruebas y gates sintéticos pasan. El lock Python de ocho paquetes valida con `--require-hashes`. SBOM SPDX 2.3 parcial adjunto para los ocho paquetes Python, con licencias `NOASSERTION`; inventario de runner/acciones/contenedor y revisión de licencias pendientes. |
 
 ## Reglas de admisión
 
