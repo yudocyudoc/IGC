@@ -46,7 +46,7 @@ La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin re
 2. **Auditar:** inventariar archivos, dependencias, librerías Modelica y los PR #20, #39 y #40 mencionados por la especificación. Registrar refs y hashes consultados; no inferir que un PR está fusionado o ejecutable.
 3. **Fijar decisiones e interfaces:** producir ADR de responsabilidades, ERD conceptual, matriz existente/documentado/faltante y contratos mínimos de la spike.
 4. **Verificar terceros:** identificar versiones, licencias, fuentes oficiales y compatibilidades de ontologías, RDF/SPARQL/SHACL, ATMS, OpenModelica y herramientas auxiliares. Fijar el resultado en `stack.lock.yaml`/manifiestos, con los límites conocidos.
-5. **Levantar entorno local:** automatizar los componentes de prueba y las migraciones locales con Docker/Compose o Makefile, según la auditoría. Cloud real queda fuera de F0.
+5. **Laboratorio en GitHub Actions (decisión vigente):** automatizar dependencias fijadas, pruebas y componentes sintéticos dentro de workflows de GitHub Actions. No se requiere checkout, runtime ni Docker/Compose local como paso del procedimiento; Docker puede ejecutarse dentro del runner de Actions. Cloud real queda fuera de F0.
 6. **Ejecutar spike sintética:** recorrer el flujo vertical, conservar entradas, salidas, logs, hashes y pasos de reproducción. Incluir fallos negativos y distinguir pruebas contractuales de capacidades integradas.
 7. **Cerrar F0:** actualizar `STATUS.md`, proponer secuencia PR F1–F9 con dependencias/riesgos y preparar PR draft con resultados revisables. No hacer merge, despliegue, gasto cloud ni publicar afirmaciones de éxito sin autorización expresa.
 
@@ -59,14 +59,14 @@ La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin re
 - ERD conceptual
 - matriz existente/documentado/faltante
 - manifiesto de ontologías y licencias
-- configuración del laboratorio local
+- workflows de GitHub Actions y configuración del laboratorio ejecutado en runner
 - fixtures sintéticos, comandos de reproducción y salidas de la spike
 - reporte de limitaciones, gates pendientes y pruebas negativas
 - propuesta de pull requests para F1–F9
 
 ## 5. Reglas de avance y aceptación
 
-- Cada fase se trabaja en rama aislada y entrega un diff revisable, comandos de reproducción, pruebas ejecutables, resultados y limitaciones. La promoción a `main` se hace mediante revisión y autorización del investigador.
+- Cada fase se trabaja en rama aislada y entrega un diff revisable, workflow de GitHub Actions reproducible, pruebas ejecutables, resultados y limitaciones. La promoción a `main` se hace mediante revisión y autorización del investigador.
 - Un gate solo se marca como aprobado si se ejecutó con el componente real requerido y se conservaron evidencias reproducibles. Stubs, mocks y contratos pendientes se identifican como tales.
 - SD permanece como lente de investigación y OpenModelica como destino y motor de simulación obligatorio. Un resultado de simulación no identifica por sí mismo un mecanismo real.
 - Se conservan modelos rivales, desacuerdos, fallos, resultados negativos, versiones y procedencia. No se promueven relaciones vectoriales a causalidad sin el proceso de evaluación definido.
@@ -79,4 +79,4 @@ Antes de usar datos reales, operar recursos cloud reales, incurrir en gasto, apr
 
 ## 7. Próximo paso
 
-Iniciar **F0 solamente** en una rama aislada. Primero confirmar el checkout y refs disponibles del repo; después completar la auditoría, contratos, entorno local y spike. Al cierre de F0, presentar resultados y una secuencia revisada de PRs F1–F9 antes de ampliar la implementación.
+Iniciar **F0 solamente** en una rama aislada. Confirmar refs y estado del repo desde GitHub; completar auditoría, contratos, laboratorio de Actions y spike sintética. No usar pasos locales de ejecución. Al cierre de F0, presentar resultados y una secuencia revisada de PRs F1–F9 antes de ampliar la implementación.
