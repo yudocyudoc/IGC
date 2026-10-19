@@ -48,6 +48,43 @@ class F0SpikeContractTests(unittest.TestCase):
         self.assertIn("OpenModelica image", document["comment"])
         self.assertIn("3 pinned GitHub Actions", document["comment"])
 
+
+    def test_platform_sbom_includes_pinned_modelica_source(self):
+        digest = "d" * 64
+        commit = "a" * 40
+        lock_text = (
+            "demo-pkg==2.0.0 \\\n"
+            f"    --hash=sha256:{digest}\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lock = root / "requirements.lock"
+            lock.write_text(lock_text, encoding="utf-8")
+            runner = root / "runner.tsv"
+            runner.write_text("libc\t2.0\tamd64\n", encoding="utf-8")
+            container = root / "container.tsv"
+            container.write_text("omc-lib\t1.0\tamd64\n", encoding="utf-8")
+            workflow = root / "workflow.yml"
+            workflow.write_text(f"      uses: actions/checkout@{commit} # v6\n", encoding="utf-8")
+            extras = root / "extras.json"
+            extras.write_text(json.dumps([{
+                "name": "SystemDynamics",
+                "version": "2.1.2+b986a2ea354ab550d627a392f857ad7c9997d961",
+                "scope": "modelica-source",
+                "purl": "pkg:github/modelica-3rdparty/SystemDynamics@b986a2ea354ab550d627a392f857ad7c9997d961",
+                "downloadLocation": "https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz",
+                "checksums": [{"algorithm": "SHA256", "checksumValue": "e" * 64}],
+                "comment": "Pinned upstream source snapshot.",
+            }]), encoding="utf-8")
+            document = render_platform_spdx(
+                lock, runner, container, workflow, "ubuntu-24.04",
+                "openmodelica/openmodelica:v1.27.1-minimal",
+                "sha256:" + "c" * 64, extras,
+            )
+        package = next(item for item in document["packages"] if item["name"] == "SystemDynamics")
+        self.assertIn("2.1.2+b986a2ea", package["versionInfo"])
+        self.assertEqual(package["checksums"][0]["checksumValue"], "e" * 64)
+
     def test_sbom_contains_lock_hash_and_unasserted_license(self):
         digest = "b" * 64
         lock_text = (
