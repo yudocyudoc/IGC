@@ -1,0 +1,49 @@
+{
+  "schema": "igc-fm-b5-identifiability/0.1",
+  "id": "urn:igc:experiment:fm-b5-identifiability@0.1",
+  "synthetic": true,
+  "empirical_or_causal_claim": false,
+  "molecule_source": "poc/short_wrappers/IGCMolecules.mo",
+  "structures": [
+    {"id": "CS-01", "stage_count": 1},
+    {"id": "CS-02", "stage_count": 2}
+  ],
+  "parameter_ranges": {
+    "maxThroughput": {"minimum": 1.2, "maximum": 2.4, "step": 0.2, "unit": "units/hour"},
+    "responseTime": {"minimum": 0.4, "maximum": 1.6, "step": 0.1, "unit": "hour"}
+  },
+  "synthetic_data_generation": {
+    "truth_structure": "CS-02",
+    "truth_parameters": {"maxThroughput": 1.8, "responseTime": 0.8},
+    "noise_standard_deviation": 0.08,
+    "calibration_noise_seed": 314159,
+    "pulse_noise_seed": 271828
+  },
+  "calibration": {
+    "input_amplitude": 0.8,
+    "input_duration": 2.0,
+    "stop_time": 8.0,
+    "observation_interval": 2.0
+  },
+  "held_out_discrimination": {
+    "input_amplitude": 3.0,
+    "input_duration": 2.0,
+    "stop_time": 16.0,
+    "observation_interval": 0.5
+  },
+  "uncertainty_rule": {
+    "method": "grid_profile_likelihood",
+    "delta_chi_square": 5.991,
+    "confidence_level_approximate": 0.95,
+    "parameter_count": 2,
+    "grid_is_coarse": true
+  },
+  "parameter_prior": "uniform over the declared finite parameter grid; calibration posterior predictive scores use the declared Gaussian noise scale",
+  "discrimination_rule": {
+    "minimum_prediction_gap_in_noise_sd": 2.0,
+    "minimum_absolute_held_out_log_bayes_factor": 2.302585093,
+    "bayes_factor_threshold_interpretation": "10:1 predictive odds with equal structure prior probabilities"
+  },
+  "numerics": {"integration_step": 0.01},
+  "note": "All ranges, truth values, inputs and noisy observations are a declared synthetic twin experiment; they are not empirical estimates or recommended real-system bounds."
+}
