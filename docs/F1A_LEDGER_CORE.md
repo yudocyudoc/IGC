@@ -14,7 +14,11 @@
 
 ## Validación
 
-La corrida [#205](https://github.com/yudocyudoc/IGC/actions/runs/39348542070) terminó en verde con 25 pruebas totales; las 11 pruebas F1a cubren corrección posterior, corte `as_known_at`, filtro de tiempo válido, idempotencia, conflicto de clave, timestamps zonificados, intervalos, registro/checksum de migración, detección de cambios, estructura del esquema e inmutabilidad.
+El commit `15803a99e94330b957249514b3db1365ca7ff34a` pasó las verificaciones de GitHub Actions:
+
+- [F0 synthetic spike, run 229](https://github.com/yudocyudoc/IGC/actions/runs/39349618174): 26 pruebas totales, incluidas 12 de F1a; validó append y consulta por CLI en un ledger temporal. El reporte científico F0 sigue `BLOCKED` por el candidato de modelo marcado como stub; D1/R2 no se ejecutaron.
+- [F1a LinkML schema, run 13](https://github.com/yudocyudoc/IGC/actions/runs/39349618179): instalación con hashes, regeneración/diff del JSON Schema y validación del fixture sintético pasaron.
+- Artefactos: F0 `12232706276`; evidencia de esquema LinkML `12232537715`.
 
 ## Pendiente dentro de F1a
 
