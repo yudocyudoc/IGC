@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 import unittest
 
+from scripts.igc import main as igc_main
 from scripts.ledger import IdempotencyConflict, Ledger, LedgerError
 
 
@@ -19,6 +20,32 @@ T3 = "2026-01-04T00:00:00Z"
 
 
 class LedgerTests(unittest.TestCase):
+    def test_cli_append_and_as_known_at_query_round_trip(self):
+        payload_file = Path(self.tmp.name) / "payload.json"
+        payload_file.write_text(json.dumps({"text": "Podría ocurrir."}), encoding="utf-8")
+        common = [
+            "--database", str(self.db),
+            "--entity-id", "urn:igc:claim:cli",
+            "--entity-type", "ClaimOccurrence",
+            "--case-id", "urn:igc:case:c1",
+            "--actor-id", "urn:igc:actor:researcher",
+            "--payload-file", str(payload_file),
+            "--created-at", T1,
+            "--valid-from", T0,
+        ]
+        appended = StringIO()
+        with redirect_stdout(appended):
+            result = igc_main(["ledger", "append", *common, "--idempotency-key", "cli-1", "--recorded-at", T1])
+        self.assertEqual(result, 0)
+        shown = StringIO()
+        with redirect_stdout(shown):
+            result = igc_main([
+                "ledger", "show", "--database", str(self.db), "--case-id", "urn:igc:case:c1",
+                "--as-known-at", T2,
+            ])
+        self.assertEqual(result, 0)
+        self.assertEqual(json.loads(shown.getvalue())[0]["payload"]["text"], "Podría ocurrir.")
+
     def test_migration_version_and_checksum_are_recorded(self):
         with sqlite3.connect(self.db) as connection:
             version, digest = connection.execute(
