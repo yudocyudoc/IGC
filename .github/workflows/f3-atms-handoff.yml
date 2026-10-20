@@ -1,0 +1,52 @@
+name: F3 ATMS candidate handoff
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/f3-atms-handoff.yml
+      - scripts/f0_atms_probe.py
+      - scripts/f0_candidate_handoff.py
+      - scripts/f3_candidate_selection.py
+      - scripts/f3_candidate_handoff.py
+      - data/synthetic/system_model_candidate.json
+      - data/synthetic/f3_candidate_proposals.json
+      - tests/test_f3_candidate_selection.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f3-atms-handoff-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  atms-selected-handoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      IGC_OMC_DOCKER_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+      - name: Run ATMS selection contract tests
+        run: python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
+      - name: Run selected candidate through OpenModelica
+        run: python scripts/f3_candidate_handoff.py
+      - name: Make Docker evidence readable by artifact uploader
+        if: always()
+        run: |
+          if [ -d artifacts/f3 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/f3
+          fi
+      - name: Upload F3 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: f3-atms-candidate-handoff
+          path: artifacts/f3/
+          if-no-files-found: error
