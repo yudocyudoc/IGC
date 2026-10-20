@@ -119,3 +119,8 @@ F0 (PR #1 y #3) y el corte inicial F1a (PR #2 y #4) están integrados en main. F
 ### Corte F3 sintético — PR #5
 
 Actions #4 (run 39367112366) pasó con cinco pruebas contractuales y la simulación OpenModelica; el artefacto reproducible es 12240026771. El selector consume propuestas versionadas, supuestos, justificaciones y nogoods; genera solo candidatos con etiquetas consistentes y conserva esas etiquetas en el candidato enviado al handoff. El workflow de Actions ejecuta pruebas negativas y el candidato elegido en OpenModelica. Este corte utiliza el probe `f0-atms-feasibility/0.1`, de modo que no acredita retractación/versionado, un motor de producción, integración RDF ni composición de estructuras dinámicas distintas. La evidencia es de cableado de software sintético y no evalúa H-IGC.
+
+
+### Corte F2b/F3 — PR #6
+
+Actions #6 validó la formalización RDF/CRMinf del ClaimOccurrence, su procedencia PROV-O y una consulta SPARQL que genera las propuestas consumidas por ATMS. El artefacto conserva hashes de claim, fuente, catálogo, grafo, consulta y generadores. El alcance es sintético y declara la política de mapeo; no infiere causalidad ni evidencia empírica. La reconstrucción independiente de la selección queda pendiente para F3a/F3b.

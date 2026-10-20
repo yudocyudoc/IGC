@@ -6,7 +6,8 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 |---|---|---|---|
 | F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #450 | No cubre T01–T30 integralmente |
 | F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #250: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
-| ATMS → selección → handoff | PASS_SYNTHETIC (PR #5; Actions #2) | Actions #2 (run 39365713141): 5 pruebas; el nogood poda el baseline y OpenModelica obtiene 30/40 pedidos para el candidato seleccionado y su perturbación; artefacto 12238439065 | El probe ATMS sigue siendo prototipo; no consume conclusiones RDF/CRMinf/SPARQL ni demuestra semántica empírica |
+| ATMS → selección → handoff | PASS_SYNTHETIC (PR #5; Actions #4) | Run 39367112366: 5 pruebas; el nogood poda el baseline; OpenModelica obtiene 30/40 pedidos; artefacto 12240026771 | El probe sigue siendo prototipo y la selección no se reconstruye de forma independiente |
+| F2b/F3 — RDF/CRMinf → SPARQL → ATMS | PASS_SYNTHETIC_INTEGRATION (PR #6; Actions #6) | Run 39367526129: SPARQL deriva propuestas desde la afirmación con provenance PROV-O/CRMinf; 5 pruebas F3 + 4 semánticas; handoff 30/40; artefacto 12240415497 | Formalización y catálogo explícitos sintéticos; nogoods declarados; sin inferencia empírica ni causalidad |
 | F0 — fase | ACCEPTED_WITH_LIMITATIONS | Investigador autorizó e integró PR #1 y #3 en `main` el 2026-10-20 | No completa la plataforma ni evalúa H-IGC |
 | H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
 | Plataforma completa | INCOMPLETE | F1–F9 siguen su secuencia; la persistencia cloud está planificada en F8 | No es una dependencia para aceptar los gates técnicos de F0 |
@@ -48,4 +49,9 @@ PR #2 implementó el contrato LinkML y ledger SQLite local; PR #4 añadió `reco
 
 El workflow `F3 ATMS candidate handoff` (run #4) pasó y generó `selection.json`, el candidato seleccionado, el manifiesto del handoff y la verificación de OpenModelica. La suite comprueba que el nogood elimina el candidato baseline, que sin nogood coexisten las dos alternativas, y que referencias o valores inválidos fallan cerrados. La selección se conserva dentro del candidato hasheado y el manifiesto enlaza esa evidencia.
 
-Este incremento no cierra F2b ni F3a/F3b: usa el probe F0 explícitamente no productivo, no procesa salidas semánticas RDF/CRMinf/SPARQL, y no compone estructuras SD distintas. La integración semántica, retractación/versionado, conformance del ATMS y modelos estructuralmente rivales quedan pendientes.
+Este incremento no cierra F3a/F3b: usa el probe F0 explícitamente no productivo, no procesa salidas semánticas RDF/CRMinf/SPARQL, y no compone estructuras SD distintas. La integración semántica, retractación/versionado, conformance del ATMS y modelos estructuralmente rivales quedan pendientes.
+
+
+## Puente semántico F2b/F3 — PR #6
+
+Actions #6 pasó las pruebas del selector y del puente semántico, además del handoff OpenModelica. La formalización RDF sintética del ClaimOccurrence anclado registra una actividad PROV-O/CRMinf; SPARQL recupera solo las propuestas ligadas a esa afirmación, y su salida alimenta ATMS y OpenModelica. Sigue siendo una traducción explícita del fixture: no prueba inferencia empírica, mantiene los nogoods declarados y no afirma causalidad. La verificación independiente de la selección completa sigue pendiente.

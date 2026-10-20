@@ -1,6 +1,7 @@
 """Run a synthetic ATMS selection through the OpenModelica handoff."""
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -8,9 +9,13 @@ from pathlib import Path
 try:
     from .f0_candidate_handoff import ROOT, CANDIDATE_PATH, run_candidate_handoff
     from .f3_candidate_selection import select_candidates
+    from .f0_spike import source_and_annotation
+    from .f2_f3_semantic_bridge import derive_candidate_proposals
 except ImportError:
-    from f0_candidate_handoff import ROOT, CANDIDATE_PATH, OUTPUT_DIR, run_candidate_handoff
+    from f0_candidate_handoff import ROOT, CANDIDATE_PATH, run_candidate_handoff
     from f3_candidate_selection import select_candidates
+    from f0_spike import source_and_annotation
+    from f2_f3_semantic_bridge import derive_candidate_proposals
 
 
 PROPOSALS_PATH = ROOT / "data" / "synthetic" / "f3_candidate_proposals.json"
@@ -25,9 +30,33 @@ def main() -> int:
     if proposal_set.get("schema") != "igc-atms-candidate-proposals/0.1" or not proposal_set.get("synthetic"):
         raise SystemExit("unsupported or non-synthetic proposal fixture")
 
-    selection = select_candidates(
-        base, proposal_set["proposals"], proposal_set["assumptions"], proposal_set["nogoods"]
+    source_stages, annotation = source_and_annotation()
+    if not annotation or not source_stages or source_stages[0].get("status") != "PASS":
+        raise SystemExit("could not create a source-anchored synthetic annotation")
+    claim_path = ROOT / "data" / "synthetic" / "claim.json"
+    source_path = ROOT / "data" / "synthetic" / "source.txt"
+    claim = json.loads(claim_path.read_text(encoding="utf-8"))
+    semantic_inputs, graph_turtle = derive_candidate_proposals(
+        annotation, claim, source_path.read_bytes(), proposal_set
     )
+    graph_path = ARTIFACT_DIR / "semantic-bridge.ttl"
+    graph_path.write_text(graph_turtle, encoding="utf-8")
+    semantic_inputs["semantic_evidence"]["candidate_selector_sha256"] = hashlib.sha256(
+        Path(__file__).with_name("f3_candidate_selection.py").read_bytes()
+    ).hexdigest()
+    semantic_path = ARTIFACT_DIR / "semantic-evidence.json"
+    semantic_path.write_text(
+        json.dumps(semantic_inputs["semantic_evidence"], ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    selection = select_candidates(
+        base, semantic_inputs["proposals"],
+        semantic_inputs["assumptions"], semantic_inputs["nogoods"]
+    )
+    selection["semantic_evidence"] = semantic_inputs["semantic_evidence"]
+    for item in selection["selected"]:
+        item["candidate"]["atms_selection"]["semantic_evidence"] = semantic_inputs["semantic_evidence"]
     selection_path = ARTIFACT_DIR / "selection.json"
     selection_path.write_text(json.dumps(selection, ensure_ascii=False, indent=2) + "\n",
                                encoding="utf-8")
@@ -53,7 +82,9 @@ def main() -> int:
     report = {"schema": "igc-f3-atms-handoff/0.1",
               "status": "PASS_SYNTHETIC" if result.get("status") == "PASS" else "FAIL",
               "synthetic": True, "selection_result": str(selection_path.relative_to(ROOT)),
-              "selected_candidate": str(selected_path.relative_to(ROOT)), "handoff": result}
+              "selected_candidate": str(selected_path.relative_to(ROOT)),
+              "semantic_evidence": str(semantic_path.relative_to(ROOT)),
+              "rdf_graph": str(graph_path.relative_to(ROOT)), "handoff": result}
     report_path = ARTIFACT_DIR / "run.json"
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
