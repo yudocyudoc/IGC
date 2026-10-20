@@ -3,12 +3,17 @@ on:
   pull_request:
     branches:
       - main
+      - f2-f3-rdf-atms-handoff
     paths:
       - .github/workflows/f1a-linkml-bootstrap.yml
       - requirements-f1a-linkml.lock.txt
       - schema/source/**
       - schema/derived/**
       - data/synthetic/f1a_entity_revision.json
+      - data/synthetic/fm_a_structural_candidates.json
+      - scripts/validate_fm_a_contract.py
+      - docs/FM_A_AUDIT_AND_FEASIBILITY.md
+      - docs/ANEXO_PUENTE_MOLECULAR_IGC_FM_v0_2_2026-10-20.md
       - scripts/lock_from_pip_report.py
       - scripts/sbom_from_lock.py
 permissions:
@@ -37,6 +42,10 @@ jobs:
           /tmp/igc-linkml-locked/bin/gen-json-schema schema/source/igc.yaml > artifacts/f1a/igc.schema.json
           diff -u schema/derived/igc.schema.json artifacts/f1a/igc.schema.json
           /tmp/igc-linkml-locked/bin/gen-json-schema --top-class ClaimOccurrence schema/source/igc.yaml > artifacts/f1a/claim-occurrence.schema.json
+          mkdir -p artifacts/f1a/fm-a
+          for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
+            /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/f1a/fm-a/${top_class}.schema.json"
+          done
           /tmp/igc-linkml-locked/bin/python - <<'PY'
           import json
           from pathlib import Path
@@ -51,7 +60,9 @@ jobs:
               raise SystemExit("\n".join(error.message for error in errors))
           print("LinkML source parsed; committed JSON Schema matches generator output; synthetic ClaimOccurrence validates.")
           PY
+          /tmp/igc-linkml-locked/bin/python scripts/validate_fm_a_contract.py --schema-dir artifacts/f1a/fm-a --check-negative-cases
       - name: Upload F1a schema and lock evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: f1a-linkml-evidence

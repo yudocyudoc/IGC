@@ -6,6 +6,7 @@ on:
       - f0-inventario-spike
       - f0-candidate-handoff
       - f1a-ledger-core
+      - fm-a-molecular-contract
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -18,10 +19,13 @@ on:
       - schema/**
       - migrations/**
       - docs/F1A_LEDGER_CORE.md
+      - docs/ANEXO_PUENTE_MOLECULAR_IGC_FM_v0_2_2026-10-20.md
+      - docs/FM_A_AUDIT_AND_FEASIBILITY.md
   pull_request:
     branches:
       - main
       - f0-inventario-spike
+      - f2-f3-rdf-atms-handoff
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -33,6 +37,9 @@ on:
       - schema/**
       - migrations/**
       - docs/F1A_LEDGER_CORE.md
+      - docs/ANEXO_PUENTE_MOLECULAR_IGC_FM_v0_2_2026-10-20.md
+      - docs/FM_A_AUDIT_AND_FEASIBILITY.md
+      - data/synthetic/fm_a_structural_candidates.json
   workflow_dispatch:
 
 permissions:

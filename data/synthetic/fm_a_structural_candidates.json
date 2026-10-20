@@ -1,0 +1,245 @@
+{
+  "schema": "igc-fm-a-structural-candidates/0.1",
+  "synthetic": true,
+  "catalog_snapshot": "short-pr32@eef3c38799f19d9526c8b81097ec0483d802dc15;short-pr33@d5a9512e69b8e1f59ae1ea13c0e6fdb8c9472e72",
+  "license_status": "NOASSERTION_NOT_CLEARED",
+  "admission_status": "CANDIDATE_NOT_ADMITTED",
+  "request": {
+    "id": "urn:igc:request:fm-a-stage-count",
+    "description": "Synthetic comparison of one versus two serial processing stages.",
+    "entity_type": "Shipment",
+    "origin_refs": [
+      "https://github.com/yudocyudoc/short/pull/32",
+      "https://github.com/yudocyudoc/short/pull/33"
+    ],
+    "unresolved": [
+      "empirical_stage_count",
+      "molecule_license",
+      "igc_openmodelica_admission"
+    ]
+  },
+  "molecule_definitions": [
+    {
+      "id": "urn:igc:molecule:accepted-source@0.1",
+      "version": "0.1",
+      "maturity": "SOURCE_INSPECTED_NOT_ADMITTED",
+      "modelica_class": "IGCMolecules.AcceptedSource",
+      "source_ref": "https://github.com/yudocyudoc/short/blob/eef3c38799f19d9526c8b81097ec0483d802dc15/src/modelica/IGCMolecules.mo",
+      "source_commit": "eef3c38799f19d9526c8b81097ec0483d802dc15",
+      "license_status": "NOASSERTION_NOT_CLEARED",
+      "ports": [
+        {
+          "port_id": "externalRate",
+          "name": "externalRate",
+          "direction": "in",
+          "signal_kind": "SIGNAL",
+          "semantic_type": "OrderRate",
+          "unit": "units/hour"
+        },
+        {
+          "port_id": "outflow",
+          "name": "outflow",
+          "direction": "out",
+          "signal_kind": "FLOW",
+          "semantic_type": "Shipment",
+          "unit": "units/hour"
+        }
+      ],
+      "parameters": []
+    },
+    {
+      "id": "urn:igc:molecule:bounded-queue@0.1",
+      "version": "0.1",
+      "maturity": "SOURCE_INSPECTED_NOT_ADMITTED",
+      "modelica_class": "IGCMolecules.BoundedQueue",
+      "source_ref": "https://github.com/yudocyudoc/short/blob/eef3c38799f19d9526c8b81097ec0483d802dc15/src/modelica/IGCMolecules.mo",
+      "source_commit": "eef3c38799f19d9526c8b81097ec0483d802dc15",
+      "license_status": "NOASSERTION_NOT_CLEARED",
+      "ports": [
+        {
+          "port_id": "arrival",
+          "name": "arrival",
+          "direction": "in",
+          "signal_kind": "FLOW",
+          "semantic_type": "Shipment",
+          "unit": "units/hour"
+        },
+        {
+          "port_id": "completed",
+          "name": "completed",
+          "direction": "out",
+          "signal_kind": "FLOW",
+          "semantic_type": "Shipment",
+          "unit": "units/hour"
+        },
+        {
+          "port_id": "waiting",
+          "name": "waiting",
+          "direction": "out",
+          "signal_kind": "STATE",
+          "semantic_type": "Shipment",
+          "unit": "units"
+        }
+      ],
+      "parameters": [
+        {
+          "parameter_id": "maxThroughput",
+          "unit": "units/hour",
+          "minimum": 0.0
+        },
+        {
+          "parameter_id": "responseTime",
+          "unit": "hour",
+          "minimum": 1e-09
+        }
+      ]
+    },
+    {
+      "id": "urn:igc:molecule:delivery-counter@0.1",
+      "version": "0.1",
+      "maturity": "SOURCE_INSPECTED_NOT_ADMITTED",
+      "modelica_class": "IGCMolecules.DeliveryCounter",
+      "source_ref": "https://github.com/yudocyudoc/short/blob/eef3c38799f19d9526c8b81097ec0483d802dc15/src/modelica/IGCMolecules.mo",
+      "source_commit": "eef3c38799f19d9526c8b81097ec0483d802dc15",
+      "license_status": "NOASSERTION_NOT_CLEARED",
+      "ports": [
+        {
+          "port_id": "arrival",
+          "name": "arrival",
+          "direction": "in",
+          "signal_kind": "FLOW",
+          "semantic_type": "Shipment",
+          "unit": "units/hour"
+        },
+        {
+          "port_id": "total",
+          "name": "total",
+          "direction": "out",
+          "signal_kind": "STATE",
+          "semantic_type": "Shipment",
+          "unit": "units"
+        }
+      ],
+      "parameters": []
+    }
+  ],
+  "candidates": [
+    {
+      "id": "urn:igc:candidate:CS-01",
+      "request_id": "urn:igc:request:fm-a-stage-count",
+      "structure_revision_id": "urn:igc:structure:CS-01@0.1",
+      "status": "HYPOTHESIS_SYNTHETIC_NOT_EMPIRICALLY_SUPPORTED",
+      "assumption_refs": [],
+      "origin_refs": [
+        "urn:igc:request:fm-a-stage-count"
+      ]
+    },
+    {
+      "id": "urn:igc:candidate:CS-02",
+      "request_id": "urn:igc:request:fm-a-stage-count",
+      "structure_revision_id": "urn:igc:structure:CS-02@0.1",
+      "status": "HYPOTHESIS_SYNTHETIC_NOT_EMPIRICALLY_SUPPORTED",
+      "assumption_refs": [],
+      "origin_refs": [
+        "urn:igc:request:fm-a-stage-count"
+      ]
+    }
+  ],
+  "structures": [
+    {
+      "id": "urn:igc:structure:CS-01@0.1",
+      "catalog_snapshot": "short-pr32@eef3c38799f19d9526c8b81097ec0483d802dc15;short-pr33@d5a9512e69b8e1f59ae1ea13c0e6fdb8c9472e72",
+      "molecule_instances": [
+        {
+          "id": "source0",
+          "molecule_definition_id": "urn:igc:molecule:accepted-source@0.1",
+          "parameter_bindings": []
+        },
+        {
+          "id": "stage0",
+          "molecule_definition_id": "urn:igc:molecule:bounded-queue@0.1",
+          "parameter_bindings": []
+        },
+        {
+          "id": "receipt0",
+          "molecule_definition_id": "urn:igc:molecule:delivery-counter@0.1",
+          "parameter_bindings": []
+        }
+      ],
+      "connections": [
+        {
+          "id": "c1",
+          "from_port": "source0.outflow",
+          "to_port": "stage0.arrival",
+          "connection_kind": "MATERIAL_FLOW"
+        },
+        {
+          "id": "c2",
+          "from_port": "stage0.completed",
+          "to_port": "receipt0.arrival",
+          "connection_kind": "MATERIAL_FLOW"
+        }
+      ],
+      "structural_hash": "sha256:2d84ed93064a47b10d667bd00083694bf715cc0fc0adccedc234bc0d38b5bb75"
+    },
+    {
+      "id": "urn:igc:structure:CS-02@0.1",
+      "catalog_snapshot": "short-pr32@eef3c38799f19d9526c8b81097ec0483d802dc15;short-pr33@d5a9512e69b8e1f59ae1ea13c0e6fdb8c9472e72",
+      "molecule_instances": [
+        {
+          "id": "source0",
+          "molecule_definition_id": "urn:igc:molecule:accepted-source@0.1",
+          "parameter_bindings": []
+        },
+        {
+          "id": "stage0",
+          "molecule_definition_id": "urn:igc:molecule:bounded-queue@0.1",
+          "parameter_bindings": []
+        },
+        {
+          "id": "stage1",
+          "molecule_definition_id": "urn:igc:molecule:bounded-queue@0.1",
+          "parameter_bindings": []
+        },
+        {
+          "id": "receipt0",
+          "molecule_definition_id": "urn:igc:molecule:delivery-counter@0.1",
+          "parameter_bindings": []
+        }
+      ],
+      "connections": [
+        {
+          "id": "c1",
+          "from_port": "source0.outflow",
+          "to_port": "stage0.arrival",
+          "connection_kind": "MATERIAL_FLOW"
+        },
+        {
+          "id": "c2",
+          "from_port": "stage0.completed",
+          "to_port": "stage1.arrival",
+          "connection_kind": "MATERIAL_FLOW"
+        },
+        {
+          "id": "c3",
+          "from_port": "stage1.completed",
+          "to_port": "receipt0.arrival",
+          "connection_kind": "MATERIAL_FLOW"
+        }
+      ],
+      "structural_hash": "sha256:7dd43f47bd72be05c522bb48272a184de3085bb35a5d1cdd9e31cbda32363d5e"
+    }
+  ],
+  "feasibility": {
+    "gate": "FM-A-FEAS",
+    "status": "FEASIBLE_WITH_RESTRICTIONS",
+    "abandonment_status": "BLOCKED_WITH_CAUSE",
+    "abandonment_cause": "NO_NATIVE_CONSERVATIVE_SPLIT",
+    "restrictions": [
+      "Structures are declarative fixtures only; no IGC native compilation or simulation was performed.",
+      "Molecule licenses are NOASSERTION and not cleared for copying or import.",
+      "One versus two stages is not empirical evidence about any target system.",
+      "The researcher must select or replace the pair before FM-B."
+    ]
+  }
+}
