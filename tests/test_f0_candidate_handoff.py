@@ -107,7 +107,7 @@ class CandidateHandoffTests(unittest.TestCase):
             "generator": {"path": str(generator_path.relative_to(root)), "sha256": digest(generator_path)},
             "generated_models": {
                 "base": {"path": str(base_model.relative_to(root)), "sha256": digest(base_model)},
-                "perturbed": {"path": str(perturbed_model), "assumption_id": "assumption-arrival-rate-001",
+                "perturbed": {"path": str(perturbed_model.relative_to(root)), "assumption_id": "assumption-arrival-rate-001",
                               "parameter": "arrivalRate", "before": 3, "after": 4, "delta": 1,
                               "sha256": digest(perturbed_model)},
             },
@@ -159,7 +159,7 @@ class CandidateHandoffTests(unittest.TestCase):
             manifest = self._write_verification_fixture(Path(directory))
             output = io.StringIO()
             with redirect_stdout(output):
-                result = handoff_main(["verify-handoff", "--manifest", str(manifest)])
+                result = handoff_main(["verify-handoff", "--manifest", str(manifest), "--root", directory])
         self.assertEqual(result, 0)
         self.assertIn('"status": "PASS"', output.getvalue())
 

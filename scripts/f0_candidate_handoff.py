@@ -437,9 +437,10 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     verify = commands.add_parser("verify-handoff", help="verify manifest hashes and simulation trajectories")
     verify.add_argument("--manifest", type=Path, required=True)
+    verify.add_argument("--root", type=Path, default=ROOT, help="root for resolving manifest paths")
     args = parser.parse_args(argv)
     try:
-        result = verify_handoff(args.manifest)
+        result = verify_handoff(args.manifest, root=args.root)
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
     except (HandoffError, OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
