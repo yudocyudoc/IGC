@@ -58,7 +58,7 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 
 ## 6. Evidencia que falta antes de declarar FM-A completo
 
-- Generación determinista del JSON Schema, validación positiva de los cuatro contratos, vocabularios cerrados y negativos de valores desconocidos/IDs duplicados: [Actions F1a #26](https://github.com/yudocyudoc/IGC/actions/runs/39447185779) pasó en HEAD `cb9d80670ac2b496a594ece1834a1fc0cb38098d`; la regresión del laboratorio pasó en [F0 #280](https://github.com/yudocyudoc/IGC/actions/runs/39447184843) sobre el mismo HEAD. El reporte del validador conserva `ATMS_VALUE_ADDED=NOT_DEMONSTRATED` para S0.
+- Generación determinista del JSON Schema, validación positiva de los cuatro contratos y negativos para vocabularios desconocidos, IDs duplicados y combinaciones incompatibles `connection_kind`/`signal_kind`: [Actions F1a #28](https://github.com/yudocyudoc/IGC/actions/runs/39449499781) pasó en HEAD `fe75a2f50e4c61c6e5102ab8abd25c7c96cfb317`; la regresión del laboratorio pasó en [F0 #284](https://github.com/yudocyudoc/IGC/actions/runs/39449499726) sobre el mismo HEAD. El reporte del validador conserva `ATMS_VALUE_ADDED=NOT_DEMONSTRATED` para S0.
 - Comparación S0 del filtro trivial frente al selector ATMS de PR #5: [Actions F1a #23](https://github.com/yudocyudoc/IGC/actions/runs/39444522863) dio la misma selección (`candidate-promotion-orders-001`) y registró `ATMS_VALUE_ADDED=NOT_DEMONSTRATED`, como corresponde a esta fixture.
 - Regresión del laboratorio: [Actions F0 #274](https://github.com/yudocyudoc/IGC/actions/runs/39444522778) pasó sobre el mismo HEAD `5cccaee39d0e08630b439f98a60c7c6bb0227fb7`.
 - Asegurar que no se importe código de `short` antes de una resolución de licencia.
