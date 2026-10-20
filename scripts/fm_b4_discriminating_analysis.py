@@ -174,7 +174,8 @@ def analyze_trace(path: Path, candidate_id: str, structure_profile: dict[str, An
         "post_pulse_times": t[tail_idx:]}
 
 
-def compare_candidates(traces: dict[str, dict[str, Any]], profiles: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def compare_candidates(traces: dict[str, dict[str, Any]], profiles: dict[str, dict[str, Any]],
+                      plan: dict[str, Any]) -> dict[str, Any]:
     relation = evaluate_comparison(
         {key: {"times": value["time_grid"], "delivered_series": value["delivery_series"]}
          for key, value in traces.items()},
@@ -195,12 +196,19 @@ def compare_candidates(traces: dict[str, dict[str, Any]], profiles: dict[str, di
                 "max_abs_difference_during_recovery": max(abs(x-y) for x,y in zip(
                     a["post_pulse_delivery_series"], b["post_pulse_delivery_series"]))},
             "discriminating_observation": "measure cumulative deliveries and waiting stock in each stage during the recovery tail"})
+    input_profile = plan["external_input"]["profile"]
+    pulse_duration = float(input_profile["period"]) * float(input_profile["width_percent"]) / 100
+    simulation_end = float(plan["simulation"]["stop_time"])
+    recovery_duration = simulation_end - float(input_profile["start_time"]) - pulse_duration
     return {**relation, "pairwise_comparisons": comparisons,
         "proposed_discriminating_perturbation": {
-            "kind": "finite_rate_pulse", "amplitude_units_per_hour": 3.0,
-            "duration_hours": 2.0, "recovery_observation_hours": 14.0,
+            "kind": "finite_rate_pulse",
+            "amplitude_units_per_hour": float(input_profile["amplitude"]),
+            "start_time_hours": float(input_profile["start_time"]),
+            "duration_hours": pulse_duration,
+            "recovery_observation_hours": recovery_duration,
             "readouts": ["cumulative deliveries", "waiting stock per stage", "completion rate per stage"],
-            "rationale": "the finite pulse exposes transient storage and recovery differences in serial queue counts; this proposal is evaluated only in this declared synthetic scenario",
+            "rationale": "the finite pulse exposes transient storage and recovery differences in serial queue counts; this proposal is evaluated only in the pulse declared by the plan",
             "optimized_or_empirically_validated": False}}
 
 
@@ -279,7 +287,7 @@ def verify(args: argparse.Namespace) -> None:
             raise B4Error(f"OpenModelica did not check {candidate_id}")
         path = args.output_dir / f"{result_prefix(candidate_id)}_res.csv"
         traces[candidate_id] = analyze_trace(path, candidate_id, profiles[candidate_id], plan)
-    relation = compare_candidates(traces, profiles)
+    relation = compare_candidates(traces, profiles, plan)
     evidence = {"status": "B4_DISCRIMINATING_ANALYSIS_PASS_SYNTHETIC",
         "atms_retained_and_simulated": manifest["selected_ids"],
         "atms_rejected_and_not_simulated": manifest["rejected_ids"],

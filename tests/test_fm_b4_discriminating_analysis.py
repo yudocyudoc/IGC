@@ -52,12 +52,14 @@ class FmB4DiscriminatingAnalysisTests(unittest.TestCase):
                     "post_pulse_delivery_series": [1, 5], "post_pulse_times": [2, 16],
                     "final_delivery": 5, "delivery_at_pulse_end": 1, "recovery_delivery": 4},
         }
-        result = compare_candidates(traces, profiles)
+        result = compare_candidates(traces, profiles, self.plan)
         self.assertEqual(result["status"], "DISCRIMINATING_UNDER_SCENARIO")
         self.assertEqual(result["pairwise_comparisons"][0]["structural_delta"]["stage_count"], [1, 2])
         self.assertIn("waiting stock", result["proposed_discriminating_perturbation"]["readouts"][1])
         self.assertFalse(result["ranking_performed"])
         self.assertFalse(result["proposed_discriminating_perturbation"]["optimized_or_empirically_validated"])
+        self.assertEqual(result["proposed_discriminating_perturbation"]["amplitude_units_per_hour"], 3)
+        self.assertEqual(result["proposed_discriminating_perturbation"]["duration_hours"], 2)
 
     def test_indistinguishable_pulse_preserves_both_structures(self):
         profiles = {name: {"structural_hash": name, "stage_count": count, "stock_count": count+1,
@@ -66,7 +68,7 @@ class FmB4DiscriminatingAnalysisTests(unittest.TestCase):
         trace = {"time_grid": [0, 1], "delivery_series": [0, 3],
                  "post_pulse_delivery_series": [0, 3], "post_pulse_times": [0, 1],
                  "final_delivery": 3, "delivery_at_pulse_end": 0, "recovery_delivery": 3}
-        result = compare_candidates({"a": trace, "b": copy.deepcopy(trace)}, profiles)
+        result = compare_candidates({"a": trace, "b": copy.deepcopy(trace)}, profiles, self.plan)
         self.assertEqual(result["status"], "NON_DISCRIMINATING")
         self.assertFalse(result["ranking_performed"])
 
