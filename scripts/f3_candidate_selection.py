@@ -24,36 +24,84 @@ def select_candidates(
     assumption_ids: list[str],
     nogoods: list[list[str]],
 ) -> dict[str, Any]:
-    """Return only candidate variants supported by at least one consistent ATMS label."""
-    if not proposals:
+    """Validate every proposal, then return candidates with consistent ATMS labels."""
+    if not isinstance(proposals, list) or not proposals:
         raise CandidateSelectionError("at least one candidate proposal is required")
-    if len(set(assumption_ids)) != len(assumption_ids) or any(not item for item in assumption_ids):
+    if (not isinstance(assumption_ids, list)
+            or any(not isinstance(item, str) or not item for item in assumption_ids)
+            or len(set(assumption_ids)) != len(assumption_ids)):
         raise CandidateSelectionError("assumption ids must be unique non-empty strings")
     known = set(assumption_ids)
+
+    base_items = base_candidate.get("assumptions")
+    if not isinstance(base_items, list) or not base_items:
+        raise CandidateSelectionError("base candidate must declare assumptions")
+    base_assumptions: dict[str, dict[str, Any]] = {}
+    for item in base_items:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"]:
+            raise CandidateSelectionError("base candidate assumptions need non-empty ids")
+        if item["id"] in base_assumptions:
+            raise CandidateSelectionError("base candidate assumption ids must be unique")
+        base_assumptions[item["id"]] = item
+
+    # Validate the complete input set before ATMS pruning. Invalid alternatives must
+    # not disappear silently merely because a nogood removes their support label.
+    proposal_nodes: dict[str, str] = {}
+    parameter_values: dict[str, dict[str, int | float]] = {}
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            raise CandidateSelectionError("each candidate proposal must be an object")
+        candidate_id = proposal.get("candidate_id")
+        if not isinstance(candidate_id, str) or not candidate_id or candidate_id in proposal_nodes:
+            raise CandidateSelectionError("candidate ids must be unique non-empty strings")
+        required = proposal.get("assumption_ids")
+        if (not isinstance(required, list) or not required
+                or any(not isinstance(item, str) or not item for item in required)
+                or len(set(required)) != len(required)):
+            raise CandidateSelectionError(f"{candidate_id} must cite unique assumption ids")
+        if not set(required) <= known:
+            raise CandidateSelectionError(f"{candidate_id} references an unknown assumption")
+        if not isinstance(proposal.get("mechanism_hypothesis_id"), str) or not proposal["mechanism_hypothesis_id"]:
+            raise CandidateSelectionError(f"{candidate_id} needs a mechanism hypothesis id")
+        if not isinstance(proposal.get("mechanism_statement"), str) or not proposal["mechanism_statement"]:
+            raise CandidateSelectionError(f"{candidate_id} needs a mechanism statement")
+
+        overrides = proposal.get("parameter_values", {})
+        if not isinstance(overrides, dict):
+            raise CandidateSelectionError(f"{candidate_id} parameter_values must be an object")
+        checked_overrides: dict[str, int | float] = {}
+        for assumption_id, value in overrides.items():
+            if assumption_id not in base_assumptions:
+                raise CandidateSelectionError(
+                    f"{candidate_id} overrides unknown candidate assumption {assumption_id}"
+                )
+            if (not isinstance(value, (int, float)) or isinstance(value, bool)
+                    or not math.isfinite(value) or value < 0):
+                raise CandidateSelectionError(
+                    f"{candidate_id} parameter override must be finite and non-negative"
+                )
+            checked_overrides[assumption_id] = value
+        parameter_values[candidate_id] = checked_overrides
+        proposal_nodes[candidate_id] = f"candidate_supported:{candidate_id}"
+
+    if not isinstance(nogoods, list):
+        raise CandidateSelectionError("nogoods must be a list")
+    for nogood in nogoods:
+        if (not isinstance(nogood, list) or not nogood
+                or any(not isinstance(item, str) or not item for item in nogood)
+                or len(set(nogood)) != len(nogood)
+                or not set(nogood) <= known):
+            raise CandidateSelectionError("each nogood must cite unique known assumption ids")
+
     atms = AtmsProbe()
     for assumption_id in assumption_ids:
         atms.assume(assumption_id)
-
-    proposal_nodes: dict[str, str] = {}
     for proposal in proposals:
-        candidate_id = proposal.get("candidate_id")
-        required = proposal.get("assumption_ids")
-        if not isinstance(candidate_id, str) or not candidate_id or candidate_id in proposal_nodes:
-            raise CandidateSelectionError("candidate ids must be unique non-empty strings")
-        if not isinstance(required, list) or not required:
-            raise CandidateSelectionError(f"{candidate_id} must cite at least one assumption")
-        if not set(required) <= known:
-            raise CandidateSelectionError(f"{candidate_id} references an unknown assumption")
-        node = f"candidate_supported:{candidate_id}"
-        proposal_nodes[candidate_id] = node
-        atms.justify(tuple(required), node)
-
+        atms.justify(tuple(proposal["assumption_ids"]),
+                     proposal_nodes[proposal["candidate_id"]])
     for nogood in nogoods:
-        if not nogood or not set(nogood) <= known:
-            raise CandidateSelectionError("each nogood must cite known assumption ids")
         atms.add_nogood(frozenset(nogood))
 
-    base_assumptions = {item["id"]: item for item in base_candidate.get("assumptions", [])}
     selected = []
     rejected = []
     for proposal in proposals:
@@ -79,16 +127,7 @@ def select_candidates(
             "node": node,
             "minimal_supporting_environments": labels,
         }
-        for assumption_id, value in proposal.get("parameter_values", {}).items():
-            if assumption_id not in base_assumptions:
-                raise CandidateSelectionError(
-                    f"{candidate_id} overrides unknown candidate assumption {assumption_id}"
-                )
-            if (not isinstance(value, (int, float)) or isinstance(value, bool)
-                    or not math.isfinite(value) or value < 0):
-                raise CandidateSelectionError(
-                    f"{candidate_id} parameter override must be finite and non-negative"
-                )
+        for assumption_id, value in parameter_values[candidate_id].items():
             next(item for item in candidate["assumptions"] if item["id"] == assumption_id)["value"] = value
         selected.append({"candidate": candidate, "atms_node": node,
                          "minimal_supporting_environments": labels})

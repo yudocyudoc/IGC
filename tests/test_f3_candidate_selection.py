@@ -45,6 +45,13 @@ class F3CandidateSelectionTests(unittest.TestCase):
             ["candidate-baseline-orders-001", "candidate-promotion-orders-001"],
         )
 
+    def test_invalid_parameter_is_rejected_even_if_nogood_would_prune_candidate(self):
+        proposal = dict(self.proposal_set["proposals"][0],
+                        parameter_values={"assumption-arrival-rate-001": -1})
+        with self.assertRaises(CandidateSelectionError):
+            select_candidates(self.base, [proposal], self.proposal_set["assumptions"],
+                              self.proposal_set["nogoods"])
+
     def test_unknown_assumption_reference_fails_closed(self):
         proposals = [dict(self.proposal_set["proposals"][0], assumption_ids=["unregistered"])]
         with self.assertRaises(CandidateSelectionError):
