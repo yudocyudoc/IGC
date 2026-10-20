@@ -1,6 +1,6 @@
 # FM-B3 — evaluación dinámica de alternativas moleculares
 
-**Estado:** `B3_MOLECULAR_DYNAMICS_PASS_SYNTHETIC`, GitHub Actions run #6, HEAD `ac3b73060ee3b84d10366b62fae4b34d5f968c43`.
+**Estado:** `B3_MOLECULAR_DYNAMICS_PASS_SYNTHETIC`, GitHub Actions run #14; correcciones de auditoría independientes verificadas.
 
 ## Pregunta
 
@@ -26,9 +26,11 @@ B3 informa diferencias de trayectoria y métricas de coherencia por candidato. S
 
 ## Evidencia reproducible
 
-GitHub Actions fija el runtime de OpenModelica y recupera revisiones inmutables de SystemDynamics y MSL. El artefacto registra hashes de plan, catálogo, composición, soportes, selección, evaluador, modelos, guion de ejecución y CSV. El verificador vuelve a calcular los soportes ATMS y revisa que el guion simule exactamente las alternativas admitidas. [Actions run #6 y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39491760603).
+GitHub Actions fija el runtime de OpenModelica y recupera revisiones inmutables de SystemDynamics y MSL. El artefacto registra hashes de plan, catálogo, composición, soportes, selección, evaluador, modelos, guion de ejecución y CSV. El verificador vuelve a calcular los soportes ATMS y revisa que el guion simule exactamente las alternativas admitidas. [Actions run #14 y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39495902441).
 
-La corrida aceptó CS-01 y CS-02 y no simuló CS-03. Cada candidato tuvo 102 muestras y 30 unidades de input acumulado al final de 10 horas. Las entregas finales fueron 19.098606 para CS-01 y 17.098766 para CS-02; el máximo error global fue menor que `4e-14`, y los errores por cola fueron menores que `3e-14`. La diferencia máxima entre las series de entrega fue 1.999840. Estos valores son resultados del escenario sintético, no estimaciones empíricas.
+La corrida aceptó CS-01 y CS-02 y no simuló CS-03. Cada candidato tuvo 102 muestras y 30 unidades de input acumulado al final de 10 horas. Las entregas finales fueron 19.098606 para CS-01 y 17.098766 para CS-02; el máximo residuo global reconstruido independientemente fue `2.14e-14` y los de cola también quedaron por debajo de `3e-14`. La diferencia máxima entre las series de entrega fue 1.999840. Hubo un timestamp repetido en `t=10`, entre las filas 100 y 101. Estos valores son resultados del escenario sintético, no estimaciones empíricas.
+
+Las pruebas negativas modifican en CSV solo `acceptedTotal` o las entradas acumuladas de una cola y conservan los campos de error Modelica; Python rechaza ambos archivos usando los balances reconstruidos. La prueba de comparación también conserva alternativas estructuralmente distintas cuando sus salidas son indistinguibles y las reporta como `NON_DISCRIMINATING`, con una perturbación sugerida.
 
 ## Límites
 
