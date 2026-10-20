@@ -21,7 +21,7 @@ La instrucción del investigador «implementa, armonizando la tensión» autoriz
 
 ### Estado de licencia y procedencia
 
-En los árboles revisados de #32–#40 no aparece un archivo raíz `LICENSE` o `COPYING`; `short/FOUNDATION.md` identifica los paquetes de moléculas como fuentes migradas literalmente, pero no adjudica una licencia a esos wrappers. Los metadatos del repositorio no sustituyen una licencia aplicable al archivo. Se registra `NOASSERTION / NOT_CLEARED`; por ello FM-A **no copia ni importa** esos archivos en IGC. La admisión de cualquier pieza requiere resolver licencia y procedencia por archivo, además de compatibilidad y CI de IGC. Las dependencias SystemDynamics/MSL conservan sus propias revisiones separadas.
+En los árboles revisados de #32–#40 no aparece un archivo raíz `LICENSE` o `COPYING`. `short/FOUNDATION.md` atribuye los wrappers `IGCMolecules.mo` e `IGCInformationMolecules.mo` a migraciones literales desde los PR #25 y #29 del mismo proyecto; el historial identifica commits bajo la cuenta del investigador. Esto respalda una hipótesis de autoría/procedencia del proyecto, pero por sí solo **no acredita titularidad ni autorización jurídica** sobre cada archivo. Se mantiene `NOASSERTION / NOT_CLEARED` hasta que el investigador confirme expresamente que controla los derechos de esos wrappers y autoriza su reutilización en IGC, o aporte otra base de permisos. No se copia ni importa código en FM-A. Las dependencias SystemDynamics/MSL y cualquier otro componente de terceros requieren revisión de licencia separada; la eventual declaración sobre wrappers no las cubre.
 
 ## 3. Interfaces y capacidades observadas
 
@@ -48,6 +48,7 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 ## 5. Decisiones de contrato aplicadas
 
 - `schema/source/igc.yaml` amplía LinkML de manera aditiva para contratos de catálogo, puertos, parámetros, instancias, conexiones, revisiones estructurales, candidatos, validación y ejecuciones.
+- Los campos `direction`, `signal_kind` y `connection_kind` usan vocabularios LinkML cerrados; el validador comprueba también identificadores únicos de candidatos y conexiones y conserva casos negativos para valores desconocidos y duplicados.
 - Los hashes de estructura y los valores de parámetros se representan por separado.
 - En las fixtures, `structural_hash` es SHA-256 de JSON canónico UTF-8 (`sort_keys=true`, separadores `(',', ':')`) sobre `catalog_snapshot`, instancias ordenadas por `id` con sólo `id`/`molecule_definition_id`, y conexiones ordenadas por `from_port`/`to_port`/`connection_kind`. `parameter_bindings` se excluye para que un cambio paramétrico no altere el hash topológico.
 - El estado de madurez/licencia se conserva como dato explícito; `source_ref` o clase Modelica por sí solos no significan admisión.
@@ -56,7 +57,7 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 
 ## 6. Evidencia que falta antes de declarar FM-A completo
 
-- Generación determinista del JSON Schema, validación positiva de los cuatro contratos y controles negativos de referencia, puerto, unidad y duplicación de flujo: completado en [Actions F1a #20](https://github.com/yudocyudoc/IGC/actions/runs/39443732945), HEAD `2f1b43e1d28163eb21c3ae1553c62bb7ee4696f4`.
+- Generación determinista del JSON Schema, validación positiva de los cuatro contratos y controles negativos: evidencia inicial en [Actions F1a #20](https://github.com/yudocyudoc/IGC/actions/runs/39443732945), HEAD `2f1b43e1d28163eb21c3ae1553c62bb7ee4696f4`. El vocabulario cerrado y los negativos nuevos requieren validación de Actions en el HEAD revisado antes de sustituir esa referencia.
 - Comparación S0 del filtro trivial frente al selector ATMS de PR #5: [Actions F1a #23](https://github.com/yudocyudoc/IGC/actions/runs/39444522863) dio la misma selección (`candidate-promotion-orders-001`) y registró `ATMS_VALUE_ADDED=NOT_DEMONSTRATED`, como corresponde a esta fixture.
 - Regresión del laboratorio: [Actions F0 #274](https://github.com/yudocyudoc/IGC/actions/runs/39444522778) pasó sobre el mismo HEAD `5cccaee39d0e08630b439f98a60c7c6bb0227fb7`.
 - Asegurar que no se importe código de `short` antes de una resolución de licencia.

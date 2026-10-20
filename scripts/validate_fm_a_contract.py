@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = ROOT / "data/synthetic/fm_a_structural_candidates.json"
 DEFAULT_PROPOSALS = ROOT / "data/synthetic/f3_candidate_proposals.json"
 DEFAULT_BASE_CANDIDATE = ROOT / "data/synthetic/system_model_candidate.json"
+PORT_DIRECTIONS = {"in", "out"}
+SIGNAL_KINDS = {"FLOW", "SIGNAL", "STATE"}
+CONNECTION_KINDS = {"MATERIAL_FLOW", "INFORMATION_SIGNAL", "CONTROL_SIGNAL"}
 
 
 class ContractError(ValueError):
@@ -51,6 +54,9 @@ def validate_references(document: dict[str, Any]) -> None:
         raise ContractError("DUPLICATE_MOLECULE", "molecule definition ids must be unique")
     if len(structures) != len(document["structures"]):
         raise ContractError("DUPLICATE_STRUCTURE", "structure revision ids must be unique")
+    candidate_ids = [item["id"] for item in document["candidates"]]
+    if len(set(candidate_ids)) != len(candidate_ids):
+        raise ContractError("DUPLICATE_CANDIDATE", "candidate ids must be unique")
 
     for candidate in document["candidates"]:
         if candidate["request_id"] != document["request"]["id"]:
@@ -71,10 +77,20 @@ def validate_references(document: dict[str, Any]) -> None:
             if len(ports) != len(definition["ports"]):
                 raise ContractError("DUPLICATE_PORT", definition["id"])
             ports_by_instance[instance_id] = ports
+            for port in definition["ports"]:
+                if port["direction"] not in PORT_DIRECTIONS:
+                    raise ContractError("UNKNOWN_DIRECTION", port["direction"])
+                if port["signal_kind"] not in SIGNAL_KINDS:
+                    raise ContractError("UNKNOWN_SIGNAL_KIND", port["signal_kind"])
 
         used_flow_outputs: set[str] = set()
         used_inputs: set[str] = set()
+        connection_ids = [item["id"] for item in structure["connections"]]
+        if len(set(connection_ids)) != len(connection_ids):
+            raise ContractError("DUPLICATE_CONNECTION", structure["id"])
         for connection in structure["connections"]:
+            if connection["connection_kind"] not in CONNECTION_KINDS:
+                raise ContractError("UNKNOWN_CONNECTION_KIND", connection["connection_kind"])
             try:
                 from_instance, from_name = connection["from_port"].rsplit(".", 1)
                 to_instance, to_name = connection["to_port"].rsplit(".", 1)
@@ -125,7 +141,16 @@ def validate_linkml_objects(document: dict[str, Any], schema_dir: Path) -> None:
                 raise ContractError("LINKML_SCHEMA_INVALID", f"{location}: {first.message}")
 
 
-def check_negative_cases(document: dict[str, Any]) -> None:
+def check_negative_cases(document: dict[str, Any], schema_dir: Path) -> None:
+    def expect_schema_rejection(invalid: dict[str, Any], label: str) -> None:
+        try:
+            validate_linkml_objects(invalid, schema_dir)
+        except ContractError as exc:
+            if exc.code != "LINKML_SCHEMA_INVALID":
+                raise
+        else:
+            raise ContractError("NEGATIVE_CASE_ACCEPTED", label)
+
     invalid = copy.deepcopy(document)
     invalid["structures"][0]["molecule_instances"][1]["molecule_definition_id"] = "urn:igc:molecule:missing"
     try:
@@ -135,6 +160,51 @@ def check_negative_cases(document: dict[str, Any]) -> None:
             raise
     else:
         raise ContractError("NEGATIVE_CASE_ACCEPTED", "unknown molecule reference")
+
+    for path, value, label in [
+        (("molecule_definitions", 0, "ports", 0, "direction"), "sideways", "unknown port direction"),
+        (("molecule_definitions", 0, "ports", 0, "signal_kind"), "UNKNOWN_SIGNAL", "unknown signal kind"),
+        (("structures", 0, "connections", 0, "connection_kind"), "UNKNOWN_LINK", "unknown connection kind"),
+    ]:
+        invalid = copy.deepcopy(document)
+        target: Any = invalid
+        for key in path[:-1]:
+            target = target[key]
+        target[path[-1]] = value
+        expect_schema_rejection(invalid, label)
+        try:
+            validate_references(invalid)
+        except ContractError as exc:
+            expected = {
+                "unknown port direction": "UNKNOWN_DIRECTION",
+                "unknown signal kind": "UNKNOWN_SIGNAL_KIND",
+                "unknown connection kind": "UNKNOWN_CONNECTION_KIND",
+            }[label]
+            if exc.code != expected:
+                raise
+        else:
+            raise ContractError("NEGATIVE_CASE_ACCEPTED", label)
+
+    invalid = copy.deepcopy(document)
+    invalid["candidates"].append(copy.deepcopy(invalid["candidates"][0]))
+    try:
+        validate_references(invalid)
+    except ContractError as exc:
+        if exc.code != "DUPLICATE_CANDIDATE":
+            raise
+    else:
+        raise ContractError("NEGATIVE_CASE_ACCEPTED", "duplicated candidate id")
+
+    invalid = copy.deepcopy(document)
+    connections = invalid["structures"][0]["connections"]
+    connections.append(copy.deepcopy(connections[0]))
+    try:
+        validate_references(invalid)
+    except ContractError as exc:
+        if exc.code != "DUPLICATE_CONNECTION":
+            raise
+    else:
+        raise ContractError("NEGATIVE_CASE_ACCEPTED", "duplicated connection id")
 
     invalid = copy.deepcopy(document)
     invalid["structures"][0]["connections"][0]["from_port"] = "source0.missing"
@@ -217,7 +287,7 @@ def main() -> int:
     validate_linkml_objects(document, args.schema_dir)
     validate_references(document)
     if args.check_negative_cases:
-        check_negative_cases(document)
+        check_negative_cases(document, args.schema_dir)
     baseline = compare_simple_filter_to_atms()
     if not baseline["same_selection"]:
         raise ContractError("S0_BASELINE_MISMATCH", json.dumps(baseline, sort_keys=True))

@@ -1,5 +1,5 @@
 {
-  "id": "https://w3id.org/igc/schema/0.1.1",
+  "id": "https://w3id.org/igc/schema/0.1.2",
   "name": "igc",
   "title": "IGC Core Knowledge and Ledger Schema",
   "description": "Additive F1a ledger and FM-A molecular contract. JSON is valid YAML; LinkML generates the checked-in JSON Schema from this source.",
@@ -114,6 +114,28 @@
       "slots": ["id", "candidate_id", "solver", "status", "input_hash", "output_hash", "artifact_refs"]
     }
   },
+  "enums": {
+    "PortDirection": {
+      "permissible_values": {
+        "in": {},
+        "out": {}
+      }
+    },
+    "SignalKind": {
+      "permissible_values": {
+        "FLOW": {},
+        "SIGNAL": {},
+        "STATE": {}
+      }
+    },
+    "ConnectionKind": {
+      "permissible_values": {
+        "MATERIAL_FLOW": {},
+        "INFORMATION_SIGNAL": {},
+        "CONTROL_SIGNAL": {}
+      }
+    }
+  },
   "slots": {
     "id": {
       "identifier": true,
@@ -210,8 +232,8 @@
     "parameters": {"range": "ParameterSpecification", "multivalued": true, "inlined": true, "inlined_as_list": true},
     "port_id": {"identifier": true, "range": "string", "required": true},
     "name": {"range": "string", "required": true},
-    "direction": {"range": "string", "required": true},
-    "signal_kind": {"range": "string", "required": true},
+    "direction": {"range": "PortDirection", "required": true},
+    "signal_kind": {"range": "SignalKind", "required": true},
     "semantic_type": {"range": "string", "required": true},
     "unit": {"range": "string", "required": true},
     "parameter_id": {"identifier": true, "range": "string", "required": true},
@@ -226,7 +248,7 @@
     "parameter_bindings": {"range": "ParameterBinding", "multivalued": true, "inlined": true, "inlined_as_list": true},
     "from_port": {"range": "string", "required": true},
     "to_port": {"range": "string", "required": true},
-    "connection_kind": {"range": "string", "required": true},
+    "connection_kind": {"range": "ConnectionKind", "required": true},
     "catalog_snapshot": {"range": "string", "required": true},
     "molecule_instances": {"range": "MoleculeInstance", "multivalued": true, "inlined": true, "inlined_as_list": true, "required": true},
     "connections": {"range": "StructureConnection", "multivalued": true, "inlined": true, "inlined_as_list": true},
