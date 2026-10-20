@@ -48,7 +48,7 @@ El estado de la plataforma no sustituye al estado de la integración vertical ni
 - **F0-VERTICAL:** Source/ClaimOccurrence → SystemModelCandidate → handoff Modelica → simulación trazable; permanece bloqueado hasta superar sus pruebas propias.
 - **H-IGC:** fidelidad/utilidad científica; `NOT_EVALUATED` mientras no exista protocolo experimental y evidencia adecuada.
 
-El criterio técnico de F0-VERTICAL para la spike es sintético y acotado: una instancia estructurada enlaza claim anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; una perturbación declarada cambia el resultado; unidades y referencias inválidas se rechazan. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
+El criterio técnico de F0-VERTICAL para la spike es sintético y acotado: una instancia estructurada enlaza claim anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; una perturbación declarada cambia el resultado; unidades y referencias inválidas se rechazan. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. En PR #3, Actions #235 pasó este gate sintético sobre `6f2bddf0c25d6e000d78fa42e2cbcde19c93849e`; el reporte global F0 sigue `BLOCKED` y H-IGC sigue `NOT_EVALUATED`. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
 
 ### 3.1 Secuencia propuesta de PRs F1–F9
 
