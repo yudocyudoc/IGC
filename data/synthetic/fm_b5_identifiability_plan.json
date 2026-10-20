@@ -15,7 +15,7 @@
   "synthetic_data_generation": {
     "truth_structure": "CS-02",
     "truth_parameters": {"maxThroughput": 1.8, "responseTime": 0.8},
-    "noise_standard_deviation": 0.04,
+    "noise_standard_deviation": 0.08,
     "calibration_noise_seed": 314159,
     "pulse_noise_seed": 271828
   },
@@ -23,7 +23,7 @@
     "input_amplitude": 0.8,
     "input_duration": 2.0,
     "stop_time": 8.0,
-    "observation_interval": 0.5
+    "observation_interval": 2.0
   },
   "held_out_discrimination": {
     "input_amplitude": 3.0,
