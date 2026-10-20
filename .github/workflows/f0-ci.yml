@@ -26,7 +26,6 @@ on:
       - requirements-f0.lock.txt
       - spike/**
       - data/synthetic/**
-      - docs/GATES_INTEGRACION.md
   workflow_dispatch:
 
 permissions:

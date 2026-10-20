@@ -9,7 +9,7 @@
 
 Convertir la especificación IGC v0.2 en entregas verificables, preservando todo el alcance F0–F9. Cada fase debe dejar artefactos reproducibles, declarar limitaciones y enlazar sus resultados con contratos y criterios de aceptación. La secuencia permite trabajo incremental; no elimina capacidades ni convierte una integración técnica en evidencia científica.
 
-La primera autorización de implementación se limita a **F0 y a una spike vertical sintética**, según el Apéndice A de la especificación. El resto de las fases se detalla aquí como hoja de ruta; iniciar trabajo que use recursos cloud reales, incorporar datos reales o publicar/mergear resultados requiere las decisiones y autorizaciones señaladas en la especificación.
+La autorización inicial cubrió F0 y una spike vertical sintética; el investigador amplió la autorización el 20 de octubre de 2026 para el corte sintético F1a del PR #2. El resto de las fases se detalla aquí como hoja de ruta. Los recursos cloud reales, datos reales, gasto y publicación siguen sujetos a las decisiones reservadas en la especificación.
 
 ## 2. Estado inicial verificado
 
@@ -48,7 +48,7 @@ El estado de la plataforma no sustituye al estado de la integración vertical ni
 - **F0-VERTICAL:** Source/ClaimOccurrence → SystemModelCandidate → handoff Modelica → simulación trazable; permanece bloqueado hasta superar sus pruebas propias.
 - **H-IGC:** fidelidad/utilidad científica; `NOT_EVALUATED` mientras no exista protocolo experimental y evidencia adecuada.
 
-El criterio técnico de F0-VERTICAL para la spike es sintético y acotado: una instancia estructurada enlaza claim anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; una perturbación declarada cambia el resultado; unidades y referencias inválidas se rechazan. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. En PR #3, Actions #238 pasó este gate sintético sobre `58e52902623971b0c46d2bfed91bd4fc1bad25d4`; el reporte global F0 sigue `BLOCKED` y H-IGC sigue `NOT_EVALUATED`. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
+El criterio técnico de F0-VERTICAL es sintético y acotado: una instancia tipada enlaza ClaimOccurrence anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; verifica cada muestra y tiempo de una perturbación; y rechaza unidades o referencias inválidas. El handoff no consume la salida semántica/ATMS: esa unión queda para F2/F3. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. La persistencia D1/R2 pertenece a F8 y queda OUT_OF_SCOPE en la aceptación F0. El cierre formal F0 sigue pendiente de revisión; H-IGC sigue NOT_EVALUATED. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
 
 ### 3.1 Secuencia propuesta de PRs F1–F9
 

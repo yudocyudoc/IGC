@@ -123,12 +123,149 @@ def render_model(candidate: dict[str, Any], model_name: str) -> str:
     )
 
 
-def _csv_final_stock(path: Path, stock_name: str) -> float:
+def _csv_trajectory(
+    path: Path,
+    *,
+    stock_name: str,
+    initial: float,
+    inflow: float,
+    outflow: float,
+    duration: float,
+) -> dict[str, float | int]:
     with path.open(newline="", encoding="utf-8") as stream:
-        rows = list(csv.DictReader(stream))
-    if not rows or stock_name not in rows[-1]:
-        raise HandoffError(f"simulation result is missing {stock_name}")
-    return float(rows[-1][stock_name])
+        reader = csv.DictReader(stream)
+        rows = list(reader)
+        fields = reader.fieldnames or []
+    if len(rows) < 2 or "time" not in fields or stock_name not in fields:
+        raise HandoffError(f"simulation result must contain time and {stock_name} samples")
+    times: list[float] = []
+    values: list[float] = []
+    for row in rows:
+        try:
+            time_value = float(row["time"])
+            stock_value = float(row[stock_name])
+        except (TypeError, ValueError) as exc:
+            raise HandoffError("simulation result contains a non-numeric sample") from exc
+        if not math.isfinite(time_value) or not math.isfinite(stock_value):
+            raise HandoffError("simulation result contains a non-finite sample")
+        expected = initial + (inflow - outflow) * time_value
+        if not math.isclose(stock_value, expected, rel_tol=1e-7, abs_tol=1e-7):
+            raise HandoffError(
+                f"simulation trajectory mismatch at time {time_value}: expected {expected}, got {stock_value}"
+            )
+        times.append(time_value)
+        values.append(stock_value)
+    if not math.isclose(times[0], 0.0, abs_tol=1e-9):
+        raise HandoffError("simulation trajectory must start at time zero")
+    if any(later <= earlier for earlier, later in zip(times, times[1:])):
+        raise HandoffError("simulation sample times must be strictly increasing")
+    if not math.isclose(times[-1], duration, rel_tol=1e-9, abs_tol=1e-9):
+        raise HandoffError("simulation trajectory does not end at the declared duration")
+    expected_final = initial + (inflow - outflow) * duration
+    return {"sample_count": len(rows), "final_stock": values[-1],
+            "expected_final_stock": expected_final}
+
+
+def _safe_file(root: Path, relative_path: str) -> Path:
+    candidate = Path(relative_path)
+    if candidate.is_absolute():
+        raise HandoffError("manifest paths must be relative")
+    root_resolved = root.resolve()
+    resolved = (root_resolved / candidate).resolve()
+    if resolved != root_resolved and root_resolved not in resolved.parents:
+        raise HandoffError("manifest path escapes the verification root")
+    if not resolved.is_file():
+        raise HandoffError(f"manifest file is missing: {relative_path}")
+    return resolved
+
+
+def _verify_hash(root: Path, reference: dict[str, Any], label: str) -> Path:
+    path = _safe_file(root, reference.get("path", ""))
+    digest = _sha256(path.read_bytes())
+    if digest != reference.get("sha256"):
+        raise HandoffError(f"{label} hash mismatch")
+    return path
+
+
+def verify_handoff(manifest_path: str | Path, *, root: str | Path = ROOT) -> dict[str, Any]:
+    """Independently verify manifest references, hashes and full simulation trajectories."""
+    root_path = Path(root).resolve()
+    manifest_file = Path(manifest_path)
+    if not manifest_file.is_absolute():
+        manifest_file = root_path / manifest_file
+    if root_path not in manifest_file.resolve().parents:
+        raise HandoffError("manifest path escapes the verification root")
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if manifest.get("schema") != "igc-candidate-handoff-evidence/0.1" or manifest.get("synthetic") is not True:
+        raise HandoffError("unsupported or non-synthetic handoff manifest")
+
+    source_path = _verify_hash(root_path, manifest["source"], "source")
+    claim_path = _verify_hash(root_path, manifest["claim"], "claim")
+    candidate_path = _verify_hash(root_path, manifest["candidate"], "candidate")
+    _verify_hash(root_path, manifest["generator"], "generator")
+    source_text = source_path.read_text(encoding="utf-8")
+    claim = json.loads(claim_path.read_text(encoding="utf-8"))
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    evidence = validate_candidate(candidate, claim, source_text)
+    if (manifest["source"].get("id") != evidence["source_id"]
+            or manifest["claim"].get("id") != evidence["source_claim_id"]
+            or manifest["candidate"].get("id") != candidate.get("candidate_id")
+            or manifest["claim"].get("entity_type") != "ClaimOccurrence"
+            or manifest["candidate"].get("entity_type") != "SystemModelCandidate"):
+        raise HandoffError("manifest entity references do not match verified inputs")
+
+    model_refs = manifest["generated_models"]
+    _verify_hash(root_path, model_refs["base"], "base Modelica")
+    _verify_hash(root_path, model_refs["perturbed"], "perturbed Modelica")
+    sim = manifest["simulation"]
+    duration = float(sim["duration_hours"])
+    if duration <= 0:
+        raise HandoffError("simulation duration must be positive")
+    assumption_by_id = {item["id"]: item for item in candidate["assumptions"]}
+    inflow_id = candidate["structure"]["inflow"]["assumption_id"]
+    outflow_id = candidate["structure"]["outflow"]["assumption_id"]
+    inflow = assumption_by_id[inflow_id]
+    outflow = assumption_by_id[outflow_id]
+    perturbation = model_refs["perturbed"]
+    if (perturbation.get("assumption_id") != inflow_id
+            or perturbation.get("parameter") != inflow["parameter"]
+            or not math.isclose(float(perturbation["before"]), float(inflow["value"]))
+            or not math.isclose(float(perturbation["after"]) - float(perturbation["before"]),
+                                float(perturbation["delta"]))):
+        raise HandoffError("manifest parameter perturbation does not match candidate assumptions")
+
+    base_result = sim["base_result"]
+    perturbed_result = sim["perturbed_result"]
+    base_csv = _verify_hash(root_path, base_result, "base CSV")
+    perturbed_csv = _verify_hash(root_path, perturbed_result, "perturbed CSV")
+    stock = candidate["structure"]["stock"]
+    base = _csv_trajectory(base_csv, stock_name=stock["name"], initial=float(stock["initial_value"]),
+                           inflow=float(inflow["value"]), outflow=float(outflow["value"]),
+                           duration=duration)
+    perturbed = _csv_trajectory(perturbed_csv, stock_name=stock["name"],
+                                initial=float(stock["initial_value"]),
+                                inflow=float(perturbation["after"]), outflow=float(outflow["value"]),
+                                duration=duration)
+    for label, result, actual in (
+        ("base", base_result, base),
+        ("perturbed", perturbed_result, perturbed),
+    ):
+        for key in ("final_stock", "expected_final_stock"):
+            if not math.isclose(float(result[key]), float(actual[key]), rel_tol=1e-7, abs_tol=1e-7):
+                raise HandoffError(f"{label} manifest {key} does not match verified CSV trajectory")
+        if result.get("sample_count") != actual["sample_count"]:
+            raise HandoffError(f"{label} manifest sample count does not match verified CSV trajectory")
+    if not math.isclose(float(perturbation["after"]), float(perturbation["before"]) + float(perturbation["delta"])):
+        raise HandoffError("manifest perturbation delta is inconsistent")
+    if math.isclose(float(base["final_stock"]), float(perturbed["final_stock"]), rel_tol=1e-7, abs_tol=1e-7):
+        raise HandoffError("verified perturbation did not change the simulation result")
+    return {
+        "status": "PASS",
+        "checks": ["source_claim_candidate_refs", "input_and_generator_hashes",
+                   "generated_model_hashes", "CSV_hashes", "every_time_series_sample"],
+        "sample_counts": {"base": base["sample_count"], "perturbed": perturbed["sample_count"]},
+        "final_stock": {"base": base["final_stock"], "perturbed": perturbed["final_stock"]},
+    }
 
 
 def _run_openmodelica(output_dir: Path, image: str | None) -> tuple[str, str]:
@@ -207,16 +344,23 @@ def run_candidate_handoff() -> dict[str, Any]:
         changed_model_path.write_text(changed_model, encoding="utf-8")
 
         base_csv, changed_csv = _run_openmodelica(output_dir, os.environ.get("IGC_OMC_DOCKER_IMAGE"))
-        stock_name = candidate["structure"]["stock"]["name"]
-        base_final = _csv_final_stock(Path(base_csv), stock_name)
-        changed_final = _csv_final_stock(Path(changed_csv), stock_name)
+        stock = candidate["structure"]["stock"]
         assumption_by_id = {item["id"]: item for item in candidate["assumptions"]}
-        expected_base = candidate["structure"]["stock"]["initial_value"] + (
-            assumption_by_id[candidate["structure"]["inflow"]["assumption_id"]]["value"]
-            - assumption_by_id[candidate["structure"]["outflow"]["assumption_id"]]["value"]
-        ) * DURATION_HOURS
-        if not math.isclose(base_final, expected_base, rel_tol=1e-7, abs_tol=1e-7):
-            raise HandoffError("base simulation output does not match the declared stock-flow equation")
+        inflow_id = candidate["structure"]["inflow"]["assumption_id"]
+        outflow_id = candidate["structure"]["outflow"]["assumption_id"]
+        inflow = assumption_by_id[inflow_id]
+        outflow = assumption_by_id[outflow_id]
+        delta = 1.0
+        before = float(inflow["value"])
+        after = before + delta
+        base = _csv_trajectory(Path(base_csv), stock_name=stock["name"],
+                               initial=float(stock["initial_value"]), inflow=before,
+                               outflow=float(outflow["value"]), duration=DURATION_HOURS)
+        changed_result = _csv_trajectory(Path(changed_csv), stock_name=stock["name"],
+                                         initial=float(stock["initial_value"]), inflow=after,
+                                         outflow=float(outflow["value"]), duration=DURATION_HOURS)
+        base_final = float(base["final_stock"])
+        changed_final = float(changed_result["final_stock"])
         if math.isclose(base_final, changed_final, rel_tol=1e-7, abs_tol=1e-7):
             raise HandoffError("parameter perturbation did not change the simulated result")
 
@@ -224,12 +368,16 @@ def run_candidate_handoff() -> dict[str, Any]:
             "schema": "igc-candidate-handoff-evidence/0.1",
             "status": "PASS_SYNTHETIC_INTEGRATION_ONLY",
             "synthetic": True,
-            "source": {"id": evidence["source_id"], "sha256": _sha256(source_bytes),
-                       "quote_start": evidence["quote_start"], "quote_end": evidence["quote_end"]},
-            "claim": {"id": evidence["source_claim_id"], "entity_type": claim["entity_type"],
-                      "sha256": _sha256(claim_bytes)},
-            "candidate": {"id": candidate["candidate_id"], "entity_type": candidate["entity_type"],
+            "source": {"path": str(SOURCE_PATH.relative_to(ROOT)), "id": evidence["source_id"],
+                       "sha256": _sha256(source_bytes), "quote_start": evidence["quote_start"],
+                       "quote_end": evidence["quote_end"]},
+            "claim": {"path": str(CLAIM_PATH.relative_to(ROOT)), "id": evidence["source_claim_id"],
+                      "entity_type": claim["entity_type"], "sha256": _sha256(claim_bytes)},
+            "candidate": {"path": str(CANDIDATE_PATH.relative_to(ROOT)),
+                          "id": candidate["candidate_id"], "entity_type": candidate["entity_type"],
                           "sha256": _sha256(candidate_bytes)},
+            "generator": {"path": str(Path(__file__).relative_to(ROOT)),
+                          "sha256": _sha256(Path(__file__).read_bytes())},
             "mechanism_hypothesis_id": candidate["mechanism_hypothesis"]["id"],
             "assumptions": [
                 {"id": item["id"], "parameter": item["parameter"], "value": item["value"],
@@ -241,8 +389,8 @@ def run_candidate_handoff() -> dict[str, Any]:
                 "base": {"path": str(base_model_path.relative_to(ROOT)),
                          "sha256": _sha256(base_model.encode("utf-8"))},
                 "perturbed": {"path": str(changed_model_path.relative_to(ROOT)),
-                              "parameter": parameter["parameter"], "before": before,
-                              "after": parameter["value"],
+                              "assumption_id": inflow_id, "parameter": parameter["parameter"],
+                              "before": before, "after": parameter["value"], "delta": delta,
                               "sha256": _sha256(changed_model.encode("utf-8"))},
             },
             "simulation": {
@@ -250,10 +398,10 @@ def run_candidate_handoff() -> dict[str, Any]:
                 "duration_hours": DURATION_HOURS,
                 "base_result": {"path": str(Path(base_csv).relative_to(ROOT)),
                                 "sha256": _sha256(Path(base_csv).read_bytes()),
-                                "final_stock": base_final},
+                                **base},
                 "perturbed_result": {"path": str(Path(changed_csv).relative_to(ROOT)),
                                      "sha256": _sha256(Path(changed_csv).read_bytes()),
-                                     "final_stock": changed_final},
+                                     **changed_result},
                 "output_changed": not math.isclose(base_final, changed_final,
                                                     rel_tol=1e-7, abs_tol=1e-7),
             },
@@ -262,7 +410,12 @@ def run_candidate_handoff() -> dict[str, Any]:
         manifest_path = output_dir / "handoff.json"
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
                                  encoding="utf-8")
+        verification = verify_handoff(manifest_path, root=ROOT)
+        verification_path = output_dir / "verification.json"
+        verification_path.write_text(json.dumps(verification, ensure_ascii=False, indent=2) + "\n",
+                                     encoding="utf-8")
         return {"stage": stage, "status": "PASS", "evidence": str(manifest_path.relative_to(ROOT)),
+                "verification": str(verification_path.relative_to(ROOT)),
                 "candidate_id": candidate["candidate_id"], "base_final_stock": base_final,
                 "perturbed_final_stock": changed_final}
     except Exception as exc:
@@ -274,3 +427,25 @@ def run_candidate_handoff() -> dict[str, Any]:
         return {"stage": stage, "status": "FAIL",
                 "reason": f"{type(exc).__name__}: {exc}",
                 "evidence": str((OUTPUT_DIR / "handoff-error.json").relative_to(ROOT))}
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(prog="f0-candidate-handoff")
+    commands = parser.add_subparsers(dest="command", required=True)
+    verify = commands.add_parser("verify-handoff", help="verify manifest hashes and simulation trajectories")
+    verify.add_argument("--manifest", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        result = verify_handoff(args.manifest)
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 0
+    except (HandoffError, OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
+        print(json.dumps({"status": "FAIL", "error": str(exc)}), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

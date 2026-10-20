@@ -1,23 +1,37 @@
 # Gates de integración IGC
 
-Este documento separa la salud del laboratorio de la integración del candidato y de la evaluación científica. Un workflow verde solo acredita las aserciones que ejecuta.
+Este documento separa la salud del laboratorio, el handoff sintético, el cierre de la fase y la evaluación científica. Un workflow verde acredita solo las aserciones que ejecuta.
 
-| Gate | Estado de partida | Evidencia requerida | Qué no demuestra |
+| Gate | Estado | Evidencia / criterio | Límite |
 |---|---|---|---|
-| **F0-ENG** — laboratorio y componentes | `PASS_PROVISIONAL` para las comprobaciones implementadas en Actions | Lock reproducible, pruebas y checks semánticos/OpenModelica publicados como artefactos | Cobertura integral T01–T30 o integración candidato→simulador |
-| **F0-VERTICAL** — conocimiento a simulación | `PASS_SYNTHETIC` en Actions #235; PR #3 sigue sujeto a revisión del diff | Claim anclado en fuente; candidato estructurado con mecanismo y supuestos; transformación reproducible a Modelica; compilación/simulación; manifiesto con hashes y procedencia; resultado sensible a un parámetro; rechazos negativos para unidad y referencias inválidas | Validez empírica, calibración, explicación causal o mejora de fidelidad |
-| **H-IGC** — utilidad/fidelidad científica | `NOT_EVALUATED` | Protocolo y gates de evaluación posteriores con evidencia independiente | No se aprueba con fixtures sintéticos ni con una compilación |
+| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #239 | No cubre T01–T30 integralmente |
+| F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #239: 21 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
+| Integración semántica/ATMS → modelador | NOT_YET_INTEGRATED | Los checks semánticos y la sonda ATMS corren en el mismo workflow | El generador no consume una conclusión CRMinf/PROV/SPARQL ni la selección de supuestos del ATMS |
+| F0 — cierre de fase | PENDING_FORMAL_REVIEW | Revisar PR #1 y PR #3, evidencias, inventario y límites declarados | La revisión de fase es independiente de H-IGC |
+| H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
+| Plataforma completa | INCOMPLETE | F1–F9 siguen su secuencia; la persistencia cloud está planificada en F8 | No es una dependencia para aceptar los gates técnicos de F0 |
 
-## Alcance de F0-VERTICAL
+## Alcance demostrado por F0-VERTICAL
 
-El corte actual de este gate es una instancia sintética ejecutable de SystemModelCandidate, separada del toy Modelica fijo existente. Actions #238 pasó sobre el commit `58e52902623971b0c46d2bfed91bd4fc1bad25d4`: 21 pruebas pasaron; las salidas finales fueron 20 y 30 orders al elevar llegadas de 3 a 4 orders/hour. El [artefacto F0](https://github.com/yudocyudoc/IGC/actions/runs/39355733952/artifacts/12235500998) conserva handoff.json, fuentes Modelica, logs y CSV. El workflow exige la carga de Modelica 4.0.0 y rechaza mensajes de error en `checkModel`. Su supuesto de promoción solo cambia un parámetro de llegadas inventado. El workflow debe generar dos modelos desde los datos del candidato, simular ambos con la misma versión fijada de OpenModelica y confirmar que la salida del stock cambia de acuerdo con la ecuación declarada.
+El recorrido implementado es:
+ClaimOccurrence anclado en fuente → SystemModelCandidate estructurado → hipótesis de mecanismo y supuestos sintéticos → generación de dos modelos Modelica → simulación → manifiesto con hashes → verificación independiente.
 
-Las pruebas negativas deben fallar antes de generar el modelo cuando falta una unidad compatible o una referencia a claim/supuesto no se resuelve. La evidencia enlaza el texto fuente, ClaimOccurrence, hipótesis, supuestos, Modelica generado, CSV de ambas simulaciones y hashes.
+El generador acepta deliberadamente solo la estructura single_stock y usa una ecuación stock-flow predeterminada. La etapa semántica y la sonda ATMS se ejecutan antes en el mismo workflow, pero no gobiernan ni alimentan la construcción del candidato. La integración de esa decisión corresponde a F2/F3; esta limitación no invalida el gate F0-VERTICAL acotado.
 
-## Lectura del estado global
+La perturbación cambia llegadas de 3 a 4 pedidos/hora. OpenModelica debe producir toda la trayectoria esperada desde el valor inicial hasta el resultado final: 20 y 30 pedidos, respectivamente, tras 10 horas. Se verifica cada muestra y su tiempo, no solo el último valor. Los negativos rechazan unidades/parámetros/referencias inválidas.
 
-El reporte global F0 permanece `BLOCKED` mientras queden etapas F0 obligatorias como persistencia cloud sin ejecutar. Esto no cambia el estado de H-IGC. El estado de cada gate se comunica por separado; la ejecución sintética no aprueba datos, hipótesis ni mecanismos del mundo real.
+## Integridad del handoff
 
-## Criterio de salida del PR de handoff
+La operación verify-handoff relee el manifiesto y verifica las rutas y hashes de fuente, claim, candidato, generador, ambos modelos y ambos CSV. También valida las referencias de entidad y vuelve a calcular toda la trayectoria de cada CSV contra los parámetros y duración declarados.
 
-El gate técnico sintético tiene estado `PASS_SYNTHETIC` por Actions #238 y sus negativos confirmados en 20 pruebas. El PR #3 sigue en borrador para revisión del diff/artefacto; este estado no promueve F0 ni aprueba H-IGC. La matriz T01–T30 conserva 0 PASS integral hasta que cada criterio tenga su propia prueba de requisito.
+La suite modifica un archivo Modelica y una muestra interior del CSV; el verificador debe detectar ambos cambios, incluso si el hash del manifiesto se actualiza para la muestra alterada. Actions guarda handoff.json, verification.json, fuentes Modelica, logs y CSV en el artefacto F0.
+
+## F0 y la integración cloud de F8
+
+D1/R2 son integración cloud planificada en F8, no requisito de aceptación de F0. La corrida F0 marca esa etapa OUT_OF_SCOPE; si los gates técnicos requeridos pasan, el resultado de la spike es PASS_WITH_LIMITATIONS y la plataforma queda INCOMPLETE. F0 aún requiere revisión formal de fase; no se declara completa solo por Actions verde.
+
+El artefacto verificado en Actions #239 corresponde al commit 66953076bed8d9767f81ef3cd48c81fbc2310373. Actions #235 y #238 son corridas históricas anteriores; la referencia vigente debe actualizarse al cerrar las mejoras de este PR.
+
+## Criterio para el cierre de fase
+
+F0 puede proponerse para cierre técnico con F0-ENG PASS_PROVISIONAL y F0-VERTICAL PASS_SYNTHETIC, inventario y límites documentados y revisión del investigador. Esto no promueve a main ni evalúa H-IGC. No se requiere configurar servicios cloud reales; estos pertenecen a F8.
