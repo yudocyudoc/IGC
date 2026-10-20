@@ -4,15 +4,20 @@ on:
   pull_request:
     branches:
       - main
+      - f3-atms-candidate-selection
     paths:
       - .github/workflows/f3-atms-handoff.yml
       - scripts/f0_atms_probe.py
       - scripts/f0_candidate_handoff.py
       - scripts/f3_candidate_selection.py
       - scripts/f3_candidate_handoff.py
+      - scripts/f2_f3_semantic_bridge.py
+      - scripts/f0_spike.py
+      - requirements-f0.lock.txt
       - data/synthetic/system_model_candidate.json
       - data/synthetic/f3_candidate_proposals.json
       - tests/test_f3_candidate_selection.py
+      - tests/test_f2_f3_semantic_bridge.py
   workflow_dispatch:
 
 permissions:
@@ -33,10 +38,16 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13.16"
-      - name: Run ATMS selection contract tests
-        run: python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
-      - name: Run selected candidate through OpenModelica
-        run: python scripts/f3_candidate_handoff.py
+      - name: Install the locked F0 semantic dependencies
+        run: |
+          python -m venv /tmp/igc-f3-venv
+          /tmp/igc-f3-venv/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f0.lock.txt
+      - name: Run semantic bridge and ATMS contract tests
+        run: |
+          /tmp/igc-f3-venv/bin/python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
+          /tmp/igc-f3-venv/bin/python -m unittest discover -s tests -p 'test_f2_f3_semantic_bridge.py' -v
+      - name: Run RDF to ATMS selected candidate through OpenModelica
+        run: /tmp/igc-f3-venv/bin/python scripts/f3_candidate_handoff.py
       - name: Make Docker evidence readable by artifact uploader
         if: always()
         run: |

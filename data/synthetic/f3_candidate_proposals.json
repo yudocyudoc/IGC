@@ -1,5 +1,6 @@
 {
   "schema": "igc-atms-candidate-proposals/0.1",
+  "claim_id": "claim-synthetic-001",
   "synthetic": true,
   "assumptions": [
     "mechanism-baseline",
@@ -12,6 +13,7 @@
   ],
   "proposals": [
     {
+      "claim_id": "claim-synthetic-001",
       "candidate_id": "candidate-baseline-orders-001",
       "mechanism_hypothesis_id": "mechanism-baseline-orders-001",
       "mechanism_statement": "Synthetic baseline arrival mechanism.",
@@ -21,6 +23,7 @@
       }
     },
     {
+      "claim_id": "claim-synthetic-001",
       "candidate_id": "candidate-promotion-orders-001",
       "mechanism_hypothesis_id": "mechanism-promotion-orders-001",
       "mechanism_statement": "Synthetic promotion variant with a higher arrival rate.",
