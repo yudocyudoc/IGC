@@ -101,6 +101,13 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual([(x.revision, x.payload["modality"]) for x in after], [(2, "asserted")])
         self.assertEqual(correction.supersedes_revision, original.revision)
 
+    def test_recorded_at_cannot_move_backwards_across_entity_revisions(self):
+        first = self.record(recorded_at=T2)
+        with self.assertRaisesRegex(LedgerError, "recorded_at cannot precede"):
+            self.record(idempotency_key="cmd-2", recorded_at=T1)
+        snapshot = self.ledger.snapshot(case_id="urn:igc:case:c1", as_known_at=T3)
+        self.assertEqual([(item.revision, item.event_id) for item in snapshot],
+                         [(first.revision, first.event_id)])
     def test_valid_time_filter_is_independent_of_system_cut(self):
         self.record(valid_from=T0, valid_to=T2)
         during = self.ledger.snapshot(
