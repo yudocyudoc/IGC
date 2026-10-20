@@ -1,6 +1,6 @@
 # FM-B5 — identificabilidad con parámetros inciertos
 
-**Estado:** experimento sintético pequeño; pendiente de evidencia de Actions y revisión científica.
+**Estado:** `B5_PARAMETER_IDENTIFIABILITY_EVALUATED_SYNTHETIC`; PR #14 en borrador, pendiente de revisión científica.
 
 ## Pregunta
 
@@ -10,7 +10,7 @@
 
 El plan declara los rangos de ajuste: `maxThroughput` entre 1.2 y 2.4 unidades/h, en pasos de 0.2; `responseTime` entre 0.4 y 1.6 h, en pasos de 0.1. Son rangos didácticos de este escenario, no límites inferidos de un sistema ni recomendaciones para un caso real.
 
-La calibración observa una entrada baja de 0.8 unidades/h durante 2 h y una ventana total de 8 h. El evaluador genera observaciones sintéticas con ruido gaussiano de desviación estándar 0.04 y ajusta **cada estructura por separado**, usando una búsqueda sobre la misma rejilla de parámetros. El límite de capacidad no se alcanza con esa entrada, de modo que su incertidumbre debe permanecer explícita.
+La calibración observa una entrada baja de 0.8 unidades/h durante 2 h y una ventana total de 8 h, con observaciones cada 2 h. El evaluador genera datos sintéticos con ruido gaussiano de desviación estándar 0.08 y ajusta **cada estructura por separado**, usando una búsqueda sobre la misma rejilla de parámetros. El límite de capacidad no se alcanza con esa entrada, de modo que su incertidumbre debe permanecer explícita.
 
 Después del ajuste se reserva un segundo conjunto, con una semilla de ruido distinta: entrada de 3 unidades/h durante 2 h y seguimiento de la recuperación hasta 16 h. Ese conjunto no participa en el ajuste, la selección de parámetros ni la construcción de los intervalos predictivos. Se compara contra las predicciones de los puntos de rejilla compatibles con el ajuste dentro de `Δχ² = 5.991` (aproximación de perfil de verosimilitud al 95% para dos parámetros, con ruido conocido y rejilla discreta).
 
@@ -33,8 +33,8 @@ La evidencia responderá una pregunta más acotada que «¿qué estructura es ve
 
 ## Resultado de la corrida sintética
 
-GitHub Actions [run #4](https://github.com/yudocyudoc/IGC/actions/runs/39512219936) pasó las tres pruebas de B5 y ejecutó el ajuste/evaluación. Con la semilla declarada, la calibración favoreció CS-02 (RMSE 0.04345 frente a 0.08044 para CS-01). En ambos modelos la rejilla compatible dejó `maxThroughput` sin identificar dentro del rango completo [1.2, 2.4]; `responseTime` quedó en 0.8 h para CS-02 y en 1.6 h para CS-01.
+GitHub Actions [run #10](https://github.com/yudocyudoc/IGC/actions/runs/39512750432) pasó las tres pruebas y ejecutó el ajuste y la evaluación reservada. La calibración favoreció CS-02 (RMSE 0.02259 frente a 0.06743 para CS-01). Aun así, el conjunto compatible dejó `maxThroughput` sin identificar en el rango completo [1.2, 2.4] para ambas estructuras; `responseTime` quedó entre 1.2–1.6 h para CS-01 y 0.6–0.9 h para CS-02.
 
-En el pulso reservado, la media predictiva sobre los conjuntos de parámetros compatibles tuvo RMSE 0.08056 para CS-02 y 0.21464 para CS-01. Las envolventes se separaron por más de dos desviaciones de ruido en t=0.5, 1.0 y 1.5 h; la regla declarada produjo `DISTINGUISHED_ON_HELD_OUT_PULSE`, y CS-02 tuvo el menor error reservado. La evaluación de solo el punto de mejor ajuste dio un resultado peor para CS-02 debido a que el desempate escogió el throughput mínimo en una meseta no identificada. Por eso se reporta también el conjunto compatible y su media no ponderada, sin presentarla como posterior estadístico.
+Para el pulso reservado, el RMSE de la media predictiva fue 0.26187 para CS-01 y 0.09392 para CS-02. El log factor de Bayes predictivo CS-02/CS-01 fue 65.714, frente al umbral predeclarado ln(10) ≈ 2.303, por lo que el resultado fue `DISTINGUISHED_ON_HELD_OUT_PULSE`. CS-02 también recibió mayor densidad predictiva en los datos reservados. Las envolventes predictivas marginales de los dos modelos se solaparon en las 33 observaciones: la separación aparece al considerar la verosimilitud conjunta de toda la trayectoria, no al exigir que los rangos en un instante aislado sean disjuntos.
 
-Este resultado muestra identificabilidad condicional dentro de un gemelo sintético con verdad CS-02 conocida por construcción. No es un descubrimiento sobre un sistema externo, y la calibración ya favorecía CS-02 antes de evaluar el pulso. El valor del pulso aquí es comprobar la predicción fuera de la condición de baja entrada y exponer la incertidumbre de capacidad que la calibración no resolvió.
+La conclusión es condicional a este gemelo sintético, a la prior uniforme de rejilla, al ruido conocido y a estas dos estructuras. La verdad generadora es CS-02 por construcción; no es conocimiento descubierto sobre un sistema externo. La calibración ya favorecía CS-02, mientras que el pulso reservado confirma su capacidad predictiva fuera de la entrada baja, aunque `maxThroughput` permanece incierto.
