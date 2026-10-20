@@ -82,6 +82,32 @@
             "title": "Assumption",
             "type": "object"
         },
+        "CandidateRelation": {
+            "additionalProperties": false,
+            "description": "Explicit relation between candidates; it does not select a winner.",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "relation_type": {
+                    "type": "string"
+                },
+                "source_candidate_id": {
+                    "type": "string"
+                },
+                "target_candidate_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "source_candidate_id",
+                "target_candidate_id",
+                "relation_type"
+            ],
+            "title": "CandidateRelation",
+            "type": "object"
+        },
         "ClaimOccurrence": {
             "additionalProperties": false,
             "description": "A source-grounded occurrence of a claim; it does not assert truth of proposition content.",
@@ -163,6 +189,56 @@
             ],
             "title": "ClaimOccurrence",
             "type": "object"
+        },
+        "ConceptualModelRequest": {
+            "additionalProperties": false,
+            "description": "Structured model-building request; it does not assert an empirically true mechanism.",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "origin_refs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "unresolved": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "description",
+                "entity_type"
+            ],
+            "title": "ConceptualModelRequest",
+            "type": "object"
+        },
+        "ConnectionKind": {
+            "description": "",
+            "enum": [
+                "MATERIAL_FLOW",
+                "INFORMATION_SIGNAL",
+                "CONTROL_SIGNAL"
+            ],
+            "title": "ConnectionKind",
+            "type": "string"
         },
         "EntityRevision": {
             "additionalProperties": false,
@@ -302,6 +378,133 @@
             "title": "KnowledgeEvent",
             "type": "object"
         },
+        "MoleculeDefinition": {
+            "additionalProperties": false,
+            "description": "Versioned molecular contract; source presence does not imply runtime admission.",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "license_status": {
+                    "type": "string"
+                },
+                "maturity": {
+                    "type": "string"
+                },
+                "modelica_class": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "parameters": {
+                    "items": {
+                        "$ref": "#/$defs/ParameterSpecification"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "ports": {
+                    "items": {
+                        "$ref": "#/$defs/MoleculePort"
+                    },
+                    "type": "array"
+                },
+                "source_commit": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "source_ref": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "source_sha256": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "version": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "version",
+                "maturity",
+                "license_status",
+                "ports"
+            ],
+            "title": "MoleculeDefinition",
+            "type": "object"
+        },
+        "MoleculeInstance": {
+            "additionalProperties": false,
+            "description": "One version-pinned instance of an admitted or explicitly partial molecule.",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "molecule_definition_id": {
+                    "type": "string"
+                },
+                "parameter_bindings": {
+                    "items": {
+                        "$ref": "#/$defs/ParameterBinding"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "molecule_definition_id"
+            ],
+            "title": "MoleculeInstance",
+            "type": "object"
+        },
+        "MoleculePort": {
+            "additionalProperties": false,
+            "description": "Typed and directed interface port for a molecular definition.",
+            "properties": {
+                "direction": {
+                    "$ref": "#/$defs/PortDirection"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port_id": {
+                    "type": "string"
+                },
+                "semantic_type": {
+                    "type": "string"
+                },
+                "signal_kind": {
+                    "$ref": "#/$defs/SignalKind"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "port_id",
+                "name",
+                "direction",
+                "signal_kind",
+                "semantic_type",
+                "unit"
+            ],
+            "title": "MoleculePort",
+            "type": "object"
+        },
         "Observation": {
             "additionalProperties": false,
             "description": "An observation record with separate valid time and recorded time.",
@@ -384,6 +587,73 @@
             "title": "Observation",
             "type": "object"
         },
+        "ParameterBinding": {
+            "additionalProperties": false,
+            "description": "A parameter value with unit and optional supporting assumption reference.",
+            "properties": {
+                "assumption_ref": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "parameter_id": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "parameter_id",
+                "value",
+                "unit"
+            ],
+            "title": "ParameterBinding",
+            "type": "object"
+        },
+        "ParameterSpecification": {
+            "additionalProperties": false,
+            "description": "Declared numeric bounds and unit for a molecule parameter.",
+            "properties": {
+                "maximum": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "minimum": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "parameter_id": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "parameter_id",
+                "unit"
+            ],
+            "title": "ParameterSpecification",
+            "type": "object"
+        },
+        "PortDirection": {
+            "description": "",
+            "enum": [
+                "in",
+                "out"
+            ],
+            "title": "PortDirection",
+            "type": "string"
+        },
         "Proposition": {
             "additionalProperties": false,
             "description": "Normalized propositional content, kept distinct from its source occurrence.",
@@ -465,9 +735,207 @@
             ],
             "title": "Proposition",
             "type": "object"
+        },
+        "SignalKind": {
+            "description": "",
+            "enum": [
+                "FLOW",
+                "SIGNAL",
+                "STATE"
+            ],
+            "title": "SignalKind",
+            "type": "string"
+        },
+        "SimulationRun": {
+            "additionalProperties": false,
+            "description": "Reproducible simulation record bound to one candidate revision and its artifacts.",
+            "properties": {
+                "artifact_refs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "candidate_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_hash": {
+                    "type": "string"
+                },
+                "output_hash": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "solver": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "candidate_id",
+                "solver",
+                "status",
+                "input_hash"
+            ],
+            "title": "SimulationRun",
+            "type": "object"
+        },
+        "StructuralValidation": {
+            "additionalProperties": false,
+            "description": "Versioned structural-linter result, distinct from empirical support.",
+            "properties": {
+                "candidate_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "issues": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "status": {
+                    "type": "string"
+                },
+                "validator_version": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "candidate_id",
+                "status",
+                "validator_version"
+            ],
+            "title": "StructuralValidation",
+            "type": "object"
+        },
+        "StructureConnection": {
+            "additionalProperties": false,
+            "description": "Directed connection between two declared molecule ports.",
+            "properties": {
+                "connection_kind": {
+                    "$ref": "#/$defs/ConnectionKind"
+                },
+                "from_port": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "to_port": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "from_port",
+                "to_port",
+                "connection_kind"
+            ],
+            "title": "StructureConnection",
+            "type": "object"
+        },
+        "SystemModelCandidate": {
+            "additionalProperties": false,
+            "description": "A candidate model retaining its request, structure, assumptions and provenance.",
+            "properties": {
+                "assumption_refs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "origin_refs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "structure_revision_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "request_id",
+                "structure_revision_id",
+                "status"
+            ],
+            "title": "SystemModelCandidate",
+            "type": "object"
+        },
+        "SystemStructureRevision": {
+            "additionalProperties": false,
+            "description": "Immutable topology revision, separately hashed from parameter values.",
+            "properties": {
+                "catalog_snapshot": {
+                    "type": "string"
+                },
+                "connections": {
+                    "items": {
+                        "$ref": "#/$defs/StructureConnection"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "molecule_instances": {
+                    "items": {
+                        "$ref": "#/$defs/MoleculeInstance"
+                    },
+                    "type": "array"
+                },
+                "structural_hash": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "catalog_snapshot",
+                "molecule_instances",
+                "structural_hash"
+            ],
+            "title": "SystemStructureRevision",
+            "type": "object"
         }
     },
-    "$id": "https://w3id.org/igc/schema/0.1.0",
+    "$id": "https://w3id.org/igc/schema/0.1.2",
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "additionalProperties": true,
     "metamodel_version": "1.12.0",

@@ -1,8 +1,8 @@
 {
-  "id": "https://w3id.org/igc/schema/0.1.0",
+  "id": "https://w3id.org/igc/schema/0.1.2",
   "name": "igc",
   "title": "IGC Core Knowledge and Ledger Schema",
-  "description": "Initial F1a schema contract for append-only entity revisions and bitemporal queries. JSON is valid YAML; LinkML generates the checked-in JSON Schema from this source.",
+  "description": "Additive F1a ledger and FM-A molecular contract. JSON is valid YAML; LinkML generates the checked-in JSON Schema from this source.",
   "prefixes": {
     "igc": "https://w3id.org/igc/",
     "linkml": "https://w3id.org/linkml/",
@@ -64,6 +64,76 @@
         "payload_hash",
         "payload"
       ]
+    },
+    "MoleculeDefinition": {
+      "description": "Versioned molecular contract; source presence does not imply runtime admission.",
+      "slots": ["id", "version", "maturity", "modelica_class", "source_ref", "source_commit", "source_sha256", "license_status", "ports", "parameters"]
+    },
+    "MoleculePort": {
+      "description": "Typed and directed interface port for a molecular definition.",
+      "slots": ["port_id", "name", "direction", "signal_kind", "semantic_type", "unit"]
+    },
+    "ParameterSpecification": {
+      "description": "Declared numeric bounds and unit for a molecule parameter.",
+      "slots": ["parameter_id", "unit", "minimum", "maximum"]
+    },
+    "ConceptualModelRequest": {
+      "description": "Structured model-building request; it does not assert an empirically true mechanism.",
+      "slots": ["id", "description", "entity_type", "origin_refs", "unresolved"]
+    },
+    "ParameterBinding": {
+      "description": "A parameter value with unit and optional supporting assumption reference.",
+      "slots": ["parameter_id", "value", "unit", "assumption_ref"]
+    },
+    "MoleculeInstance": {
+      "description": "One version-pinned instance of an admitted or explicitly partial molecule.",
+      "slots": ["id", "molecule_definition_id", "parameter_bindings"]
+    },
+    "StructureConnection": {
+      "description": "Directed connection between two declared molecule ports.",
+      "slots": ["id", "from_port", "to_port", "connection_kind"]
+    },
+    "SystemStructureRevision": {
+      "description": "Immutable topology revision, separately hashed from parameter values.",
+      "slots": ["id", "catalog_snapshot", "molecule_instances", "connections", "structural_hash"]
+    },
+    "SystemModelCandidate": {
+      "description": "A candidate model retaining its request, structure, assumptions and provenance.",
+      "slots": ["id", "request_id", "structure_revision_id", "status", "assumption_refs", "origin_refs"]
+    },
+    "CandidateRelation": {
+      "description": "Explicit relation between candidates; it does not select a winner.",
+      "slots": ["id", "source_candidate_id", "target_candidate_id", "relation_type"]
+    },
+    "StructuralValidation": {
+      "description": "Versioned structural-linter result, distinct from empirical support.",
+      "slots": ["id", "candidate_id", "status", "validator_version", "issues"]
+    },
+    "SimulationRun": {
+      "description": "Reproducible simulation record bound to one candidate revision and its artifacts.",
+      "slots": ["id", "candidate_id", "solver", "status", "input_hash", "output_hash", "artifact_refs"]
+    }
+  },
+  "enums": {
+    "PortDirection": {
+      "permissible_values": {
+        "in": {},
+        "out": {}
+      }
+    },
+    "SignalKind": {
+      "permissible_values": {
+        "FLOW": {},
+        "SIGNAL": {},
+        "STATE": {}
+      }
+    },
+    "ConnectionKind": {
+      "permissible_values": {
+        "MATERIAL_FLOW": {},
+        "INFORMATION_SIGNAL": {},
+        "CONTROL_SIGNAL": {}
+      }
     }
   },
   "slots": {
@@ -150,6 +220,52 @@
     "payload_hash": {
       "range": "string",
       "required": true
-    }
+    },
+    "version": {"range": "string", "required": true},
+    "maturity": {"range": "string", "required": true},
+    "modelica_class": {"range": "string"},
+    "source_ref": {"range": "uriorcurie"},
+    "source_commit": {"range": "string"},
+    "source_sha256": {"range": "string"},
+    "license_status": {"range": "string", "required": true},
+    "ports": {"range": "MoleculePort", "multivalued": true, "inlined": true, "inlined_as_list": true, "required": true},
+    "parameters": {"range": "ParameterSpecification", "multivalued": true, "inlined": true, "inlined_as_list": true},
+    "port_id": {"identifier": true, "range": "string", "required": true},
+    "name": {"range": "string", "required": true},
+    "direction": {"range": "PortDirection", "required": true},
+    "signal_kind": {"range": "SignalKind", "required": true},
+    "semantic_type": {"range": "string", "required": true},
+    "unit": {"range": "string", "required": true},
+    "parameter_id": {"identifier": true, "range": "string", "required": true},
+    "minimum": {"range": "float"},
+    "maximum": {"range": "float"},
+    "description": {"range": "string", "required": true},
+    "origin_refs": {"range": "uriorcurie", "multivalued": true},
+    "unresolved": {"range": "string", "multivalued": true},
+    "value": {"range": "float", "required": true},
+    "assumption_ref": {"range": "uriorcurie"},
+    "molecule_definition_id": {"range": "uriorcurie", "required": true},
+    "parameter_bindings": {"range": "ParameterBinding", "multivalued": true, "inlined": true, "inlined_as_list": true},
+    "from_port": {"range": "string", "required": true},
+    "to_port": {"range": "string", "required": true},
+    "connection_kind": {"range": "ConnectionKind", "required": true},
+    "catalog_snapshot": {"range": "string", "required": true},
+    "molecule_instances": {"range": "MoleculeInstance", "multivalued": true, "inlined": true, "inlined_as_list": true, "required": true},
+    "connections": {"range": "StructureConnection", "multivalued": true, "inlined": true, "inlined_as_list": true},
+    "structural_hash": {"range": "string", "required": true},
+    "request_id": {"range": "uriorcurie", "required": true},
+    "structure_revision_id": {"range": "uriorcurie", "required": true},
+    "status": {"range": "string", "required": true},
+    "assumption_refs": {"range": "uriorcurie", "multivalued": true},
+    "source_candidate_id": {"range": "uriorcurie", "required": true},
+    "target_candidate_id": {"range": "uriorcurie", "required": true},
+    "relation_type": {"range": "string", "required": true},
+    "candidate_id": {"range": "uriorcurie", "required": true},
+    "validator_version": {"range": "string", "required": true},
+    "issues": {"range": "string", "multivalued": true},
+    "solver": {"range": "string", "required": true},
+    "input_hash": {"range": "string", "required": true},
+    "output_hash": {"range": "string"},
+    "artifact_refs": {"range": "uriorcurie", "multivalued": true}
   }
 }
