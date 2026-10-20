@@ -1,0 +1,41 @@
+{
+  "poc": "igc-short-wrapper-topology/0.1",
+  "synthetic": true,
+  "source_repository": "https://github.com/yudocyudoc/short",
+  "source_snapshot_commit": "eef3c38799f19d9526c8b81097ec0483d802dc15",
+  "files": [
+    {
+      "path": "IGCMolecules.mo",
+      "upstream_path": "src/modelica/IGCMolecules.mo",
+      "origin_pr": 25,
+      "source_blob": "2f83de72d38d0b8f5e866295b806d19067c5194d",
+      "sha256": "1c5f6e505944039604e4059fd487643efc649e91554b4fdf070f21d9a605697a",
+      "classes": ["AcceptedSource", "BoundedQueue", "DeliveryCounter"]
+    },
+    {
+      "path": "IGCInformationMolecules.mo",
+      "upstream_path": "src/modelica/IGCInformationMolecules.mo",
+      "origin_pr": 29,
+      "source_blob": "36d97a7e9de4d7ee80bf884beec6094a9bb1cf98",
+      "sha256": "05350e33c3f0c332f1e2570b95ca8e2ab49bfe66fcfc4853a69b1972530c4245",
+      "classes": ["FirstOrderReportFilter"]
+    }
+  ],
+  "dependencies": {
+    "SystemDynamics": {
+      "version": "2.1.2",
+      "commit": "b986a2ea354ab550d627a392f857ad7c9997d961"
+    },
+    "ModelicaStandardLibrary": {
+      "version": "4.0.0",
+      "commit": "6626538a236a34a390655b55d5e8c906bfe31772"
+    },
+    "OpenModelica": {
+      "version": "1.27.1",
+      "image": "openmodelica/openmodelica:v1.27.1-minimal",
+      "digest": "sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824"
+    }
+  },
+  "license_review": "DEFERRED_BY_RESEARCHER",
+  "runtime_admission": "POC_ONLY_NOT_ADMITTED"
+}

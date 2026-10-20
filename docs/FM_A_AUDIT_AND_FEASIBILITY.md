@@ -2,7 +2,7 @@
 
 **Estado:** evidencia de inspección para FM-A; no es admisión de biblioteca ni `PASS` de integración.
 **Base de IGC:** PR #6 HEAD `88b181cd85b5d96a3686acf695ec45cc05600a98`; rama `fm-a-molecular-contract`.
-**Auditoría de `short`:** referencias obtenidas el 2026-10-20; no se copió código de ese repositorio.
+**Auditoría de `short`:** referencias obtenidas el 2026-10-20. FM-A no copió código. La instrucción posterior del investigador autorizó una PoC separada con los dos wrappers existentes; sus copias exactas y digests están en `poc/short_wrappers/`.
 
 ## 1. Decisión de autorización
 
@@ -21,7 +21,7 @@ La instrucción del investigador «implementa, armonizando la tensión» autoriz
 
 ### Estado de licencia y procedencia
 
-En los árboles revisados de #32–#40 no aparece un archivo raíz `LICENSE` o `COPYING`. `short/FOUNDATION.md` atribuye los wrappers `IGCMolecules.mo` e `IGCInformationMolecules.mo` a migraciones literales desde los PR #25 y #29 del mismo proyecto; el historial identifica commits bajo la cuenta del investigador. Esto respalda una hipótesis de autoría/procedencia del proyecto, pero por sí solo **no acredita titularidad ni autorización jurídica** sobre cada archivo. Se mantiene `NOASSERTION / NOT_CLEARED` hasta que el investigador confirme expresamente que controla los derechos de esos wrappers y autoriza su reutilización en IGC, o aporte otra base de permisos. No se copia ni importa código en FM-A. Las dependencias SystemDynamics/MSL y cualquier otro componente de terceros requieren revisión de licencia separada; la eventual declaración sobre wrappers no las cubre.
+En los árboles revisados de #32–#40 no aparece un archivo raíz `LICENSE` o `COPYING`. `short/FOUNDATION.md` atribuye los wrappers `IGCMolecules.mo` e `IGCInformationMolecules.mo` a migraciones literales desde los PR #25 y #29 del mismo proyecto; el historial identifica commits bajo la cuenta del investigador. Esto respalda una hipótesis de autoría/procedencia del proyecto, pero por sí solo **no acredita titularidad ni autorización jurídica** sobre cada archivo. Por instrucción expresa posterior del investigador, esos dos archivos se copiaron byte por byte a `poc/short_wrappers/` para una PoC aislada; el manifiesto conserva fuente, blob y SHA-256. La revisión de licencias queda diferida y `NOASSERTION / NOT_CLEARED`; la copia no equivale a admisión general, garantía de derechos ni autorización para redistribuir componentes distintos. Las dependencias SystemDynamics/MSL y cualquier otro componente de terceros requieren revisión separada, al final como indicó el investigador.
 
 ## 3. Interfaces y capacidades observadas
 
