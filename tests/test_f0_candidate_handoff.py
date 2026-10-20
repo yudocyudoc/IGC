@@ -138,7 +138,7 @@ class CandidateHandoffTests(unittest.TestCase):
             manifest_path = self._write_verification_fixture(root)
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             csv_path = root / manifest["simulation"]["base_result"]["path"]
-            csv_path.write_text("time,orderStock\\n0,0\\n5,10\\n5,10\\n10,20\\n", encoding="utf-8")
+            csv_path.write_text("time,orderStock\n0,0\n5,10\n5,10\n10,20\n", encoding="utf-8")
             base_result = manifest["simulation"]["base_result"]
             base_result["sample_count"] = 4
             base_result["sha256"] = hashlib.sha256(csv_path.read_bytes()).hexdigest()
