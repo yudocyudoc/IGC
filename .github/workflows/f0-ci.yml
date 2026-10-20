@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - f0-inventario-spike
+      - f0-candidate-handoff
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -16,6 +17,7 @@ on:
   pull_request:
     branches:
       - main
+      - f0-inventario-spike
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -24,6 +26,7 @@ on:
       - requirements-f0.lock.txt
       - spike/**
       - data/synthetic/**
+      - docs/GATES_INTEGRACION.md
   workflow_dispatch:
 
 permissions:
@@ -164,7 +167,7 @@ jobs:
         continue-on-error: true
         run: /tmp/igc-f0-locked/bin/python scripts/f0_spike.py
 
-      - name: Require source, semantic, and OpenModelica stages to pass
+      - name: Require F0-ENG and synthetic F0-VERTICAL stages to pass
         if: always()
         run: |
           python - <<'PY'
@@ -181,6 +184,7 @@ jobs:
               "sparql_query": "PASS",
               "crminf_crmsci_mapping": "PASS",
               "atms_reasoning": "PASS",
+              "system_model_candidate_and_handoff": "PASS",
               "openmodelica_compile_and_simulate": "PASS",
           }
           failures = {

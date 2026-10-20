@@ -41,6 +41,15 @@ El desarrollo y las verificaciones se realizan en GitHub mediante commits al PR 
 La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin reemplazarlos: `Source → Web Annotation → CRMinf/PROV → SPARQL → ATMS → SystemModelCandidate → handoff → OpenModelica → artefacto/evento`. Si un componente no puede ejecutarse todavía, el resultado debe etiquetarse como stub y su gate permanecer pendiente.
 
 
+### 3.1 Gates independientes de integración
+
+El estado de la plataforma no sustituye al estado de la integración vertical ni a la evaluación científica. Se reportan por separado:
+- **F0-ENG:** laboratorio de Actions y componentes verificados; estado provisional según las aserciones efectivamente ejecutadas.
+- **F0-VERTICAL:** Source/ClaimOccurrence → SystemModelCandidate → handoff Modelica → simulación trazable; permanece bloqueado hasta superar sus pruebas propias.
+- **H-IGC:** fidelidad/utilidad científica; `NOT_EVALUATED` mientras no exista protocolo experimental y evidencia adecuada.
+
+El criterio técnico de F0-VERTICAL para la spike es sintético y acotado: una instancia estructurada enlaza claim anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; una perturbación declarada cambia el resultado; unidades y referencias inválidas se rechazan. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
+
 ### 3.1 Secuencia propuesta de PRs F1–F9
 
 La secuencia conserva todo el alcance y ejecuta validaciones e integraciones mediante GitHub Actions. Cada PR debe ser revisable por separado; una fase puede abrirse cuando sus contratos y artefactos de entrada estén versionados. Los recursos Cloudflare reales se ejercitan desde workflows únicamente después de configurar secretos, límites y autorización.

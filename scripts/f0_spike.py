@@ -13,8 +13,10 @@ from pathlib import Path
 
 if __package__:
     from .f0_atms_probe import run_atms_probe
+    from .f0_candidate_handoff import run_candidate_handoff
 else:
     from f0_atms_probe import run_atms_probe
+    from f0_candidate_handoff import run_candidate_handoff
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATH = ROOT / "data" / "synthetic" / "source.txt"
@@ -323,9 +325,7 @@ def main() -> int:
 
     stages.extend([
         run_atms_probe(),
-        {"stage": "system_model_candidate_and_handoff", "status": "STUB",
-         "reason": "candidate is a labeled contract stub; no candidate is promoted",
-         "stub_artifact": str(CANDIDATE_PATH.relative_to(ROOT))},
+        run_candidate_handoff(),
         run_openmodelica(),
         {"stage": "cloudflare_d1_r2_persistence", "status": "NOT_RUN",
          "reason": "cloud resources are out of scope for this synthetic spike"},

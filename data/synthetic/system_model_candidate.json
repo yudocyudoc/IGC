@@ -1,0 +1,55 @@
+{
+  "schema": "igc-system-model-candidate/0.2",
+  "candidate_id": "candidate-synthetic-orders-001",
+  "investigation_id": "investigation-synthetic-001",
+  "status": "SYNTHETIC_EXECUTABLE_FIXTURE",
+  "synthetic": true,
+  "source_claim_id": "claim-synthetic-001",
+  "mechanism_hypothesis": {
+    "id": "mechanism-synthetic-promotion-arrivals-001",
+    "claim_id": "claim-synthetic-001",
+    "statement": "For this software fixture only, promotion is represented as a higher order arrival rate.",
+    "assumption_ids": [
+      "assumption-arrival-rate-001",
+      "assumption-completion-rate-001"
+    ]
+  },
+  "assumptions": [
+    {
+      "id": "assumption-arrival-rate-001",
+      "parameter": "arrivalRate",
+      "value": 3,
+      "unit": "orders/hour",
+      "synthetic": true,
+      "role": "inflow"
+    },
+    {
+      "id": "assumption-completion-rate-001",
+      "parameter": "completionRate",
+      "value": 1,
+      "unit": "orders/hour",
+      "synthetic": true,
+      "role": "outflow"
+    }
+  ],
+  "structure": {
+    "kind": "single_stock",
+    "stock": {
+      "name": "orderStock",
+      "unit": "orders",
+      "initial_value": 0
+    },
+    "inflow": {
+      "name": "arrivals",
+      "assumption_id": "assumption-arrival-rate-001",
+      "unit": "orders/hour"
+    },
+    "outflow": {
+      "name": "completions",
+      "assumption_id": "assumption-completion-rate-001",
+      "unit": "orders/hour"
+    }
+  },
+  "evidence_status": "SYNTHETIC_FIXTURE_ONLY",
+  "causal_status": "NOT_ASSESSED"
+}
