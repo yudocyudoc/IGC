@@ -84,13 +84,17 @@ class Ledger:
                     raise LedgerError(f"applied migration {migration_version} was modified")
                 return
             try:
-                connection.executescript(
-                    "BEGIN IMMEDIATE;\\n"
+                migration_script = (
+                    "BEGIN IMMEDIATE;" + chr(10)
                     + migration_sql
-                    + "\\nINSERT INTO schema_migrations(version, sha256, applied_at) "
+                    + chr(10)
+                    + "INSERT INTO schema_migrations(version, sha256, applied_at) "
                     + f"VALUES ('{migration_version}', '{migration_sha256}', "
-                    + "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));\\nCOMMIT;"
+                    + "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));"
+                    + chr(10)
+                    + "COMMIT;"
                 )
+                connection.executescript(migration_script)
             except Exception:
                 if connection.in_transaction:
                     connection.rollback()
