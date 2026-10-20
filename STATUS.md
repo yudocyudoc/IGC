@@ -11,7 +11,6 @@
 - PR #3 — handoff sintético; merge `83b9ebffb437382adee94c36bb8e17476d5aa9c8`.
 - PR #2 — LinkML y ledger SQLite inicial F1a; merge `acd17fbd7fe5ce8d39b208b492607936090f6d11`.
 - PR #4 — `recorded_at` monotónico; merge `1d706e6847ad03c0cb6a026aa49f8b7214dbcfb0`.
-- HEAD `main`: `1d706e6847ad03c0cb6a026aa49f8b7214dbcfb0`.
 
 ## Verificación
 
