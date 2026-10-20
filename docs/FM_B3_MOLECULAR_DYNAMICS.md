@@ -16,11 +16,13 @@ La salida JSON participa en una cadena de evidencia, pero no es el criterio de �
 - arrivals, completions y stock de cada cola;
 - balance terminal entre entradas al contador y entregas.
 
-Cada trayectoria debe tener 102 muestras finitas en el intervalo del plan; las marcas de tiempo pueden repetirse en eventos de inicialización, pero no retroceder; stocks y cantidades acumuladas no negativos; entregas e input acumulado monótonos; y errores absolutos de balance no superiores a `1e-5`. Para cada cola se comprueba `arrivals acumuladas - completions acumuladas = stock`; para el sistema, `input acumulado = entregas + stocks en cola`. Las trayectorias admitidas deben usar la misma malla temporal y diferir en entregas para no colapsar en una misma explicación dinámica.
+Cada trayectoria debe tener 102 muestras finitas en el intervalo del plan; las marcas de tiempo pueden repetirse, pero no retroceder. La evidencia informa cuántas repeticiones hay y las filas/instantes donde aparecen. Stocks y cantidades acumuladas deben ser no negativos; entregas e input acumulado, monótonos.
+
+Python reconstruye independientemente en cada muestra `ε(t) = acceptedTotal(t) - delivered(t) - Σ waiting_i(t)`. También reconstruye cada balance de cola a partir de entradas acumuladas, salidas acumuladas y stock exportado; los campos de error generados por Modelica se usan como comprobación cruzada, no como fuente del veredicto. Los errores absolutos independientes deben ser menores que `1e-5`.
 
 ## Evaluación comparativa
 
-B3 informa diferencias de trayectoria y métricas de coherencia por candidato. No ajusta parámetros a observaciones, no ordena los candidatos, no infiere causalidad ni declara qué topología corresponde a un sistema real. La comparación comprueba que las explicaciones retenidas son estructuralmente distintas y tienen consecuencias dinámicas diferenciables bajo los mismos parámetros y entrada sintéticos.
+B3 informa diferencias de trayectoria y métricas de coherencia por candidato. Si dos estructuras distintas tienen trayectorias observables iguales dentro de tolerancia, se conservan y la pareja se informa como `NON_DISCRIMINATING`, con una sugerencia para probar una entrada pulsada y observar la recuperación. No ajusta parámetros a observaciones, no ordena candidatos, no infiere causalidad ni declara qué topología corresponde a un sistema real.
 
 ## Evidencia reproducible
 

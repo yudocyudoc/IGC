@@ -102,26 +102,30 @@ def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
             f"  model {cname}",
             f"    {model_class} candidate;",
             "    Modelica.Blocks.Continuous.Integrator cumulativeInput(initType=Modelica.Blocks.Types.Init.InitialState, y_start=0);",
-            "    Modelica.Blocks.Continuous.Integrator cumulativeTerminal(initType=Modelica.Blocks.Types.Init.InitialState, y_start=0);",
+            "    Modelica.Blocks.Continuous.Integrator cumulativeTerminalInput(initType=Modelica.Blocks.Types.Init.InitialState, y_start=0);",
         ]
         for stage in stages:
             model_lines.extend([
                 f"    Modelica.Blocks.Continuous.Integrator cumulativeArrival_{stage}(initType=Modelica.Blocks.Types.Init.InitialState, y_start=0);",
                 f"    Modelica.Blocks.Continuous.Integrator cumulativeCompletion_{stage}(initType=Modelica.Blocks.Types.Init.InitialState, y_start=0);",
                 f"    output Real waiting_{stage};",
+                f"    output Real cumulativeArrivals_{stage};",
+                f"    output Real cumulativeCompletions_{stage};",
                 f"    output Real queueBalanceError_{stage};",
             ])
         model_lines.extend([
             "    output Real delivered;",
             "    output Real acceptedTotal;",
+            "    output Real terminalArrivals;",
             "    output Real systemInventory;",
             "    output Real systemBalanceError;",
             "    output Real terminalBalanceError;",
             "  equation",
             f"    cumulativeInput.u = candidate.{source}.outflow;",
-            f"    cumulativeTerminal.u = candidate.{sink}.arrival;",
+            f"    cumulativeTerminalInput.u = candidate.{sink}.arrival;",
             "    delivered = candidate.delivered;",
             "    acceptedTotal = cumulativeInput.y;",
+            "    terminalArrivals = cumulativeTerminalInput.y;",
             "    systemInventory = delivered + " + " + ".join(
                 f"candidate.{stage}.waiting" for stage in stages
             ) + ";",
@@ -133,7 +137,9 @@ def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
                 f"    cumulativeArrival_{stage}.u = candidate.{stage}.arrival;",
                 f"    cumulativeCompletion_{stage}.u = candidate.{stage}.completed;",
                 f"    waiting_{stage} = candidate.{stage}.waiting;",
-                f"    queueBalanceError_{stage} = cumulativeArrival_{stage}.y - cumulativeCompletion_{stage}.y - waiting_{stage};",
+                f"    cumulativeArrivals_{stage} = cumulativeArrival_{stage}.y;",
+                f"    cumulativeCompletions_{stage} = cumulativeCompletion_{stage}.y;",
+                f"    queueBalanceError_{stage} = cumulativeArrivals_{stage} - cumulativeCompletions_{stage} - waiting_{stage};",
             ])
         model_lines.extend([f"  end {cname};", ""])
         lines.extend(model_lines)
@@ -186,8 +192,10 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
     if len(rows) != intervals + 2:
         raise DynamicEvaluationError(f"{path.name}: expected {intervals + 2} samples, got {len(rows)}")
     required = {"time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
-                "terminalBalanceError"}
+                "terminalBalanceError", "terminalArrivals"}
     required.update(f"waiting_{stage}" for stage in stage_ids)
+    required.update(f"cumulativeArrivals_{stage}" for stage in stage_ids)
+    required.update(f"cumulativeCompletions_{stage}" for stage in stage_ids)
     required.update(f"queueBalanceError_{stage}" for stage in stage_ids)
     if not rows or not required <= set(rows[0]):
         raise DynamicEvaluationError(f"{path.name}: missing dynamic diagnostic columns {sorted(required - set(rows[0]) if rows else required)}")
@@ -198,9 +206,14 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
         raise DynamicEvaluationError(f"{path.name}: time cannot move backwards")
     if not any(right > left + TOLERANCE for left, right in zip(times, times[1:])):
         raise DynamicEvaluationError(f"{path.name}: simulation time did not advance")
-    metrics = {key: [] for key in ["delivered", "acceptedTotal", "systemInventory", "systemBalanceError", "terminalBalanceError"]}
-    metrics.update({f"waiting_{stage}": [] for stage in stage_ids})
-    metrics.update({f"queueBalanceError_{stage}": [] for stage in stage_ids})
+    metrics = {key: [] for key in ["delivered", "acceptedTotal", "systemInventory", "systemBalanceError", "terminalBalanceError", "terminalArrivals"]}
+    for stage in stage_ids:
+        metrics[f"waiting_{stage}"] = []
+        metrics[f"cumulativeArrivals_{stage}"] = []
+        metrics[f"cumulativeCompletions_{stage}"] = []
+        metrics[f"queueBalanceError_{stage}"] = []
+    independent_global_errors = []
+    independent_queue_errors = {stage: [] for stage in stage_ids}
     for index, row in enumerate(rows):
         for key in metrics:
             metrics[key].append(_number(row, key, path, index))
@@ -214,30 +227,52 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
         )
         if abs(metrics["systemInventory"][-1] - reconstructed_inventory) > TOLERANCE:
             raise DynamicEvaluationError(f"{path.name}: inventory observable does not match state stocks")
-        if abs(metrics["systemBalanceError"][-1]) > TOLERANCE:
-            raise DynamicEvaluationError(f"{path.name}: global stock-flow conservation failed")
-        if abs(metrics["terminalBalanceError"][-1]) > TOLERANCE:
-            raise DynamicEvaluationError(f"{path.name}: terminal inflow/delivery balance failed")
+        global_error = metrics["acceptedTotal"][-1] - metrics["delivered"][-1] - sum(
+            metrics[f"waiting_{stage}"][-1] for stage in stage_ids
+        )
+        independent_global_errors.append(global_error)
+        if abs(global_error) > TOLERANCE:
+            raise DynamicEvaluationError(f"{path.name}: independently reconstructed global stock-flow conservation failed")
+        terminal_error = metrics["terminalArrivals"][-1] - metrics["delivered"][-1]
+        if abs(terminal_error) > TOLERANCE:
+            raise DynamicEvaluationError(f"{path.name}: independently reconstructed terminal balance failed")
+        if abs(metrics["systemBalanceError"][-1] - global_error) > TOLERANCE:
+            raise DynamicEvaluationError(f"{path.name}: exported global balance diagnostic disagrees with independent reconstruction")
+        if abs(metrics["terminalBalanceError"][-1] - terminal_error) > TOLERANCE:
+            raise DynamicEvaluationError(f"{path.name}: exported terminal diagnostic disagrees with independent reconstruction")
         if metrics["delivered"][-1] > metrics["acceptedTotal"][-1] + TOLERANCE:
             raise DynamicEvaluationError(f"{path.name}: delivered quantity exceeds accepted input")
         for stage in stage_ids:
-            if abs(metrics[f"queueBalanceError_{stage}"][-1]) > TOLERANCE:
-                raise DynamicEvaluationError(f"{path.name}: queue stock-flow balance failed at {stage}")
+            queue_error = (metrics[f"cumulativeArrivals_{stage}"][-1]
+                           - metrics[f"cumulativeCompletions_{stage}"][-1]
+                           - metrics[f"waiting_{stage}"][-1])
+            independent_queue_errors[stage].append(queue_error)
+            if abs(queue_error) > TOLERANCE:
+                raise DynamicEvaluationError(f"{path.name}: independently reconstructed queue stock-flow balance failed at {stage}")
+            if abs(metrics[f"queueBalanceError_{stage}"][-1] - queue_error) > TOLERANCE:
+                raise DynamicEvaluationError(f"{path.name}: exported queue diagnostic disagrees with independent reconstruction at {stage}")
     for key in ("delivered", "acceptedTotal"):
         if any(right + TOLERANCE < left for left, right in zip(metrics[key], metrics[key][1:])):
             raise DynamicEvaluationError(f"{path.name}: {key} must not decrease")
+    duplicate_events = [
+        {"time": left, "previous_sample_row": index, "sample_row": index + 1}
+        for index, (left, right) in enumerate(zip(times, times[1:]))
+        if abs(right - left) <= TOLERANCE
+    ]
     return {
         "samples": len(rows),
         "final_delivered": metrics["delivered"][-1],
         "final_accepted_total": metrics["acceptedTotal"][-1],
         "final_system_inventory": metrics["systemInventory"][-1],
         "final_waiting": {stage: metrics[f"waiting_{stage}"][-1] for stage in stage_ids},
-        "max_abs_global_balance_error": max(abs(value) for value in metrics["systemBalanceError"]),
-        "max_abs_terminal_balance_error": max(abs(value) for value in metrics["terminalBalanceError"]),
+        "max_abs_independent_global_balance_error": max(abs(value) for value in independent_global_errors),
+        "max_abs_independent_terminal_balance_error": max(abs(a - b) for a, b in zip(
+            metrics["terminalArrivals"], metrics["delivered"])),
         "max_abs_queue_balance_error": {
-            stage: max(abs(value) for value in metrics[f"queueBalanceError_{stage}"])
-            for stage in stage_ids
+            stage: max(abs(value) for value in independent_queue_errors[stage]) for stage in stage_ids
         },
+        "repeated_timestamp_count": len(duplicate_events),
+        "repeated_timestamp_events": duplicate_events,
         "times": times,
         "delivered_series": metrics["delivered"],
     }
@@ -252,10 +287,18 @@ def evaluate_comparison(traces: dict[str, dict[str, Any]], structural_hashes: di
         if a["times"] != b["times"]:
             raise DynamicEvaluationError("candidate trajectories use different time grids")
         difference = max(abs(x - y) for x, y in zip(a["delivered_series"], b["delivered_series"]))
-        if difference <= TOLERANCE:
-            raise DynamicEvaluationError("distinct candidates produced indistinguishable delivered trajectories")
-        pairs.append({"candidate_ids": [left, right], "max_abs_delivered_difference": difference})
-    return {"pairwise_comparisons": pairs, "ranking_performed": False,
+        discriminating = difference > TOLERANCE
+        pairs.append({"candidate_ids": [left, right],
+                      "dynamic_relation": "DISCRIMINATING" if discriminating else "NON_DISCRIMINATING",
+                      "max_abs_delivered_difference": difference,
+                      "interpretation": ("outputs differ under this scenario" if discriminating
+                                         else "structurally distinct alternatives are observationally equivalent under this scenario"),
+                      "next_step": (None if discriminating else
+                                    "retain both; test a finite input pulse and observe delivery during the recovery tail")})
+    return {"status": ("NON_DISCRIMINATING" if any(
+                item["dynamic_relation"] == "NON_DISCRIMINATING" for item in pairs
+            ) else "DISCRIMINATING_UNDER_SCENARIO"),
+            "pairwise_comparisons": pairs, "ranking_performed": False,
             "empirical_adequacy_evaluated": False}
 
 

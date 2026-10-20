@@ -54,7 +54,8 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
 
     def _trace(self, path: Path, corrupt: str | None = None):
         fields = ["time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
-                  "terminalBalanceError", "waiting_stage0", "queueBalanceError_stage0"]
+                  "terminalBalanceError", "terminalArrivals", "waiting_stage0", "cumulativeArrivals_stage0",
+                  "cumulativeCompletions_stage0", "queueBalanceError_stage0"]
         rows = []
         for time, delivered, accepted, waiting in ((0, 0, 0, 0), (5, 10, 15, 5), (10, 20, 30, 10)):
             row = {
@@ -64,11 +65,16 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
                 "systemInventory": delivered + waiting,
                 "systemBalanceError": 0,
                 "terminalBalanceError": 0,
+                "terminalArrivals": delivered,
                 "waiting_stage0": waiting,
+                "cumulativeArrivals_stage0": accepted,
+                "cumulativeCompletions_stage0": delivered,
                 "queueBalanceError_stage0": 0,
             }
-            if corrupt == "conservation" and time == 10:
-                row["systemBalanceError"] = 0.1
+            if corrupt == "accepted_total" and time == 10:
+                row["acceptedTotal"] = accepted + 0.1
+            if corrupt == "queue_input" and time == 10:
+                row["cumulativeArrivals_stage0"] = accepted + 0.1
             if corrupt == "negative_stock" and time == 5:
                 row["waiting_stage0"] = -1
             rows.append(row)
@@ -86,7 +92,8 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
         self.assertEqual(metrics["max_abs_global_balance_error"], 0)
 
     def test_rejects_conservation_error_and_negative_stock(self):
-        for corruption, expected in (("conservation", "global stock-flow conservation"),
+        for corruption, expected in (("accepted_total", "independently reconstructed global stock-flow conservation"),
+                                     ("queue_input", "independently reconstructed queue stock-flow balance"),
                                      ("negative_stock", "negative queue stock")):
             with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as temp_dir:
                 with self.assertRaisesRegex(DynamicEvaluationError, expected):
@@ -96,23 +103,30 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "trace.csv"
             fields = ["time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
-                      "terminalBalanceError", "waiting_stage0", "queueBalanceError_stage0"]
+                      "terminalBalanceError", "terminalArrivals", "waiting_stage0", "cumulativeArrivals_stage0",
+                      "cumulativeCompletions_stage0", "queueBalanceError_stage0"]
             rows = [
                 {"time": 0, "delivered": 0, "acceptedTotal": 0, "systemInventory": 0,
-                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 0,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "terminalArrivals": 0,
+                 "waiting_stage0": 0, "cumulativeArrivals_stage0": 0, "cumulativeCompletions_stage0": 0,
                  "queueBalanceError_stage0": 0},
                 {"time": 0, "delivered": 0, "acceptedTotal": 0, "systemInventory": 0,
-                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 0,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "terminalArrivals": 0,
+                 "waiting_stage0": 0, "cumulativeArrivals_stage0": 0, "cumulativeCompletions_stage0": 0,
                  "queueBalanceError_stage0": 0},
                 {"time": 10, "delivered": 20, "acceptedTotal": 30, "systemInventory": 30,
-                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 10,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "terminalArrivals": 20,
+                 "waiting_stage0": 10, "cumulativeArrivals_stage0": 30, "cumulativeCompletions_stage0": 20,
                  "queueBalanceError_stage0": 0},
             ]
             with path.open("w", newline="", encoding="utf-8") as stream:
                 writer = csv.DictWriter(stream, fieldnames=fields)
                 writer.writeheader()
                 writer.writerows(rows)
-            self.assertEqual(assess_trace(path, ["stage0"], 0, 10, 1)["samples"], 3)
+            metrics = assess_trace(path, ["stage0"], 0, 10, 1)
+            self.assertEqual(metrics["samples"], 3)
+            self.assertEqual(metrics["repeated_timestamp_count"], 1)
+            self.assertEqual(metrics["repeated_timestamp_events"][0]["time"], 0)
             rows[1]["time"] = -1
             with path.open("w", newline="", encoding="utf-8") as stream:
                 writer = csv.DictWriter(stream, fieldnames=fields)
@@ -126,10 +140,13 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
         result = evaluate_comparison({"a": common, "b": {"times": [0, 1], "delivered_series": [0, 3]}},
                                      {"a": "hash-a", "b": "hash-b"})
         self.assertFalse(result["ranking_performed"])
+        self.assertEqual(result["status"], "DISCRIMINATING_UNDER_SCENARIO")
         self.assertEqual(result["pairwise_comparisons"][0]["max_abs_delivered_difference"], 1)
-        with self.assertRaisesRegex(DynamicEvaluationError, "indistinguishable"):
-            evaluate_comparison({"a": common, "b": copy.deepcopy(common)},
-                                {"a": "hash-a", "b": "hash-b"})
+        equivalent = evaluate_comparison({"a": common, "b": copy.deepcopy(common)},
+                                         {"a": "hash-a", "b": "hash-b"})
+        self.assertEqual(equivalent["status"], "NON_DISCRIMINATING")
+        self.assertEqual(equivalent["pairwise_comparisons"][0]["dynamic_relation"], "NON_DISCRIMINATING")
+        self.assertIsNotNone(equivalent["pairwise_comparisons"][0]["next_step"])
 
 
 if __name__ == "__main__":
