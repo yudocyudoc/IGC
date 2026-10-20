@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,8 +80,10 @@ def validate_candidate(candidate: dict[str, Any], claim: dict[str, Any], source_
         assumption = by_id.get(flow.get("assumption_id"))
         if assumption is None:
             raise HandoffError(f"{role} references an undeclared assumption")
-        if assumption.get("role") != role or assumption.get("unit") != flow["unit"]:
-            raise HandoffError(f"{role} assumption role/unit does not match the flow")
+        expected_parameter = "arrivalRate" if role == "inflow" else "completionRate"
+        if (assumption.get("role") != role or assumption.get("unit") != flow["unit"]
+                or assumption.get("parameter") != expected_parameter):
+            raise HandoffError(f"{role} assumption role/parameter/unit does not match the flow")
     return {
         "source_claim_id": claim["claim_id"],
         "source_id": claim.get("source_id"),
@@ -94,7 +95,6 @@ def validate_candidate(candidate: dict[str, Any], claim: dict[str, Any], source_
 
 
 def render_model(candidate: dict[str, Any], model_name: str) -> str:
-    validation = candidate
     params = {item["id"]: item for item in candidate["assumptions"]}
     inflow_id = candidate["structure"]["inflow"]["assumption_id"]
     outflow_id = candidate["structure"]["outflow"]["assumption_id"]
@@ -206,8 +206,10 @@ def run_candidate_handoff() -> dict[str, Any]:
         stock_name = candidate["structure"]["stock"]["name"]
         base_final = _csv_final_stock(Path(base_csv), stock_name)
         changed_final = _csv_final_stock(Path(changed_csv), stock_name)
+        assumption_by_id = {item["id"]: item for item in candidate["assumptions"]}
         expected_base = candidate["structure"]["stock"]["initial_value"] + (
-            candidate["assumptions"][0]["value"] - candidate["assumptions"][1]["value"]
+            assumption_by_id[candidate["structure"]["inflow"]["assumption_id"]]["value"]
+            - assumption_by_id[candidate["structure"]["outflow"]["assumption_id"]]["value"]
         ) * DURATION_HOURS
         if not math.isclose(base_final, expected_base, rel_tol=1e-7, abs_tol=1e-7):
             raise HandoffError("base simulation output does not match the declared stock-flow equation")

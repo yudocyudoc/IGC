@@ -39,6 +39,12 @@ class CandidateHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(HandoffError, "reference"):
             validate_candidate(candidate, CLAIM, SOURCE)
 
+    def test_flow_with_mismatched_parameter_name_is_rejected(self):
+        candidate = copy.deepcopy(CANDIDATE)
+        candidate["assumptions"][0]["parameter"] = "completionRate"
+        with self.assertRaisesRegex(HandoffError, "parameter/unit"):
+            validate_candidate(candidate, CLAIM, SOURCE)
+
     def test_parameter_change_changes_generated_model(self):
         candidate = copy.deepcopy(CANDIDATE)
         base = render_model(candidate, "CandidateBase")
