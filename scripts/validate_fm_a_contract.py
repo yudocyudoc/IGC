@@ -159,10 +159,15 @@ def check_negative_cases(document: dict[str, Any]) -> None:
         raise ContractError("NEGATIVE_CASE_ACCEPTED", "incompatible port unit")
 
     invalid = copy.deepcopy(document)
+    invalid["structures"][0]["molecule_instances"].append({
+        "id": "branch0",
+        "molecule_definition_id": "urn:igc:molecule:bounded-queue@0.1",
+        "parameter_bindings": [],
+    })
     invalid["structures"][0]["connections"].append({
         "id": "invalid-material-duplication",
         "from_port": "source0.outflow",
-        "to_port": "receipt0.arrival",
+        "to_port": "branch0.arrival",
         "connection_kind": "MATERIAL_FLOW",
     })
     try:
