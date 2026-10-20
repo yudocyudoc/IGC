@@ -175,6 +175,10 @@ class F0SpikeContractTests(unittest.TestCase):
     def test_only_all_pass_can_report_pass(self):
         self.assertEqual(overall_status([{"status": "PASS"}, {"status": "PASS"}]), "PASS")
 
+    def test_out_of_scope_cloud_stage_does_not_block_f0_acceptance(self):
+        self.assertEqual(overall_status([{"status": "PASS"}, {"status": "OUT_OF_SCOPE"}]),
+                         "PASS_WITH_LIMITATIONS")
+
     def test_synthetic_claim_has_an_exact_source_anchor(self):
         stages, annotation = source_and_annotation()
         self.assertEqual(stages[0]["status"], "PASS")

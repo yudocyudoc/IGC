@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - f0-inventario-spike
+      - f0-candidate-handoff
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -16,6 +17,7 @@ on:
   pull_request:
     branches:
       - main
+      - f0-inventario-spike
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -132,16 +134,18 @@ jobs:
         run: |
           cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
           setModelicaPath("/opt/modelica:/opt/systemdynamics");
-          loadModel(Modelica, {"4.0.0"});
-          print(getErrorString());
           loadFile("/opt/systemdynamics/SystemDynamics/package.mo");
           print(getErrorString());
           checkModel(SystemDynamics.Levels.Level);
           print(getErrorString());
           MOS
           docker run --rm -e MODELICAPATH=/opt/modelica:/opt/systemdynamics -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" -v "$PWD/artifacts/f0:/evidence" "${{ env.IGC_OMC_DOCKER_IMAGE }}" omc /evidence/check-systemdynamics.mos 2>&1 | tee artifacts/f0/systemdynamics-omc.log
+          grep -q "Automatically loaded package Modelica 4.0.0 due to usage" artifacts/f0/systemdynamics-omc.log
           grep -q "Check of SystemDynamics.Levels.Level completed successfully" artifacts/f0/systemdynamics-omc.log
-          ! grep -Eq "Error:|Failed to load|Class .* not found" artifacts/f0/systemdynamics-omc.log
+          if grep -Eq "Error:|Failed to load|Class .* not found" artifacts/f0/systemdynamics-omc.log; then
+            echo "OpenModelica reported a load or model check error" >&2
+            exit 1
+          fi
           printf 'SystemDynamics_commit=b986a2ea354ab550d627a392f857ad7c9997d961\nMSL_commit=6626538a236a34a390655b55d5e8c906bfe31772\nSystemDynamics_archive_sha256=%s\nMSL_archive_sha256=%s\n' "$(cat artifacts/f0/systemdynamics.archive.sha256)" "$(cat artifacts/f0/msl-4.0.0.archive.sha256)" > artifacts/f0/systemdynamics-test.txt
 
       - name: Snapshot CI platform and generate full SPDX inventory
@@ -164,7 +168,7 @@ jobs:
         continue-on-error: true
         run: /tmp/igc-f0-locked/bin/python scripts/f0_spike.py
 
-      - name: Require source, semantic, and OpenModelica stages to pass
+      - name: Require F0-ENG and synthetic F0-VERTICAL stages to pass
         if: always()
         run: |
           python - <<'PY'
@@ -181,6 +185,7 @@ jobs:
               "sparql_query": "PASS",
               "crminf_crmsci_mapping": "PASS",
               "atms_reasoning": "PASS",
+              "system_model_candidate_and_handoff": "PASS",
               "openmodelica_compile_and_simulate": "PASS",
           }
           failures = {
