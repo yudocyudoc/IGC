@@ -132,6 +132,19 @@ class CandidateHandoffTests(unittest.TestCase):
         self.assertEqual(result["sample_counts"], {"base": 3, "perturbed": 3})
         self.assertEqual(result["final_stock"], {"base": 20.0, "perturbed": 30.0})
 
+    def test_verify_handoff_accepts_consistent_duplicate_times(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = self._write_verification_fixture(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            csv_path = root / manifest["simulation"]["base_result"]["path"]
+            csv_path.write_text("time,orderStock\\n0,0\\n5,10\\n5,10\\n10,20\\n", encoding="utf-8")
+            base_result = manifest["simulation"]["base_result"]
+            base_result["sample_count"] = 4
+            base_result["sha256"] = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+            manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+            result = verify_handoff(manifest_path, root=root)
+        self.assertEqual(result["sample_counts"]["base"], 4)
     def test_verify_handoff_detects_modelica_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

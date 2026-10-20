@@ -157,8 +157,12 @@ def _csv_trajectory(
         values.append(stock_value)
     if not math.isclose(times[0], 0.0, abs_tol=1e-9):
         raise HandoffError("simulation trajectory must start at time zero")
-    if any(later <= earlier for earlier, later in zip(times, times[1:])):
-        raise HandoffError("simulation sample times must be strictly increasing")
+    if any(later < earlier for earlier, later in zip(times, times[1:])):
+        raise HandoffError("simulation sample times must be non-decreasing")
+    for index in range(1, len(times)):
+        if math.isclose(times[index], times[index - 1], abs_tol=1e-12) and not math.isclose(
+                values[index], values[index - 1], rel_tol=1e-7, abs_tol=1e-7):
+            raise HandoffError("duplicate simulation times have inconsistent stock values")
     if not math.isclose(times[-1], duration, rel_tol=1e-9, abs_tol=1e-9):
         raise HandoffError("simulation trajectory does not end at the declared duration")
     expected_final = initial + (inflow - outflow) * duration
