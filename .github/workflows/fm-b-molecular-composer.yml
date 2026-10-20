@@ -1,0 +1,99 @@
+name: FM-B molecular composer PoC
+
+on:
+  push:
+    branches:
+      - fm-b-molecular-composer
+    paths:
+      - .github/workflows/fm-b-molecular-composer.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b_serial_chain_plan.json
+      - poc/short_wrappers/**
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/validate_fm_a_contract.py
+      - scripts/verify_molecular_composition_poc.py
+  pull_request:
+    branches:
+      - fm-b-wrapper-poc
+    paths:
+      - .github/workflows/fm-b-molecular-composer.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b_serial_chain_plan.json
+      - poc/short_wrappers/**
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/validate_fm_a_contract.py
+      - scripts/verify_molecular_composition_poc.py
+
+permissions:
+  contents: read
+
+jobs:
+  compose-and-simulate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+
+      - name: Install hash-locked LinkML validation dependencies
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer
+          python -m venv /tmp/igc-linkml-locked
+          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f1a-linkml.lock.txt
+
+      - name: Generate LinkML schemas and compose declared candidates
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer/linkml
+          for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
+            /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/fm-b-molecular-composer/linkml/${top_class}.schema.json"
+          done
+          /tmp/igc-linkml-locked/bin/python scripts/compose_molecular_candidates.py \
+            --schema-dir artifacts/fm-b-molecular-composer/linkml \
+            --output-dir artifacts/fm-b-molecular-composer | tee artifacts/fm-b-molecular-composer/composer.log
+
+      - name: Fetch immutable SystemDynamics and MSL sources
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz | tee artifacts/fm-b-molecular-composer/systemdynamics.archive.sha256
+          sha256sum /tmp/igc-modelica/msl.tar.gz | tee artifacts/fm-b-molecular-composer/msl.archive.sha256
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+          test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
+          test -f /tmp/igc-modelica/MSL/Modelica/package.mo
+
+      - name: Check and simulate generated molecular candidates
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-molecular-composer:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-composed-models.mos 2>&1 | tee artifacts/fm-b-molecular-composer/openmodelica.log
+
+      - name: Verify generated candidate provenance and simulation traces
+        run: python scripts/verify_molecular_composition_poc.py | tee artifacts/fm-b-molecular-composer/verification.log
+
+      - name: Upload B1 composition evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fm-b-molecular-composer
+          path: artifacts/fm-b-molecular-composer/
+          if-no-files-found: error

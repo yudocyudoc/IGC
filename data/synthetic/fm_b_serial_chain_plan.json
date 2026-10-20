@@ -1,0 +1,35 @@
+{
+  "id": "urn:igc:composition-plan:serial-chain-poc@0.1",
+  "composition_rule": "serial_chain",
+  "request_id": "urn:igc:request:fm-a-stage-count",
+  "roles": {
+    "source": "urn:igc:molecule:accepted-source@0.1",
+    "stage": "urn:igc:molecule:bounded-queue@0.1",
+    "sink": "urn:igc:molecule:delivery-counter@0.1"
+  },
+  "instances": {
+    "source": "source0",
+    "stage_prefix": "stage",
+    "sink": "receipt0"
+  },
+  "parameter_bindings": {
+    "maxThroughput": {"value": 2.0, "unit": "units/hour"},
+    "responseTime": {"value": 1.0, "unit": "hour"}
+  },
+  "external_input": {
+    "target_port": "source0.externalRate",
+    "value": 3.0,
+    "unit": "units/hour"
+  },
+  "observable": {
+    "port": "receipt0.total",
+    "output_name": "delivered"
+  },
+  "simulation": {"start_time": 0.0, "stop_time": 10.0, "intervals": 100},
+  "candidates": [
+    {"id": "urn:igc:candidate:CS-01", "structure_id": "urn:igc:structure:CS-01@0.2", "stage_count": 1},
+    {"id": "urn:igc:candidate:CS-02", "structure_id": "urn:igc:structure:CS-02@0.2", "stage_count": 2}
+  ],
+  "synthetic": true,
+  "empirical_or_causal_claim": false
+}
