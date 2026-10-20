@@ -1,0 +1,155 @@
+{
+  "id": "https://w3id.org/igc/schema/0.1.0",
+  "name": "igc",
+  "title": "IGC Core Knowledge and Ledger Schema",
+  "description": "Initial F1a schema contract for append-only entity revisions and bitemporal queries. JSON syntax is used because JSON is a YAML subset; LinkML generation is a later gated step.",
+  "prefixes": {
+    "igc": "https://w3id.org/igc/",
+    "linkml": "https://w3id.org/linkml/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "default_prefix": "igc",
+  "default_range": "string",
+  "imports": [
+    "linkml:types"
+  ],
+  "classes": {
+    "EntityRevision": {
+      "description": "Immutable revision of a domain entity, recorded by one ledger event.",
+      "slots": [
+        "id",
+        "entity_type",
+        "schema_version",
+        "case_id",
+        "revision",
+        "created_at",
+        "created_by",
+        "recorded_at",
+        "source_event_id",
+        "access_policy",
+        "integrity_hash",
+        "valid_from",
+        "valid_to",
+        "supersedes_revision",
+        "payload"
+      ]
+    },
+    "ClaimOccurrence": {
+      "is_a": "EntityRevision",
+      "description": "A source-grounded occurrence of a claim; it does not assert truth of proposition content."
+    },
+    "Proposition": {
+      "is_a": "EntityRevision",
+      "description": "Normalized propositional content, kept distinct from its source occurrence."
+    },
+    "Observation": {
+      "is_a": "EntityRevision",
+      "description": "An observation record with separate valid time and recorded time."
+    },
+    "Assumption": {
+      "is_a": "EntityRevision",
+      "description": "Revisable assumption with scope and provenance."
+    },
+    "KnowledgeEvent": {
+      "description": "Append-only command/event envelope recorded atomically with an entity revision.",
+      "slots": [
+        "event_id",
+        "case_id",
+        "event_type",
+        "actor_id",
+        "idempotency_key",
+        "occurred_at",
+        "recorded_at",
+        "schema_version",
+        "payload_hash",
+        "payload"
+      ]
+    }
+  },
+  "slots": {
+    "id": {
+      "identifier": true,
+      "range": "uriorcurie",
+      "required": true
+    },
+    "entity_type": {
+      "range": "string",
+      "required": true
+    },
+    "schema_version": {
+      "range": "string",
+      "required": true
+    },
+    "case_id": {
+      "range": "uriorcurie",
+      "required": true
+    },
+    "revision": {
+      "range": "integer",
+      "required": true
+    },
+    "created_at": {
+      "range": "datetime",
+      "required": true
+    },
+    "created_by": {
+      "range": "uriorcurie",
+      "required": true
+    },
+    "recorded_at": {
+      "range": "datetime",
+      "required": true,
+      "description": "System time at which the ledger accepted this revision."
+    },
+    "source_event_id": {
+      "range": "uriorcurie",
+      "required": true
+    },
+    "access_policy": {
+      "range": "string",
+      "required": true
+    },
+    "integrity_hash": {
+      "range": "string",
+      "required": true
+    },
+    "valid_from": {
+      "range": "datetime"
+    },
+    "valid_to": {
+      "range": "datetime"
+    },
+    "supersedes_revision": {
+      "range": "integer"
+    },
+    "payload": {
+      "range": "string",
+      "required": true,
+      "description": "Canonical JSON object serialized as text."
+    },
+    "event_id": {
+      "identifier": true,
+      "range": "uriorcurie",
+      "required": true
+    },
+    "event_type": {
+      "range": "string",
+      "required": true
+    },
+    "actor_id": {
+      "range": "uriorcurie",
+      "required": true
+    },
+    "idempotency_key": {
+      "range": "string",
+      "required": true
+    },
+    "occurred_at": {
+      "range": "datetime"
+    },
+    "payload_hash": {
+      "range": "string",
+      "required": true
+    }
+  }
+}
