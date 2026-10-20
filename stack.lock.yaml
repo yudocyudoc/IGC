@@ -41,6 +41,18 @@ python_dependency_lock:
   resolved_package_count: 8
   validation: CI_REQUIRE_HASHES_PASS
 
+linkml_toolchain:
+  file: requirements-f1a-linkml.lock.txt
+  target: ubuntu-24.04 / CPython 3.13.16 / x86_64
+  package: linkml==1.12.1
+  declared_license: Apache-2.0
+  resolved_package_count: 90
+  schema_source: schema/source/igc.yaml
+  generated_json_schema: schema/derived/igc.schema.json
+  validation: CI_HASHES_GENERATION_DRIFT_AND_SYNTHETIC_FIXTURE_PASS
+  sbom: artifacts/f1a/linkml-toolchain.spdx.json
+  sbom_license_assertions: NOASSERTION
+
 platform_sbom:
   file: artifacts/f0/platform.spdx.json
   format: SPDX-2.3-JSON
