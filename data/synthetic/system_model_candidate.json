@@ -51,5 +51,6 @@
     }
   },
   "evidence_status": "SYNTHETIC_FIXTURE_ONLY",
-  "causal_status": "NOT_ASSESSED"
+  "causal_status": "NOT_ASSESSED",
+  "entity_type": "SystemModelCandidate"
 }

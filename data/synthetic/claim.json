@@ -3,5 +3,6 @@
   "source_id": "source-synthetic-001",
   "quote": "During a promotion, the number of incoming orders may increase.",
   "modality": "possible",
-  "synthetic": true
+  "synthetic": true,
+  "entity_type": "ClaimOccurrence"
 }

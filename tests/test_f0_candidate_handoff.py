@@ -21,6 +21,17 @@ class CandidateHandoffTests(unittest.TestCase):
         self.assertEqual(evidence["quote"], CLAIM["quote"])
         self.assertEqual(evidence["quote_end"] - evidence["quote_start"], len(CLAIM["quote"]))
 
+    def test_source_and_candidate_entity_types_are_required(self):
+        candidate = copy.deepcopy(CANDIDATE)
+        claim = copy.deepcopy(CLAIM)
+        candidate["entity_type"] = "UnknownCandidate"
+        with self.assertRaisesRegex(HandoffError, "SystemModelCandidate"):
+            validate_candidate(candidate, claim, SOURCE)
+        candidate = copy.deepcopy(CANDIDATE)
+        claim["entity_type"] = "UnknownClaim"
+        with self.assertRaisesRegex(HandoffError, "ClaimOccurrence"):
+            validate_candidate(candidate, claim, SOURCE)
+
     def test_candidate_with_missing_flow_unit_is_rejected(self):
         candidate = copy.deepcopy(CANDIDATE)
         candidate["structure"]["inflow"].pop("unit")

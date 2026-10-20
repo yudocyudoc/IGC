@@ -31,6 +31,10 @@ def _sha256(data: bytes) -> str:
 def validate_candidate(candidate: dict[str, Any], claim: dict[str, Any], source_text: str) -> dict[str, Any]:
     if candidate.get("schema") != "igc-system-model-candidate/0.2":
         raise HandoffError("unsupported candidate schema")
+    if candidate.get("entity_type") != "SystemModelCandidate":
+        raise HandoffError("candidate must be typed as SystemModelCandidate")
+    if claim.get("entity_type") != "ClaimOccurrence":
+        raise HandoffError("source entity must be typed as ClaimOccurrence")
     if candidate.get("synthetic") is not True or claim.get("synthetic") is not True:
         raise HandoffError("this integration gate accepts synthetic fixtures only")
     if candidate.get("source_claim_id") != claim.get("claim_id"):
@@ -222,8 +226,10 @@ def run_candidate_handoff() -> dict[str, Any]:
             "synthetic": True,
             "source": {"id": evidence["source_id"], "sha256": _sha256(source_bytes),
                        "quote_start": evidence["quote_start"], "quote_end": evidence["quote_end"]},
-            "claim": {"id": evidence["source_claim_id"], "sha256": _sha256(claim_bytes)},
-            "candidate": {"id": candidate["candidate_id"], "sha256": _sha256(candidate_bytes)},
+            "claim": {"id": evidence["source_claim_id"], "entity_type": claim["entity_type"],
+                      "sha256": _sha256(claim_bytes)},
+            "candidate": {"id": candidate["candidate_id"], "entity_type": candidate["entity_type"],
+                          "sha256": _sha256(candidate_bytes)},
             "mechanism_hypothesis_id": candidate["mechanism_hypothesis"]["id"],
             "assumptions": [
                 {"id": item["id"], "parameter": item["parameter"], "value": item["value"],
