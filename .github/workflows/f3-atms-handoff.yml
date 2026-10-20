@@ -37,6 +37,12 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
       - name: Run selected candidate through OpenModelica
         run: python scripts/f3_candidate_handoff.py
+      - name: Make Docker evidence readable by artifact uploader
+        if: always()
+        run: |
+          if [ -d artifacts/f3 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/f3
+          fi
       - name: Upload F3 evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
