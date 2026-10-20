@@ -7,7 +7,7 @@ note: >-
   F0 Python dependencies and the OpenModelica image are pinned and passed in
   GitHub Actions. requirements-f0.lock.txt contains the eight-package Python
   closure with SHA-256 hashes for ubuntu-24.04 CPython 3.13.16 x86_64.
-  GitHub Actions emits an SPDX 2.3 snapshot covering the Python lock, runner/container dpkg packages, pinned Actions, runner label, OpenModelica image, two Modelica source archives, and four checksum-pinned ontology graphs. All license fields remain NOASSERTION for the final review; non-dpkg runner tools and bundled Action dependencies remain outside package-level expansion.
+  GitHub Actions emits an SPDX 2.3 snapshot covering the Python lock, runner/container dpkg packages, pinned Actions, runner label, OpenModelica image, two Modelica source archives, and four checksum-pinned ontology graphs. Scoped documentation review is recorded in docs/REVISION_LICENCIAS_F0.md. SPDX license fields remain NOASSERTION because 1,432 dpkg package licenses, non-dpkg runner tools, and bundled Action dependencies are not individually reviewed.
 
 execution_environment:
   provider: GitHub Actions
@@ -86,7 +86,7 @@ ontology_graphs:
   limitations:
     - owl:imports closure is not expanded.
     - This is a bounded compatibility probe, not ontology-wide conformance or empirical validation.
-  licenses: DEFERRED_TO_FINAL_INVENTORY_STEP
+  licenses: SCOPED_REVIEW_COMPLETE_GRAPH_SERIALIZATION_GAPS_REMAIN
 
 python_sbom:
   file: artifacts/f0/python-dependencies.spdx.json
@@ -217,5 +217,5 @@ candidates:
 hashes:
   - artifact: openmodelica/openmodelica:v1.27.1-minimal
     sha256: ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
-licenses_verified: false
+license_review:\n  document: docs/REVISION_LICENCIAS_F0.md\n  status: SCOPED_DOCUMENTARY_REVIEW_COMPLETE_PLATFORM_CLOSURE_PENDING\n  spdx_license_assertions: NOASSERTION\n  dpkg_packages_not_individually_reviewed: 1432\n  non_dpkg_runner_tools_reviewed: false\n  github_action_bundled_dependencies_reviewed: false\n  redistribution_cleared: false\nlicenses_verified: false
 compatibility_verified: false
