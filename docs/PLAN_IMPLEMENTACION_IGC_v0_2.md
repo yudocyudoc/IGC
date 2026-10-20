@@ -45,10 +45,10 @@ La spike vertical de F0 debe avanzar en paralelo con el diseño de F1/F2, sin re
 
 El estado de la plataforma no sustituye al estado de la integración vertical ni a la evaluación científica. Se reportan por separado:
 - **F0-ENG:** laboratorio de Actions y componentes verificados; estado provisional según las aserciones efectivamente ejecutadas.
-- **F0-VERTICAL:** Source/ClaimOccurrence → SystemModelCandidate → handoff Modelica → simulación trazable; permanece bloqueado hasta superar sus pruebas propias.
+- **F0-VERTICAL:** `PASS_SYNTHETIC` según Actions #249 y revisión técnica aceptada el 2026-10-20; el alcance no integra aún los resultados RDF/ATMS al generador.
 - **H-IGC:** fidelidad/utilidad científica; `NOT_EVALUATED` mientras no exista protocolo experimental y evidencia adecuada.
 
-El criterio técnico de F0-VERTICAL es sintético y acotado: una instancia tipada enlaza ClaimOccurrence anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; verifica cada muestra y tiempo de una perturbación; y rechaza unidades o referencias inválidas. El handoff no consume la salida semántica/ATMS: esa unión queda para F2/F3. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. La persistencia D1/R2 pertenece a F8 y queda OUT_OF_SCOPE en la aceptación F0. El cierre formal F0 sigue pendiente de revisión; H-IGC sigue NOT_EVALUATED. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
+El criterio técnico de F0-VERTICAL es sintético y acotado: una instancia tipada enlaza ClaimOccurrence anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; verifica cada muestra y tiempo de una perturbación; y rechaza unidades o referencias inválidas. El handoff no consume la salida semántica/ATMS: esa unión queda para F2/F3. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. La persistencia D1/R2 pertenece a F8 y queda OUT_OF_SCOPE en la aceptación F0. La revisión técnica de F0-VERTICAL fue aceptada el 2026-10-20. La revisión formal y autorización del investigador para integrar los PR siguen pendientes; H-IGC sigue NOT_EVALUATED. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
 
 ### 3.1 Secuencia propuesta de PRs F1–F9
 
@@ -111,6 +111,8 @@ La aceptación de cada PR requiere su propio workflow de Actions verde, artefact
 
 Antes de usar datos reales, operar recursos cloud reales, incurrir en gasto, aprobar promoción causal automática, publicar resultados o fusionar cambios, registrar la decisión correspondiente del investigador conforme a §22 de la especificación. Estas decisiones no impiden inventariar ni construir el laboratorio local con datos sintéticos.
 
-## 7. Próximo paso
+## 7. Estado y secuencia siguiente
 
-Iniciar **F0 solamente** en una rama aislada. Confirmar refs y estado del repo desde GitHub; completar auditoría, contratos, laboratorio de Actions y spike sintética. No usar pasos locales de ejecución. Al cierre de F0, presentar resultados y una secuencia revisada de PRs F1–F9 antes de ampliar la implementación.
+La revisión técnica de F0-VERTICAL está aceptada dentro del alcance sintético; PR #1 y PR #3 constituyen la evidencia principal para la revisión formal de F0. Mantener PR #1, #2 y #3 sin fusionar hasta la autorización formal del investigador.
+
+Después de esa autorización, continuar F1a (#2), cuyo corte de ledger ya está implementado y probado en Actions. Seguir con F2 (perfiles semánticos ejecutables) y F3 (ATMS, investigaciones y candidatos rivales), conservando la secuencia de dependencias de este plan. El objetivo completo incluye experimentar con configuraciones distintas de conocimiento estructurado, razonamiento ATMS, embeddings y modelos de dinámica de sistemas; F0 no debe ampliarse para seguir endureciendo su ecuación sintética.
