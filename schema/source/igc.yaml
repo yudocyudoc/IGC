@@ -2,7 +2,7 @@
   "id": "https://w3id.org/igc/schema/0.1.0",
   "name": "igc",
   "title": "IGC Core Knowledge and Ledger Schema",
-  "description": "Initial F1a schema contract for append-only entity revisions and bitemporal queries. JSON syntax is used because JSON is a YAML subset; LinkML generation is a later gated step.",
+  "description": "Initial F1a schema contract for append-only entity revisions and bitemporal queries. JSON is valid YAML; LinkML generates the checked-in JSON Schema from this source.",
   "prefixes": {
     "igc": "https://w3id.org/igc/",
     "linkml": "https://w3id.org/linkml/",
