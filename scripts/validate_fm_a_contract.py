@@ -18,6 +18,11 @@ DEFAULT_BASE_CANDIDATE = ROOT / "data/synthetic/system_model_candidate.json"
 PORT_DIRECTIONS = {"in", "out"}
 SIGNAL_KINDS = {"FLOW", "SIGNAL", "STATE"}
 CONNECTION_KINDS = {"MATERIAL_FLOW", "INFORMATION_SIGNAL", "CONTROL_SIGNAL"}
+CONNECTION_SIGNAL_COMPATIBILITY = {
+    "MATERIAL_FLOW": {"FLOW"},
+    "INFORMATION_SIGNAL": {"SIGNAL", "STATE"},
+    "CONTROL_SIGNAL": {"SIGNAL"},
+}
 
 
 class ContractError(ValueError):
@@ -105,8 +110,11 @@ def validate_references(document: dict[str, Any]) -> None:
                 raise ContractError("PORT_TYPE_MISMATCH", connection["id"])
             if source["unit"] != target["unit"]:
                 raise ContractError("UNIT_MISMATCH", connection["id"])
-            if connection["connection_kind"] == "MATERIAL_FLOW" and source["signal_kind"] != "FLOW":
-                raise ContractError("NON_FLOW_MATERIAL_LINK", connection["id"])
+            if source["signal_kind"] not in CONNECTION_SIGNAL_COMPATIBILITY[connection["connection_kind"]]:
+                raise ContractError(
+                    "CONNECTION_SIGNAL_MISMATCH",
+                    f"{connection['id']}: {connection['connection_kind']} cannot carry {source['signal_kind']}",
+                )
             if connection["to_port"] in used_inputs:
                 raise ContractError("MULTIPLE_INCOMING", connection["to_port"])
             used_inputs.add(connection["to_port"])
@@ -184,6 +192,20 @@ def check_negative_cases(document: dict[str, Any], schema_dir: Path) -> None:
                 raise
         else:
             raise ContractError("NEGATIVE_CASE_ACCEPTED", label)
+
+    for connection_kind in ("INFORMATION_SIGNAL", "CONTROL_SIGNAL"):
+        invalid = copy.deepcopy(document)
+        invalid["structures"][0]["connections"][0]["connection_kind"] = connection_kind
+        try:
+            validate_references(invalid)
+        except ContractError as exc:
+            if exc.code != "CONNECTION_SIGNAL_MISMATCH":
+                raise
+        else:
+            raise ContractError(
+                "NEGATIVE_CASE_ACCEPTED",
+                f"{connection_kind} cannot carry FLOW",
+            )
 
     invalid = copy.deepcopy(document)
     invalid["candidates"].append(copy.deepcopy(invalid["candidates"][0]))

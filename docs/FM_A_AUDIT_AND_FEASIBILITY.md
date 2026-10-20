@@ -49,6 +49,7 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 
 - `schema/source/igc.yaml` amplía LinkML de manera aditiva para contratos de catálogo, puertos, parámetros, instancias, conexiones, revisiones estructurales, candidatos, validación y ejecuciones.
 - Los campos `direction`, `signal_kind` y `connection_kind` usan vocabularios LinkML cerrados; el validador comprueba también identificadores únicos de candidatos y conexiones y conserva casos negativos para valores desconocidos y duplicados.
+- La compatibilidad entre clase de conexión y señal es explícita: `MATERIAL_FLOW` admite `FLOW`; `INFORMATION_SIGNAL`, `SIGNAL` o `STATE`; `CONTROL_SIGNAL`, sólo `SIGNAL`. Se rechaza cualquier otro emparejamiento con `CONNECTION_SIGNAL_MISMATCH` y hay negativos para una señal `FLOW` etiquetada como información o control.
 - Los hashes de estructura y los valores de parámetros se representan por separado.
 - En las fixtures, `structural_hash` es SHA-256 de JSON canónico UTF-8 (`sort_keys=true`, separadores `(',', ':')`) sobre `catalog_snapshot`, instancias ordenadas por `id` con sólo `id`/`molecule_definition_id`, y conexiones ordenadas por `from_port`/`to_port`/`connection_kind`. `parameter_bindings` se excluye para que un cambio paramétrico no altere el hash topológico.
 - El estado de madurez/licencia se conserva como dato explícito; `source_ref` o clase Modelica por sí solos no significan admisión.
