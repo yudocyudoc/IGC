@@ -82,6 +82,16 @@ class LedgerTests(unittest.TestCase):
             self.record(valid_from=T2, valid_to=T1)
         self.assertEqual(self.ledger.snapshot(case_id="urn:igc:case:c1", as_known_at=T3), [])
 
+    def test_entity_case_scope_is_immutable(self):
+        self.record()
+        with self.assertRaises(LedgerError):
+            self.record(
+                idempotency_key="cmd-other-case",
+                case_id="urn:igc:case:other",
+                recorded_at=T2,
+            )
+        self.assertEqual(len(self.ledger.snapshot(case_id="urn:igc:case:c1", as_known_at=T3)), 1)
+
     def test_canonical_tables_are_append_only(self):
         self.record()
         with sqlite3.connect(self.db) as connection:
