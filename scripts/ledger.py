@@ -256,6 +256,35 @@ class Ledger:
             ]
         return sorted(result, key=lambda item: item.entity_id)
 
+    def verify_integrity(self, *, entity_id: str, revision: int) -> bool:
+        """Check a stored revision digest against its canonical metadata and payload."""
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM entity_revisions WHERE entity_id = ? AND revision = ?",
+                (entity_id, revision),
+            ).fetchone()
+        if row is None:
+            raise LedgerError("revision does not exist")
+        payload = json.loads(row["payload_json"])
+        payload_hash = _digest(_canonical(payload))
+        body = _canonical({
+            "entity_id": row["entity_id"],
+            "revision": row["revision"],
+            "event_id": row["event_id"],
+            "entity_type": row["entity_type"],
+            "case_id": row["case_id"],
+            "recorded_at": row["recorded_at"],
+            "valid_from": row["valid_from"],
+            "valid_to": row["valid_to"],
+            "supersedes_revision": row["supersedes_revision"],
+            "schema_version": row["schema_version"],
+            "created_at": row["created_at"],
+            "created_by": row["created_by"],
+            "access_policy": row["access_policy"],
+            "payload_hash": payload_hash,
+        })
+        return _digest(body) == row["integrity_hash"]
+
     @staticmethod
     def _from_row(row: sqlite3.Row) -> Revision:
         return Revision(
