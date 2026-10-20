@@ -4,8 +4,8 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 
 | Gate | Estado | Evidencia / criterio | Límite |
 |---|---|---|---|
-| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #239 | No cubre T01–T30 integralmente |
-| F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #239: 21 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
+| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #247 | No cubre T01–T30 integralmente |
+| F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #247: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
 | Integración semántica/ATMS → modelador | NOT_YET_INTEGRATED | Los checks semánticos y la sonda ATMS corren en el mismo workflow | El generador no consume una conclusión CRMinf/PROV/SPARQL ni la selección de supuestos del ATMS |
 | F0 — cierre de fase | PENDING_FORMAL_REVIEW | Revisar PR #1 y PR #3, evidencias, inventario y límites declarados | La revisión de fase es independiente de H-IGC |
 | H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
@@ -30,7 +30,7 @@ La suite modifica un archivo Modelica y una muestra interior del CSV; el verific
 
 D1/R2 son integración cloud planificada en F8, no requisito de aceptación de F0. La corrida F0 marca esa etapa OUT_OF_SCOPE; si los gates técnicos requeridos pasan, el resultado de la spike es PASS_WITH_LIMITATIONS y la plataforma queda INCOMPLETE. F0 aún requiere revisión formal de fase; no se declara completa solo por Actions verde.
 
-El artefacto verificado en Actions #239 corresponde al commit 66953076bed8d9767f81ef3cd48c81fbc2310373. Actions #235 y #238 son corridas históricas anteriores; la referencia vigente debe actualizarse al cerrar las mejoras de este PR.
+El artefacto verificado en Actions #247 corresponde al commit `748880e40e79481d8c16d2cf3ea17f133c055f05`; conserva `handoff.json`, `verification.json`, fuentes Modelica, logs y CSV. El resultado reportado fue 20 pedidos base y 29.99999999999999 perturbado al cabo de 10 horas. Actions #239 (#6695307) es la evidencia previa; #235 y #238 son corridas históricas.
 
 ## Criterio para el cierre de fase
 
