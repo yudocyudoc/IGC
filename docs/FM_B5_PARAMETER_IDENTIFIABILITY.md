@@ -18,7 +18,7 @@ Después del ajuste se reserva un segundo conjunto, con una semilla de ruido dis
 
 El cálculo usa RK4 sobre las ecuaciones stock-flujo de las moléculas fuente auditadas: cada etapa acumula entradas menos terminaciones; la terminación es `min(stock/responseTime, maxThroughput)`; las entregas acumulan la terminación de la última etapa. El snapshot de `IGCMolecules.mo` y el commit fijado de SystemDynamics se registran en el reporte.
 
-Se informa el RMSE de calibración, el conjunto de parámetros compatible y su envolvente de predicción para el pulso. La regla predeclarada solo marca `DISTINGUISHED_ON_HELD_OUT_PULSE` si las envolventes se separan por al menos dos desviaciones de ruido en tres o más observaciones y la ventaja de RMSE reservado alcanza una desviación de ruido. De lo contrario informa `NOT_DISTINGUISHED_ON_HELD_OUT_PULSE`; no se trata como error de software.
+Se informa el RMSE de calibración, la comparación entre estructuras durante el ajuste, el conjunto de parámetros compatible y su envolvente de predicción para el pulso. El RMSE reservado se calcula sobre la media no ponderada de los puntos de rejilla compatibles con la calibración para evitar que un desempate arbitrario del mejor punto en una meseta de throughput determine la evaluación. Esa media no es una estimación bayesiana. La regla predeclarada solo marca `DISTINGUISHED_ON_HELD_OUT_PULSE` si las envolventes se separan por al menos dos desviaciones de ruido en tres o más observaciones y la ventaja de RMSE reservado alcanza una desviación de ruido. De lo contrario informa `NOT_DISTINGUISHED_ON_HELD_OUT_PULSE`; no se trata como error de software.
 
 ## Límites científicos
 

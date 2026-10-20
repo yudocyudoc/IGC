@@ -195,9 +195,12 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         best_prediction = simulate(stage_count, best_params["maxThroughput"], best_params["responseTime"],
             float(held_out["input_amplitude"]), float(held_out["input_duration"]),
             float(held_out["stop_time"]), float(held_out["observation_interval"]), step)
+        ensemble_mean = [sum(row[index] for row in predictions) / len(predictions)
+                         for index in range(len(test_times))]
         pulse_predictions[name] = {
-            "held_out_rmse": rmse(best_prediction, test_obs),
-            "best_fit_prediction": best_prediction,
+            "held_out_rmse": rmse(ensemble_mean, test_obs),
+            "best_fit_point_held_out_rmse": rmse(best_prediction, test_obs),
+            "calibration_supported_ensemble_mean": ensemble_mean,
             "prediction_envelope_under_calibration_uncertainty": [
                 {"minimum": min(row[i] for row in predictions),
                  "maximum": max(row[i] for row in predictions)}
@@ -235,6 +238,14 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         "calibration_fit_by_structure": {
             name: {key: value for key, value in fit.items() if key != "supported_grid_points"}
             for name, fit in calibration_fits.items()},
+        "calibration_structure_comparison": {
+            "best_structure_by_calibration_rmse": min(structures,
+                key=lambda name: calibration_fits[name]["best_fit"]["rmse"]),
+            "best_fit_sse_by_structure": {name: fit["best_fit"]["sse"]
+                for name, fit in calibration_fits.items()},
+            "best_fit_rmse_by_structure": {name: fit["best_fit"]["rmse"]
+                for name, fit in calibration_fits.items()},
+            "interpretation": "calibration comparison is descriptive; the held-out pulse remains excluded from fitting"},
         "held_out_pulse_evaluation": {
             "input_amplitude_units_per_hour": float(held_out["input_amplitude"]),
             "input_duration_hours": float(held_out["input_duration"]),
@@ -243,6 +254,9 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
             "rmse_by_structure": {name: item["held_out_rmse"] for name, item in pulse_predictions.items()},
             "lower_rmse_structure": heldout_winner,
             "held_out_rmse_advantage": rmse_gap,
+            "best_fit_point_rmse_by_structure": {name: item["best_fit_point_held_out_rmse"]
+                for name, item in pulse_predictions.items()},
+            "predictive_aggregation": "unweighted mean across the calibration-compatible grid points; not a Bayesian posterior mean",
             "prediction_envelope_separated_observation_count": len(separated),
             "separated_observation_times": separated,
             "parameter_uncertainty_predictions": {name: item["prediction_envelope_under_calibration_uncertainty"]
