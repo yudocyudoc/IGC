@@ -180,12 +180,15 @@ class Ledger:
                 connection.commit()
                 return self._from_row(existing)
             current = connection.execute(
-                "SELECT revision, case_id FROM entity_revisions WHERE entity_id = ? ORDER BY revision DESC LIMIT 1",
+                "SELECT revision, case_id, recorded_at FROM entity_revisions WHERE entity_id = ? ORDER BY revision DESC LIMIT 1",
                 (entity_id,),
             ).fetchone()
             if current and current["case_id"] != case_id:
                 connection.rollback()
                 raise LedgerError("an entity cannot change case_id across revisions")
+            if current and recorded < current["recorded_at"]:
+                connection.rollback()
+                raise LedgerError("recorded_at cannot precede the prior revision for this entity")
             revision = (current["revision"] + 1) if current else 1
             supersedes = revision - 1 if revision > 1 else None
             event_id = f"urn:igc:event:{_digest(idempotency_key)[:24]}"
