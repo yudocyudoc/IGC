@@ -59,6 +59,10 @@ jobs:
       - name: Verify wrapper provenance and distinct topology traces
         run: python scripts/verify_short_wrapper_poc.py | tee artifacts/fm-b-wrapper-poc/verification.log
 
+      - name: Normalize container artifact permissions
+        if: always()
+        run: chmod -R a+rX artifacts/fm-b-wrapper-poc
+
       - name: Upload wrapper PoC evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

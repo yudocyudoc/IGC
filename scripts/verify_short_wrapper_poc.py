@@ -16,8 +16,8 @@ RESULTS = ROOT / "artifacts/fm-b-wrapper-poc"
 def load_trace(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
-    if len(rows) != 101:
-        raise SystemExit(f"{path.name}: expected 101 samples, got {len(rows)}")
+    if len(rows) != 102:
+        raise SystemExit(f"{path.name}: expected 102 samples, got {len(rows)}")
     if "time" not in rows[0] or "delivered" not in rows[0]:
         raise SystemExit(f"{path.name}: required output columns missing")
     for row in rows:
