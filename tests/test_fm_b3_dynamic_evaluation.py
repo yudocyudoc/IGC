@@ -92,6 +92,35 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
                 with self.assertRaisesRegex(DynamicEvaluationError, expected):
                     self._trace(Path(temp_dir) / "trace.csv", corruption)
 
+    def test_accepts_repeated_event_timestamps_but_rejects_time_reversal(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "trace.csv"
+            fields = ["time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
+                      "terminalBalanceError", "waiting_stage0", "queueBalanceError_stage0"]
+            rows = [
+                {"time": 0, "delivered": 0, "acceptedTotal": 0, "systemInventory": 0,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 0,
+                 "queueBalanceError_stage0": 0},
+                {"time": 0, "delivered": 0, "acceptedTotal": 0, "systemInventory": 0,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 0,
+                 "queueBalanceError_stage0": 0},
+                {"time": 10, "delivered": 20, "acceptedTotal": 30, "systemInventory": 30,
+                 "systemBalanceError": 0, "terminalBalanceError": 0, "waiting_stage0": 10,
+                 "queueBalanceError_stage0": 0},
+            ]
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                writer.writerows(rows)
+            self.assertEqual(assess_trace(path, ["stage0"], 0, 10, 1)["samples"], 3)
+            rows[1]["time"] = -1
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                writer.writerows(rows)
+            with self.assertRaisesRegex(DynamicEvaluationError, "time cannot move backwards"):
+                assess_trace(path, ["stage0"], 0, 10, 1)
+
     def test_comparison_requires_distinct_dynamic_behavior(self):
         common = {"times": [0, 1], "delivered_series": [0, 2]}
         result = evaluate_comparison({"a": common, "b": {"times": [0, 1], "delivered_series": [0, 3]}},

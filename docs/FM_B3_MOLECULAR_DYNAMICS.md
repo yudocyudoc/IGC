@@ -16,7 +16,7 @@ La salida JSON participa en una cadena de evidencia, pero no es el criterio de �
 - arrivals, completions y stock de cada cola;
 - balance terminal entre entradas al contador y entregas.
 
-Cada trayectoria debe tener 102 muestras finitas en el intervalo del plan; stocks y cantidades acumuladas no negativos; entregas e input acumulado monótonos; y errores absolutos de balance no superiores a `1e-5`. Para cada cola se comprueba `arrivals acumuladas - completions acumuladas = stock`; para el sistema, `input acumulado = entregas + stocks en cola`. Las trayectorias admitidas deben usar la misma malla temporal y diferir en entregas para no colapsar en una misma explicación dinámica.
+Cada trayectoria debe tener 102 muestras finitas en el intervalo del plan; las marcas de tiempo pueden repetirse en eventos de inicialización, pero no retroceder; stocks y cantidades acumuladas no negativos; entregas e input acumulado monótonos; y errores absolutos de balance no superiores a `1e-5`. Para cada cola se comprueba `arrivals acumuladas - completions acumuladas = stock`; para el sistema, `input acumulado = entregas + stocks en cola`. Las trayectorias admitidas deben usar la misma malla temporal y diferir en entregas para no colapsar en una misma explicación dinámica.
 
 ## Evaluación comparativa
 

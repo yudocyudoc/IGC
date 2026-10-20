@@ -194,8 +194,10 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
     times = [_number(row, "time", path, index) for index, row in enumerate(rows)]
     if abs(times[0] - start) > TOLERANCE or abs(times[-1] - stop) > TOLERANCE:
         raise DynamicEvaluationError(f"{path.name}: simulation time bounds differ from the plan")
-    if any(right <= left for left, right in zip(times, times[1:])):
-        raise DynamicEvaluationError(f"{path.name}: time must increase strictly")
+    if any(right < left - TOLERANCE for left, right in zip(times, times[1:])):
+        raise DynamicEvaluationError(f"{path.name}: time cannot move backwards")
+    if not any(right > left + TOLERANCE for left, right in zip(times, times[1:])):
+        raise DynamicEvaluationError(f"{path.name}: simulation time did not advance")
     metrics = {key: [] for key in ["delivered", "acceptedTotal", "systemInventory", "systemBalanceError", "terminalBalanceError"]}
     metrics.update({f"waiting_{stage}": [] for stage in stage_ids})
     metrics.update({f"queueBalanceError_{stage}": [] for stage in stage_ids})
