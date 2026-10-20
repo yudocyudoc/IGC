@@ -181,7 +181,7 @@ def check_negative_cases(document: dict[str, Any]) -> None:
 
 def compare_simple_filter_to_atms() -> dict[str, Any]:
     """Compare the PR #5 fixture's ATMS decision with a subset filter baseline."""
-    from scripts.f3_candidate_selection import select_candidates
+    from f3_candidate_selection import select_candidates
 
     proposals = json.loads(DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
     base = json.loads(DEFAULT_BASE_CANDIDATE.read_text(encoding="utf-8"))
