@@ -10,10 +10,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 POC = ROOT / "poc/short_wrappers"
 RESULTS = ROOT / "artifacts/fm-b-molecular-composer"
+PLAN = ROOT / "data/synthetic/fm_b_serial_chain_plan.json"
+CATALOG = ROOT / "data/synthetic/fm_a_structural_candidates.json"
+GENERATOR = ROOT / "scripts/compose_molecular_candidates.py"
 
 
 def sha256(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def verify_input_provenance(report: dict, plan_path: Path = PLAN,
+                            catalog_path: Path = CATALOG,
+                            generator_path: Path = GENERATOR) -> None:
+    for name, path in (("plan_sha256", plan_path), ("catalog_sha256", catalog_path),
+                       ("generator_sha256", generator_path)):
+        if report[name] != sha256(path):
+            raise ValueError(f"{name}: current input does not match the composition report")
 
 
 def load_trace(path: Path) -> list[dict[str, str]]:
@@ -39,6 +51,10 @@ def main() -> None:
         source_hashes[entry["path"]] = "sha256:" + actual
 
     report = json.loads((RESULTS / "composition-report.json").read_text(encoding="utf-8"))
+    try:
+        verify_input_provenance(report)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     candidates_path = RESULTS / "composed_candidates.json"
     modelica_path = RESULTS / "GeneratedMolecularCandidates.mo"
     mos_path = RESULTS / "run-composed-models.mos"

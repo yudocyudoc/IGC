@@ -12,6 +12,7 @@ on:
       - requirements-f1a-linkml.lock.txt
       - schema/source/igc.yaml
       - scripts/compose_molecular_candidates.py
+      - tests/test_fm_b_molecular_composer.py
       - scripts/validate_fm_a_contract.py
       - scripts/verify_molecular_composition_poc.py
   pull_request:
@@ -25,6 +26,7 @@ on:
       - requirements-f1a-linkml.lock.txt
       - schema/source/igc.yaml
       - scripts/compose_molecular_candidates.py
+      - tests/test_fm_b_molecular_composer.py
       - scripts/validate_fm_a_contract.py
       - scripts/verify_molecular_composition_poc.py
 
@@ -54,6 +56,7 @@ jobs:
 
       - name: Generate LinkML schemas and compose declared candidates
         run: |
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b_molecular_composer.py' -v
           mkdir -p artifacts/fm-b-molecular-composer/linkml
           for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
             /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/fm-b-molecular-composer/linkml/${top_class}.schema.json"

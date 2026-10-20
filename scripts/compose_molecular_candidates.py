@@ -19,6 +19,8 @@ from validate_fm_a_contract import (  # noqa: E402
     validate_references,
 )
 
+MODEL_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 
 def digest(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
@@ -33,6 +35,39 @@ def require_port(definition: dict[str, Any], name: str, direction: str,
     if port["direction"] != direction or (signal_kind and port["signal_kind"] != signal_kind):
         raise ContractError("COMPOSITION_PORT_INCOMPATIBLE", f"{definition['id']}.{name}")
     return port
+
+
+def validate_modelica_symbols(plan: dict[str, Any], document: dict[str, Any]) -> None:
+    class_names = [
+        "Composed_" + modelica_identifier(candidate["id"].rsplit(":", 1)[-1])
+        for candidate in document["candidates"]
+    ]
+    if len(set(class_names)) != len(class_names):
+        raise ContractError(
+            "COMPOSITION_MODELICA_IDENTIFIER_COLLISION",
+            "candidate ids normalize to the same Modelica class",
+        )
+    for candidate, class_name in zip(document["candidates"], class_names):
+        if not MODEL_IDENTIFIER.fullmatch(class_name):
+            raise ContractError("COMPOSITION_MODELICA_IDENTIFIER_INVALID", candidate["id"])
+
+    for structure in document["structures"]:
+        for instance in structure["molecule_instances"]:
+            if not MODEL_IDENTIFIER.fullmatch(instance["id"]):
+                raise ContractError("COMPOSITION_MODELICA_IDENTIFIER_INVALID", instance["id"])
+            definition = next(item for item in document["molecule_definitions"]
+                              if item["id"] == instance["molecule_definition_id"])
+            modelica_class = definition.get("modelica_class", "")
+            if not modelica_class or not all(
+                MODEL_IDENTIFIER.fullmatch(part) for part in modelica_class.split(".")
+            ):
+                raise ContractError("COMPOSITION_MODELICA_CLASS_INVALID", modelica_class)
+            for binding in instance["parameter_bindings"]:
+                if not MODEL_IDENTIFIER.fullmatch(binding["parameter_id"]):
+                    raise ContractError("COMPOSITION_MODELICA_IDENTIFIER_INVALID", binding["parameter_id"])
+    output_name = plan["observable"]["output_name"]
+    if not MODEL_IDENTIFIER.fullmatch(output_name):
+        raise ContractError("COMPOSITION_MODELICA_IDENTIFIER_INVALID", output_name)
 
 
 def binding_values(definition: dict[str, Any], requested: dict[str, Any]) -> list[dict[str, Any]]:
@@ -78,8 +113,11 @@ def compose(plan: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
     if input_instance != plan["instances"]["source"]:
         raise ContractError("COMPOSITION_INPUT_INSTANCE", ext["target_port"])
     require_port(source_def, input_port, "in", "SIGNAL")
-    if ext["unit"] != next(p["unit"] for p in source_def["ports"] if p["name"] == input_port):
+    input_definition = next(p for p in source_def["ports"] if p["name"] == input_port)
+    if ext["unit"] != input_definition["unit"]:
         raise ContractError("COMPOSITION_INPUT_UNIT", ext["target_port"])
+    if not isinstance(ext["value"], (int, float)) or not math.isfinite(ext["value"]):
+        raise ContractError("COMPOSITION_INPUT_INVALID", ext["target_port"])
     sink_id, observable_port = observable["port"].rsplit(".", 1)
     if sink_id != plan["instances"]["sink"]:
         raise ContractError("COMPOSITION_OBSERVABLE_INSTANCE", observable["port"])
@@ -127,6 +165,7 @@ def compose(plan: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
                 "molecule_definitions": catalog["molecule_definitions"],
                 "candidates": candidates, "structures": structures}
     validate_references(document)
+    validate_modelica_symbols(plan, document)
     return document
 
 
