@@ -4,9 +4,9 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 
 | Gate | Estado | Evidencia / criterio | Límite |
 |---|---|---|---|
-| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #250 | No cubre T01–T30 integralmente |
+| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #450 | No cubre T01–T30 integralmente |
 | F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #250: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
-| ATMS → selección → handoff | PASS_SYNTHETIC (PR #5; Actions #2) | Actions #2 (run 39365713141): 4 pruebas; el nogood poda el baseline y OpenModelica obtiene 30/40 pedidos para el candidato seleccionado y su perturbación; artefacto 12238439065 | El probe ATMS sigue siendo prototipo; no consume conclusiones RDF/CRMinf/SPARQL ni demuestra semántica empírica |
+| ATMS → selección → handoff | PASS_SYNTHETIC (PR #5; Actions #2) | Actions #2 (run 39365713141): 5 pruebas; el nogood poda el baseline y OpenModelica obtiene 30/40 pedidos para el candidato seleccionado y su perturbación; artefacto 12238439065 | El probe ATMS sigue siendo prototipo; no consume conclusiones RDF/CRMinf/SPARQL ni demuestra semántica empírica |
 | F0 — fase | ACCEPTED_WITH_LIMITATIONS | Investigador autorizó e integró PR #1 y #3 en `main` el 2026-10-20 | No completa la plataforma ni evalúa H-IGC |
 | H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
 | Plataforma completa | INCOMPLETE | F1–F9 siguen su secuencia; la persistencia cloud está planificada en F8 | No es una dependencia para aceptar los gates técnicos de F0 |
@@ -46,6 +46,6 @@ PR #2 implementó el contrato LinkML y ledger SQLite local; PR #4 añadió `reco
 
 ## Incremento F3: selección ATMS conectada al handoff
 
-El workflow `F3 ATMS candidate handoff` (run #2) pasó y generó `selection.json`, el candidato seleccionado, el manifiesto del handoff y la verificación de OpenModelica. La suite comprueba que el nogood elimina el candidato baseline, que sin nogood coexisten las dos alternativas, y que referencias o valores inválidos fallan cerrados. La selección se conserva dentro del candidato hasheado y el manifiesto enlaza esa evidencia.
+El workflow `F3 ATMS candidate handoff` (run #4) pasó y generó `selection.json`, el candidato seleccionado, el manifiesto del handoff y la verificación de OpenModelica. La suite comprueba que el nogood elimina el candidato baseline, que sin nogood coexisten las dos alternativas, y que referencias o valores inválidos fallan cerrados. La selección se conserva dentro del candidato hasheado y el manifiesto enlaza esa evidencia.
 
 Este incremento no cierra F2b ni F3a/F3b: usa el probe F0 explícitamente no productivo, no procesa salidas semánticas RDF/CRMinf/SPARQL, y no compone estructuras SD distintas. La integración semántica, retractación/versionado, conformance del ATMS y modelos estructuralmente rivales quedan pendientes.
