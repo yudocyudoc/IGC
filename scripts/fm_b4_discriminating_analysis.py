@@ -45,10 +45,15 @@ def source_profile() -> dict[str, Any]:
         "bounded_queue_stock": "SystemDynamics.Levels.Levelstock(x0=0);",
         "bounded_release": "SystemDynamics.Rates.RRaterelease(minFlow=0,maxFlow=maxThroughput);",
         "proportional_response": "Modelica.Blocks.Math.Gainresponse(k=1/responseTime);",
-        "negative_feedback_path": "response.u=stock.level;connect(response.y,release.u);connect(release.y,completed);connect(release.y1,stock.u2);",
+        "negative_feedback_level_link": "response.u=stock.level;",
+        "negative_feedback_control_link": "connect(response.y,release.u);",
+        "negative_feedback_release_output": "connect(release.y,completed);",
+        "negative_feedback_stock_depletion": "connect(release.y1,stock.u2);",
         "queue_input_path": "connect(arrival,inflow.u);connect(inflow.y,stock.u1);",
         "source_passthrough": "connect(externalRate,incoming.u);connect(incoming.y,outflow);",
-        "sink_accumulator": "SystemDynamics.Levels.Level1adeliveries(x0=0);connect(incoming.y,deliveries.u1);total=deliveries.level;",
+        "sink_accumulator_stock": "SystemDynamics.Levels.Level1adeliveries(x0=0);",
+        "sink_accumulator_input": "connect(incoming.y,deliveries.u1);",
+        "sink_accumulator_output": "total=deliveries.level;",
     }
     missing = [label for label, signature in signatures.items() if signature not in source]
     if missing:

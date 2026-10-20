@@ -129,4 +129,4 @@ jobs:
         with:
           name: fm-b4-discriminating-perturbation
           path: artifacts/fm-b4-discriminating-analysis/
-          if-no-files-found: error
+          if-no-files-found: warn
