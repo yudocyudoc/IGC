@@ -45,7 +45,7 @@ jobs:
         run: |
           docker run --rm \
             --user "$(id -u):$(id -g)" \
-            --workdir /tmp \
+            --workdir /results \
             -e HOME=/tmp \
             -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
             -v "$PWD/poc/short_wrappers:/evidence:ro" \
