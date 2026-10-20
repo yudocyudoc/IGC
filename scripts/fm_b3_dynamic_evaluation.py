@@ -130,7 +130,7 @@ def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
                 f"candidate.{stage}.waiting" for stage in stages
             ) + ";",
             "    systemBalanceError = acceptedTotal - systemInventory;",
-            "    terminalBalanceError = cumulativeTerminal.y - delivered;",
+            "    terminalBalanceError = terminalArrivals - delivered;",
         ])
         for stage in stages:
             model_lines.extend([
