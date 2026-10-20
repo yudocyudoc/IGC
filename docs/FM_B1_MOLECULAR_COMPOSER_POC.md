@@ -1,6 +1,6 @@
 # FM-B1 — PoC de composición molecular declarativa
 
-**Estado:** `B1_MOLECULAR_COMPOSITION_PASS_SYNTHETIC` en GitHub Actions #2, commit `17bbf0612b3ec8afbc7d72bfaadc5880e6436167`.
+**Estado:** `B1_MOLECULAR_COMPOSITION_PASS_SYNTHETIC`; hardening de revisión aprobado en Actions #4, commit `8576045163c366299c5f50ba6606501f20d9c6f9`.
 
 ## Objetivo
 
@@ -20,6 +20,8 @@ La PoC no lee las estructuras CS-01/CS-02 ya guardadas en el fixture FM-A como e
 
 ## Evidencia que producirá Actions
 
-El workflow genera esquemas desde LinkML, valida el documento compuesto, comprueba las clases Modelica generadas, las simula con el runtime fijado y verifica hashes de entradas/salidas y series CSV. Actions #2 pasó con 102 muestras por candidato y hashes estructurales distintos. La diferencia máxima entre las series `delivered` fue 1.9998477; los valores finales fueron 19.0986130 para una etapa y 17.0987653 para dos. La evidencia está en [GitHub Actions #2](https://github.com/yudocyudoc/IGC/actions/runs/39458708549) y su artifact `fm-b-molecular-composer`.
+El workflow genera esquemas desde LinkML, valida el documento compuesto, comprueba las clases Modelica generadas, las simula con el runtime fijado y verifica hashes de entradas/salidas y series CSV. Actions #2 pasó con 102 muestras por candidato y hashes estructurales distintos. La diferencia máxima entre las series `delivered` fue 1.9998477; los valores finales fueron 19.0986130 para una etapa y 17.0987653 para dos. La evidencia está en [Actions #2](https://github.com/yudocyudoc/IGC/actions/runs/39458708549) y su artifact `fm-b-molecular-composer`.
+
+La revisión añadió pruebas para tres etapas, cero etapas, un puerto incompatible, un parámetro bajo el límite, colisión de nombres Modelica, identificadores de instancia inválidos y cambios posteriores del plan o catálogo. Todas pasaron junto con la compilación, simulación y verificación en [Actions #4](https://github.com/yudocyudoc/IGC/actions/runs/39462790658).
 
 Este resultado acredita la composición y ejecución de esta integración sintética, no la admisión general del compositor ni la evaluación científica H-IGC.
