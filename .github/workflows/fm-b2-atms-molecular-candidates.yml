@@ -1,0 +1,91 @@
+name: FM-B2 ATMS molecular candidates
+
+on:
+  push:
+    branches:
+      - fm-b2-atms-molecular-candidates
+    paths:
+      - .github/workflows/fm-b2-atms-molecular-candidates.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b_serial_chain_plan.json
+      - data/synthetic/fm_b2_candidate_supports.json
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/f0_atms_probe.py
+      - scripts/fm_b2_atms_candidate_reasoning.py
+      - scripts/validate_fm_a_contract.py
+      - scripts/verify_fm_b2_atms_selection.py
+      - tests/test_fm_b_molecular_composer.py
+      - tests/test_fm_b2_atms_molecular_candidates.py
+  pull_request:
+    branches:
+      - fm-b-molecular-composer
+    paths:
+      - .github/workflows/fm-b2-atms-molecular-candidates.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b_serial_chain_plan.json
+      - data/synthetic/fm_b2_candidate_supports.json
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/f0_atms_probe.py
+      - scripts/fm_b2_atms_candidate_reasoning.py
+      - scripts/validate_fm_a_contract.py
+      - scripts/verify_fm_b2_atms_selection.py
+      - tests/test_fm_b_molecular_composer.py
+      - tests/test_fm_b2_atms_molecular_candidates.py
+
+permissions:
+  contents: read
+
+jobs:
+  atms-molecular-candidates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+
+      - name: Install hash-locked LinkML validation dependencies
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer artifacts/fm-b2-atms-candidates
+          python -m venv /tmp/igc-linkml-locked
+          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f1a-linkml.lock.txt
+
+      - name: Test B1 contracts and B2 ATMS behavior
+        run: |
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b_molecular_composer.py' -v
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b2_atms_molecular_candidates.py' -v
+
+      - name: Compose and LinkML-validate molecular candidates
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer/linkml
+          for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
+            /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/fm-b-molecular-composer/linkml/${top_class}.schema.json"
+          done
+          /tmp/igc-linkml-locked/bin/python scripts/compose_molecular_candidates.py \
+            --schema-dir artifacts/fm-b-molecular-composer/linkml \
+            --output-dir artifacts/fm-b-molecular-composer
+
+      - name: Apply ATMS supports to composed alternatives
+        run: |
+          /tmp/igc-linkml-locked/bin/python scripts/fm_b2_atms_candidate_reasoning.py \
+            --candidates artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --support-plan data/synthetic/fm_b2_candidate_supports.json \
+            --composition-report artifacts/fm-b-molecular-composer/composition-report.json \
+            --output-dir artifacts/fm-b2-atms-candidates
+          /tmp/igc-linkml-locked/bin/python scripts/verify_fm_b2_atms_selection.py
+
+      - name: Upload B2 ATMS evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fm-b2-atms-molecular-candidates
+          path: artifacts/fm-b2-atms-candidates/
+          if-no-files-found: error
