@@ -1,0 +1,229 @@
+schema_version: 1
+project: igc
+specification: docs/IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md
+lock_status: PYTHON_HASH_LOCKED_PLATFORM_SPECIFIC
+generated_at: 2026-10-19
+note: >-
+  F0 Python dependencies and the OpenModelica image are pinned and passed in
+  GitHub Actions. requirements-f0.lock.txt contains the eight-package Python
+  closure with SHA-256 hashes for ubuntu-24.04 CPython 3.13.16 x86_64.
+  GitHub Actions emits an SPDX 2.3 snapshot covering the Python lock, runner/container dpkg packages, pinned Actions, runner label, OpenModelica image, two Modelica source archives, and four checksum-pinned ontology graphs. Scoped documentation review is recorded in docs/REVISION_LICENCIAS_F0.md. SPDX license fields remain NOASSERTION because 1,432 dpkg package licenses, non-dpkg runner tools, and bundled Action dependencies are not individually reviewed.
+
+execution_environment:
+  provider: GitHub Actions
+  runner: ubuntu-24.04
+  python:
+    version: 3.13.16
+    source: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+  docker:
+    version_observed: 28.0.4
+  openmodelica:
+    version: 1.27.1
+    image: openmodelica/openmodelica:v1.27.1-minimal
+    digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    license: OSMC-PL-1.8-or-AGPL-3.0-as-distributed
+    status: COMPILE_SIMULATE_PASS_SYNTHETIC
+
+github_actions:
+  - action: actions/checkout
+    version: v6
+    commit: d23441a48e516b6c34aea4fa41551a30e30af803
+  - action: actions/setup-python
+    version: v7
+    commit: 5fda3b95a4ea91299a34e894583c3862153e4b97
+  - action: actions/upload-artifact
+    version: v4
+    commit: ea165f8d65b6e75b540449e92b4886f43607fa02
+
+python_dependency_lock:
+  file: requirements-f0.lock.txt
+  target: ubuntu-24.04 / CPython 3.13.16 / x86_64
+  resolved_package_count: 8
+  validation: CI_REQUIRE_HASHES_PASS
+
+platform_sbom:
+  file: artifacts/f0/platform.spdx.json
+  format: SPDX-2.3-JSON
+  package_count: 1451
+  python_packages: 8
+  runner_dpkg_packages: 1210
+  openmodelica_dpkg_packages: 222
+  pinned_github_actions: 3
+  runner_image_label: ubuntu-24.04
+  openmodelica_image_digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+  snapshot_content_sha256: 60bef95ddb7e3c1811b2af9201ef73240bfe183ac206038e1846dee35e0c98dd
+  license_assertions: NOASSERTION
+  limitations:
+    - Runner tools installed outside dpkg are not expanded into package records.
+    - GitHub-hosted runner label is mutable; this SBOM is a point-in-time snapshot.
+    - Action source is identified by commit SHA, but internal bundled dependencies are not expanded.
+    - Snapshot includes two pinned Modelica sources and four ontology graph snapshots; raw upstream source is not retained in artifacts.
+
+ontology_graphs:
+  manifest: data/ontologies/manifest.json
+  verification_script: scripts/verify_ontologies.py
+  status: CI_PARSE_TERM_AND_BOUNDED_OWL_RL_PASS
+  graph_count: 4
+  source_triple_count: 6974
+  combined_triples_after_owl_rl: 18847
+  graphs:
+    - name: CIDOC CRM
+      version: 7.1.3
+      sha256: 05074c0e3010fcef5fae70ae8c80e0428d7cab251e30657737d2475db0bcf07d
+    - name: CRMinf
+      version: 1.2.1
+      sha256: d7d9bb51339380abf56acdcc7229f529c65c547b467dc913b1c8d31bccf95298
+    - name: CRMsci
+      version: 3.2
+      sha256: 0b00e2c08b2dc14d8859764462e3f5448fc55eca16a0d586cbb5e1a4665bdffd
+    - name: PROV-O
+      version: 2013-04-30
+      sha256: d7ea634dbcd31347eba38157197f69d314077ef7f88fd4f90e4f24a78bfe1097
+  entailment:
+    input: http://www.cidoc-crm.org/cidoc-crm/E16_Measurement
+    inferred: http://www.cidoc-crm.org/extensions/crmsci/S4_Single_Observation
+    status: OWL_RL_PASS
+  limitations:
+    - owl:imports closure is not expanded.
+    - This is a bounded compatibility probe, not ontology-wide conformance or empirical validation.
+  licenses: SCOPED_REVIEW_COMPLETE_GRAPH_SERIALIZATION_GAPS_REMAIN
+
+python_sbom:
+  file: artifacts/f0/python-dependencies.spdx.json
+  format: SPDX-2.3-JSON
+  package_count: 8
+  scope: PYTHON_DEPENDENCY_CLOSURE_ONLY
+  license_assertions: NOASSERTION
+  status: GENERATED_IN_CI
+
+python_direct_dependencies:
+  - package: rdflib
+    version: 7.6.0
+    license: BSD-3-Clause
+    requirement: requirements-f0.txt
+    hash_lock: requirements-f0.lock.txt
+    status: PINNED_DIRECT_HASH_LOCK_CI_PASS
+  - package: pyshacl
+    version: 0.40.1
+    license: Apache-2.0
+    requirement: requirements-f0.txt
+    status: PINNED_DIRECT_CI_PASS
+
+semantic_capabilities:
+  - name: web_annotation_jsonld_roundtrip
+    status: CI_PASS_SYNTHETIC_FIXTURE
+  - name: rdf_prov_mapping
+    status: CI_PASS_MINIMAL_PROV_O_PROFILE
+  - name: shacl
+    status: CI_PASS_POSITIVE_AND_NEGATIVE_FIXTURE
+  - name: sparql
+    status: CI_PASS_SYNTHETIC_QUERY
+  - name: crminf_crmsci
+    status: MINIMAL_PROFILE_CI_PASS
+    crminf: 1.2.1
+    crmsci: 3.2
+    compatible_cidoc_crm: 7.1.3
+    profile: igc-f0-crminf-minimal/0.1
+    official_sources:
+      crminf_release: https://cidoc-crm.org/crminf/ModelVersion/crminf-1.2.1
+      crminf_declarations: https://cidoc-crm.org/extensions/crminf/html/CRMinf_v1.2.1.html
+      crmsci_releases: https://cidoc-crm.org/crmsci/fm_releases
+      crmsci_declarations: https://cidoc-crm.org/extensions/crmsci/html/CRMsci_v3.2.html
+    limitation: >-
+      Uses I1, I2, I4, J2, J4 for a synthetic assessment record. I5 inference
+      and CRMsci observation classes are deliberately not asserted because the
+      fixture declares no measurement or causal evidence. Official ontology
+      declarations are referenced; full ontology graph import and entailment
+      testing are not claimed.
+  - name: atms
+    status: F0_PROTOTYPE_CI_PASS_PRODUCTION_SELECTION_PENDING
+    implementation: scripts/f0_atms_probe.py
+
+resolution_evidence:
+  workflow: .github/workflows/f0-ci.yml
+  verified_run: https://github.com/yudocyudoc/IGC/actions/runs/39344398983
+  verified_commit: 06bd8514a893dd1be08e7645a2c88bbfbc9079a0
+  artifact: f0-spike-evidence
+  artifact_id: 12230756168
+  contains:
+    - pip-install-report.json
+    - requirements-f0.resolved.lock.txt
+    - lock-verification-report.json
+    - python-environment.txt
+    - run.json
+    - annotation-graph.ttl
+    - shacl-report.ttl
+    - shacl-negative-report.txt
+    - omc.log
+    - f0_toy_stock_res.csv
+    - python-dependencies.spdx.json
+    - ontology-verification.json
+    - modelica-libraries.json
+    - systemdynamics-omc.log
+    - systemdynamics-test.txt
+    - platform.spdx.json
+    - runner-packages.tsv
+    - openmodelica-packages.tsv
+    - pip-freeze.txt
+
+candidates:
+  semantic:
+    - name: linkml
+      version: null
+      status: NOT_SELECTED_NOT_LOCKED
+    - name: jsonld_validation
+      package: rdflib JSON-LD parser plus project SHACL profile
+      version: rdflib 7.6.0
+      status: SYNTHETIC_PROFILE_ONLY_NOT_FULL_W3C_CONFORMANCE
+  reasoning:
+    - name: atms
+      implementation: scripts/f0_atms_probe.py
+      version: project prototype 0.1
+      status: F0_FEASIBILITY_ONLY_NOT_PRODUCTION_ENGINE
+  dynamic_modeling:
+    - name: openmodelica
+      version: 1.27.1
+      image_digest: sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+      status: COMPILE_SIMULATE_PASS_SYNTHETIC
+    - name: system_dynamics_modelica_library
+      version: 2.1.2
+      source: https://github.com/modelica-3rdparty/SystemDynamics
+      source_ref: v2.1.2
+      source_commit: b986a2ea354ab550d627a392f857ad7c9997d961
+      declared_license: BSD-3-Clause
+      declared_msl_compatibility: 4.0.0
+      status: CHECKMODEL_PASS_OPENMODELICA_1_27_1_NOT_SIMULATED_OR_INTEGRATED
+      tested_model: SystemDynamics.Levels.Level
+      msl_version: 4.0.0
+      msl_source_commit: 6626538a236a34a390655b55d5e8c906bfe31772
+      test_run: https://github.com/yudocyudoc/IGC/actions/runs/39344398983
+    - name: business_simulation_library
+      version: 2.2.0
+      source: https://github.com/bslMS/BusinessSimulation
+      source_ref: v2.2.0
+      source_commit: 608cf499af56233766130afe2cfa0a7b80d5cc6d
+      declared_license: EUPL-1.2-or-later
+      declared_msl_compatibility: 4.0.0
+      upstream_om_support: RELEASE_TARGETS_OPENMODELICA_TESTED_OMEDIT_1.23.0_DEV
+      status: UPSTREAM_METADATA_VERIFIED_NOT_LOCKED_OR_TESTED_IN_IGC
+  cloud:
+    - name: cloudflare_d1
+      status: DESIGN_ONLY_NO_BINDING
+    - name: cloudflare_r2
+      status: DESIGN_ONLY_NO_BINDING
+    - name: cloudflare_vectorize
+      status: DESIGN_ONLY_NO_BINDING
+
+hashes:
+  - artifact: openmodelica/openmodelica:v1.27.1-minimal
+    sha256: ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+license_review:
+  document: docs/REVISION_LICENCIAS_F0.md
+  status: SCOPED_DOCUMENTARY_REVIEW_COMPLETE_PLATFORM_CLOSURE_PENDING
+  spdx_license_assertions: NOASSERTION
+  dpkg_packages_not_individually_reviewed: 1432
+  non_dpkg_runner_tools_reviewed: false
+  github_action_bundled_dependencies_reviewed: false
+  redistribution_cleared: false
+licenses_verified: false
+compatibility_verified: false

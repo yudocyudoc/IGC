@@ -1,0 +1,214 @@
+name: F0 synthetic spike
+
+on:
+  push:
+    branches:
+      - f0-inventario-spike
+    paths:
+      - .github/workflows/f0-ci.yml
+      - scripts/**
+      - tests/**
+      - requirements-f0.txt
+      - requirements-f0.lock.txt
+      - spike/**
+      - data/synthetic/**
+      - data/ontologies/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/f0-ci.yml
+      - scripts/**
+      - tests/**
+      - requirements-f0.txt
+      - requirements-f0.lock.txt
+      - spike/**
+      - data/synthetic/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f0-spike-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-spike:
+    name: Synthetic spike (Python + RDF + OpenModelica)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      IGC_OMC_DOCKER_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+
+      - name: Install and verify the committed F0 hash lock
+        run: |
+          mkdir -p artifacts/f0
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          def pins(path):
+              result = {}
+              for line in Path(path).read_text(encoding="utf-8").splitlines():
+                  line = line.strip().rstrip(chr(92)).strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([^\s]+)", line)
+                  if match:
+                      name = re.sub(r"[-_.]+", "-", match.group(1)).lower()
+                      result[name] = match.group(2)
+              return result
+
+          direct = pins("requirements-f0.txt")
+          locked = pins("requirements-f0.lock.txt")
+          missing = {name: version for name, version in direct.items() if locked.get(name) != version}
+          if missing:
+              raise SystemExit(f"direct pins disagree with hash lock: {missing}")
+          PY
+          python -m venv /tmp/igc-f0-locked
+          /tmp/igc-f0-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f0.lock.txt --report artifacts/f0/pip-install-report.json
+          /tmp/igc-f0-locked/bin/python scripts/lock_from_pip_report.py artifacts/f0/pip-install-report.json --output artifacts/f0/requirements-f0.resolved.lock.txt
+          diff -u requirements-f0.lock.txt artifacts/f0/requirements-f0.resolved.lock.txt
+          /tmp/igc-f0-locked/bin/python -m pip freeze > artifacts/f0/python-environment.txt
+
+      - name: Generate Python dependency SPDX inventory
+        run: /tmp/igc-f0-locked/bin/python scripts/sbom_from_lock.py requirements-f0.lock.txt --output artifacts/f0/python-dependencies.spdx.json
+
+      - name: Fetch immutable SystemDynamics and MSL sources
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz | awk '{print $1}' > artifacts/f0/systemdynamics.archive.sha256
+          sha256sum /tmp/igc-modelica/msl.tar.gz | awk '{print $1}' > artifacts/f0/msl-4.0.0.archive.sha256
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+          test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
+          test -f /tmp/igc-modelica/MSL/Modelica/package.mo
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          records = []
+          for name, version, scope, commit, archive, url in [
+              ("SystemDynamics", "2.1.2", "modelica-library-source", "b986a2ea354ab550d627a392f857ad7c9997d961", "systemdynamics.archive.sha256", "https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz"),
+              ("ModelicaStandardLibrary", "4.0.0", "modelica-library-dependency", "6626538a236a34a390655b55d5e8c906bfe31772", "msl-4.0.0.archive.sha256", "https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz"),
+          ]:
+              records.append({
+                  "name": name,
+                  "version": version,
+                  "scope": scope,
+                  "purl": f"pkg:github/{'modelica-3rdparty/SystemDynamics' if name == 'SystemDynamics' else 'modelica/ModelicaStandardLibrary'}@{commit}",
+                  "downloadLocation": url,
+                  "checksums": [{"algorithm": "SHA256", "checksumValue": Path(f"artifacts/f0/{archive}").read_text().strip()}],
+                  "comment": "Immutable upstream commit archive; license review is intentionally pending."
+              })
+          Path("artifacts/f0/modelica-libraries.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Verify official ontology graphs and bounded entailment
+        run: |
+          /tmp/igc-f0-locked/bin/python scripts/verify_ontologies.py --manifest data/ontologies/manifest.json --report artifacts/f0/ontology-verification.json --packages artifacts/f0/ontology-packages.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          sources = []
+          for path in ("artifacts/f0/modelica-libraries.json", "artifacts/f0/ontology-packages.json"):
+              sources.extend(json.loads(Path(path).read_text(encoding="utf-8")))
+          Path("artifacts/f0/platform-extra-packages.json").write_text(json.dumps(sources, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Check SystemDynamics with its declared MSL version in pinned OpenModelica
+        run: |
+          cat > artifacts/f0/check-systemdynamics.mos <<'MOS'
+          setModelicaPath("/opt/modelica:/opt/systemdynamics");
+          loadModel(Modelica, {"4.0.0"});
+          print(getErrorString());
+          loadFile("/opt/systemdynamics/SystemDynamics/package.mo");
+          print(getErrorString());
+          checkModel(SystemDynamics.Levels.Level);
+          print(getErrorString());
+          MOS
+          docker run --rm -e MODELICAPATH=/opt/modelica:/opt/systemdynamics -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" -v "$PWD/artifacts/f0:/evidence" "${{ env.IGC_OMC_DOCKER_IMAGE }}" omc /evidence/check-systemdynamics.mos 2>&1 | tee artifacts/f0/systemdynamics-omc.log
+          grep -q "Check of SystemDynamics.Levels.Level completed successfully" artifacts/f0/systemdynamics-omc.log
+          ! grep -Eq "Error:|Failed to load|Class .* not found" artifacts/f0/systemdynamics-omc.log
+          printf 'SystemDynamics_commit=b986a2ea354ab550d627a392f857ad7c9997d961\nMSL_commit=6626538a236a34a390655b55d5e8c906bfe31772\nSystemDynamics_archive_sha256=%s\nMSL_archive_sha256=%s\n' "$(cat artifacts/f0/systemdynamics.archive.sha256)" "$(cat artifacts/f0/msl-4.0.0.archive.sha256)" > artifacts/f0/systemdynamics-test.txt
+
+      - name: Snapshot CI platform and generate full SPDX inventory
+        run: |
+          dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/runner-packages.tsv
+          docker run --rm --entrypoint sh -e 'DPKG_FORMAT=${db:Status-Abbrev}\t${binary:Package}\t${Version}\t${Architecture}\n' "${{ env.IGC_OMC_DOCKER_IMAGE }}" -c 'dpkg-query -W -f="$DPKG_FORMAT"' | awk -F '\t' '$1 ~ /^ii/ {print $2 "\t" $3 "\t" $4}' | sort > artifacts/f0/openmodelica-packages.tsv
+          /tmp/igc-f0-locked/bin/python scripts/sbom_from_inventory.py             --lock requirements-f0.lock.txt             --runner-packages artifacts/f0/runner-packages.tsv             --container-packages artifacts/f0/openmodelica-packages.tsv             --workflow .github/workflows/f0-ci.yml             --runner-label ubuntu-24.04             --image-ref openmodelica/openmodelica:v1.27.1-minimal             --image-digest sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824             --extra-packages artifacts/f0/platform-extra-packages.json             --output artifacts/f0/platform.spdx.json
+
+      - name: Record tool versions
+        run: |
+          python --version
+          docker --version
+          docker run --rm "${{ env.IGC_OMC_DOCKER_IMAGE }}" omc --version
+
+      - name: Run contract and semantic integration tests
+        run: /tmp/igc-f0-locked/bin/python -m unittest discover -s tests -v
+
+      - name: Run synthetic spike
+        id: spike
+        continue-on-error: true
+        run: /tmp/igc-f0-locked/bin/python scripts/f0_spike.py
+
+      - name: Require source, semantic, and OpenModelica stages to pass
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("artifacts/f0/run.json").read_text(encoding="utf-8"))
+          stages = {item["stage"]: item["status"] for item in report["stages"]}
+          required = {
+              "source_ingest_and_anchor": "PASS",
+              "web_annotation_jsonld_roundtrip": "PASS",
+              "rdf_prov_mapping": "PASS",
+              "shacl_positive_and_negative": "PASS",
+              "sparql_query": "PASS",
+              "crminf_crmsci_mapping": "PASS",
+              "atms_reasoning": "PASS",
+              "openmodelica_compile_and_simulate": "PASS",
+          }
+          failures = {
+              name: {"expected": expected, "actual": stages.get(name, "MISSING")}
+              for name, expected in required.items()
+              if stages.get(name) != expected
+          }
+          print(json.dumps({
+              "overall_status": report["overall_status"],
+              "required_stages": required,
+              "actual_stages": stages,
+              "failures": failures,
+          }, indent=2))
+          if failures:
+              raise SystemExit(1)
+          PY
+
+      - name: Make Docker evidence readable by artifact uploader
+        if: always()
+        run: |
+          if [ -d artifacts/f0 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/f0
+          fi
+
+      - name: Upload F0 run evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: f0-spike-evidence
+          path: artifacts/f0/
+          if-no-files-found: error

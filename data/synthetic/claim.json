@@ -1,0 +1,7 @@
+{
+  "claim_id": "claim-synthetic-001",
+  "source_id": "source-synthetic-001",
+  "quote": "During a promotion, the number of incoming orders may increase.",
+  "modality": "possible",
+  "synthetic": true
+}
