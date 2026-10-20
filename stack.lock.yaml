@@ -1,13 +1,13 @@
 schema_version: 1
 project: igc
 specification: docs/IGC_CONOCIMIENTO_SISTEMICO_ESPECIFICACION_v0_2_2026-10-19.md
-lock_status: PYTHON_HASH_LOCKED_PLATFORM_SPECIFIC
+lock_status: PYTHON_AND_LINKML_TOOLCHAINS_HASH_LOCKED_PLATFORM_SPECIFIC
 generated_at: 2026-10-19
 note: >-
   F0 Python dependencies and the OpenModelica image are pinned and passed in
   GitHub Actions. requirements-f0.lock.txt contains the eight-package Python
   closure with SHA-256 hashes for ubuntu-24.04 CPython 3.13.16 x86_64.
-  GitHub Actions emits an SPDX 2.3 snapshot covering the Python lock, runner/container dpkg packages, pinned Actions, runner label, OpenModelica image, two Modelica source archives, and four checksum-pinned ontology graphs. Scoped documentation review is recorded in docs/REVISION_LICENCIAS_F0.md. SPDX license fields remain NOASSERTION because 1,432 dpkg package licenses, non-dpkg runner tools, and bundled Action dependencies are not individually reviewed.
+  The F0 Python lock and separate F1a LinkML generation-tool lock are hash-pinned for GitHub Actions. GitHub Actions emits an SPDX 2.3 F0 platform snapshot covering the Python lock, runner/container dpkg packages, pinned Actions, runner label, OpenModelica image, two Modelica source archives, and four checksum-pinned ontology graphs. Scoped documentation review is recorded in docs/REVISION_LICENCIAS_F0.md. SPDX license fields remain NOASSERTION because 1,432 dpkg package licenses, non-dpkg runner tools, and bundled Action dependencies are not individually reviewed.
 
 execution_environment:
   provider: GitHub Actions
