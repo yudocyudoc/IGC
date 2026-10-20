@@ -1,6 +1,6 @@
 # FM-B3 — evaluación dinámica de alternativas moleculares
 
-**Estado:** pendiente de ejecutar en GitHub Actions. La aceptación propuesta es sintética y acotada.
+**Estado:** `B3_MOLECULAR_DYNAMICS_PASS_SYNTHETIC`, GitHub Actions run #6, HEAD `ac3b73060ee3b84d10366b62fae4b34d5f968c43`.
 
 ## Pregunta
 
@@ -24,7 +24,9 @@ B3 informa diferencias de trayectoria y métricas de coherencia por candidato. N
 
 ## Evidencia reproducible
 
-GitHub Actions fija el runtime de OpenModelica y recupera revisiones inmutables de SystemDynamics y MSL. El artefacto registra hashes de plan, catálogo, composición, soportes, selección, evaluador, modelos, guion de ejecución y CSV. El verificador vuelve a calcular los soportes ATMS y revisa que el guion simule exactamente las alternativas admitidas.
+GitHub Actions fija el runtime de OpenModelica y recupera revisiones inmutables de SystemDynamics y MSL. El artefacto registra hashes de plan, catálogo, composición, soportes, selección, evaluador, modelos, guion de ejecución y CSV. El verificador vuelve a calcular los soportes ATMS y revisa que el guion simule exactamente las alternativas admitidas. [Actions run #6 y artefactos](https://github.com/yudocyudoc/IGC/actions/runs/39491760603).
+
+La corrida aceptó CS-01 y CS-02 y no simuló CS-03. Cada candidato tuvo 102 muestras y 30 unidades de input acumulado al final de 10 horas. Las entregas finales fueron 19.098606 para CS-01 y 17.098766 para CS-02; el máximo error global fue menor que `4e-14`, y los errores por cola fueron menores que `3e-14`. La diferencia máxima entre las series de entrega fue 1.999840. Estos valores son resultados del escenario sintético, no estimaciones empíricas.
 
 ## Límites
 
@@ -36,4 +38,4 @@ GitHub Actions fija el runtime de OpenModelica y recupera revisiones inmutables 
 
 ## Gate propuesto
 
-`B3_MOLECULAR_DYNAMICS_PASS_SYNTHETIC` requiere: conservar y ejecutar CS-01 y CS-02; rechazar y no ejecutar CS-03; verificar de forma independiente procedencia y selección; pasar balances por cola y sistema; y reportar trayectorias distintas sin ranking ni afirmación empírica.
+`B3_MOLECULAR_DYNAMICS_PASS_SYNTHETIC` requiere: conservar y ejecutar CS-01 y CS-02; rechazar y no ejecutar CS-03; verificar de forma independiente procedencia y selección; pasar balances por cola y sistema; y reportar trayectorias distintas sin ranking ni afirmación empírica. La corrida #6 satisface estos criterios dentro del alcance sintético definido.
