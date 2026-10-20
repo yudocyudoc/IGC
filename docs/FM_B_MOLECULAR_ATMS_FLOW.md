@@ -1,7 +1,9 @@
 # Diseño de flujo FM-B: composición molecular y razonamiento ATMS
 
-**Estado:** diseño para revisión; no implementa ni declara aprobado el gate FM-B.  
-**Base de trabajo:** rama FM-A `fm-a-molecular-contract`, HEAD observado `0b84038e34b19407bff20830e2c15a0c7a57b117`.  
+**Estado:** diseño para revisión; no implementa ni declara aprobado el gate FM-B.
+
+**Base de trabajo:** rama FM-A `fm-a-molecular-contract`, HEAD observado `0b84038e34b19407bff20830e2c15a0c7a57b117`.
+
 **Alcance:** definir el orden y los contratos entre conocimiento estructurado, wrappers moleculares, composición, ATMS y OpenModelica. El uso de wrappers existentes de `short` queda indicado por el investigador; la revisión de licencias se conserva como asunto final y separado.
 
 ## Decisión de arquitectura
