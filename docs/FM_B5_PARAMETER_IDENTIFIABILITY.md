@@ -20,6 +20,8 @@ El cálculo usa RK4 sobre las ecuaciones stock-flujo de las moléculas fuente au
 
 Se informa el RMSE de calibración, la comparación entre estructuras durante el ajuste, el conjunto de parámetros compatible y su envolvente de predicción para el pulso. Para comparar las trayectorias completas del conjunto reservado, el evaluador integra la verosimilitud de los datos de pulso sobre los pesos posteriores de cada punto de la rejilla, calculados exclusivamente con calibración y una prior uniforme declarada. Se informa el factor de Bayes predictivo con probabilidades previas iguales para ambas estructuras. La regla predeclarada solo marca `DISTINGUISHED_ON_HELD_OUT_PULSE` si el valor absoluto del log factor alcanza ln(10), es decir, odds predictivos de al menos 10:1. El solapamiento de envolventes marginales por tiempo se conserva como diagnóstico adicional, no como regla de decisión. De lo contrario informa `NOT_DISTINGUISHED_ON_HELD_OUT_PULSE`; no se trata como error de software.
 
+El conjunto de perfil al 95% se usa para resumir la incertidumbre de parámetros y producir envolventes marginales. El factor predictivo integra sobre la rejilla completa con pesos de calibración; el conjunto reservado solo puntúa las predicciones y no modifica esos pesos.
+
 ## Límites científicos
 
 - Los datos de calibración y evaluación son generados por una de las mismas estructuras que se están comparando. El resultado no demuestra identificabilidad frente a estructuras desconocidas ni frente a discrepancia del modelo.
