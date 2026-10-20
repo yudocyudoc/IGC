@@ -64,8 +64,37 @@ class Ledger:
     def __init__(self, db_path: str | Path, migration_path: str | Path):
         self.db_path = str(db_path)
         self.migration_path = Path(migration_path)
+        migration_sql = self.migration_path.read_text(encoding="utf-8")
+        migration_version = self.migration_path.stem
+        migration_sha256 = _digest(migration_sql)
         with self._connect() as connection:
-            connection.executescript(self.migration_path.read_text(encoding="utf-8"))
+            connection.execute(
+                """CREATE TABLE IF NOT EXISTS schema_migrations (
+                    version TEXT PRIMARY KEY,
+                    sha256 TEXT NOT NULL,
+                    applied_at TEXT NOT NULL
+                )"""
+            )
+            applied = connection.execute(
+                "SELECT sha256 FROM schema_migrations WHERE version = ?",
+                (migration_version,),
+            ).fetchone()
+            if applied:
+                if applied["sha256"] != migration_sha256:
+                    raise LedgerError(f"applied migration {migration_version} was modified")
+                return
+            try:
+                connection.executescript(
+                    "BEGIN IMMEDIATE;\\n"
+                    + migration_sql
+                    + "\\nINSERT INTO schema_migrations(version, sha256, applied_at) "
+                    + f"VALUES ('{migration_version}', '{migration_sha256}', "
+                    + "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));\\nCOMMIT;"
+                )
+            except Exception:
+                if connection.in_transaction:
+                    connection.rollback()
+                raise
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
