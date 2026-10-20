@@ -1,15 +1,15 @@
 # Matriz de cobertura de aceptación T01–T30
 
-**Corte:** 2026-10-19. Esta matriz diferencia pruebas F0 ejecutadas de criterios todavía no implementados. Una prueba cercana al requisito se marca **Parcial**, nunca como PASS completo. La suite integral de aceptación sigue pendiente.
+**Corte:** 2026-10-20. Esta matriz diferencia pruebas F0 ejecutadas de criterios todavía no implementados. Una prueba cercana al requisito se marca **Parcial**, nunca como PASS completo. La suite integral de aceptación sigue pendiente.
 
 | Test | Requisito resumido | Evidencia actual en IGC | Estado |
 |---|---|---|---|
 | T01 | Modalidad de habla no se convierte en causa cierta | El fixture contiene una afirmación sintética anclada, pero no prueba preservación modal ni atribución de causa | Pendiente |
 | T02 | Resúmenes dependientes no cuentan como fuentes independientes | No hay grafo de dependencias entre fuentes | Pendiente |
-| T03 | Valores de periodos distintos no se contradicen automáticamente | Sin ledger temporal ni prueba as-of | Pendiente |
+| T03 | Valores de periodos distintos no se contradicen automáticamente | `test_valid_time_filter_is_independent_of_system_cut` separa tiempo válido y corte de sistema; sin prueba semántica de contradicciones | Parcial |
 | T04 | Rechazar rol/dimensión stock–flujo inválida | Sin IGC-SL/linter dimensional | Pendiente |
 | T05 | Aceptar split conservativo y rechazar duplicación | Sin chequeo topológico/conservativo | Pendiente |
-| T06 | Corrección posterior preserva historial y responde as-of | Sin journal bitemporal | Pendiente |
+| T06 | Corrección posterior preserva historial y responde as-of | `test_as_known_at_preserves_later_correction` y `test_recorded_at_cannot_move_backwards_across_entity_revisions` prueban historial, corte y orden de registro local | Parcial |
 | T07 | Eliminación de modalidad por LLM activa gate | No existe pipeline de extracción LLM ni gate de fidelidad | Pendiente |
 | T08 | Cita inventada o selector/digest alterado no se ingesta | test_synthetic_claim_has_an_exact_source_anchor prueba un anclaje válido; no hay caso negativo de manipulación | Parcial |
 | T09 | Similitud semántica no crea soporte causal | Sin índice vectorial ni regla de promoción | Pendiente |
@@ -38,7 +38,7 @@
 ## Resumen
 
 - **PASS integral:** 0 de 30.
-- **Parcial con prueba F0 relacionada:** T08, T11, T12, T24, T25, T27, T29.
-- **Pendiente:** 23 de 30.
-- La suite existente tiene 14 pruebas contractuales/de integración, pero ese conteo no equivale a 14 criterios T aprobados. F0 no incluye todavía fixtures adversativos vecinos positivos/negativos para cada requisito.
+- **Parcial con prueba relacionada:** T03, T06, T08, T11, T12, T24, T25, T27, T29.
+- **Pendiente:** 21 de 30.
+- La última corrida F0/F1a (#253) ejecutó 40 pruebas; ese conteo no equivale a criterios T aprobados. F0 no incluye todavía fixtures adversativos vecinos positivos/negativos para cada requisito.
 - Para F1–F5 se deben convertir los estados parciales en pruebas de requisito con entradas adversativas, resultado esperado localizado y control vecino aceptado. La cobertura debe conservar links a nombres de test y artefactos de Actions.

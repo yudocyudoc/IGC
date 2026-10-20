@@ -4,10 +4,10 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 
 | Gate | Estado | Evidencia / criterio | Límite |
 |---|---|---|---|
-| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #248 | No cubre T01–T30 integralmente |
-| F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #248: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
+| F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #250 | No cubre T01–T30 integralmente |
+| F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #250: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
 | Integración semántica/ATMS → modelador | NOT_YET_INTEGRATED | Los checks semánticos y la sonda ATMS corren en el mismo workflow | El generador no consume una conclusión CRMinf/PROV/SPARQL ni la selección de supuestos del ATMS |
-| F0 — cierre de fase | TECHNICAL_REVIEW_ACCEPTED; FORMAL_AUTHORIZATION_PENDING | Dictamen del 2026-10-20 acepta F0-VERTICAL en su alcance sintético; PR #1 y PR #3 son las evidencias principales para revisión formal | La aceptación técnica no fusiona PRs ni completa la plataforma |
+| F0 — fase | ACCEPTED_WITH_LIMITATIONS | Investigador autorizó e integró PR #1 y #3 en `main` el 2026-10-20 | No completa la plataforma ni evalúa H-IGC |
 | H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
 | Plataforma completa | INCOMPLETE | F1–F9 siguen su secuencia; la persistencia cloud está planificada en F8 | No es una dependencia para aceptar los gates técnicos de F0 |
 
@@ -28,12 +28,17 @@ La suite modifica un archivo Modelica y una muestra interior del CSV; el verific
 
 ## F0 y la integración cloud de F8
 
-D1/R2 son integración cloud planificada en F8, no requisito de aceptación de F0. La corrida F0 marca esa etapa OUT_OF_SCOPE; si los gates técnicos requeridos pasan, el resultado de la spike es PASS_WITH_LIMITATIONS y la plataforma queda INCOMPLETE. El dictamen técnico del 2026-10-20 acepta el alcance de F0-VERTICAL y cierra su discusión técnica. La revisión formal de F0 y la autorización del investigador siguen pendientes; PR #1 y PR #3 son las evidencias principales. Los PR permanecen sin fusionar.
+D1/R2 son integración cloud planificada en F8, no requisito de aceptación de F0. La corrida F0 marca esa etapa OUT_OF_SCOPE; si los gates técnicos requeridos pasan, el resultado de la spike es PASS_WITH_LIMITATIONS y la plataforma queda INCOMPLETE. El dictamen técnico del 2026-10-20 acepta el alcance de F0-VERTICAL y cierra su discusión técnica. La autorización formal fue otorgada y PR #1/#3 quedaron integrados. F0 se acepta con limitaciones.
 
-El artefacto verificado en Actions #248 corresponde al commit `b669a3015375db805d28733177c7c5805ebcfe8e`; conserva `handoff.json`, `verification.json`, fuentes Modelica, logs y CSV. El resultado reportado fue 20 pedidos base y 29.99999999999999 perturbado al cabo de 10 horas. Actions #247 (#748880e) es la corrida previa; #239, #235 y #238 son antecedentes históricos.
+La evidencia de F0-VERTICAL en Actions #250 corresponde al commit `19fb16723d02352b14e0d394573d57fcaa0e013d`; conserva `handoff.json`, `verification.json`, fuentes Modelica, logs y CSV. El resultado reportado fue 20 pedidos base y 29.99999999999999 perturbado al cabo de 10 horas. Actions #247 (#748880e) es la corrida previa; #239, #235 y #238 son antecedentes históricos.
 
 ## Revisión técnica y formal de F0
 
-El dictamen del 2026-10-20 acepta técnicamente F0-VERTICAL como PASS_SYNTHETIC y recomienda cerrar su discusión técnica. La evidencia principal para la revisión formal de fase es PR #1 (inventario, laboratorio y componentes) junto con PR #3 (candidato, handoff y simulación). F0-ENG permanece PASS_PROVISIONAL; la aceptación formal y la autorización del investigador aún están pendientes. Los PR #1, #2 y #3 no se fusionan hasta esa autorización.
+El dictamen del 2026-10-20 acepta técnicamente F0-VERTICAL como PASS_SYNTHETIC. PR #1 y PR #3 se integraron en main con autorización del investigador; F0 queda ACCEPTED_WITH_LIMITATIONS. F0-ENG permanece PASS_PROVISIONAL.
 
-La aceptación técnica de F0 no evalúa H-IGC ni completa la plataforma. Tras la autorización formal, la secuencia prevista continúa con F1a (#2) y luego F2/F3, donde se conectarán los contratos semánticos y el razonamiento ATMS. El objetivo posterior es experimentar con configuraciones de conocimiento estructurado, ATMS, embeddings y modelos SD; no ampliar artificialmente la ecuación sintética de F0. La persistencia cloud corresponde a F8.
+La aceptación técnica de F0 no evalúa H-IGC ni completa la plataforma. PR #2 y el seguimiento PR #4 integraron el corte inicial F1a. Continúan los contratos semánticos F2 y el razonamiento ATMS F3. El objetivo posterior es experimentar con configuraciones de conocimiento estructurado, ATMS, embeddings y modelos SD; no ampliar artificialmente la ecuación sintética de F0. La persistencia cloud corresponde a F8.
+
+
+## F1a temporal
+
+PR #2 implementó el contrato LinkML y ledger SQLite local; PR #4 añadió `recorded_at` monotónico por entidad. Actions #253 validó 40 pruebas combinadas F0/F1a. El corte sigue siendo sintético y no productivo.

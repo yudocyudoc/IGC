@@ -1,27 +1,22 @@
-# F1a — Ledger bitemporal mínimo (spike)
+# F1a — Ledger bitemporal mínimo
 
-**Estado:** implementación inicial para datos sintéticos; no es el ledger de producción ni D1.  
-**Base:** rama `f1a-ledger-core`, apilada sobre F0.  
-**Alcance de este corte:** esquema LinkML fuente, migración SQLite reproducible en Actions y eventos/revisiones append-only con idempotencia y consulta bitemporal local dentro del runner.
+**Estado:** corte inicial integrado en `main`; prototipo sintético local, no ledger de producción ni D1.
+**Alcance:** LinkML fuente y JSON Schema derivado; migración SQLite; revisiones append-only, idempotencia, digests y consulta bitemporal local.
 
-## Contrato implementado
+## Contrato
 
-- La identidad de entidad persiste entre revisiones; cada revisión nueva crea un evento y una fila histórica, nunca sobrescribe el contenido canónico anterior.
-- `recorded_at` es el tiempo del sistema y `valid_from/valid_to` delimitan validez en el mundo. Las consultas primero reconstruyen la revisión que se conocía en `as_known_at`; después pueden filtrar por un intervalo de validez independiente.
-- Los timestamps aceptan ISO-8601 con zona horaria y se normalizan a UTC. Se rechazan tiempos sin zona o ventanas invertidas.
-- Las escrituras insertan evento y revisión bajo `BEGIN IMMEDIATE`; una clave idempotente repetida con la misma orden devuelve la revisión existente, y una clave reutilizada con contenido distinto falla. Cada migración se registra por versión/SHA-256 y rechaza cambios retrospectivos; las revisiones tienen un digest verificable para detectar cambios de contenido.
-- Los triggers impiden UPDATE/DELETE de las tablas canónicas. El ledger local no implementa aún outbox/proyecciones, política de borrado regulatorio ni autorización por caso.
+- `recorded_at` es tiempo del sistema; `valid_from/valid_to` son tiempos válidos del fenómeno. `as_known_at` reconstruye el estado conocido a ese corte.
+- Timestamps con zona horaria se normalizan a UTC; se rechazan ventanas invertidas.
+- PR #4 añade la regla de que `recorded_at` no retroceda para una misma entidad; tiempos iguales se desempatan con número de revisión.
+- Escrituras `BEGIN IMMEDIATE`; comandos idénticos con la misma idempotency key son idempotentes; orden distinta con igual clave falla.
+- Triggers impiden UPDATE/DELETE en tablas canónicas.
 
-## Validación
+## Evidencia
 
-El commit `15803a99e94330b957249514b3db1365ca7ff34a` pasó las verificaciones de GitHub Actions:
+- [F0/F1a Actions #252](https://github.com/yudocyudoc/IGC/actions/runs/39362255158): 39 pruebas combinadas.
+- [F1a LinkML #15](https://github.com/yudocyudoc/IGC/actions/runs/39362255202): schema reproducible y fixture validado.
+- [PR #4 Actions #253](https://github.com/yudocyudoc/IGC/actions/runs/39362587500): 40 pruebas combinadas; merge `1d706e6847ad03c0cb6a026aa49f8b7214dbcfb0`.
 
-- [F0 synthetic spike, run 229](https://github.com/yudocyudoc/IGC/actions/runs/39349618174): 26 pruebas totales, incluidas 12 de F1a; validó append y consulta por CLI en un ledger temporal. El reporte científico F0 sigue `BLOCKED` por el candidato de modelo marcado como stub; D1/R2 no se ejecutaron.
-- [F1a LinkML schema, run 13](https://github.com/yudocyudoc/IGC/actions/runs/39349618179): instalación con hashes, regeneración/diff del JSON Schema y validación del fixture sintético pasaron.
-- Artefactos: F0 `12232706276`; evidencia de esquema LinkML `12232537715`.
+## Pendiente
 
-## Pendiente dentro de F1a
-
-El fuente LinkML está fijado en `schema/source/igc.yaml`. LinkML 1.12.1 y su cierre de 90 paquetes están en `requirements-f1a-linkml.lock.txt`; el workflow de Actions reinstala todo con `--require-hashes`, regenera `schema/derived/igc.schema.json` y compara los bytes contra el artefacto comprometido. Un fixture sintético ClaimOccurrence se valida con el JSON Schema generado. El entorno LinkML es una herramienta de generación separada del lock de ejecución F0; el SPDX de ese toolchain conserva `NOASSERTION` para licencias transitivas.
-
-D1 batch, outbox transaccional/proyectores, R2 snapshot, borrado y privacidad permanecen fuera de este corte y requieren gates propios antes de integrar recursos reales.
+SQLite es temporal dentro del runner. Falta validación completa de payloads por clase LinkML; no hay D1, API persistente, outbox/proyectores, R2, Vectorize, borrado regulatorio ni autorización por caso. Este corte no es productivo.

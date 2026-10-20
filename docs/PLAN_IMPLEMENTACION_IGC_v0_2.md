@@ -48,7 +48,7 @@ El estado de la plataforma no sustituye al estado de la integración vertical ni
 - **F0-VERTICAL:** `PASS_SYNTHETIC` según Actions #249 y revisión técnica aceptada el 2026-10-20; el alcance no integra aún los resultados RDF/ATMS al generador.
 - **H-IGC:** fidelidad/utilidad científica; `NOT_EVALUATED` mientras no exista protocolo experimental y evidencia adecuada.
 
-El criterio técnico de F0-VERTICAL es sintético y acotado: una instancia tipada enlaza ClaimOccurrence anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; verifica cada muestra y tiempo de una perturbación; y rechaza unidades o referencias inválidas. El handoff no consume la salida semántica/ATMS: esa unión queda para F2/F3. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. La persistencia D1/R2 pertenece a F8 y queda OUT_OF_SCOPE en la aceptación F0. La revisión técnica de F0-VERTICAL fue aceptada el 2026-10-20. La revisión formal y autorización del investigador para integrar los PR siguen pendientes; H-IGC sigue NOT_EVALUATED. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
+El criterio técnico de F0-VERTICAL es sintético y acotado: una instancia tipada enlaza ClaimOccurrence anclado, mecanismo hipotético y supuestos sintéticos; genera Modelica reproducible; compila y simula; conserva hashes/procedencia; verifica cada muestra y tiempo de una perturbación; y rechaza unidades o referencias inválidas. El handoff no consume la salida semántica/ATMS: esa unión queda para F2/F3. No exige modelos rivales, calibración ni datos reales. Tampoco demuestra fidelidad empírica o causalidad. La persistencia D1/R2 pertenece a F8 y queda OUT_OF_SCOPE en la aceptación F0. F0-VERTICAL fue aceptada y F0 se integró con autorización del investigador el 2026-10-20. H-IGC sigue NOT_EVALUATED. Véase [GATES_INTEGRACION.md](GATES_INTEGRACION.md).
 
 ### 3.1 Secuencia propuesta de PRs F1–F9
 
@@ -113,6 +113,4 @@ Antes de usar datos reales, operar recursos cloud reales, incurrir en gasto, apr
 
 ## 7. Estado y secuencia siguiente
 
-La revisión técnica de F0-VERTICAL está aceptada dentro del alcance sintético; PR #1 y PR #3 constituyen la evidencia principal para la revisión formal de F0. Mantener PR #1, #2 y #3 sin fusionar hasta la autorización formal del investigador.
-
-Después de esa autorización, continuar F1a (#2), cuyo corte de ledger ya está implementado y probado en Actions. Seguir con F2 (perfiles semánticos ejecutables) y F3 (ATMS, investigaciones y candidatos rivales), conservando la secuencia de dependencias de este plan. El objetivo completo incluye experimentar con configuraciones distintas de conocimiento estructurado, razonamiento ATMS, embeddings y modelos de dinámica de sistemas; F0 no debe ampliarse para seguir endureciendo su ecuación sintética.
+F0 (PR #1 y #3) y el corte inicial F1a (PR #2 y #4) están integrados en main. F1a permanece como ledger local sintético, no de producción. Continuar con F2 (perfiles semánticos ejecutables) y F3 (ATMS, investigaciones y candidatos rivales) respetando dependencias. El objetivo completo incluye experimentar con configuraciones distintas de conocimiento estructurado, ATMS, embeddings y modelos SD; no ampliar F0 alrededor de su ecuación sintética.
