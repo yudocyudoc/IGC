@@ -9,12 +9,12 @@
 - La identidad de entidad persiste entre revisiones; cada revisión nueva crea un evento y una fila histórica, nunca sobrescribe el contenido canónico anterior.
 - `recorded_at` es el tiempo del sistema y `valid_from/valid_to` delimitan validez en el mundo. Las consultas primero reconstruyen la revisión que se conocía en `as_known_at`; después pueden filtrar por un intervalo de validez independiente.
 - Los timestamps aceptan ISO-8601 con zona horaria y se normalizan a UTC. Se rechazan tiempos sin zona o ventanas invertidas.
-- Las escrituras insertan evento y revisión bajo `BEGIN IMMEDIATE`; una clave idempotente repetida con la misma orden devuelve la revisión existente, y una clave reutilizada con contenido distinto falla.
+- Las escrituras insertan evento y revisión bajo `BEGIN IMMEDIATE`; una clave idempotente repetida con la misma orden devuelve la revisión existente, y una clave reutilizada con contenido distinto falla. Cada migración se registra por versión/SHA-256 y rechaza cambios retrospectivos; las revisiones tienen un digest verificable para detectar cambios de contenido.
 - Los triggers impiden UPDATE/DELETE de las tablas canónicas. El ledger local no implementa aún outbox/proyecciones, política de borrado regulatorio ni autorización por caso.
 
 ## Validación
 
-El workflow ejecuta pruebas sintéticas para corrección posterior, corte `as_known_at`, filtro de tiempo válido, idempotencia, conflicto de clave, validación de timestamp, rechazo de intervalo inválido e inmutabilidad de tablas.
+La corrida [#205](https://github.com/yudocyudoc/IGC/actions/runs/39348542070) terminó en verde con 25 pruebas totales; las 11 pruebas F1a cubren corrección posterior, corte `as_known_at`, filtro de tiempo válido, idempotencia, conflicto de clave, timestamps zonificados, intervalos, registro/checksum de migración, detección de cambios, estructura del esquema e inmutabilidad.
 
 ## Pendiente dentro de F1a
 
