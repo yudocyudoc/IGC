@@ -50,6 +50,26 @@ class FmBMolecularComposerTests(unittest.TestCase):
         with self.assertRaisesRegex(ContractError, "COMPOSITION_PARAMETER_BOUNDS"):
             compose(plan, CATALOG)
 
+    def test_declared_pulse_input_profile_renders_as_modelica_pulse(self):
+        plan = copy.deepcopy(PLAN)
+        plan["external_input"]["profile"] = {
+            "kind": "pulse", "amplitude": 3, "offset": 0,
+            "period": 16, "width_percent": 12.5, "start_time": 0,
+        }
+        document = compose(plan, CATALOG)
+        rendered = render_modelica(plan, document)
+        self.assertIn("Modelica.Blocks.Sources.Pulse inputDriver", rendered)
+        self.assertIn("width=12.5", rendered)
+
+    def test_invalid_pulse_profile_fails_closed(self):
+        plan = copy.deepcopy(PLAN)
+        plan["external_input"]["profile"] = {
+            "kind": "pulse", "amplitude": 3, "offset": 0,
+            "period": 0, "width_percent": 110, "start_time": 0,
+        }
+        with self.assertRaisesRegex(ContractError, "COMPOSITION_INPUT_PROFILE_INVALID"):
+            compose(plan, CATALOG)
+
     def test_candidate_ids_with_colliding_modelica_names_are_rejected(self):
         plan = copy.deepcopy(PLAN)
         plan["candidates"].append({

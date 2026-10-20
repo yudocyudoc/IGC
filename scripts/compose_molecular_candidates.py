@@ -118,6 +118,7 @@ def compose(plan: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
         raise ContractError("COMPOSITION_INPUT_UNIT", ext["target_port"])
     if not isinstance(ext["value"], (int, float)) or not math.isfinite(ext["value"]):
         raise ContractError("COMPOSITION_INPUT_INVALID", ext["target_port"])
+    input_driver_declaration(ext)
     sink_id, observable_port = observable["port"].rsplit(".", 1)
     if sink_id != plan["instances"]["sink"]:
         raise ContractError("COMPOSITION_OBSERVABLE_INSTANCE", observable["port"])
@@ -176,6 +177,33 @@ def modelica_identifier(value: str) -> str:
     return value
 
 
+def input_driver_declaration(external_input: dict[str, Any]) -> str:
+    profile = external_input.get("profile")
+    if profile is None:
+        return ("Modelica.Blocks.Sources.Constant inputDriver(k="
+                f"{float(external_input['value']):.17g});")
+    if not isinstance(profile, dict) or profile.get("kind") != "pulse":
+        raise ContractError("COMPOSITION_INPUT_PROFILE_UNSUPPORTED", str(profile))
+    try:
+        amplitude = float(profile["amplitude"])
+        offset = float(profile.get("offset", 0.0))
+        period = float(profile["period"])
+        width = float(profile["width_percent"])
+        start_time = float(profile["start_time"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ContractError("COMPOSITION_INPUT_PROFILE_INVALID", "pulse fields are incomplete") from exc
+    values = (amplitude, offset, period, width, start_time)
+    if not all(math.isfinite(value) for value in values):
+        raise ContractError("COMPOSITION_INPUT_PROFILE_INVALID", "pulse values must be finite")
+    if amplitude < 0 or period <= 0 or not 0 < width <= 100 or start_time < 0:
+        raise ContractError("COMPOSITION_INPUT_PROFILE_INVALID", "pulse bounds are invalid")
+    if not math.isclose(amplitude, float(external_input["value"]), rel_tol=0, abs_tol=1e-12):
+        raise ContractError("COMPOSITION_INPUT_PROFILE_INVALID", "pulse amplitude must match declared input value")
+    return ("Modelica.Blocks.Sources.Pulse inputDriver("
+            f"amplitude={amplitude:.17g}, offset={offset:.17g}, period={period:.17g}, "
+            f"width={width:.17g}, startTime={start_time:.17g});")
+
+
 def render_modelica(plan: dict[str, Any], document: dict[str, Any]) -> str:
     definitions = {item["id"]: item for item in document["molecule_definitions"]}
     lines = ["within;", "package GeneratedMolecularCandidates"]
@@ -184,7 +212,7 @@ def render_modelica(plan: dict[str, Any], document: dict[str, Any]) -> str:
         instance_defs = {item["id"]: definitions[item["molecule_definition_id"]]
                          for item in structure["molecule_instances"]}
         model_lines = [f"  model {class_name}",
-                 f"    Modelica.Blocks.Sources.Constant inputDriver(k={float(plan['external_input']['value']):.17g});"]
+                 "    " + input_driver_declaration(plan["external_input"])]
         for instance in structure["molecule_instances"]:
             bindings = {item["parameter_id"]: item["value"] for item in instance["parameter_bindings"]}
             args = ", ".join(f"{key}={float(value):.17g}" for key, value in sorted(bindings.items()))

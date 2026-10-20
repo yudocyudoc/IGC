@@ -1,0 +1,16 @@
+{
+  "schema": "igc-fm-b2-candidate-supports/0.1",
+  "synthetic": true,
+  "origin_ref": "urn:igc:composition-plan:fm-b4-pulse@0.1",
+  "assumptions": [
+    {"id": "urn:igc:assumption:B4-CS01", "description": "Synthetic admissibility premise for CS-01."},
+    {"id": "urn:igc:assumption:B4-CS02", "description": "Synthetic admissibility premise for CS-02."},
+    {"id": "urn:igc:assumption:B4-CS03", "description": "Synthetic admissibility premise for CS-03."}
+  ],
+  "justifications": [
+    {"id": "urn:igc:justification:B4-CS01", "candidate_id": "urn:igc:candidate:CS-01", "antecedent_ids": ["urn:igc:assumption:B4-CS01"]},
+    {"id": "urn:igc:justification:B4-CS02", "candidate_id": "urn:igc:candidate:CS-02", "antecedent_ids": ["urn:igc:assumption:B4-CS02"]},
+    {"id": "urn:igc:justification:B4-CS03", "candidate_id": "urn:igc:candidate:CS-03", "antecedent_ids": ["urn:igc:assumption:B4-CS03"]}
+  ],
+  "nogoods": [["urn:igc:assumption:B4-CS03"]]
+}
