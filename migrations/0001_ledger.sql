@@ -1,4 +1,8 @@
-PRAGMA foreign_keys = ON;
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version TEXT PRIMARY KEY,
+    sha256 TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS ledger_events (
     event_id TEXT PRIMARY KEY,
