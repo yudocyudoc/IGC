@@ -217,5 +217,13 @@ candidates:
 hashes:
   - artifact: openmodelica/openmodelica:v1.27.1-minimal
     sha256: ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
-license_review:\n  document: docs/REVISION_LICENCIAS_F0.md\n  status: SCOPED_DOCUMENTARY_REVIEW_COMPLETE_PLATFORM_CLOSURE_PENDING\n  spdx_license_assertions: NOASSERTION\n  dpkg_packages_not_individually_reviewed: 1432\n  non_dpkg_runner_tools_reviewed: false\n  github_action_bundled_dependencies_reviewed: false\n  redistribution_cleared: false\nlicenses_verified: false
+license_review:
+  document: docs/REVISION_LICENCIAS_F0.md
+  status: SCOPED_DOCUMENTARY_REVIEW_COMPLETE_PLATFORM_CLOSURE_PENDING
+  spdx_license_assertions: NOASSERTION
+  dpkg_packages_not_individually_reviewed: 1432
+  non_dpkg_runner_tools_reviewed: false
+  github_action_bundled_dependencies_reviewed: false
+  redistribution_cleared: false
+licenses_verified: false
 compatibility_verified: false
