@@ -1,0 +1,29 @@
+{
+  "schema": "igc-fm-b2-candidate-supports/0.1",
+  "synthetic": true,
+  "origin_ref": "urn:igc:composition-plan:serial-chain-b3@0.1",
+  "assumptions": [
+    {"id": "urn:igc:assumption:CS-01-mechanism", "description": "Synthetic support premise for the one-stage candidate."},
+    {"id": "urn:igc:assumption:CS-01-route-a", "description": "Synthetic alternative support route A for the one-stage candidate."},
+    {"id": "urn:igc:assumption:CS-01-route-b", "description": "Synthetic alternative support route B for the one-stage candidate."},
+    {"id": "urn:igc:assumption:CS-02-mechanism", "description": "Synthetic support premise for the two-stage candidate."},
+    {"id": "urn:igc:assumption:CS-02-route-a", "description": "Synthetic alternative support route A for the two-stage candidate."},
+    {"id": "urn:igc:assumption:CS-02-route-b", "description": "Synthetic alternative support route B for the two-stage candidate."},
+    {"id": "urn:igc:assumption:CS-03-mechanism", "description": "Synthetic support premise for the three-stage candidate."},
+    {"id": "urn:igc:assumption:CS-03-route-a", "description": "Synthetic alternative support route A for the three-stage candidate."},
+    {"id": "urn:igc:assumption:CS-03-route-b", "description": "Synthetic alternative support route B for the three-stage candidate."}
+  ],
+  "justifications": [
+    {"id": "urn:igc:justification:CS-01-a", "candidate_id": "urn:igc:candidate:CS-01", "antecedent_ids": ["urn:igc:assumption:CS-01-mechanism", "urn:igc:assumption:CS-01-route-a"]},
+    {"id": "urn:igc:justification:CS-01-b", "candidate_id": "urn:igc:candidate:CS-01", "antecedent_ids": ["urn:igc:assumption:CS-01-mechanism", "urn:igc:assumption:CS-01-route-b"]},
+    {"id": "urn:igc:justification:CS-02-a", "candidate_id": "urn:igc:candidate:CS-02", "antecedent_ids": ["urn:igc:assumption:CS-02-mechanism", "urn:igc:assumption:CS-02-route-a"]},
+    {"id": "urn:igc:justification:CS-02-b", "candidate_id": "urn:igc:candidate:CS-02", "antecedent_ids": ["urn:igc:assumption:CS-02-mechanism", "urn:igc:assumption:CS-02-route-b"]},
+    {"id": "urn:igc:justification:CS-03-a", "candidate_id": "urn:igc:candidate:CS-03", "antecedent_ids": ["urn:igc:assumption:CS-03-mechanism", "urn:igc:assumption:CS-03-route-a"]},
+    {"id": "urn:igc:justification:CS-03-b", "candidate_id": "urn:igc:candidate:CS-03", "antecedent_ids": ["urn:igc:assumption:CS-03-mechanism", "urn:igc:assumption:CS-03-route-b"]}
+  ],
+  "nogoods": [
+    ["urn:igc:assumption:CS-01-mechanism", "urn:igc:assumption:CS-01-route-a"],
+    ["urn:igc:assumption:CS-03-mechanism", "urn:igc:assumption:CS-03-route-a"],
+    ["urn:igc:assumption:CS-03-mechanism", "urn:igc:assumption:CS-03-route-b"]
+  ]
+}
