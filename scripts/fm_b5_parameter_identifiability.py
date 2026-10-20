@@ -114,7 +114,13 @@ def grid_fit(plan: dict[str, Any], stage_count: int, times: list[float],
             key: {"minimum": min(item[key] for item in supported),
                   "maximum": max(item[key] for item in supported)}
             for key in ("maxThroughput", "responseTime")},
-        "supported_grid_points": supported}
+        "supported_grid_points": supported,
+        "all_grid_points": fits}
+
+
+def logsumexp(values_: list[float]) -> float:
+    maximum = max(values_)
+    return maximum + math.log(sum(math.exp(value - maximum) for value in values_))
 
 
 def write_observations(path: Path, times: list[float], values_: list[float]) -> None:
@@ -187,23 +193,36 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
     for name, stage_count in structures.items():
         fit = calibration_fits[name]
         param_set = fit["supported_grid_points"]
+        all_points = fit["all_grid_points"]
         predictions = [simulate(stage_count, item["maxThroughput"], item["responseTime"],
             float(held_out["input_amplitude"]), float(held_out["input_duration"]),
             float(held_out["stop_time"]), float(held_out["observation_interval"]), step)
-            for item in param_set]
+            for item in all_points]
+        test_sse = [sum((prediction[i] - test_obs[i])**2 for i in range(len(test_obs)))
+                    for prediction in predictions]
+        log_train_weights = [-0.5 * item["sse"] / (sigma**2) for item in all_points]
+        log_train_normalizer = logsumexp(log_train_weights)
+        posterior_weights = [math.exp(value - log_train_normalizer) for value in log_train_weights]
+        ensemble_mean = [sum(weight * row[index] for weight, row in zip(posterior_weights, predictions))
+                         for index in range(len(test_times))]
+        log_test_predictive_density = logsumexp([
+            log_weight - log_train_normalizer - 0.5 * holdout_sse / (sigma**2)
+            for log_weight, holdout_sse in zip(log_train_weights, test_sse)])
         best_params = fit["best_fit"]
         best_prediction = simulate(stage_count, best_params["maxThroughput"], best_params["responseTime"],
             float(held_out["input_amplitude"]), float(held_out["input_duration"]),
             float(held_out["stop_time"]), float(held_out["observation_interval"]), step)
-        ensemble_mean = [sum(row[index] for row in predictions) / len(predictions)
-                         for index in range(len(test_times))]
+        supported_indices = [i for i, item in enumerate(all_points)
+                             if item["sse"] <= fit["profile_likelihood_cutoff_sse"]]
+        supported_predictions = [predictions[i] for i in supported_indices]
         pulse_predictions[name] = {
             "held_out_rmse": rmse(ensemble_mean, test_obs),
             "best_fit_point_held_out_rmse": rmse(best_prediction, test_obs),
-            "calibration_supported_ensemble_mean": ensemble_mean,
+            "calibration_posterior_predictive_mean": ensemble_mean,
+            "held_out_log_predictive_density_without_common_gaussian_constant": log_test_predictive_density,
             "prediction_envelope_under_calibration_uncertainty": [
-                {"minimum": min(row[i] for row in predictions),
-                 "maximum": max(row[i] for row in predictions)}
+                {"minimum": min(row[i] for row in supported_predictions),
+                 "maximum": max(row[i] for row in supported_predictions)}
                 for i in range(len(test_times))],
             "best_fit_parameters_from_calibration_only": {
                 "maxThroughput": best_params["maxThroughput"],
@@ -218,11 +237,14 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         gap = max(left["minimum"] - right["maximum"], right["minimum"] - left["maximum"], 0.0)
         if gap >= gap_floor:
             separated.append({"time_hours": test_times[index], "envelope_gap_units": gap})
-    heldout_winner = min((a, b), key=lambda key: pulse_predictions[key]["held_out_rmse"])
+    heldout_winner = max((a, b), key=lambda key:
+        pulse_predictions[key]["held_out_log_predictive_density_without_common_gaussian_constant"])
     rmse_gap = abs(pulse_predictions[a]["held_out_rmse"] - pulse_predictions[b]["held_out_rmse"])
-    target_error = float(plan["discrimination_rule"]["minimum_held_out_rmse_advantage_in_noise_sd"]) * sigma
-    distinguished = (len(separated) >= int(plan["discrimination_rule"]["minimum_separated_observations"])
-                     and rmse_gap >= target_error)
+    log_bayes_factor_cs02_over_cs01 = (
+        pulse_predictions["CS-02"]["held_out_log_predictive_density_without_common_gaussian_constant"]
+        - pulse_predictions["CS-01"]["held_out_log_predictive_density_without_common_gaussian_constant"])
+    log_bf_threshold = float(plan["discrimination_rule"]["minimum_absolute_held_out_log_bayes_factor"])
+    distinguished = abs(log_bayes_factor_cs02_over_cs01) >= log_bf_threshold
     result = {
         "status": "B5_PARAMETER_IDENTIFIABILITY_EVALUATED_SYNTHETIC",
         "discrimination_result": "DISTINGUISHED_ON_HELD_OUT_PULSE" if distinguished else "NOT_DISTINGUISHED_ON_HELD_OUT_PULSE",
@@ -236,7 +258,8 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         "noise_standard_deviation": sigma,
         "uncertainty_method": plan["uncertainty_rule"],
         "calibration_fit_by_structure": {
-            name: {key: value for key, value in fit.items() if key != "supported_grid_points"}
+            name: {key: value for key, value in fit.items()
+                  if key not in {"supported_grid_points", "all_grid_points"}}
             for name, fit in calibration_fits.items()},
         "calibration_structure_comparison": {
             "best_structure_by_calibration_rmse": min(structures,
@@ -252,11 +275,15 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
             "observation_horizon_hours": float(held_out["stop_time"]),
             "observation_count": len(test_times),
             "rmse_by_structure": {name: item["held_out_rmse"] for name, item in pulse_predictions.items()},
-            "lower_rmse_structure": heldout_winner,
+            "higher_held_out_predictive_density_structure": heldout_winner,
             "held_out_rmse_advantage": rmse_gap,
+            "log_bayes_factor_CS02_over_CS01": log_bayes_factor_cs02_over_cs01,
+            "structure_prior_odds_CS02_to_CS01": 1.0,
+            "minimum_absolute_log_bayes_factor": log_bf_threshold,
             "best_fit_point_rmse_by_structure": {name: item["best_fit_point_held_out_rmse"]
                 for name, item in pulse_predictions.items()},
-            "predictive_aggregation": "unweighted mean across the calibration-compatible grid points; not a Bayesian posterior mean",
+            "predictive_aggregation": "parameter-grid posterior predictive, uniform prior over declared grid and Gaussian likelihood from calibration only",
+            "predictive_model_comparison": "held-out joint trajectory likelihood integrated over calibration posterior; held-out data did not update parameter weights",
             "prediction_envelope_separated_observation_count": len(separated),
             "separated_observation_times": separated,
             "parameter_uncertainty_predictions": {name: item["prediction_envelope_under_calibration_uncertainty"]

@@ -38,10 +38,11 @@
     "parameter_count": 2,
     "grid_is_coarse": true
   },
+  "parameter_prior": "uniform over the declared finite parameter grid; calibration posterior predictive scores use the declared Gaussian noise scale",
   "discrimination_rule": {
-    "minimum_separated_observations": 3,
     "minimum_prediction_gap_in_noise_sd": 2.0,
-    "minimum_held_out_rmse_advantage_in_noise_sd": 1.0
+    "minimum_absolute_held_out_log_bayes_factor": 2.302585093,
+    "bayes_factor_threshold_interpretation": "10:1 predictive odds with equal structure prior probabilities"
   },
   "numerics": {"integration_step": 0.01},
   "note": "All ranges, truth values, inputs and noisy observations are a declared synthetic twin experiment; they are not empirical estimates or recommended real-system bounds."

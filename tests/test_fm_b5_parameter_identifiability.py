@@ -33,12 +33,9 @@ class FmB5ParameterIdentifiabilityTests(unittest.TestCase):
             self.assertTrue(first["structure_of_data_split"]["independent_noise_seeds"])
             self.assertEqual(first["held_out_pulse_evaluation"]["rmse_by_structure"],
                              second["held_out_pulse_evaluation"]["rmse_by_structure"])
-            separated = first["held_out_pulse_evaluation"]["prediction_envelope_separated_observation_count"]
-            rmse_advantage = first["held_out_pulse_evaluation"]["held_out_rmse_advantage"]
-            rule = PLAN["discrimination_rule"]
-            expected = (separated >= rule["minimum_separated_observations"] and
-                rmse_advantage >= rule["minimum_held_out_rmse_advantage_in_noise_sd"] *
-                PLAN["synthetic_data_generation"]["noise_standard_deviation"])
+            log_bf = first["held_out_pulse_evaluation"]["log_bayes_factor_CS02_over_CS01"]
+            threshold = PLAN["discrimination_rule"]["minimum_absolute_held_out_log_bayes_factor"]
+            expected = abs(log_bf) >= threshold
             self.assertEqual(first["discrimination_result"] == "DISTINGUISHED_ON_HELD_OUT_PULSE", expected)
 
     def test_simulated_cumulative_deliveries_are_finite_and_non_decreasing(self):
