@@ -13,6 +13,8 @@ from jsonschema.validators import validator_for
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = ROOT / "data/synthetic/fm_a_structural_candidates.json"
+DEFAULT_PROPOSALS = ROOT / "data/synthetic/f3_candidate_proposals.json"
+DEFAULT_BASE_CANDIDATE = ROOT / "data/synthetic/system_model_candidate.json"
 
 
 class ContractError(ValueError):
@@ -70,6 +72,8 @@ def validate_references(document: dict[str, Any]) -> None:
                 raise ContractError("DUPLICATE_PORT", definition["id"])
             ports_by_instance[instance_id] = ports
 
+        used_flow_outputs: set[str] = set()
+        used_inputs: set[str] = set()
         for connection in structure["connections"]:
             try:
                 from_instance, from_name = connection["from_port"].rsplit(".", 1)
@@ -87,6 +91,13 @@ def validate_references(document: dict[str, Any]) -> None:
                 raise ContractError("UNIT_MISMATCH", connection["id"])
             if connection["connection_kind"] == "MATERIAL_FLOW" and source["signal_kind"] != "FLOW":
                 raise ContractError("NON_FLOW_MATERIAL_LINK", connection["id"])
+            if connection["to_port"] in used_inputs:
+                raise ContractError("MULTIPLE_INCOMING", connection["to_port"])
+            used_inputs.add(connection["to_port"])
+            if source["signal_kind"] == "FLOW":
+                if connection["from_port"] in used_flow_outputs:
+                    raise ContractError("MATERIAL_FLOW_MULTICAST", connection["from_port"])
+                used_flow_outputs.add(connection["from_port"])
 
         actual_hash = canonical_structure_hash(structure)
         if structure["structural_hash"] != actual_hash:
@@ -147,6 +158,49 @@ def check_negative_cases(document: dict[str, Any]) -> None:
     else:
         raise ContractError("NEGATIVE_CASE_ACCEPTED", "incompatible port unit")
 
+    invalid = copy.deepcopy(document)
+    invalid["structures"][0]["connections"].append({
+        "id": "invalid-material-duplication",
+        "from_port": "source0.outflow",
+        "to_port": "receipt0.arrival",
+        "connection_kind": "MATERIAL_FLOW",
+    })
+    try:
+        validate_references(invalid)
+    except ContractError as exc:
+        if exc.code != "MATERIAL_FLOW_MULTICAST":
+            raise
+    else:
+        raise ContractError("NEGATIVE_CASE_ACCEPTED", "duplicated material flow")
+
+
+def compare_simple_filter_to_atms() -> dict[str, Any]:
+    """Compare the PR #5 fixture's ATMS decision with a subset filter baseline."""
+    from scripts.f3_candidate_selection import select_candidates
+
+    proposals = json.loads(DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
+    base = json.loads(DEFAULT_BASE_CANDIDATE.read_text(encoding="utf-8"))
+    simple_ids = sorted(
+        proposal["candidate_id"]
+        for proposal in proposals["proposals"]
+        if not any(set(nogood) <= set(proposal["assumption_ids"])
+                   for nogood in proposals["nogoods"])
+    )
+    atms_result = select_candidates(
+        base,
+        proposals["proposals"],
+        proposals["assumptions"],
+        proposals["nogoods"],
+    )
+    atms_ids = sorted(item["candidate"]["candidate_id"] for item in atms_result["selected"])
+    return {
+        "fixture": "data/synthetic/f3_candidate_proposals.json",
+        "simple_filter_candidate_ids": simple_ids,
+        "atms_candidate_ids": atms_ids,
+        "same_selection": simple_ids == atms_ids,
+        "value_added": "NOT_DEMONSTRATED" if simple_ids == atms_ids else "DIFFERENCE_REQUIRES_REVIEW",
+    }
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -159,12 +213,16 @@ def main() -> int:
     validate_references(document)
     if args.check_negative_cases:
         check_negative_cases(document)
+    baseline = compare_simple_filter_to_atms()
+    if not baseline["same_selection"]:
+        raise ContractError("S0_BASELINE_MISMATCH", json.dumps(baseline, sort_keys=True))
     print(json.dumps({
         "status": "FM_A_CONTRACT_VALID",
         "synthetic": document["synthetic"],
         "candidate_ids": [item["id"] for item in document["candidates"]],
         "structural_hashes": [item["structural_hash"] for item in document["structures"]],
         "negative_cases_checked": args.check_negative_cases,
+        "simple_filter_comparison": baseline,
         "empirical_or_causal_claim": False,
     }, indent=2))
     return 0

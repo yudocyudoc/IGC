@@ -11,6 +11,8 @@ on:
       - schema/derived/**
       - data/synthetic/f1a_entity_revision.json
       - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/f3_candidate_proposals.json
+      - data/synthetic/system_model_candidate.json
       - scripts/validate_fm_a_contract.py
       - docs/FM_A_AUDIT_AND_FEASIBILITY.md
       - docs/ANEXO_PUENTE_MOLECULAR_IGC_FM_v0_2_2026-10-20.md

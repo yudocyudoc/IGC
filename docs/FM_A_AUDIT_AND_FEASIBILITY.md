@@ -56,8 +56,8 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 
 ## 6. Evidencia que falta antes de declarar FM-A completo
 
-- Generar y revisar el JSON Schema derivado en GitHub Actions contra el mismo LinkML fuente.
-- Validar fixtures positivos y negativos de referencias, puertos y unidades en Actions.
+- Generación determinista del JSON Schema, validación positiva de los cuatro contratos y controles negativos de referencia, puerto, unidad y duplicación de flujo: completado en [Actions F1a #20](https://github.com/yudocyudoc/IGC/actions/runs/39443732945), HEAD `2f1b43e1d28163eb21c3ae1553c62bb7ee4696f4`.
+- Comparación S0 del filtro trivial frente al selector ATMS de PR #5: añadida al validador de Actions; resultado registrado en su próximo workflow.
 - Asegurar que no se importe código de `short` antes de una resolución de licencia.
 - Adjudicar con el investigador si la pareja de una etapa/dos etapas es la elegida para FM-B.
 
