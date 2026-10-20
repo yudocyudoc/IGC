@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sqlite3
 import tempfile
 import unittest
@@ -17,6 +18,17 @@ T3 = "2026-01-04T00:00:00Z"
 
 
 class LedgerTests(unittest.TestCase):
+    def test_linkml_source_contract_declares_required_identity_and_time_slots(self):
+        schema = json.loads((ROOT / "schema" / "source" / "igc.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(schema["name"], "igc")
+        slots = schema["slots"]
+        for required in ("id", "entity_type", "schema_version", "case_id", "created_at",
+                         "created_by", "recorded_at", "source_event_id", "revision",
+                         "access_policy", "integrity_hash", "valid_from", "valid_to"):
+            self.assertIn(required, slots)
+        self.assertIn("ClaimOccurrence", schema["classes"])
+        self.assertIn("Proposition", schema["classes"])
+
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
