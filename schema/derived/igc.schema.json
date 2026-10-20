@@ -230,6 +230,16 @@
             "title": "ConceptualModelRequest",
             "type": "object"
         },
+        "ConnectionKind": {
+            "description": "",
+            "enum": [
+                "MATERIAL_FLOW",
+                "INFORMATION_SIGNAL",
+                "CONTROL_SIGNAL"
+            ],
+            "title": "ConnectionKind",
+            "type": "string"
+        },
         "EntityRevision": {
             "additionalProperties": false,
             "description": "Immutable revision of a domain entity, recorded by one ledger event.",
@@ -466,7 +476,7 @@
             "description": "Typed and directed interface port for a molecular definition.",
             "properties": {
                 "direction": {
-                    "type": "string"
+                    "$ref": "#/$defs/PortDirection"
                 },
                 "name": {
                     "type": "string"
@@ -478,7 +488,7 @@
                     "type": "string"
                 },
                 "signal_kind": {
-                    "type": "string"
+                    "$ref": "#/$defs/SignalKind"
                 },
                 "unit": {
                     "type": "string"
@@ -635,6 +645,15 @@
             "title": "ParameterSpecification",
             "type": "object"
         },
+        "PortDirection": {
+            "description": "",
+            "enum": [
+                "in",
+                "out"
+            ],
+            "title": "PortDirection",
+            "type": "string"
+        },
         "Proposition": {
             "additionalProperties": false,
             "description": "Normalized propositional content, kept distinct from its source occurrence.",
@@ -716,6 +735,16 @@
             ],
             "title": "Proposition",
             "type": "object"
+        },
+        "SignalKind": {
+            "description": "",
+            "enum": [
+                "FLOW",
+                "SIGNAL",
+                "STATE"
+            ],
+            "title": "SignalKind",
+            "type": "string"
         },
         "SimulationRun": {
             "additionalProperties": false,
@@ -802,7 +831,7 @@
             "description": "Directed connection between two declared molecule ports.",
             "properties": {
                 "connection_kind": {
-                    "type": "string"
+                    "$ref": "#/$defs/ConnectionKind"
                 },
                 "from_port": {
                     "type": "string"
@@ -906,7 +935,7 @@
             "type": "object"
         }
     },
-    "$id": "https://w3id.org/igc/schema/0.1.1",
+    "$id": "https://w3id.org/igc/schema/0.1.2",
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "additionalProperties": true,
     "metamodel_version": "1.12.0",
