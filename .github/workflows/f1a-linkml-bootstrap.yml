@@ -1,17 +1,20 @@
-name: F1a LinkML lock bootstrap
+name: F1a LinkML schema
 on:
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/f1a-linkml-bootstrap.yml
+      - requirements-f1a-linkml.lock.txt
       - schema/source/**
+      - schema/derived/**
       - data/synthetic/f1a_entity_revision.json
       - scripts/lock_from_pip_report.py
+      - scripts/sbom_from_lock.py
 permissions:
   contents: read
 jobs:
-  resolve-and-verify:
+  linkml-schema:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -21,39 +24,36 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13.16"
-      - name: Resolve, lock, and verify LinkML schema
+      - name: Install LinkML toolchain from committed hashes
         run: |
-          python -m venv /tmp/igc-linkml-resolver
-          /tmp/igc-linkml-resolver/bin/python -m pip install --report /tmp/linkml-pip-report.json linkml==1.12.1
-          /tmp/igc-linkml-resolver/bin/python scripts/lock_from_pip_report.py /tmp/linkml-pip-report.json --output /tmp/requirements-f1a-linkml.lock.txt
+          mkdir -p artifacts/f1a
           python -m venv /tmp/igc-linkml-locked
-          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement /tmp/requirements-f1a-linkml.lock.txt
-          mkdir -p /tmp/igc-linkml-output
-          /tmp/igc-linkml-locked/bin/gen-json-schema schema/source/igc.yaml > /tmp/igc-linkml-output/igc.schema.json
-          /tmp/igc-linkml-locked/bin/gen-json-schema --top-class ClaimOccurrence schema/source/igc.yaml > /tmp/igc-linkml-output/claim-occurrence.schema.json
+          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f1a-linkml.lock.txt --report artifacts/f1a/linkml-pip-install-report.json
+          /tmp/igc-linkml-locked/bin/python scripts/lock_from_pip_report.py artifacts/f1a/linkml-pip-install-report.json --output artifacts/f1a/requirements-f1a-linkml.resolved.lock.txt
+          diff -u requirements-f1a-linkml.lock.txt artifacts/f1a/requirements-f1a-linkml.resolved.lock.txt
+          /tmp/igc-linkml-locked/bin/python scripts/sbom_from_lock.py requirements-f1a-linkml.lock.txt --output artifacts/f1a/linkml-toolchain.spdx.json
+      - name: Generate, compare, and validate LinkML outputs
+        run: |
+          /tmp/igc-linkml-locked/bin/gen-json-schema schema/source/igc.yaml > artifacts/f1a/igc.schema.json
+          diff -u schema/derived/igc.schema.json artifacts/f1a/igc.schema.json
+          /tmp/igc-linkml-locked/bin/gen-json-schema --top-class ClaimOccurrence schema/source/igc.yaml > artifacts/f1a/claim-occurrence.schema.json
           /tmp/igc-linkml-locked/bin/python - <<'PY'
           import json
           from pathlib import Path
-          from jsonschema import Draft202012Validator
-          schema = json.loads(Path("/tmp/igc-linkml-output/claim-occurrence.schema.json").read_text(encoding="utf-8"))
+          from jsonschema.validators import validator_for
+
+          schema = json.loads(Path("artifacts/f1a/claim-occurrence.schema.json").read_text(encoding="utf-8"))
           fixture = json.loads(Path("data/synthetic/f1a_entity_revision.json").read_text(encoding="utf-8"))
-          errors = sorted(Draft202012Validator(schema).iter_errors(fixture), key=lambda error: list(error.path))
+          validator = validator_for(schema)
+          validator.check_schema(schema)
+          errors = sorted(validator(schema).iter_errors(fixture), key=lambda error: list(error.path))
           if errors:
               raise SystemExit("\n".join(error.message for error in errors))
-          print("LinkML source parsed; JSON Schema generated; synthetic ClaimOccurrence validates.")
+          print("LinkML source parsed; committed JSON Schema matches generator output; synthetic ClaimOccurrence validates.")
           PY
-          echo 'LINKML_LOCK_BEGIN'
-          cat /tmp/requirements-f1a-linkml.lock.txt
-          echo 'LINKML_LOCK_END'
-          echo 'LINKML_SCHEMA_BEGIN'
-          cat /tmp/igc-linkml-output/igc.schema.json
-          echo 'LINKML_SCHEMA_END'
-      - name: Upload generated schema and resolver evidence
+      - name: Upload F1a schema and lock evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: f1a-linkml-bootstrap
-          path: |
-            /tmp/requirements-f1a-linkml.lock.txt
-            /tmp/linkml-pip-report.json
-            /tmp/igc-linkml-output/
+          name: f1a-linkml-evidence
+          path: artifacts/f1a/
           if-no-files-found: error
