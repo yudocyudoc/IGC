@@ -1,0 +1,479 @@
+{
+    "$defs": {
+        "Assumption": {
+            "additionalProperties": false,
+            "description": "Revisable assumption with scope and provenance.",
+            "properties": {
+                "access_policy": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "integrity_hash": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "source_event_id": {
+                    "type": "string"
+                },
+                "supersedes_revision": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "valid_from": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "valid_to": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "entity_type",
+                "schema_version",
+                "case_id",
+                "revision",
+                "created_at",
+                "created_by",
+                "recorded_at",
+                "source_event_id",
+                "access_policy",
+                "integrity_hash",
+                "payload"
+            ],
+            "title": "Assumption",
+            "type": "object"
+        },
+        "ClaimOccurrence": {
+            "additionalProperties": false,
+            "description": "A source-grounded occurrence of a claim; it does not assert truth of proposition content.",
+            "properties": {
+                "access_policy": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "integrity_hash": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "source_event_id": {
+                    "type": "string"
+                },
+                "supersedes_revision": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "valid_from": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "valid_to": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "entity_type",
+                "schema_version",
+                "case_id",
+                "revision",
+                "created_at",
+                "created_by",
+                "recorded_at",
+                "source_event_id",
+                "access_policy",
+                "integrity_hash",
+                "payload"
+            ],
+            "title": "ClaimOccurrence",
+            "type": "object"
+        },
+        "EntityRevision": {
+            "additionalProperties": false,
+            "description": "Immutable revision of a domain entity, recorded by one ledger event.",
+            "properties": {
+                "access_policy": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "integrity_hash": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "source_event_id": {
+                    "type": "string"
+                },
+                "supersedes_revision": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "valid_from": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "valid_to": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "entity_type",
+                "schema_version",
+                "case_id",
+                "revision",
+                "created_at",
+                "created_by",
+                "recorded_at",
+                "source_event_id",
+                "access_policy",
+                "integrity_hash",
+                "payload"
+            ],
+            "title": "EntityRevision",
+            "type": "object"
+        },
+        "KnowledgeEvent": {
+            "additionalProperties": false,
+            "description": "Append-only command/event envelope recorded atomically with an entity revision.",
+            "properties": {
+                "actor_id": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "event_type": {
+                    "type": "string"
+                },
+                "idempotency_key": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "payload_hash": {
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "schema_version": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "event_id",
+                "case_id",
+                "event_type",
+                "actor_id",
+                "idempotency_key",
+                "recorded_at",
+                "schema_version",
+                "payload_hash",
+                "payload"
+            ],
+            "title": "KnowledgeEvent",
+            "type": "object"
+        },
+        "Observation": {
+            "additionalProperties": false,
+            "description": "An observation record with separate valid time and recorded time.",
+            "properties": {
+                "access_policy": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "integrity_hash": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "source_event_id": {
+                    "type": "string"
+                },
+                "supersedes_revision": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "valid_from": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "valid_to": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "entity_type",
+                "schema_version",
+                "case_id",
+                "revision",
+                "created_at",
+                "created_by",
+                "recorded_at",
+                "source_event_id",
+                "access_policy",
+                "integrity_hash",
+                "payload"
+            ],
+            "title": "Observation",
+            "type": "object"
+        },
+        "Proposition": {
+            "additionalProperties": false,
+            "description": "Normalized propositional content, kept distinct from its source occurrence.",
+            "properties": {
+                "access_policy": {
+                    "type": "string"
+                },
+                "case_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "integrity_hash": {
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "Canonical JSON object serialized as text.",
+                    "type": "string"
+                },
+                "recorded_at": {
+                    "description": "System time at which the ledger accepted this revision.",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "schema_version": {
+                    "type": "string"
+                },
+                "source_event_id": {
+                    "type": "string"
+                },
+                "supersedes_revision": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "valid_from": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "valid_to": {
+                    "format": "date-time",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "entity_type",
+                "schema_version",
+                "case_id",
+                "revision",
+                "created_at",
+                "created_by",
+                "recorded_at",
+                "source_event_id",
+                "access_policy",
+                "integrity_hash",
+                "payload"
+            ],
+            "title": "Proposition",
+            "type": "object"
+        }
+    },
+    "$id": "https://w3id.org/igc/schema/0.1.0",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "additionalProperties": true,
+    "metamodel_version": "1.12.0",
+    "title": "igc",
+    "type": "object",
+    "version": null
+}
+
+2026-10-20T00:40:57.9889918
