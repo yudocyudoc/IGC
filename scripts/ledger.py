@@ -1,13 +1,14 @@
 """Minimal append-only SQLite ledger with bitemporal snapshots for synthetic F1a fixtures."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
 import sqlite3
-from typing import Any
+from typing import Any, Iterator
 
 
 class LedgerError(ValueError):
@@ -66,11 +67,15 @@ class Ledger:
         with self._connect() as connection:
             connection.executescript(self.migration_path.read_text(encoding="utf-8"))
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         connection = sqlite3.connect(self.db_path, isolation_level=None)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
-        return connection
+        try:
+            yield connection
+        finally:
+            connection.close()
 
     def append_revision(
         self,
@@ -142,9 +147,12 @@ class Ledger:
                 connection.commit()
                 return self._from_row(existing)
             current = connection.execute(
-                "SELECT revision FROM entity_revisions WHERE entity_id = ? ORDER BY revision DESC LIMIT 1",
+                "SELECT revision, case_id FROM entity_revisions WHERE entity_id = ? ORDER BY revision DESC LIMIT 1",
                 (entity_id,),
             ).fetchone()
+            if current and current["case_id"] != case_id:
+                connection.rollback()
+                raise LedgerError("an entity cannot change case_id across revisions")
             revision = (current["revision"] + 1) if current else 1
             supersedes = revision - 1 if revision > 1 else None
             event_id = f"urn:igc:event:{_digest(idempotency_key)[:24]}"
