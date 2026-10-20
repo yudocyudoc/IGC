@@ -320,11 +320,12 @@ def _run_openmodelica(output_dir: Path, image: str | None) -> tuple[str, str]:
     return str(base_csv), str(changed_csv)
 
 
-def run_candidate_handoff() -> dict[str, Any]:
+def run_candidate_handoff(*, candidate_path: Path = CANDIDATE_PATH,
+                          output_dir: Path = OUTPUT_DIR) -> dict[str, Any]:
     """Validate, generate, perturb, simulate and hash a synthetic candidate handoff."""
     stage = "system_model_candidate_and_handoff"
     try:
-        candidate_bytes = CANDIDATE_PATH.read_bytes()
+        candidate_bytes = candidate_path.read_bytes()
         claim_bytes = CLAIM_PATH.read_bytes()
         source_bytes = SOURCE_PATH.read_bytes()
         candidate = json.loads(candidate_bytes)
@@ -332,7 +333,6 @@ def run_candidate_handoff() -> dict[str, Any]:
         source_text = source_bytes.decode("utf-8")
         evidence = validate_candidate(candidate, claim, source_text)
 
-        output_dir = OUTPUT_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
         base_model = render_model(candidate, "CandidateBase")
         base_model_path = output_dir / "CandidateBase.mo"
@@ -377,9 +377,10 @@ def run_candidate_handoff() -> dict[str, Any]:
                        "quote_end": evidence["quote_end"]},
             "claim": {"path": str(CLAIM_PATH.relative_to(ROOT)), "id": evidence["source_claim_id"],
                       "entity_type": claim["entity_type"], "sha256": _sha256(claim_bytes)},
-            "candidate": {"path": str(CANDIDATE_PATH.relative_to(ROOT)),
+            "candidate": {"path": str(candidate_path.relative_to(ROOT)),
                           "id": candidate["candidate_id"], "entity_type": candidate["entity_type"],
                           "sha256": _sha256(candidate_bytes)},
+            "atms_selection": candidate.get("atms_selection"),
             "generator": {"path": str(Path(__file__).relative_to(ROOT)),
                           "sha256": _sha256(Path(__file__).read_bytes())},
             "mechanism_hypothesis_id": candidate["mechanism_hypothesis"]["id"],

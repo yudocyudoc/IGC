@@ -6,7 +6,7 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 |---|---|---|---|
 | F0-ENG — laboratorio y componentes | PASS_PROVISIONAL | Locks, pruebas, validaciones RDF acotadas y Modelica verificados por Actions #250 | No cubre T01–T30 integralmente |
 | F0-VERTICAL — candidato a simulación | PASS_SYNTHETIC | Actions #250: 27 pruebas; candidato tipado, handoff reproducible, sensibilidad y verificador independiente | No demuestra fidelidad empírica, calibración ni causalidad |
-| Integración semántica/ATMS → modelador | NOT_YET_INTEGRATED | Los checks semánticos y la sonda ATMS corren en el mismo workflow | El generador no consume una conclusión CRMinf/PROV/SPARQL ni la selección de supuestos del ATMS |
+| ATMS → selección → handoff | PENDING_ACTIONS (PR #5 propuesto) | Fixture de dos candidatos; una etiqueta ATMS queda podada por nogood y el candidato restante modifica los parámetros que llegan a OpenModelica; Actions conserva selección y handoff | El probe ATMS sigue siendo prototipo; no consume conclusiones RDF/CRMinf/SPARQL ni demuestra semántica empírica |
 | F0 — fase | ACCEPTED_WITH_LIMITATIONS | Investigador autorizó e integró PR #1 y #3 en `main` el 2026-10-20 | No completa la plataforma ni evalúa H-IGC |
 | H-IGC — utilidad/fidelidad científica | NOT_EVALUATED | Requiere protocolo experimental y evidencia posterior | Fixtures sintéticos no evalúan hipótesis científicas |
 | Plataforma completa | INCOMPLETE | F1–F9 siguen su secuencia; la persistencia cloud está planificada en F8 | No es una dependencia para aceptar los gates técnicos de F0 |
@@ -16,7 +16,7 @@ Este documento separa la salud del laboratorio, el handoff sintético, el cierre
 El recorrido implementado es:
 ClaimOccurrence anclado en fuente → SystemModelCandidate estructurado → hipótesis de mecanismo y supuestos sintéticos → generación de dos modelos Modelica → simulación → manifiesto con hashes → verificación independiente.
 
-El generador acepta deliberadamente solo la estructura single_stock y usa una ecuación stock-flow predeterminada. La etapa semántica y la sonda ATMS se ejecutan antes en el mismo workflow, pero no gobiernan ni alimentan la construcción del candidato. La integración de esa decisión corresponde a F2/F3; esta limitación no invalida el gate F0-VERTICAL acotado.
+El generador acepta deliberadamente solo la estructura single_stock y usa una ecuación stock-flow predeterminada. La etapa semántica F0 aún corre por separado. El incremento F3 (PR #5) conecta la sonda ATMS al selector: justificaciones derivan etiquetas de soporte, nogoods podan alternativas y solo candidatos soportados se entregan al handoff. El fixture tiene dos variantes sintéticas de una misma estructura single_stock; el gate demuestra que la decisión ATMS cambia candidato y tasa de llegada, no composición estructural abierta. El probe sigue sin retractación/versionado ni selección de motor de producción. La salida no es evidencia de causalidad o fidelidad.
 
 La perturbación cambia llegadas de 3 a 4 pedidos/hora. OpenModelica debe producir toda la trayectoria esperada desde el valor inicial hasta el resultado final: 20 y 30 pedidos, respectivamente, tras 10 horas. Se verifica cada muestra y su tiempo, no solo el último valor. Los negativos rechazan unidades/parámetros/referencias inválidas.
 
@@ -42,3 +42,10 @@ La aceptación técnica de F0 no evalúa H-IGC ni completa la plataforma. PR #2 
 ## F1a temporal
 
 PR #2 implementó el contrato LinkML y ledger SQLite local; PR #4 añadió `recorded_at` monotónico por entidad. Actions #253 validó 40 pruebas combinadas F0/F1a. El corte sigue siendo sintético y no productivo.
+
+
+## Incremento F3: selección ATMS conectada al handoff
+
+Cuando pase el workflow `F3 ATMS candidate handoff`, generará `selection.json`, el candidato seleccionado, el manifiesto del handoff y la verificación de OpenModelica. La suite comprueba que el nogood elimina el candidato baseline, que sin nogood coexisten las dos alternativas, y que referencias o valores inválidos fallan cerrados. La selección se conserva dentro del candidato hasheado y el manifiesto enlaza esa evidencia.
+
+Este incremento no cierra F2b ni F3a/F3b: usa el probe F0 explícitamente no productivo, no procesa salidas semánticas RDF/CRMinf/SPARQL, y no compone estructuras SD distintas. La integración semántica, retractación/versionado, conformance del ATMS y modelos estructuralmente rivales quedan pendientes.

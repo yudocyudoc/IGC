@@ -113,4 +113,9 @@ Antes de usar datos reales, operar recursos cloud reales, incurrir en gasto, apr
 
 ## 7. Estado y secuencia siguiente
 
-F0 (PR #1 y #3) y el corte inicial F1a (PR #2 y #4) están integrados en main. F1a permanece como ledger local sintético, no de producción. Continuar con F2 (perfiles semánticos ejecutables) y F3 (ATMS, investigaciones y candidatos rivales) respetando dependencias. El objetivo completo incluye experimentar con configuraciones distintas de conocimiento estructurado, ATMS, embeddings y modelos SD; no ampliar F0 alrededor de su ecuación sintética.
+F0 (PR #1 y #3) y el corte inicial F1a (PR #2 y #4) están integrados en main. F1a permanece como ledger local sintético, no de producción. El PR #5 propone un corte sintético F3: conecta etiquetas/nogoods del probe ATMS a la selección del candidato que llega a OpenModelica. Continuar con F2b (perfiles semánticos ejecutables y enlace RDF→decisión) y F3a/F3b (motor ATMS conforme, investigaciones y modelos rivales), respetando dependencias. El objetivo completo incluye experimentar con configuraciones distintas de conocimiento estructurado, ATMS, embeddings y modelos SD; no ampliar F0 alrededor de su ecuación sintética.
+
+
+### Corte F3 sintético — PR #5
+
+El selector consume propuestas versionadas, supuestos, justificaciones y nogoods; genera solo candidatos con etiquetas consistentes y conserva esas etiquetas en el candidato enviado al handoff. El workflow de Actions ejecuta pruebas negativas y el candidato elegido en OpenModelica. Este corte utiliza el probe `f0-atms-feasibility/0.1`, de modo que no acredita retractación/versionado, un motor de producción, integración RDF ni composición de estructuras dinámicas distintas. La evidencia es de cableado de software sintético y no evalúa H-IGC.
