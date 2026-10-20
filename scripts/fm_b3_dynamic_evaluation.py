@@ -193,11 +193,13 @@ def _number(row: dict[str, str], key: str, path: Path, row_index: int) -> float:
 
 
 def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
-                 intervals: int) -> dict[str, Any]:
+                 intervals: int, allow_extra_event_samples: bool = False) -> dict[str, Any]:
     with path.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
-    if len(rows) != intervals + 2:
-        raise DynamicEvaluationError(f"{path.name}: expected {intervals + 2} samples, got {len(rows)}")
+    expected_samples = intervals + 2
+    if (len(rows) < expected_samples if allow_extra_event_samples else len(rows) != expected_samples):
+        relation = "at least" if allow_extra_event_samples else "exactly"
+        raise DynamicEvaluationError(f"{path.name}: expected {relation} {expected_samples} samples, got {len(rows)}")
     required = {"time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
                 "terminalBalanceError", "terminalArrivals"}
     required.update(f"waiting_{stage}" for stage in stage_ids)
@@ -213,6 +215,12 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
         raise DynamicEvaluationError(f"{path.name}: time cannot move backwards")
     if not any(right > left + TOLERANCE for left, right in zip(times, times[1:])):
         raise DynamicEvaluationError(f"{path.name}: simulation time did not advance")
+    if allow_extra_event_samples:
+        nominal_grid = [start + (stop - start) * index / intervals for index in range(intervals + 1)]
+        missing_grid = [point for point in nominal_grid
+                        if not any(abs(sample - point) <= TOLERANCE for sample in times)]
+        if missing_grid:
+            raise DynamicEvaluationError(f"{path.name}: event samples are allowed only when the planned time grid is retained; missing {missing_grid[:3]}")
     metrics = {key: [] for key in ["delivered", "acceptedTotal", "systemInventory", "systemBalanceError", "terminalBalanceError", "terminalArrivals"]}
     for stage in stage_ids:
         metrics[f"waiting_{stage}"] = []

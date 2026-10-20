@@ -22,7 +22,7 @@ La auditoría no pretende ser un parser general de Modelica. Requiere coincidenc
 
 ## Qué se observa y qué pregunta sugiere
 
-El verificador reconstruye de forma independiente los balances de sistema y de cada cola según el contrato B3. Además compara entregas acumuladas durante la cola de recuperación, entregas al terminar el pulso, stock en espera por etapa y duración de saturación. La relación puede ser `DISCRIMINATING` o `NON_DISCRIMINATING`; en el segundo caso se conservan ambas explicaciones sin ranking.
+El verificador reconstruye de forma independiente los balances de sistema y de cada cola según el contrato B3. Conserva la malla temporal planeada y permite muestras adicionales producidas por eventos del pulso; informa marcas repetidas y falla si falta un punto de la malla o el tiempo retrocede. Además compara entregas acumuladas durante la cola de recuperación, entregas al terminar el pulso, stock en espera por etapa y saturación observada. La relación puede ser `DISCRIMINATING` o `NON_DISCRIMINATING`; en el segundo caso se conservan ambas explicaciones sin ranking.
 
 La pregunta experimental sugerida para un sistema observado es: **tras una entrada finita y conocida, ¿cómo se distribuyen las entregas y los stocks de espera entre las etapas durante la recuperación?** Medir la trayectoria acumulada de entregas y los stocks por etapa permitiría contrastar estas topologías. El pulso de 2 h es una propuesta exploratoria de este escenario sintético, no una perturbación óptima ni validada empíricamente.
 

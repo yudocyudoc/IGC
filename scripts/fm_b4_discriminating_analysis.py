@@ -142,7 +142,8 @@ def analyze_trace(path: Path, candidate_id: str, structure_profile: dict[str, An
               if stage["definition_id"] == plan["roles"]["stage"]]
     coherence = assess_trace(path, stages, float(plan["simulation"]["start_time"]),
                              float(plan["simulation"]["stop_time"]),
-                             int(plan["simulation"]["intervals"]))
+                             int(plan["simulation"]["intervals"]),
+                             allow_extra_event_samples=True)
     rows = _rows(path)
     pulse = plan["external_input"]["profile"]
     pulse_end = float(pulse["start_time"]) + float(pulse["period"]) * float(pulse["width_percent"]) / 100
@@ -244,6 +245,8 @@ def verify(args: argparse.Namespace) -> None:
     selection = load(args.output_dir / "molecular-atms-selection.json")
     verify_selection(composed, supports, selection)
     validate_scenario(plan, report, composed, selection)
+    if selection != apply_supports(composed, supports):
+        raise B4Error("saved ATMS selection differs from deterministic recomputation")
     audit = source_profile()
     profiles = {item["candidate_id"]: explain_structure(plan, composed, item["candidate_id"], audit)
                 for item in selection["selected"]}
@@ -251,6 +254,13 @@ def verify(args: argparse.Namespace) -> None:
     if load(profile_file) != profiles:
         raise B4Error("structural profiles do not match current molecular source and candidate structures")
     manifest = load(args.output_dir / "b4-execution-plan.json")
+    expected_model = render_evaluation_modelica(plan, composed, selection,
+        include_completion_rates=True, package_name=PACKAGE)
+    expected_mos = render_openmodelica_script(plan, composed, selection, package_name=PACKAGE)
+    if (args.output_dir / f"{PACKAGE}.mo").read_text(encoding="utf-8") != expected_model:
+        raise B4Error("generated Modelica diagnostics differ from independent reconstruction")
+    if (args.output_dir / "run-discriminating-pulse.mos").read_text(encoding="utf-8") != expected_mos:
+        raise B4Error("OpenModelica script differs from independent reconstruction")
     for key, path in {"plan_sha256": args.plan, "catalog_sha256": args.catalog,
         "supports_sha256": args.support_plan, "candidates_sha256": args.candidates,
         "composition_report_sha256": args.composition_report,
