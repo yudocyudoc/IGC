@@ -1,0 +1,68 @@
+name: FM-B wrapper PoC
+
+on:
+  push:
+    branches:
+      - fm-b-wrapper-poc
+    paths:
+      - .github/workflows/fm-b-wrapper-poc.yml
+      - poc/short_wrappers/**
+      - scripts/verify_short_wrapper_poc.py
+  pull_request:
+    branches:
+      - fm-b-architecture-design
+    paths:
+      - .github/workflows/fm-b-wrapper-poc.yml
+      - poc/short_wrappers/**
+      - scripts/verify_short_wrapper_poc.py
+
+permissions:
+  contents: read
+
+jobs:
+  wrapper-poc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Fetch immutable SystemDynamics and MSL sources
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL artifacts/fm-b-wrapper-poc
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz | tee artifacts/fm-b-wrapper-poc/systemdynamics.archive.sha256
+          sha256sum /tmp/igc-modelica/msl.tar.gz | tee artifacts/fm-b-wrapper-poc/msl.archive.sha256
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+          test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
+          test -f /tmp/igc-modelica/MSL/Modelica/package.mo
+
+      - name: Check and simulate recovered wrappers in pinned OpenModelica
+        run: |
+          docker run --rm \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-wrapper-poc:/results" \
+            "$IGC_OMC_IMAGE" omc /evidence/run-wrapper-poc.mos 2>&1 | tee artifacts/fm-b-wrapper-poc/openmodelica.log
+          for class in IGCMolecules.AcceptedSource IGCMolecules.BoundedQueue IGCMolecules.DeliveryCounter IGCInformationMolecules.FirstOrderReportFilter WrapperCS01 WrapperCS02; do
+            grep -Fq "Check of ${class} completed successfully" artifacts/fm-b-wrapper-poc/openmodelica.log
+          done
+          test -s artifacts/fm-b-wrapper-poc/wrapper-cs01_res.csv
+          test -s artifacts/fm-b-wrapper-poc/wrapper-cs02_res.csv
+
+      - name: Verify wrapper provenance and distinct topology traces
+        run: python scripts/verify_short_wrapper_poc.py | tee artifacts/fm-b-wrapper-poc/verification.log
+
+      - name: Upload wrapper PoC evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fm-b-wrapper-poc
+          path: artifacts/fm-b-wrapper-poc/
+          if-no-files-found: error
