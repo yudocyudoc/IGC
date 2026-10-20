@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - f0-inventario-spike
+      - f1a-ledger-core
     paths:
       - .github/workflows/f0-ci.yml
       - scripts/**
@@ -13,6 +14,9 @@ on:
       - spike/**
       - data/synthetic/**
       - data/ontologies/**
+      - schema/**
+      - migrations/**
+      - docs/F1A_LEDGER_CORE.md
   pull_request:
     branches:
       - main
