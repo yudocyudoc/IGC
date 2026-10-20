@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from contextlib import redirect_stdout
+from io import StringIO
 import hashlib
 import json
 import sqlite3
