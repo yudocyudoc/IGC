@@ -18,6 +18,6 @@ La corrida [#205](https://github.com/yudocyudoc/IGC/actions/runs/39348542070) te
 
 ## Pendiente dentro de F1a
 
-LinkML está escrito como fuente de esquema, pero todavía no se fija su cierre de dependencias ni se ejecutan sus generadores. No se declara que las salidas JSON Schema/RDF/Python estén derivadas de forma verificada. La siguiente iteración debe fijar `linkml` y dependencias con hash, generar el JSON Schema/SQL artifacts en Actions y hacer que CI compare los outputs para detectar drift.
+El fuente LinkML está fijado en `schema/source/igc.yaml`. LinkML 1.12.1 y su cierre de 90 paquetes están en `requirements-f1a-linkml.lock.txt`; el workflow de Actions reinstala todo con `--require-hashes`, regenera `schema/derived/igc.schema.json` y compara los bytes contra el artefacto comprometido. Un fixture sintético ClaimOccurrence se valida con el JSON Schema generado. El entorno LinkML es una herramienta de generación separada del lock de ejecución F0; el SPDX de ese toolchain conserva `NOASSERTION` para licencias transitivas.
 
 D1 batch, outbox transaccional/proyectores, R2 snapshot, borrado y privacidad permanecen fuera de este corte y requieren gates propios antes de integrar recursos reales.
