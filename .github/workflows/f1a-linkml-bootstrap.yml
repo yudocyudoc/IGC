@@ -40,7 +40,6 @@ jobs:
       - name: Generate, compare, and validate LinkML outputs
         run: |
           /tmp/igc-linkml-locked/bin/gen-json-schema schema/source/igc.yaml > artifacts/f1a/igc.schema.json
-          diff -u schema/derived/igc.schema.json artifacts/f1a/igc.schema.json
           /tmp/igc-linkml-locked/bin/gen-json-schema --top-class ClaimOccurrence schema/source/igc.yaml > artifacts/f1a/claim-occurrence.schema.json
           mkdir -p artifacts/f1a/fm-a
           for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
@@ -61,6 +60,7 @@ jobs:
           print("LinkML source parsed; committed JSON Schema matches generator output; synthetic ClaimOccurrence validates.")
           PY
           /tmp/igc-linkml-locked/bin/python scripts/validate_fm_a_contract.py --schema-dir artifacts/f1a/fm-a --check-negative-cases
+          diff -u schema/derived/igc.schema.json artifacts/f1a/igc.schema.json
       - name: Upload F1a schema and lock evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
