@@ -26,6 +26,12 @@ El verificador reconstruye de forma independiente los balances de sistema y de c
 
 La pregunta experimental sugerida para un sistema observado es: **tras una entrada finita y conocida, ¿cómo se distribuyen las entregas y los stocks de espera entre las etapas durante la recuperación?** Medir la trayectoria acumulada de entregas y los stocks por etapa permitiría contrastar estas topologías. El pulso de 2 h es una propuesta exploratoria de este escenario sintético, no una perturbación óptima ni validada empíricamente.
 
+## Evidencia de Actions
+
+GitHub Actions [run #6](https://github.com/yudocyudoc/IGC/actions/runs/39497848876), sobre el commit `bad8a37d3f24b89a6a1c52efed66a229d06a918c`, pasó todas las etapas. Cada CSV tuvo 165 muestras: 160 intervalos planeados más registros adicionales de eventos. Se simularon CS-01 y CS-02; CS-03 no produjo CSV.
+
+Ambas estructuras recibieron 6 unidades y terminaron con aproximadamente 6 entregadas (CS-01: 5.999997; CS-02: 5.999959). Al finalizar el pulso, CS-01 había entregado 3.098606 y CS-02 1.544656. La entrega adicional durante la recuperación fue 2.901391 frente a 4.455303; la diferencia máxima de trayectoria durante esa cola fue 1.734993 unidades. En la primera cola se observó saturación de 2 unidades/h en 16 muestras, entre t=1.1 y t=2.4; la segunda cola de CS-02 no llegó al límite en esta corrida. Las métricas satisfacen los balances reconstruidos independientemente por B3. Son resultados de esta ejecución sintética.
+
 ## Límites
 
 - Estructuras, parámetros, soporte ATMS y entrada son sintéticos.
