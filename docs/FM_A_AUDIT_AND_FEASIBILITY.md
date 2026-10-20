@@ -57,8 +57,9 @@ La ruta `BoundedQueue.completed` es una única salida de flujo material. `waitin
 ## 6. Evidencia que falta antes de declarar FM-A completo
 
 - Generación determinista del JSON Schema, validación positiva de los cuatro contratos y controles negativos de referencia, puerto, unidad y duplicación de flujo: completado en [Actions F1a #20](https://github.com/yudocyudoc/IGC/actions/runs/39443732945), HEAD `2f1b43e1d28163eb21c3ae1553c62bb7ee4696f4`.
-- Comparación S0 del filtro trivial frente al selector ATMS de PR #5: añadida al validador de Actions; resultado registrado en su próximo workflow.
+- Comparación S0 del filtro trivial frente al selector ATMS de PR #5: [Actions F1a #23](https://github.com/yudocyudoc/IGC/actions/runs/39444522863) dio la misma selección (`candidate-promotion-orders-001`) y registró `ATMS_VALUE_ADDED=NOT_DEMONSTRATED`, como corresponde a esta fixture.
+- Regresión del laboratorio: [Actions F0 #274](https://github.com/yudocyudoc/IGC/actions/runs/39444522778) pasó sobre el mismo HEAD `5cccaee39d0e08630b439f98a60c7c6bb0227fb7`.
 - Asegurar que no se importe código de `short` antes de una resolución de licencia.
 - Adjudicar con el investigador si la pareja de una etapa/dos etapas es la elegida para FM-B.
 
-Hasta completar esos puntos, el resultado es `FM_A_CONTRACT_PARTIAL` con factibilidad estructural restringida; no `FM_A_CONTRACT_VERIFIED` ni `FM_B_STRUCTURAL_INTEGRATION_PASS`.
+El contrato declarativo y la comparación S0 pasan en Actions, pero la admisión de las clases importadas sigue bloqueada por licencia/compilación y la pareja para FM-B necesita adjudicación. El estado global de la entrega se mantiene `FM_A_CONTRACT_PARTIAL` con factibilidad estructural restringida; no es `FM_A_CONTRACT_VERIFIED` ni `FM_B_STRUCTURAL_INTEGRATION_PASS`.

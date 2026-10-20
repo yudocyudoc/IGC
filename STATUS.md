@@ -16,7 +16,7 @@
 
 - PR #5 — probe sintético ATMS → selección → OpenModelica; abierto sobre `main`.
 - PR #6 — puente sintético Web Annotation/RDF/CRMinf/PROV-O/SPARQL → propuestas ATMS → OpenModelica; abierto y apilado sobre #5. Las propuestas y `nogoods` son datos del fixture, la topología sigue siendo `single_stock` y no hay inferencia empírica.
-- PR #7 — FM-A molecular; draft apilado sobre #6. Añade auditoría, factibilidad y contratos declarativos. No supone moléculas admitidas ni autoriza FM-B.
+- PR #7 — FM-A molecular; draft apilado sobre #6. Añade auditoría, factibilidad y contratos declarativos. Actions F1a #23 y F0 #274 pasaron sobre HEAD `5cccaee39d0e08630b439f98a60c7c6bb0227fb7`; S0 produce la misma selección que ATMS y registra `ATMS_VALUE_ADDED=NOT_DEMONSTRATED`. No supone moléculas admitidas ni autoriza FM-B.
 
 ## Verificación integrada
 
