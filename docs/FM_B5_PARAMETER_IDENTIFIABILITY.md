@@ -30,3 +30,11 @@ Se informa el RMSE de calibración, la comparación entre estructuras durante el
 - No amplía el catálogo ni el motor ATMS. El estado de licencias sigue diferido.
 
 La evidencia responderá una pregunta más acotada que «¿qué estructura es verdadera?»: **¿cuánta separación predictiva conserva el pulso reservado cuando cada topología puede compensar parte de su estructura ajustando parámetros dentro de estos rangos?**
+
+## Resultado de la corrida sintética
+
+GitHub Actions [run #4](https://github.com/yudocyudoc/IGC/actions/runs/39512219936) pasó las tres pruebas de B5 y ejecutó el ajuste/evaluación. Con la semilla declarada, la calibración favoreció CS-02 (RMSE 0.04345 frente a 0.08044 para CS-01). En ambos modelos la rejilla compatible dejó `maxThroughput` sin identificar dentro del rango completo [1.2, 2.4]; `responseTime` quedó en 0.8 h para CS-02 y en 1.6 h para CS-01.
+
+En el pulso reservado, la media predictiva sobre los conjuntos de parámetros compatibles tuvo RMSE 0.08056 para CS-02 y 0.21464 para CS-01. Las envolventes se separaron por más de dos desviaciones de ruido en t=0.5, 1.0 y 1.5 h; la regla declarada produjo `DISTINGUISHED_ON_HELD_OUT_PULSE`, y CS-02 tuvo el menor error reservado. La evaluación de solo el punto de mejor ajuste dio un resultado peor para CS-02 debido a que el desempate escogió el throughput mínimo en una meseta no identificada. Por eso se reporta también el conjunto compatible y su media no ponderada, sin presentarla como posterior estadístico.
+
+Este resultado muestra identificabilidad condicional dentro de un gemelo sintético con verdad CS-02 conocida por construcción. No es un descubrimiento sobre un sistema externo, y la calibración ya favorecía CS-02 antes de evaluar el pulso. El valor del pulso aquí es comprobar la predicción fuera de la condición de baja entrada y exponer la incertidumbre de capacidad que la calibración no resolvió.
