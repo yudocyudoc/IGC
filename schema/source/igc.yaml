@@ -218,7 +218,6 @@
     "minimum": {"range": "float"},
     "maximum": {"range": "float"},
     "description": {"range": "string", "required": true},
-    "entity_type": {"range": "string", "required": true},
     "origin_refs": {"range": "uriorcurie", "multivalued": true},
     "unresolved": {"range": "string", "multivalued": true},
     "value": {"range": "float", "required": true},
