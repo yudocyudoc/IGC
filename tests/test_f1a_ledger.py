@@ -113,6 +113,17 @@ class LedgerTests(unittest.TestCase):
             )
         self.assertEqual(len(self.ledger.snapshot(case_id="urn:igc:case:c1", as_known_at=T3)), 1)
 
+    def test_revision_digest_detects_payload_tampering(self):
+        revision = self.record()
+        self.assertTrue(self.ledger.verify_integrity(entity_id=revision.entity_id, revision=revision.revision))
+        with sqlite3.connect(self.db) as connection:
+            connection.execute("DROP TRIGGER entity_revisions_no_update")
+            connection.execute(
+                "UPDATE entity_revisions SET payload_json = ? WHERE entity_id = ? AND revision = ?",
+                ('{"text":"alterado"}', revision.entity_id, revision.revision),
+            )
+        self.assertFalse(self.ledger.verify_integrity(entity_id=revision.entity_id, revision=revision.revision))
+
     def test_canonical_tables_are_append_only(self):
         self.record()
         with sqlite3.connect(self.db) as connection:
