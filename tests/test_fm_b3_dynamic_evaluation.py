@@ -89,7 +89,7 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
             metrics = self._trace(Path(temp_dir) / "trace.csv")
         self.assertEqual(metrics["final_delivered"], 20)
         self.assertEqual(metrics["final_system_inventory"], 30)
-        self.assertEqual(metrics["max_abs_global_balance_error"], 0)
+        self.assertEqual(metrics["max_abs_independent_global_balance_error"], 0)
 
     def test_rejects_conservation_error_and_negative_stock(self):
         for corruption, expected in (("accepted_total", "independently reconstructed global stock-flow conservation"),
