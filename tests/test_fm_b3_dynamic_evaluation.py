@@ -135,6 +135,39 @@ class FmB3DynamicEvaluationTests(unittest.TestCase):
             with self.assertRaisesRegex(DynamicEvaluationError, "time cannot move backwards"):
                 assess_trace(path, ["stage0"], 0, 10, 1)
 
+    def test_event_samples_may_extend_csv_but_cannot_replace_planned_grid(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "event-trace.csv"
+            fields = ["time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
+                      "terminalBalanceError", "terminalArrivals", "waiting_stage0", "cumulativeArrivals_stage0",
+                      "cumulativeCompletions_stage0", "queueBalanceError_stage0"]
+            rows = []
+            for time, delivered, accepted, waiting in ((0, 0, 0, 0), (2.5, 5, 7.5, 2.5),
+                                                       (5, 10, 15, 5), (10, 20, 30, 10)):
+                rows.append({"time": time, "delivered": delivered, "acceptedTotal": accepted,
+                    "systemInventory": delivered + waiting, "systemBalanceError": 0,
+                    "terminalBalanceError": 0, "terminalArrivals": delivered,
+                    "waiting_stage0": waiting, "cumulativeArrivals_stage0": accepted,
+                    "cumulativeCompletions_stage0": delivered, "queueBalanceError_stage0": 0})
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                writer.writerows(rows)
+            metrics = assess_trace(path, ["stage0"], 0, 10, 1, allow_extra_event_samples=True)
+            self.assertEqual(metrics["samples"], 4)
+            with self.assertRaisesRegex(DynamicEvaluationError, "expected exactly 3 samples"):
+                assess_trace(path, ["stage0"], 0, 10, 1)
+            rows[2].update({"time": 7.5, "delivered": 15, "acceptedTotal": 22.5,
+                            "systemInventory": 22.5, "terminalArrivals": 15,
+                            "waiting_stage0": 7.5, "cumulativeArrivals_stage0": 22.5,
+                            "cumulativeCompletions_stage0": 15})
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=fields)
+                writer.writeheader()
+                writer.writerows(rows)
+            with self.assertRaisesRegex(DynamicEvaluationError, "planned time grid"):
+                assess_trace(path, ["stage0"], 0, 10, 2, allow_extra_event_samples=True)
+
     def test_comparison_requires_distinct_dynamic_behavior(self):
         common = {"times": [0, 1], "delivered_series": [0, 2]}
         result = evaluate_comparison({"a": common, "b": {"times": [0, 1], "delivered_series": [0, 3]}},

@@ -78,11 +78,13 @@ def verify_composition_provenance(plan_path: Path, catalog_path: Path, candidate
 
 
 def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
-                               selection: dict[str, Any]) -> str:
+                               selection: dict[str, Any],
+                               include_completion_rates: bool = False,
+                               package_name: str = "B3MolecularDynamics") -> str:
     definitions = {item["id"]: item for item in composed["molecule_definitions"]}
     candidates = {item["id"]: item for item in composed["candidates"]}
     structures = {item["id"]: item for item in composed["structures"]}
-    lines = ["within;", "package B3MolecularDynamics"]
+    lines = ["within;", f"package {package_name}"]
     for support in selection["selected"]:
         candidate = candidates[support["candidate_id"]]
         structure = structures[candidate["structure_revision_id"]]
@@ -113,6 +115,8 @@ def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
                 f"    output Real cumulativeCompletions_{stage};",
                 f"    output Real queueBalanceError_{stage};",
             ])
+            if include_completion_rates:
+                model_lines.append(f"    output Real completionRate_{stage};")
         model_lines.extend([
             "    output Real delivered;",
             "    output Real acceptedTotal;",
@@ -141,20 +145,23 @@ def render_evaluation_modelica(plan: dict[str, Any], composed: dict[str, Any],
                 f"    cumulativeCompletions_{stage} = cumulativeCompletion_{stage}.y;",
                 f"    queueBalanceError_{stage} = cumulativeArrivals_{stage} - cumulativeCompletions_{stage} - waiting_{stage};",
             ])
+            if include_completion_rates:
+                model_lines.append(f"    completionRate_{stage} = candidate.{stage}.completed;")
         model_lines.extend([f"  end {cname};", ""])
         lines.extend(model_lines)
-    return "\n".join(lines + ["end B3MolecularDynamics;", ""])
+    return "\n".join(lines + [f"end {package_name};", ""])
 
 
 def render_openmodelica_script(plan: dict[str, Any], composed: dict[str, Any],
-                               selection: dict[str, Any]) -> str:
+                               selection: dict[str, Any],
+                               package_name: str = "B3MolecularDynamics") -> str:
     lines = [
         'setModelicaPath("/opt/modelica:/opt/systemdynamics");',
         'loadFile("/opt/systemdynamics/SystemDynamics/package.mo");',
         'loadFile("/evidence/IGCMolecules.mo");',
         'loadFile("/evidence/IGCInformationMolecules.mo");',
         'loadFile("/composer/GeneratedMolecularCandidates.mo");',
-        'loadFile("/results/B3MolecularDynamics.mo");',
+        f'loadFile("/results/{package_name}.mo");',
         "print(getErrorString());",
     ]
     selected = [item["candidate_id"] for item in selection["selected"]]
@@ -163,7 +170,7 @@ def render_openmodelica_script(plan: dict[str, Any], composed: dict[str, Any],
         raise DynamicEvaluationError("rejected candidate cannot be executed")
     sim = plan["simulation"]
     for candidate_id in selected:
-        evaluation_class = "B3MolecularDynamics." + class_name(candidate_id)
+        evaluation_class = package_name + "." + class_name(candidate_id)
         lines.extend([
             f"checkModel({evaluation_class});",
             "print(getErrorString());",
@@ -186,11 +193,13 @@ def _number(row: dict[str, str], key: str, path: Path, row_index: int) -> float:
 
 
 def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
-                 intervals: int) -> dict[str, Any]:
+                 intervals: int, allow_extra_event_samples: bool = False) -> dict[str, Any]:
     with path.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
-    if len(rows) != intervals + 2:
-        raise DynamicEvaluationError(f"{path.name}: expected {intervals + 2} samples, got {len(rows)}")
+    expected_samples = intervals + 2
+    if (len(rows) < expected_samples if allow_extra_event_samples else len(rows) != expected_samples):
+        relation = "at least" if allow_extra_event_samples else "exactly"
+        raise DynamicEvaluationError(f"{path.name}: expected {relation} {expected_samples} samples, got {len(rows)}")
     required = {"time", "delivered", "acceptedTotal", "systemInventory", "systemBalanceError",
                 "terminalBalanceError", "terminalArrivals"}
     required.update(f"waiting_{stage}" for stage in stage_ids)
@@ -206,6 +215,12 @@ def assess_trace(path: Path, stage_ids: list[str], start: float, stop: float,
         raise DynamicEvaluationError(f"{path.name}: time cannot move backwards")
     if not any(right > left + TOLERANCE for left, right in zip(times, times[1:])):
         raise DynamicEvaluationError(f"{path.name}: simulation time did not advance")
+    if allow_extra_event_samples:
+        nominal_grid = [start + (stop - start) * index / intervals for index in range(intervals + 1)]
+        missing_grid = [point for point in nominal_grid
+                        if not any(abs(sample - point) <= TOLERANCE for sample in times)]
+        if missing_grid:
+            raise DynamicEvaluationError(f"{path.name}: event samples are allowed only when the planned time grid is retained; missing {missing_grid[:3]}")
     metrics = {key: [] for key in ["delivered", "acceptedTotal", "systemInventory", "systemBalanceError", "terminalBalanceError", "terminalArrivals"]}
     for stage in stage_ids:
         metrics[f"waiting_{stage}"] = []

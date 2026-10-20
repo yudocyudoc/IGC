@@ -1,0 +1,132 @@
+name: FM-B4 structural explanation and discriminating perturbation
+
+on:
+  push:
+    branches: [fm-b4-discriminating-perturbation]
+    paths:
+      - .github/workflows/fm-b4-discriminating-perturbation.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b4_discriminating_*.json
+      - poc/short_wrappers/**
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/fm_b2_atms_candidate_reasoning.py
+      - scripts/fm_b3_dynamic_evaluation.py
+      - scripts/fm_b4_discriminating_analysis.py
+      - scripts/verify_fm_b2_atms_selection.py
+      - tests/test_fm_b_molecular_composer.py
+      - tests/test_fm_b2_atms_molecular_candidates.py
+      - tests/test_fm_b3_dynamic_evaluation.py
+      - tests/test_fm_b4_discriminating_analysis.py
+      - docs/FM_B4_DISCRIMINATING_PERTURBATION.md
+  pull_request:
+    branches: [fm-b3-molecular-dynamics]
+    paths:
+      - .github/workflows/fm-b4-discriminating-perturbation.yml
+      - data/synthetic/fm_a_structural_candidates.json
+      - data/synthetic/fm_b4_discriminating_*.json
+      - poc/short_wrappers/**
+      - requirements-f1a-linkml.lock.txt
+      - schema/source/igc.yaml
+      - scripts/compose_molecular_candidates.py
+      - scripts/fm_b2_atms_candidate_reasoning.py
+      - scripts/fm_b3_dynamic_evaluation.py
+      - scripts/fm_b4_discriminating_analysis.py
+      - scripts/verify_fm_b2_atms_selection.py
+      - tests/test_fm_b_molecular_composer.py
+      - tests/test_fm_b2_atms_molecular_candidates.py
+      - tests/test_fm_b3_dynamic_evaluation.py
+      - tests/test_fm_b4_discriminating_analysis.py
+      - docs/FM_B4_DISCRIMINATING_PERTURBATION.md
+
+permissions:
+  contents: read
+
+jobs:
+  discriminating-perturbation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+      - name: Install hash-locked LinkML validation dependencies
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer artifacts/fm-b4-discriminating-analysis
+          python -m venv /tmp/igc-linkml-locked
+          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f1a-linkml.lock.txt
+      - name: Test molecular composition, ATMS, independent balances and B4 analysis
+        run: |
+          for suite in test_fm_b_molecular_composer.py test_fm_b2_atms_molecular_candidates.py test_fm_b3_dynamic_evaluation.py test_fm_b4_discriminating_analysis.py; do
+            /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p "$suite" -v
+          done
+      - name: Compose pulse scenario under LinkML contracts
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer/linkml
+          for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
+            /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/fm-b-molecular-composer/linkml/${top_class}.schema.json"
+          done
+          /tmp/igc-linkml-locked/bin/python scripts/compose_molecular_candidates.py \
+            --plan data/synthetic/fm_b4_discriminating_pulse_plan.json \
+            --schema-dir artifacts/fm-b-molecular-composer/linkml \
+            --output-dir artifacts/fm-b-molecular-composer | tee artifacts/fm-b-molecular-composer/composer.log
+      - name: Prepare verified ATMS selection and structural explanations
+        run: |
+          /tmp/igc-linkml-locked/bin/python scripts/fm_b4_discriminating_analysis.py prepare \
+            --plan data/synthetic/fm_b4_discriminating_pulse_plan.json \
+            --support-plan data/synthetic/fm_b4_discriminating_pulse_supports.json \
+            --catalog data/synthetic/fm_a_structural_candidates.json \
+            --candidates artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --composition-report artifacts/fm-b-molecular-composer/composition-report.json \
+            --output-dir artifacts/fm-b4-discriminating-analysis
+      - name: Fetch immutable SystemDynamics and MSL sources
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz > artifacts/fm-b4-discriminating-analysis/systemdynamics.archive.sha256
+          sha256sum /tmp/igc-modelica/msl.tar.gz > artifacts/fm-b4-discriminating-analysis/msl.archive.sha256
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+      - name: Compile and simulate only ATMS-admissible candidates
+        run: |
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" --workdir /results -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-molecular-composer:/composer:ro" \
+            -v "$PWD/artifacts/fm-b4-discriminating-analysis:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-discriminating-pulse.mos 2>&1 | tee artifacts/fm-b4-discriminating-analysis/openmodelica.log
+          for class in B4MolecularDynamics.Evaluate_CS_01 B4MolecularDynamics.Evaluate_CS_02; do
+            grep -Fq "Check of ${class} completed successfully" artifacts/fm-b4-discriminating-analysis/openmodelica.log
+          done
+          if grep -Eq "Error:|Failed to load|Class .* not found" artifacts/fm-b4-discriminating-analysis/openmodelica.log; then exit 1; fi
+          test -s artifacts/fm-b4-discriminating-analysis/b3-cs_01_res.csv
+          test -s artifacts/fm-b4-discriminating-analysis/b3-cs_02_res.csv
+          test ! -e artifacts/fm-b4-discriminating-analysis/b3-cs_03_res.csv
+      - name: Independently verify structure, saturation, coherence and discrimination
+        run: |
+          /tmp/igc-linkml-locked/bin/python scripts/fm_b4_discriminating_analysis.py verify \
+            --plan data/synthetic/fm_b4_discriminating_pulse_plan.json \
+            --support-plan data/synthetic/fm_b4_discriminating_pulse_supports.json \
+            --catalog data/synthetic/fm_a_structural_candidates.json \
+            --candidates artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --composition-report artifacts/fm-b-molecular-composer/composition-report.json \
+            --openmodelica-log artifacts/fm-b4-discriminating-analysis/openmodelica.log \
+            --image "$IGC_OMC_IMAGE" \
+            --output-dir artifacts/fm-b4-discriminating-analysis | tee artifacts/fm-b4-discriminating-analysis/verification.log
+      - name: Upload B4 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fm-b4-discriminating-perturbation
+          path: artifacts/fm-b4-discriminating-analysis/
+          if-no-files-found: warn
