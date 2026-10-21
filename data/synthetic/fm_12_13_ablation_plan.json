@@ -1,0 +1,58 @@
+{
+  "schema": "igc-fm-12-13-ablation-plan/0.1",
+  "synthetic": true,
+  "scenarios": [
+    {
+      "id": "S0-simple-filter",
+      "question": "Does ATMS differ from a direct nogood-subset filter on the simple fixture?",
+      "assumptions": ["m1", "m2", "route-a", "route-b"],
+      "rules": [
+        {"id": "s0-j1", "antecedents": ["m1", "route-a"], "consequent": "candidate-cs01"},
+        {"id": "s0-j2", "antecedents": ["m2", "route-b"], "consequent": "candidate-cs02"}
+      ],
+      "nogoods": [["m1", "route-a"]],
+      "candidate_nodes": ["candidate-cs01", "candidate-cs02"],
+      "expected_labels": {
+        "candidate-cs01": [],
+        "candidate-cs02": [["m2", "route-b"]]
+      }
+    },
+    {
+      "id": "S1-alternative-justifications",
+      "question": "Does one candidate remain supported after one of its independent justifications becomes inconsistent?",
+      "assumptions": ["mechanism", "evidence-a", "evidence-b", "route-a", "route-b"],
+      "rules": [
+        {"id": "derive-path-a", "antecedents": ["mechanism", "evidence-a"], "consequent": "path-a"},
+        {"id": "derive-path-b", "antecedents": ["mechanism", "evidence-b"], "consequent": "path-b"},
+        {"id": "support-via-a", "antecedents": ["path-a", "route-a"], "consequent": "candidate-cs01"},
+        {"id": "support-via-b", "antecedents": ["path-b", "route-b"], "consequent": "candidate-cs01"}
+      ],
+      "nogoods": [["mechanism", "evidence-a", "route-a"]],
+      "candidate_nodes": ["candidate-cs01"],
+      "expected_labels": {
+        "candidate-cs01": [["evidence-b", "mechanism", "route-b"]]
+      }
+    }
+  ],
+  "llm_tasks": [
+    {
+      "id": "explain-survival",
+      "question": "Why does candidate-cs01 remain supported in S1 after the nogood is applied?",
+      "required_facts": ["support-via-b", "evidence-b", "route-b", "not causal proof"],
+      "forbidden_claims": ["the candidate is proven true"]
+    },
+    {
+      "id": "explain-pruning",
+      "question": "Which support was removed in S1, and which nogood caused it?",
+      "required_facts": ["support-via-a", "evidence-a", "route-a", "mechanism"],
+      "forbidden_claims": ["candidate-cs01 has no remaining support"]
+    },
+    {
+      "id": "scope-limit",
+      "question": "What does this synthetic result establish about the system being modeled?",
+      "required_facts": ["synthetic fixture", "logical support only", "no empirical causal conclusion"],
+      "forbidden_claims": ["empirically validated"]
+    }
+  ],
+  "empirical_or_causal_claim": false
+}
