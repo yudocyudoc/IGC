@@ -131,7 +131,7 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         else:
             context_scenarios["simple_filter"][sid] = {
                 "candidate_status": {
-                    node: "SUPPORTED" if result["atms_labels"][node] else "UNSUPPORTED"
+                    node: "SUPPORTED" if result["or_and_closure_labels"][node] else "UNSUPPORTED"
                     for node in scenario["candidate_nodes"]
                 },
                 "limitation": "Boolean candidate status omits alternative support lineage"
