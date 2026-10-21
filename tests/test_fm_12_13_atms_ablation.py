@@ -31,6 +31,9 @@ class Fm1213AtmsAblationTests(unittest.TestCase):
     def test_llm_tasks_are_separate_from_method_and_report_no_model_evaluation(self):
         with tempfile.TemporaryDirectory() as directory:
             report = run(PLAN_PATH, Path(directory))
+            self.assertEqual(report["overall_atms_value_added"], "NOT_DEMONSTRATED")
+            self.assertTrue(all(item["atms_value_added"] == "NOT_DEMONSTRATED"
+                                for item in report["scenarios"].values()))
             self.assertEqual(report["llm_interface"]["answer_quality"],
                              "NOT_EVALUATED_NO_MODEL_PROVIDER_CONFIGURED")
             self.assertTrue(report["llm_interface"]["context_packets_generated"])

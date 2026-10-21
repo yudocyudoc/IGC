@@ -89,13 +89,15 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
             raise AblationError(f"declared label mismatch in {scenario['id']}")
         if baseline is not None and baseline != expected:
             raise AblationError("simple filter mismatch in S0")
+        comparator_matches = (atms == baseline) if baseline is not None else (atms == closure)
         outputs[scenario["id"]] = {
             "question": scenario["question"],
             "atms_labels": atms,
             "direct_filter_labels": baseline,
             "or_and_closure_labels": closure,
             "atms_matches_or_and": atms == closure,
-            "atms_value_added": "NOT_DEMONSTRATED" if baseline == atms else "DIFFERENCE_OBSERVED",
+            "primary_comparator": "direct_filter" if baseline is not None else "or_and_closure",
+            "atms_value_added": "NOT_DEMONSTRATED" if comparator_matches else "DIFFERENCE_OBSERVED",
             "expected_labels": expected,
             "rule_count": len(scenario["rules"]),
             "nogood_count": len(scenario["nogoods"])
@@ -161,7 +163,7 @@ def run(plan_path: Path, output_dir: Path) -> dict[str, Any]:
         "plan_sha256": digest(plan_path),
         "script_sha256": digest(Path(__file__)),
         "scenarios": outputs,
-        "overall_atms_value_added": "NOT_DEMONSTRATED" if all(x["atms_matches_or_and"] for x in outputs.values()) and outputs["S0-simple-filter"]["atms_value_added"] == "NOT_DEMONSTRATED" else "MIXED",
+        "overall_atms_value_added": "NOT_DEMONSTRATED" if all(x["atms_value_added"] == "NOT_DEMONSTRATED" for x in outputs.values()) else "MIXED",
         "llm_interface": {
             "context_packets_generated": True,
             "paired_tasks": len(plan["llm_tasks"]),
