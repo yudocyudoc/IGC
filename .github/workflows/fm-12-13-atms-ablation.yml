@@ -1,0 +1,53 @@
+name: FM-12/13 ATMS ablation and LLM interface
+
+on:
+  push:
+    branches: [fm-12-13-atms-llm-ablation]
+    paths:
+      - .github/workflows/fm-12-13-atms-ablation.yml
+      - data/synthetic/fm_12_13_ablation_plan.json
+      - scripts/fm_12_13_atms_ablation.py
+      - scripts/f0_atms_probe.py
+      - tests/test_fm_12_13_atms_ablation.py
+      - docs/FM_12_13_ATMS_ABLATION.md
+      - docs/FM_B5_PARAMETER_IDENTIFIABILITY.md
+  pull_request:
+    branches: [fm-b5-parameter-identifiability]
+    paths:
+      - .github/workflows/fm-12-13-atms-ablation.yml
+      - data/synthetic/fm_12_13_ablation_plan.json
+      - scripts/fm_12_13_atms_ablation.py
+      - scripts/f0_atms_probe.py
+      - tests/test_fm_12_13_atms_ablation.py
+      - docs/FM_12_13_ATMS_ABLATION.md
+      - docs/FM_B5_PARAMETER_IDENTIFIABILITY.md
+
+permissions:
+  contents: read
+
+jobs:
+  atms-ablation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+      - name: Test FM-12/13 ablation contracts
+        run: python -m unittest discover -s tests -p 'test_fm_12_13_atms_ablation.py' -v
+      - name: Compare simple filter, OR/AND closure, and ATMS
+        run: |
+          mkdir -p artifacts/fm-12-13-atms-ablation
+          python scripts/fm_12_13_atms_ablation.py \
+            --plan data/synthetic/fm_12_13_ablation_plan.json \
+            --output-dir artifacts/fm-12-13-atms-ablation | tee artifacts/fm-12-13-atms-ablation/run.log
+      - name: Upload FM-12/13 evidence and paired LLM contexts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fm-12-13-atms-ablation
+          path: artifacts/fm-12-13-atms-ablation/
+          if-no-files-found: error
