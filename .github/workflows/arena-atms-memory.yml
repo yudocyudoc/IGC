@@ -1,0 +1,68 @@
+name: Arena ATMS + temporal memory (M0)
+on:
+  push:
+    branches: [feature/arena-atms-memory-core]
+    paths:
+      - 'scripts/arena_atms.py'
+      - 'scripts/arena_memory.py'
+      - 'tests/test_arena_atms_memory.py'
+      - 'data/synthetic/arena_memory_m0.json'
+      - '.github/workflows/arena-atms-memory.yml'
+      - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
+  pull_request:
+    branches: [fm-12-13-atms-llm-ablation]
+    paths:
+      - 'scripts/arena_atms.py'
+      - 'scripts/arena_memory.py'
+      - 'tests/test_arena_atms_memory.py'
+      - 'data/synthetic/arena_memory_m0.json'
+      - '.github/workflows/arena-atms-memory.yml'
+      - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
+permissions:
+  contents: read
+jobs:
+  memory-atms-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Run adversarial ATMS and memory unit tests
+        run: python -m unittest discover -s tests -p 'test_arena_atms_memory.py' -v
+      - name: Retrieve hypothesis and its minimal supporting environments
+        run: |
+          mkdir -p artifacts/arena-memory-m0
+          python -m scripts.arena_memory \
+            --events data/synthetic/arena_memory_m0.json \
+            --case INV-CAF-M0 \
+            --as-known-at '2026-10-20T10:00:00Z' \
+            --lane D \
+            --query 'abandono espera' \
+            --output artifacts/arena-memory-m0/retrieval.json
+      - name: Check manifest and no hidden/future leakage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-memory-m0/retrieval.json')
+          r=json.loads(p.read_text(encoding='utf-8'))
+          assert r['holdout_accessed'] is False
+          assert r['items'] and r['items'][0]['logical_support']['minimal_environments'] == [
+            ['count-b', 'waiting-mechanism']]
+          assert r['items'][0]['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert 'gold-model' not in p.read_text(encoding='utf-8')
+          assert 'Respuesta verdadera oculta' not in p.read_text(encoding='utf-8')
+          assert 'No presente en snapshot' not in p.read_text(encoding='utf-8')
+          print('M0_ATMS_RETRIEVAL_PASS_SYNTHETIC',r['reproducibility_hash'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-atms-memory-m0
+          path: artifacts/arena-memory-m0/
+          retention-days: 14
+          if-no-files-found: warn
