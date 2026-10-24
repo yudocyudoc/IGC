@@ -225,6 +225,7 @@ def _authorized(policy: str, lane: str) -> bool:
 
 
 def project(events: Iterable[dict[str, Any]], *, as_known_at: str, lane: str,
+            investigation_id: str | None = None,
             max_environments: int = MAX_ENVIRONMENTS,
             max_combinations: int = MAX_COMBINATIONS,
             max_steps: int = MAX_STEPS) -> tuple[ATMS, dict[str, Any]]:
@@ -235,6 +236,8 @@ def project(events: Iterable[dict[str, Any]], *, as_known_at: str, lane: str,
     latest: dict[tuple[str, str], tuple[datetime, int, dict]] = {}
     for position, raw in enumerate(events):
         event = dict(raw)
+        if investigation_id is not None and event.get("investigation_id") != investigation_id:
+            continue
         kind, identifier = event.get("kind"), event.get("id")
         if kind not in KINDS or not isinstance(identifier, str) or not identifier:
             raise ATMSError("invalid ATMS event kind or ID")
@@ -266,6 +269,7 @@ def project(events: Iterable[dict[str, Any]], *, as_known_at: str, lane: str,
                   max_combinations, max_steps)
     manifest = {"schema": "igc-atms-projection/0.1", "engine": ENGINE_VERSION,
                 "as_known_at": cut.isoformat(), "lane": lane,
+                "investigation_id": investigation_id,
                 "visible_event_ids": [e["kind"] + ":" + e["id"] for e in visible],
                 "source_snapshot_hash": digest(visible),
                 "projection_hash": digest(engine.to_report())}
@@ -282,5 +286,6 @@ def events_from_ledger(revisions: Iterable[Any]) -> list[dict[str, Any]]:
             event["recorded_at"] = revision.recorded_at
             event["access_policy"] = revision.access_policy
             event["id"] = revision.entity_id
+            event["investigation_id"] = revision.case_id
             records.append(event)
     return records
