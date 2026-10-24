@@ -5,6 +5,13 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'docs/ARENA_V0_ROUND_LOCK.md'
+      - 'data/synthetic/arena_v0_b3_primary.json'
+      - 'data/synthetic/arena_v0_b3_round_spec.json'
+      - 'tests/test_arena_b3_lock.py'
+      - 'tests/test_arena_round.py'
+      - 'scripts/arena_b3_lock.py'
+      - 'scripts/arena_round.py'
       - 'tests/test_arena_atms_memory.py'
       - 'data/synthetic/arena_memory_m0.json'
       - '.github/workflows/arena-atms-memory.yml'
@@ -16,6 +23,13 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'docs/ARENA_V0_ROUND_LOCK.md'
+      - 'data/synthetic/arena_v0_b3_primary.json'
+      - 'data/synthetic/arena_v0_b3_round_spec.json'
+      - 'tests/test_arena_b3_lock.py'
+      - 'tests/test_arena_round.py'
+      - 'scripts/arena_b3_lock.py'
+      - 'scripts/arena_round.py'
       - 'tests/test_arena_atms_memory.py'
       - 'data/synthetic/arena_memory_m0.json'
       - '.github/workflows/arena-atms-memory.yml'
@@ -37,6 +51,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_arena_atms_memory.py' -v
           python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
+          python -m unittest discover -s tests -p 'test_arena_round.py' -v
+          python -m unittest discover -s tests -p 'test_arena_b3_lock.py' -v
       - name: Retrieve hypothesis and its minimal supporting environments
         run: |
           mkdir -p artifacts/arena-memory-m0
@@ -190,6 +206,39 @@ jobs:
             --openmodelica-log artifacts/fm-b3-molecular-dynamics/openmodelica.log \
             --image "$IGC_OMC_IMAGE" \
             --output-dir artifacts/fm-b3-molecular-dynamics | tee artifacts/fm-b3-molecular-dynamics/verification.log
+
+      - name: Lock verified FM-B3 predictions alongside B0 without reserve
+        run: |
+          python -m scripts.arena_b3_lock \
+            --spec data/synthetic/arena_v0_b3_round_spec.json \
+            --primary data/synthetic/arena_v0_b3_primary.json \
+            --report artifacts/fm-b3-molecular-dynamics/b3-dynamic-evaluation.json \
+            --simulation-dir artifacts/fm-b3-molecular-dynamics \
+            --run-ref "github-actions:${GITHUB_RUN_ID}" \
+            --output-dir artifacts/arena-v0-b3-lock
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import verify_lock
+          p=Path('artifacts/arena-v0-b3-lock/prediction-lock.json')
+          lock=json.loads(p.read_text(encoding='utf-8'))
+          verify_lock(lock)
+          assert lock['evaluation_status']=='LOCKED_NOT_EVALUATED'
+          assert [x['candidate_id'] for x in lock['submissions']['D']['proposals']]==[
+            'urn:igc:candidate:CS-01','urn:igc:candidate:CS-02']
+          assert lock['submissions']['S']['status']=='NOT_IMPLEMENTED'
+          assert lock['submissions']['P']['status']=='NOT_IMPLEMENTED'
+          print('ARENA_B3_PREDICTION_LOCK_PASS_SYNTHETIC',lock['lock_hash'])
+          PY
+
+      - name: Archive Arena construction and prediction lock
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-v0-b3-construction-lock
+          path: artifacts/arena-v0-b3-lock/
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload B3 dynamic evaluation evidence
         if: always()
