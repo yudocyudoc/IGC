@@ -174,7 +174,7 @@ class RetrievalTests(unittest.TestCase):
                                     title="Abandono por espera", text="reservado",
                                     node_id="H-ESPERA", source_id="secret")]
         packet = retrieve(investigation_id="INV-CAF-001", lane="D", as_known_at=AFTER,
-                          query="abandono espera", knowledge_records=items,
+                          query="hipotesis cualitativa", knowledge_records=items,
                           atms_events=base_events())
         self.assertEqual(packet["items"], [])
 
