@@ -1,0 +1,112 @@
+{
+  "schema": "igc-arena-atms-memory-fixture/0.1",
+  "synthetic": true,
+  "investigation_id": "INV-CAF-M0",
+  "atms": [
+    {
+      "kind": "assumption",
+      "id": "waiting-mechanism",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true
+    },
+    {
+      "kind": "assumption",
+      "id": "testimony-a",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true
+    },
+    {
+      "kind": "assumption",
+      "id": "count-b",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true
+    },
+    {
+      "kind": "justification",
+      "id": "j-owner",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true,
+      "antecedents": [
+        "waiting-mechanism",
+        "testimony-a"
+      ],
+      "consequent": "hypothesis:wait-abandon",
+      "source_id": "source:owner"
+    },
+    {
+      "kind": "justification",
+      "id": "j-count",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true,
+      "antecedents": [
+        "waiting-mechanism",
+        "count-b"
+      ],
+      "consequent": "hypothesis:wait-abandon",
+      "source_id": "source:count"
+    },
+    {
+      "kind": "nogood",
+      "id": "incompatible-owner",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true,
+      "assumption_ids": [
+        "waiting-mechanism",
+        "testimony-a"
+      ]
+    },
+    {
+      "kind": "fact",
+      "id": "gold-model",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "evaluation-only",
+      "active": true
+    }
+  ],
+  "knowledge": [
+    {
+      "kind": "knowledge",
+      "id": "h-wait",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true,
+      "investigation_id": "INV-CAF-M0",
+      "title": "Abandono por espera",
+      "text": "Hipótesis parcial sobre abandono debido a colas; no existe todavía molécula de split conservativo.",
+      "item_type": "MechanismHypothesis",
+      "epistemic_status": "HIPOTESIS",
+      "source_id": "source:owner",
+      "node_id": "hypothesis:wait-abandon"
+    },
+    {
+      "kind": "knowledge",
+      "id": "h-hidden",
+      "recorded_at": "2026-10-20T10:00:00Z",
+      "access_policy": "evaluation-only",
+      "active": true,
+      "investigation_id": "INV-CAF-M0",
+      "title": "Abandono por espera golden model",
+      "text": "Respuesta verdadera oculta",
+      "source_id": "gold",
+      "node_id": "gold-model"
+    },
+    {
+      "kind": "knowledge",
+      "id": "h-future",
+      "recorded_at": "2026-10-23T10:00:00Z",
+      "access_policy": "construction-visible",
+      "active": true,
+      "investigation_id": "INV-CAF-M0",
+      "title": "Abandono por espera observación posterior",
+      "text": "No presente en snapshot",
+      "source_id": "source:future",
+      "node_id": "future"
+    }
+  ]
+}
