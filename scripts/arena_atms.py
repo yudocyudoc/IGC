@@ -100,6 +100,8 @@ class ATMS:
             if not rule.id or rule.id in seen or not rule.consequent:
                 raise ATMSError("rule IDs must be unique and conclusion non-empty")
             seen.add(rule.id)
+            if rule.consequent in self.assumptions or rule.consequent in self.facts:
+                raise ATMSError("assumption/fact seeds cannot be derived by a justification")
             if len(set(rule.antecedents)) != len(rule.antecedents) or any(not x for x in rule.antecedents):
                 raise ATMSError("repeated or empty rule antecedent")
         self.compute()
@@ -120,6 +122,8 @@ class ATMS:
             env = frozenset()
             self.labels[node] = {env}
             self.witnesses[(node, env)] = ("fact", ())
+        if sum(map(len, self.labels.values())) > self.max_environments:
+            raise ATMSLimitError("environments", sum(map(len, self.labels.values())))
         rules = sorted(self.justifications, key=lambda r: r.id)
         change = True
         while change:
