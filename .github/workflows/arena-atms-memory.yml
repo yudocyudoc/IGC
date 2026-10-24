@@ -10,6 +10,7 @@ on:
       - '.github/workflows/arena-atms-memory.yml'
       - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
       - 'scripts/fm_b2_atms_candidate_reasoning.py'
+      - 'scripts/f3_candidate_selection.py'
   pull_request:
     branches: [fm-12-13-atms-llm-ablation]
     paths:
@@ -33,7 +34,9 @@ jobs:
         with:
           python-version: '3.13'
       - name: Run adversarial ATMS and memory unit tests
-        run: python -m unittest discover -s tests -p 'test_arena_atms_memory.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_atms_memory.py' -v
+          python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
       - name: Retrieve hypothesis and its minimal supporting environments
         run: |
           mkdir -p artifacts/arena-memory-m0
