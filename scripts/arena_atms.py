@@ -170,13 +170,44 @@ class ATMS:
             if depth <= 0 or key in seen:
                 raise ATMSError("witness chain is cyclic or too deep")
             rule_id, premises = self.witnesses[key]
+            rule = next((r for r in self.justifications if r.id == rule_id), None)
             return {"node": n, "environment": sorted(env), "via": rule_id,
+                    "source_id": rule.source_id if rule is not None else None,
                     "premises": [trace(p, support, seen | {key}, depth - 1)
                                  for p, support in premises]}
         environments = _ordered_envs(self.labels.get(node, set()))
         return {"node": node, "supported": bool(environments),
                 "minimal_environments": environments,
                 "paths": [trace(node, frozenset(e), frozenset(), max_depth) for e in environments]}
+
+
+    def what_if(self, *, disable_assumptions: Iterable[str] = (),
+                disable_rules: Iterable[str] = (),
+                add_nogoods: Iterable[Iterable[str]] = ()) -> dict[str, Any]:
+        """Ephemeral branch; canonical history and this engine remain unmodified."""
+        gone = set(disable_assumptions)
+        rule_ids = set(disable_rules)
+        if not gone <= self.assumptions:
+            raise ATMSError("unknown assumption to disable")
+        if not rule_ids <= {r.id for r in self.justifications}:
+            raise ATMSError("unknown rule to disable")
+        extra = {frozenset(x) for x in add_nogoods}
+        remaining = self.assumptions - gone
+        if any(not x or not x <= remaining for x in extra):
+            raise ATMSError("new nogoods require live, known assumptions")
+        branched = ATMS(remaining, set(self.facts),
+                        [r for r in self.justifications if r.id not in rule_ids],
+                        {ng for ng in self.nogoods if ng <= remaining} | extra,
+                        self.max_environments, self.max_combinations, self.max_steps)
+        changed = {}
+        for node in sorted(set(self.labels) | set(branched.labels)):
+            before = _ordered_envs(self.labels.get(node, set()))
+            after = _ordered_envs(branched.labels.get(node, set()))
+            if before != after:
+                changed[node] = {"before": before, "after": after}
+        return {"status": "WHAT_IF_ONLY", "changed_nodes": changed,
+                "changed_count": len(changed), "canonical_mutated": False,
+                "branch_hash": digest(branched.to_report())}
 
     def to_report(self) -> dict[str, Any]:
         return {"engine": ENGINE_VERSION, "labels": {
