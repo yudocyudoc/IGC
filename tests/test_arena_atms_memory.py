@@ -257,6 +257,43 @@ class RetrievalTests(unittest.TestCase):
                           atms_events=base_events())
         self.assertEqual(packet["items"], [])
 
+    def test_fts5_recovers_hypotheses_with_same_atms_explanations(self):
+        lexical = retrieve(investigation_id="INV-CAF-001", lane="D",
+                           as_known_at=AT, query="abandono espera",
+                           knowledge_records=knowledge(), atms_events=base_events())
+        fts = retrieve(investigation_id="INV-CAF-001", lane="D",
+                       as_known_at=AT, query="abandono espera",
+                       knowledge_records=knowledge(), atms_events=base_events(),
+                       backend="fts5")
+        self.assertEqual(fts["retrieval_backend"], "FTS5_V0")
+        self.assertEqual([x["id"] for x in fts["items"]], ["k-wait"])
+        self.assertEqual(fts["items"][0]["logical_support"],
+                         lexical["items"][0]["logical_support"])
+        self.assertEqual(fts["coverage"]["authorized_knowledge_items"], 2)
+
+    def test_fts5_filters_case_time_and_gold_before_building_index(self):
+        extra = knowledge() + [
+            event("knowledge", "k-other", investigation_id="OTHER",
+                  title="Abandono espera externo", text="Dato secreto",
+                  node_id="H-ESPERA", source_id="OTHER")]
+        packet = retrieve(investigation_id="INV-CAF-001", lane="D",
+                          as_known_at=AT, query='abandono" OR gold',
+                          knowledge_records=extra, atms_events=base_events(),
+                          backend="fts5")
+        encoded = json.dumps(packet)
+        for forbidden in ("k-gold", "k-future", "k-other", "Dato secreto",
+                          "Respuesta verdadera oculta"):
+            self.assertNotIn(forbidden, encoded)
+        self.assertEqual([x["id"] for x in packet["items"]], ["k-wait"])
+
+    def test_fts5_rebuild_is_deterministic_across_input_order(self):
+        args = dict(investigation_id="INV-CAF-001", lane="D",
+                    as_known_at=AT, query="abandono espera",
+                    atms_events=base_events(), backend="fts5")
+        one = retrieve(knowledge_records=knowledge(), **args)
+        two = retrieve(knowledge_records=list(reversed(knowledge())), **args)
+        self.assertEqual(one["reproducibility_hash"], two["reproducibility_hash"])
+
     def test_lexical_ranking_is_reproducible(self):
         params = dict(investigation_id="INV-CAF-001", lane="D", as_known_at=AT,
                       query="hipotesis", knowledge_records=knowledge(),
