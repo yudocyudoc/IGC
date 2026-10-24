@@ -1,4 +1,4 @@
-"""Apply the existing ATMS feasibility probe to composed molecular candidates."""
+"""Apply the shared Arena ATMS engine to composed molecular candidates."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from f0_atms_probe import AtmsProbe  # noqa: E402
+from arena_atms import ATMS, Rule, ENGINE_VERSION  # noqa: E402
 
 
 class MolecularAtmsError(ValueError):
@@ -83,15 +83,15 @@ def apply_supports(composed: dict[str, Any], support_plan: dict[str, Any]) -> di
                 or len(set(nogood)) != len(nogood) or not set(nogood) <= known):
             raise MolecularAtmsError("each nogood must contain unique known assumption ids")
 
-    engine = AtmsProbe()
-    for assumption_id in assumption_ids:
-        engine.assume(assumption_id)
     nodes = {candidate_id: f"molecular_candidate_supported:{candidate_id}"
              for candidate_id in candidates}
-    for justification in justifications:
-        engine.justify(tuple(justification["antecedent_ids"]), nodes[justification["candidate_id"]])
-    for nogood in nogoods:
-        engine.add_nogood(frozenset(nogood))
+    engine = ATMS(
+        set(assumption_ids),
+        set(),
+        [Rule(item["id"], tuple(item["antecedent_ids"]), nodes[item["candidate_id"]])
+         for item in justifications],
+        {frozenset(item) for item in nogoods},
+    )
 
     selected = []
     rejected = []
@@ -117,7 +117,7 @@ def apply_supports(composed: dict[str, Any], support_plan: dict[str, Any]) -> di
     return {
         "schema": "igc-fm-b2-atms-molecular-selection/0.1",
         "synthetic": True,
-        "engine": "f0-atms-feasibility/0.1",
+        "engine": ENGINE_VERSION,
         "production_engine_selected": False,
         "selection_policy": "retain_every_candidate_with_at_least_one_consistent_minimal_environment",
         "candidate_ids": list(candidates),
