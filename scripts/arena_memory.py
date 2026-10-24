@@ -12,6 +12,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import re
+import sqlite3
 import unicodedata
 from typing import Any, Iterable
 
@@ -29,6 +30,28 @@ def _terms(value: str) -> set[str]:
 
 def _permit(policy: str, lane: str) -> bool:
     return policy in ("construction-visible", "lane:" + lane)
+
+
+def _fts5_scores(eligible: list[dict[str, Any]], query: str) -> dict[str, float]:
+    """Index ONLY post-permission, post-as-of objects in transient SQLite FTS5."""
+    terms = sorted(_terms(query))
+    if not terms or not eligible:
+        return {}
+    expression = " OR ".join('"' + token + '"' for token in terms)
+    try:
+        with sqlite3.connect(":memory:") as conn:
+            conn.execute("CREATE VIRTUAL TABLE candidate_memory USING fts5("
+                         "object_id UNINDEXED, title, body, "
+                         "tokenize='unicode61 remove_diacritics 2')")
+            conn.executemany("INSERT INTO candidate_memory VALUES (?, ?, ?)", [
+                (item["id"], item["title"], item["text"]) for item in eligible])
+            matches = conn.execute(
+                "SELECT object_id, bm25(candidate_memory,0.0,4.0,1.0) "
+                "FROM candidate_memory WHERE candidate_memory MATCH ?",
+                (expression,)).fetchall()
+    except sqlite3.OperationalError as exc:
+        raise ATMSError("FTS5_UNAVAILABLE_OR_INVALID_QUERY") from exc
+    return {identifier: round(-float(score), 10) for identifier, score in matches}
 
 
 def visible_knowledge(records: Iterable[dict[str, Any]], *, at: str, lane: str,
@@ -62,7 +85,7 @@ def visible_knowledge(records: Iterable[dict[str, Any]], *, at: str, lane: str,
 def retrieve(*, investigation_id: str, lane: str, as_known_at: str, query: str,
              knowledge_records: Iterable[dict[str, Any]],
              atms_events: Iterable[dict[str, Any]], top_k: int = 10,
-             max_environments: int = 500) -> dict[str, Any]:
+             max_environments: int = 500, backend: str = "lexical") -> dict[str, Any]:
     if not isinstance(query, str) or not query.strip():
         raise ATMSError("query must be non-empty")
     if not (1 <= top_k <= 100):
@@ -74,14 +97,22 @@ def retrieve(*, investigation_id: str, lane: str, as_known_at: str, query: str,
                                      max_environments=max_environments)
     eligible = visible_knowledge(knowledge_records, at=as_known_at, lane=lane,
                                  investigation_id=investigation_id)
+    if backend not in ("lexical", "fts5"):
+        raise ATMSError("unknown retrieval backend")
     query_terms = _terms(query)
+    fts_scores = _fts5_scores(eligible, query) if backend == "fts5" else {}
     matched = []
     for item in eligible:
-        title_hits = len(query_terms & _terms(item["title"]))
-        body_hits = len(query_terms & _terms(item["text"]))
-        score = title_hits * 3 + body_hits
-        if not score:
-            continue
+        if backend == "fts5":
+            if item["id"] not in fts_scores:
+                continue
+            score = fts_scores[item["id"]]
+        else:
+            title_hits = len(query_terms & _terms(item["title"]))
+            body_hits = len(query_terms & _terms(item["text"]))
+            score = title_hits * 3 + body_hits
+            if not score:
+                continue
         node = item["node_id"]
         explanation = engine.explain(node)
         matched.append({
@@ -98,11 +129,12 @@ def retrieve(*, investigation_id: str, lane: str, as_known_at: str, query: str,
         "schema": MEMORY_VERSION,
         "investigation_id": investigation_id, "lane": lane,
         "as_known_at": _utc(as_known_at).astimezone(timezone.utc).isoformat(),
-        "query": query, "retrieval_backend": "LEXICAL_V0",
+        "query": query, "retrieval_backend": "FTS5_V0" if backend == "fts5" else "LEXICAL_V0",
         "vector_backend_status": "NOT_IMPLEMENTED",
         "rdf_backend_status": "NOT_CONNECTED",
         "atms": atms_manifest, "items": matched[:top_k],
         "coverage": {"authorized_knowledge_items": len(eligible),
+                     "matching_items": len(matched),
                      "lexically_matching_items": len(matched),
                      "returned_items": min(len(matched), top_k)},
         "truncation_reason": "TOP_K" if len(matched) > top_k else None,
@@ -141,6 +173,7 @@ def main() -> int:
     parser.add_argument("--as-known-at", required=True)
     parser.add_argument("--lane", choices=("D", "S", "P", "B0"), required=True)
     parser.add_argument("--query", required=True)
+    parser.add_argument("--backend", choices=("lexical", "fts5"), default="lexical")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if (args.events is None) == (args.db is None):
@@ -152,10 +185,11 @@ def main() -> int:
         knowledge, atms = load_events_from_ledger(args.db, args.case, args.as_known_at)
     result = retrieve(investigation_id=args.case, lane=args.lane,
                       as_known_at=args.as_known_at, query=args.query,
-                      knowledge_records=knowledge, atms_events=atms)
+                      knowledge_records=knowledge, atms_events=atms,
+                      backend=args.backend)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(canonical(result) + b"\n")
-    print(json.dumps({"status": "PASS_LEXICAL_ATMS",
+    print(json.dumps({"status": "PASS_FTS5_ATMS" if args.backend == "fts5" else "PASS_LEXICAL_ATMS",
                       "items": len(result["items"]), "hash": result["reproducibility_hash"]}))
     return 0
 
