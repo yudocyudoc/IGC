@@ -10,6 +10,8 @@
 - project(): reconstruye un snapshot as_known_at desde eventos versionados, desactiva/restaura supuestos o justificaciones en revisiones posteriores y filtra permisos antes del razonamiento.
 - scripts/arena_memory.py: recuperación lexical de información, hipótesis y fuente con explicaciones ATMS y hash de manifiesto. Restringe por investigación, fecha y vía D/S/P/B0.
 - Integración al scripts/ledger.py F1a por Ledger.snapshot y revisiones KnowledgeItem. No se crea otro ledger.
+- Selección F3 (propuestas RDF/SPARQL) y selección FM-B2 (candidatos moleculares) usan ahora el mismo engine Arena ATMS, con verificador independiente anterior y regresiones existentes.
+- El workflow ejecuta la cadena FM-B3 con OpenModelica real, balances y contraste sintético de estructuras admitidas (CS-01/CS-02); CS-03 no se simula.
 - data/synthetic/arena_memory_m0.json: dos justificaciones de una hipótesis parcial, un nogood, controles hidden/future. Sin modelo de abandono ejecutable.
 - tests/test_arena_atms_memory.py: conjunto adversativo para retraction/restitution, mínimos, ciclos, límites, procedencia, filtros temporales y permisos.
 - .github/workflows/arena-atms-memory.yml: pruebas y artefacto recuperable de M0.
@@ -35,8 +37,8 @@ Para consumir directamente el ledger F1a, utilizar --db RUTA.sqlite en lugar de 
 | RET-01: recuperar hipótesis y soporte | IMPLEMENTADO; CI PENDIENTE |
 | LRN-02: reconstrucción temporal | IMPLEMENTADO; CI PENDIENTE |
 | SEC-01: sin gold, sin futuro, sin cruce de vía | IMPLEMENTADO; CI PENDIENTE |
-| ATMS-C1..C8 integral | INCOMPLETO |
-| V0 Modelica/baseline/holdout | NO IMPLEMENTADO en esta entrega |
+| ATMS-C1..C8 integral | INCOMPLETO (C1 ampliado con oráculo enumerativo, C2/C3/C6 parcialmente cubiertos) |
+| V0 Modelica/baseline/holdout | REGRESIÓN OpenModelica FM-B3 integrada; baseline B0/LOCK/custodia ciega aún NO IMPLEMENTADOS |
 
 ## Límites no disimulados
 
@@ -50,7 +52,7 @@ Para consumir directamente el ledger F1a, utilizar --db RUTA.sqlite en lugar de 
 
 ## Siguientes pasos de la Arena
 
-- Conectar el estado ATMS versionado y recuperación a los candidatos moleculares CS-01/CS-02 del FM-B2, manteniendo regresiones B2-B5.
+- Integrar la memoria ATMS versionada con la procedencia semántica y justificaciones de F3 y FM-B2 sin mezclar los experimentos M0 y B3; esas selecciones ya comparten el motor, pero no un expediente causal unificado.
 - Completar registros LinkML de conocimiento, procedencia de fuente y justificación, semántica RDF/SPARQL y búsqueda temporal/híbrida.
 - Implementar vías D/S/P selladas, baseline B0, G1/G2/G3, OpenModelica, presupuesto y manifiestos.
 - Implementar custodia privada antes de generar mundos nuevos, LOCK, consumo de holdout y evaluación independiente.
