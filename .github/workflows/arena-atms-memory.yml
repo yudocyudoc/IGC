@@ -63,6 +63,14 @@ jobs:
             --lane D \
             --query 'abandono espera' \
             --output artifacts/arena-memory-m0/retrieval.json
+          python -m scripts.arena_memory \
+            --events data/synthetic/arena_memory_m0.json \
+            --case INV-CAF-M0 \
+            --as-known-at '2026-10-20T10:00:00Z' \
+            --lane D \
+            --query 'abandono espera' \
+            --backend fts5 \
+            --output artifacts/arena-memory-m0/retrieval-fts5.json
       - name: Check manifest and no hidden/future leakage
         run: |
           python - <<'PY'
@@ -77,6 +85,12 @@ jobs:
           assert 'gold-model' not in p.read_text(encoding='utf-8')
           assert 'Respuesta verdadera oculta' not in p.read_text(encoding='utf-8')
           assert 'No presente en snapshot' not in p.read_text(encoding='utf-8')
+          fts=json.loads(Path('artifacts/arena-memory-m0/retrieval-fts5.json').read_text(encoding='utf-8'))
+          assert fts['retrieval_backend']=='FTS5_V0'
+          assert [x['id'] for x in fts['items']]==[x['id'] for x in r['items']]
+          assert fts['items'][0]['logical_support']==r['items'][0]['logical_support']
+          assert fts['holdout_accessed'] is False
+          print('M0_FTS5_ATMS_PASS_SYNTHETIC',fts['reproducibility_hash'])
           print('M0_ATMS_RETRIEVAL_PASS_SYNTHETIC',r['reproducibility_hash'])
           PY
       - uses: actions/upload-artifact@v4
