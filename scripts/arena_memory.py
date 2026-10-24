@@ -70,7 +70,8 @@ def retrieve(*, investigation_id: str, lane: str, as_known_at: str, query: str,
     if lane not in ("D", "S", "P", "B0"):
         raise ATMSError("unknown lane")
     engine, atms_manifest = project(atms_events, as_known_at=as_known_at,
-                                     lane=lane, max_environments=max_environments)
+                                     lane=lane, investigation_id=investigation_id,
+                                     max_environments=max_environments)
     eligible = visible_knowledge(knowledge_records, at=as_known_at, lane=lane,
                                  investigation_id=investigation_id)
     query_terms = _terms(query)
