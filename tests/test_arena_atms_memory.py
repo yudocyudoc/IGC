@@ -16,8 +16,11 @@ RESTORED = "2026-10-22T10:00:00Z"
 
 
 def event(kind, identifier, at=AT, policy="construction-visible", active=True, **fields):
-    return dict(kind=kind, id=identifier, recorded_at=at,
-                access_policy=policy, active=active, **fields)
+    item = dict(kind=kind, id=identifier, recorded_at=at,
+                access_policy=policy, active=active,
+                investigation_id="INV-CAF-001")
+    item.update(fields)
+    return item
 
 
 def base_events():
@@ -218,6 +221,22 @@ class RetrievalTests(unittest.TestCase):
         for forbidden in ("GOLD", "Dato futuro", "secreto", "hidden", "secret-rule", "k-future"):
             self.assertNotIn(forbidden, encoded)
         self.assertEqual(packet["coverage"]["authorized_knowledge_items"], 2)
+
+    def test_atms_dependency_from_other_case_does_not_enter_memory(self):
+        unrelated = [
+            event("assumption", "foreign", investigation_id="OTHER"),
+            event("justification", "foreign-rule", investigation_id="OTHER",
+                  antecedents=["foreign"], consequent="H-ESPERA",
+                  source_id="FOREIGN-SOURCE")
+        ]
+        packet = retrieve(investigation_id="INV-CAF-001", lane="D", as_known_at=AT,
+                          query="abandono espera", knowledge_records=knowledge(),
+                          atms_events=base_events() + unrelated)
+        serialized = json.dumps(packet)
+        self.assertNotIn("FOREIGN-SOURCE", serialized)
+        self.assertNotIn("foreign-rule", serialized)
+        self.assertNotIn("foreign", serialized)
+        self.assertEqual(len(packet["items"][0]["logical_support"]["paths"]), 2)
 
     def test_lane_isolation_with_same_atms_service(self):
         private = [event("assumption", "secretS", policy="lane:S"),
