@@ -8,21 +8,24 @@
       "id": "waiting-mechanism",
       "recorded_at": "2026-10-20T10:00:00Z",
       "access_policy": "construction-visible",
-      "active": true
+      "active": true,
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "assumption",
       "id": "testimony-a",
       "recorded_at": "2026-10-20T10:00:00Z",
       "access_policy": "construction-visible",
-      "active": true
+      "active": true,
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "assumption",
       "id": "count-b",
       "recorded_at": "2026-10-20T10:00:00Z",
       "access_policy": "construction-visible",
-      "active": true
+      "active": true,
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "justification",
@@ -35,7 +38,8 @@
         "testimony-a"
       ],
       "consequent": "hypothesis:wait-abandon",
-      "source_id": "source:owner"
+      "source_id": "source:owner",
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "justification",
@@ -48,7 +52,8 @@
         "count-b"
       ],
       "consequent": "hypothesis:wait-abandon",
-      "source_id": "source:count"
+      "source_id": "source:count",
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "nogood",
@@ -59,14 +64,16 @@
       "assumption_ids": [
         "waiting-mechanism",
         "testimony-a"
-      ]
+      ],
+      "investigation_id": "INV-CAF-M0"
     },
     {
       "kind": "fact",
       "id": "gold-model",
       "recorded_at": "2026-10-20T10:00:00Z",
       "access_policy": "evaluation-only",
-      "active": true
+      "active": true,
+      "investigation_id": "INV-CAF-M0"
     }
   ],
   "knowledge": [
