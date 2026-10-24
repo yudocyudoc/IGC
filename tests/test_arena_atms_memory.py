@@ -121,6 +121,20 @@ class AtmsEngineTests(unittest.TestCase):
             ATMS({"a", "b"}, set(), [Rule("or1", ("a",), "h"),
                                      Rule("or2", ("b",), "h")], set(), max_environments=1)
 
+    def test_what_if_retraction_produces_selective_impact_without_mutation(self):
+        engine, _ = project(base_events(), as_known_at=AT, lane="D")
+        original = digest(engine.to_report())
+        impact = engine.what_if(disable_assumptions=["evidence-a"])
+        self.assertIn("H-ESPERA", impact["changed_nodes"])
+        self.assertNotIn("H-AFLUENCIA", impact["changed_nodes"])
+        self.assertEqual(digest(engine.to_report()), original)
+        self.assertFalse(impact["canonical_mutated"])
+
+    def test_explanation_preserves_justification_source_id(self):
+        engine, _ = project(base_events(), as_known_at=AT, lane="D")
+        self.assertEqual({p["source_id"] for p in engine.explain("H-ESPERA")["paths"]},
+                         {"S-a", "S-b"})
+
     def test_extra_nogood_superset_is_minimized(self):
         a = ATMS({"a", "b"}, set(), [], {frozenset({"a"}), frozenset({"a", "b"})})
         self.assertEqual(a.to_report()["nogoods"], [["a"]])
