@@ -9,6 +9,7 @@ on:
       - 'data/synthetic/arena_memory_m0.json'
       - '.github/workflows/arena-atms-memory.yml'
       - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
+      - 'scripts/fm_b2_atms_candidate_reasoning.py'
   pull_request:
     branches: [fm-12-13-atms-llm-ablation]
     paths:
@@ -66,3 +67,26 @@ jobs:
           path: artifacts/arena-memory-m0/
           retention-days: 14
           if-no-files-found: warn
+
+  molecular-shared-atms-regression:
+    needs: memory-atms-contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install existing hash-locked molecular dependencies
+        run: |
+          python -m venv /tmp/igc-arena-linkml
+          /tmp/igc-arena-linkml/bin/python -m pip install \
+            --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
+      - name: Verify old FM-B2 and FM-B3 contracts against shared Arena ATMS
+        run: |
+          /tmp/igc-arena-linkml/bin/python -m unittest discover \
+            -s tests -p 'test_fm_b2_atms_molecular_candidates.py' -v
+          /tmp/igc-arena-linkml/bin/python -m unittest discover \
+            -s tests -p 'test_fm_b3_dynamic_evaluation.py' -v
