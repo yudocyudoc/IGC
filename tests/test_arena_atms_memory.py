@@ -121,6 +121,52 @@ class AtmsEngineTests(unittest.TestCase):
             ATMS({"a", "b"}, set(), [Rule("or1", ("a",), "h"),
                                      Rule("or2", ("b",), "h")], set(), max_environments=1)
 
+    def test_exhaustive_small_graphs_against_independent_context_enumeration(self):
+        from itertools import combinations
+        import random
+        rng = random.Random(19086)
+        assumptions = {"a", "b", "c", "d"}
+        terms = sorted(assumptions | {"seed", "p", "q", "r"})
+        all_contexts = [frozenset(group)
+                        for n in range(len(assumptions) + 1)
+                        for group in combinations(sorted(assumptions), n)]
+        for trial in range(45):
+            rules = []
+            for i in range(7):
+                choices = tuple(sorted(rng.sample(terms, rng.randint(1, 3))))
+                rules.append(Rule(f"r{i}", choices, rng.choice(["p", "q", "r"])))
+            nogoods = {frozenset(rng.sample(sorted(assumptions), 2))
+                       for _ in range(rng.randint(0, 2))}
+            engine = ATMS(set(assumptions), {"seed"}, rules, nogoods)
+            expected = {}
+            for context in all_contexts:
+                if any(ng <= context for ng in nogoods):
+                    continue
+                closure = set(context) | {"seed"}
+                changed = True
+                while changed:
+                    changed = False
+                    for rule in rules:
+                        if set(rule.antecedents) <= closure and rule.consequent not in closure:
+                            closure.add(rule.consequent)
+                            changed = True
+                for node in closure:
+                    expected.setdefault(node, set()).add(context)
+            for node, contexts in expected.items():
+                minimal = {context for context in contexts
+                           if not any(other < context for other in contexts)}
+                self.assertEqual(engine.labels.get(node, set()), minimal,
+                                 f"trial={trial} node={node}")
+            for node in engine.labels:
+                self.assertEqual(engine.labels[node], expected.get(node, set()) if node not in expected
+                                 else {context for context in expected[node]
+                                       if not any(other < context for other in expected[node])},
+                                 f"extra node trial={trial} node={node}")
+
+    def test_assumption_and_fact_seeds_cannot_be_rule_conclusions(self):
+        with self.assertRaisesRegex(ATMSError, "seeds cannot be derived"):
+            ATMS({"a"}, set(), [Rule("bad", ("a",), "a")], set())
+
     def test_what_if_retraction_produces_selective_impact_without_mutation(self):
         engine, _ = project(base_events(), as_known_at=AT, lane="D")
         original = digest(engine.to_report())
