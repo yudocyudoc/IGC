@@ -133,19 +133,38 @@ def verify_handoff(seal: dict, draft: dict, package: dict, catalog: dict, views:
 
 
 def p_submission(seal: dict, view: dict, *,
-                 tokens: int = 0, human_minutes: float = 0,
+                 tokens: int | None = None, human_minutes: float = 0,
                  actual_provider_evidence: bool = False) -> dict:
     """Type P assessment; no topologies, no numeric trajectory or fake token usage."""
     ensure(view["lane"] == "P" and view["view_hash"] == seal["views"]["P"],
            "P cross-lane handoff")
     ensure((seal["origin"] == "CLOUDFLARE_VERIFIED_RUN") == actual_provider_evidence,
            "P cannot impersonate real provider inference")
-    ensure(type(tokens) is int and tokens >= 0 and
-           type(human_minutes) in (int,float) and human_minutes >= 0,
-           "P cost values must be explicitly measured non-negative")
-    # Mock is only for contract testing, not for a real Arena evaluation.
+    ensure(type(human_minutes) in (int,float) and human_minutes >= 0,
+           "P human time must be an explicitly measured non-negative number")
+    # Real token accounting must derive from provider fields, not caller guesses.
+    # If the provider did not expose tokens, prevent SUBMITTED until the budget
+    # schema can express UNKNOWN and compare costs fairly.
     cost = {key: 0 for key in COST_UNITS}
-    cost.update(llm_calls=2, tokens=tokens, human_minutes=human_minutes)
+    if actual_provider_evidence:
+        receipt = seal.get("provenance")
+        ensure(isinstance(receipt,dict) and
+               receipt.get("receipt_hash") == hash_obj(
+                    {k:v for k,v in receipt.items() if k!="receipt_hash"}),
+               "P requires intact local provider capture receipt")
+        observations = receipt.get("observations")
+        ensure(isinstance(observations,list) and len(observations)==3 and
+               [x.get("model_name") for x in observations[1:]] ==
+                    ["P_CLEF","P_CLAIRIC"],
+               "P provider observations missing")
+        measured = [x.get("usage",{}).get("token_total") for x in observations[1:]]
+        ensure(all(type(x) is int and x>=0 for x in measured),
+               "P_TOKEN_USAGE_NOT_OBSERVABLE: cannot substitute zero")
+        derived_tokens = sum(measured)
+        ensure(tokens is None or tokens == derived_tokens,
+               "P token count differs from provider observation")
+        cost.update(llm_calls=2,tokens=derived_tokens,
+                    human_minutes=human_minutes)
     proposal = {
         "candidate_id": "P-CLEF-CLAIRIC-V0", "kind": "assessment",
         "judgement": seal["P"]["assessment"],
