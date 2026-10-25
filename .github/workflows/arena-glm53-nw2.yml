@@ -6,7 +6,7 @@ on:
     paths:
       - 'data/synthetic/arena_glm53_nw2_*'
       - 'scripts/arena_glm53_nw2.py'
-      - 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V2.json'
+      - 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V3.json'
       - 'scripts/arena_s_real.py'
       - 'scripts/arena_sp_producers.py'
       - '.github/workflows/arena-glm53-nw2.yml'
@@ -92,49 +92,67 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+
   glm53-one-shot-probe:
-    # Registered NW2 workflow already runs on push. Run this isolated job only
-    # for the unique V2 marker addition, never for PRs, later pushes or reruns.
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/experiment/arena-glm53-nw2-e2e' && github.run_attempt == 1 && contains(github.event.head_commit.added, 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V2.json') }}
+    # GitHub confirms that this existing workflow receives pull_request events.
+    # GitHub may suppress push-triggered runs for commits from an integration.
+    # Only the one commit ADDING the V3 marker may initiate a provider call.
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     concurrency:
-      group: igc-glm53-v2-single-use-probe
+      group: igc-glm53-v3-single-use-probe
       cancel-in-progress: false
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
     steps:
-      - name: Check out NW2 frozen request without checkout credentials
+      - name: Checkout immutable PR head to inspect the exact last commit
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
           persist-credentials: false
-      - name: Validate exact one-shot V2 marker and frozen prompt without network
+      - name: Gate provider call to unique newly added V3 marker only
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V3.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+            echo 'V3_MARKER_ADDED_IN_PR_HEAD; diagnostic eligible'
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'NO_V3_MARKER_ADDED; skip API call'
+          fi
+      - name: Verify pinned experiment request and V3 trigger without network
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
         run: |
           python3 -m py_compile scripts/arena_glm53_github_probe.py
           python3 -m unittest discover -s tests -p 'test_arena_glm53_github_probe.py' -v
           python3 - <<'PY'
           import json
           from pathlib import Path
-          marker=json.loads(Path("data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V2.json").read_text())
+          marker=json.loads(Path('data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V3.json').read_text())
           assert marker == {
-              "schema":"igc-glm53-github-one-shot-trigger/0.1",
-              "run_ref":"NW2-SYSTEM-USER-T0-4096-ONE-SHOT-V2",
-              "purpose":"CONFIGURATION_ONLY_NOT_ARENA_S_SUBMISSION",
-              "provider_calls_max":1,
-              "provider_retries":0,
-              "holdout_accessed":False,
-          }, "UNEXPECTED_TRIGGER"
-          print("NW2_V2_TRIGGER_VALID")
+              'schema':'igc-glm53-github-one-shot-trigger/0.1',
+              'run_ref':'NW2-SYSTEM-USER-T0-4096-ONE-SHOT-V3',
+              'purpose':'CONFIGURATION_ONLY_NOT_ARENA_S_SUBMISSION',
+              'provider_calls_max':1,
+              'provider_retries':0,
+              'holdout_accessed':False,
+          }, 'TRIGGER_CHANGED'
+          print('V3_GATE_AND_CONTRACT_VALIDATED')
           PY
-      - name: Execute one Cloudflare GLM-5.3 request, no retry
+      - name: Submit exactly one GLM5.3 call with IGC repository secrets
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
         run: |
           python3 -m scripts.arena_glm53_github_probe
-      - name: Preserve diagnostics even on 401, 429 or unusable JSON
-        if: always()
+      - name: Save diagnostic result on success, rate-limit or invalid JSON
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: nw2-glm53-v2-probe-once
+          name: nw2-glm53-v3-probe-once
           path: artifacts/glm53-nw2-github-probe/
           retention-days: 30
           if-no-files-found: warn
