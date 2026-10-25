@@ -263,7 +263,7 @@ jobs:
               (out/name).write_bytes(canonical(doc)+b'\n')
           print('S_P_MOCK_HANDOFF_LOCKED_BEFORE_SOLVER',seal['handoff_hash'])
           PY
-          python -m scripts.arena_sp_simulation prepare \
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_sp_simulation prepare \
             --handoff artifacts/arena-sp-independent/handoff.json \
             --draft artifacts/arena-sp-independent/draft.json \
             --package artifacts/arena-sp-independent/package.json \
@@ -338,7 +338,7 @@ jobs:
           test -s artifacts/arena-sp-independent/simulation/b3-cs_02_res.csv
           test ! -e artifacts/arena-sp-independent/simulation/b3-cs_01_res.csv
           test ! -e artifacts/arena-sp-independent/simulation/b3-cs_03_res.csv
-          python -m scripts.arena_sp_simulation verify \
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_sp_simulation verify \
             --handoff artifacts/arena-sp-independent/handoff.json \
             --composed artifacts/fm-b-molecular-composer/composed_candidates.json \
             --plan data/synthetic/fm_b3_dynamic_plan.json \
