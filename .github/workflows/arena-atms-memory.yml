@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_custodian.py'
+      - 'scripts/arena_custodian.py'
       - 'data/synthetic/arena_sp_public_catalog.json'
       - 'tests/test_arena_sp_producers.py'
       - 'scripts/arena_sp_producers.py'
@@ -26,6 +28,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_custodian.py'
+      - 'scripts/arena_custodian.py'
       - 'data/synthetic/arena_sp_public_catalog.json'
       - 'tests/test_arena_sp_producers.py'
       - 'scripts/arena_sp_producers.py'
@@ -59,6 +63,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
           python -m unittest discover -s tests -p 'test_arena_round.py' -v
           python -m unittest discover -s tests -p 'test_arena_b3_lock.py' -v
+          python -m unittest discover -s tests -p 'test_arena_custodian.py' -v
       - name: Retrieve hypothesis and its minimal supporting environments
         run: |
           mkdir -p artifacts/arena-memory-m0
