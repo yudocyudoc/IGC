@@ -1,0 +1,93 @@
+name: Arena D0.1 pure deterministic stock-flow smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_d_v01.py'
+      - 'tests/test_arena_d_v01.py'
+      - 'data/synthetic/arena_d_v01_visible.json'
+      - '.github/workflows/arena-d-v01.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-gates:
+    name: D0.1 G0/G1 and real OpenModelica G2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Checkout exact PR commit (no persisted credentials)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Hermetic unit and adversarial tests
+        run: |
+          python -m py_compile scripts/arena_v0_contract.py scripts/arena_d_v01.py tests/test_arena_d_v01.py
+          python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
+      - name: Prepare public construction and model source (no LLM/ATMS inference)
+        run: |
+          python -m scripts.arena_d_v01 prepare --input data/synthetic/arena_d_v01_visible.json --out artifacts/arena-d-v01
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("artifacts/arena-d-v01")
+          cases = json.loads((root / "candidates.json").read_text())["candidates"]
+          assert len(cases) == 6
+          script = []
+          for case in cases:
+              name = Path(case["modelica_file"]).stem
+              script.append(f'loadFile("/work/artifacts/arena-d-v01/{name}.mo");')
+              script.append("print(getErrorString());")
+              script.append(f"checkModel({name});")
+              script.append("print(getErrorString());")
+              script.append(f'simulate({name}, stopTime=8, numberOfIntervals=160, outputFormat="csv");')
+              script.append("print(getErrorString());")
+          (root / "models.mos").write_text("\n".join(script) + "\n")
+          PY
+      - name: Compile and simulate all six models in pinned OpenModelica
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d-v01 \
+            "$OMC_IMAGE" omc models.mos 2>&1 | tee artifacts/arena-d-v01/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d-v01/omc.log; then
+            echo 'OpenModelica reported errors' >&2
+            exit 1
+          fi
+      - name: Independently verify samplewise balances and expected artifacts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_d_v01 import verify_csv
+          root=Path("artifacts/arena-d-v01")
+          candidates=json.loads((root/"candidates.json").read_text())["candidates"]
+          construction=json.loads(Path("data/synthetic/arena_d_v01_visible.json").read_text())
+          profile=construction["construction"]["input_profile"]
+          results=[]
+          for c in candidates:
+              name=Path(c["modelica_file"]).stem
+              samples=root/(name+"_res.csv")
+              assert samples.is_file(), "SIMULATOR_DID_NOT_PRODUCE_CSV:"+name
+              result=verify_csv(samples,len(c["structure"]["stocks"]),profile)
+              results.append({"candidate_id":c["id"],"csv_file":samples.name,**result})
+          assert len(results)==6 and all(x["status"]=="G2_MASS_BALANCE_PASS_NOT_G3" for x in results)
+          (root/"g2-report.json").write_text(json.dumps(results,indent=2)+"\n")
+          print("D0_1_SIX_MODELS_OPENMODELICA_G2_PASS")
+          PY
+      - name: Retain genuine Modelica and verification artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-d-v01-synthetic-evidence
+          path: artifacts/arena-d-v01/
+          retention-days: 30
+          if-no-files-found: warn
