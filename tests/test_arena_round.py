@@ -71,6 +71,20 @@ class ArenaRoundTests(unittest.TestCase):
         self.assertEqual(self.subs["B0"]["proposals"][0]["predictions"], [4, 4, 4])
         validate_submission(self.subs["B0"], self.views["B0"])
 
+    def test_b0_linear_baseline_uses_only_construction(self):
+        items = self.subs["B0"]["proposals"]
+        self.assertEqual([p["candidate_id"] for p in items],
+                         ["B0-PERSISTENCE","B0-LINEAR-OLS"])
+        self.assertEqual(items[0]["predictions"],[4,4,4])
+        self.assertEqual(items[1]["predictions"],[6.0,8.0,10.0])
+        self.assertIsNone(self.views["B0"]["retrieval"])
+        self.assertEqual(self.lock()["evaluation_status"],"LOCKED_NOT_EVALUATED")
+
+    def test_second_baseline_is_also_locked(self):
+        self.subs["B0"]["proposals"][1]["predictions"][0] = 999
+        with self.assertRaisesRegex(RoundError, "baseline is not"):
+            self.lock()
+
     def test_views_isolated_no_holdout_or_cross_submission(self):
         self.assertEqual(len({v["view_hash"] for v in self.views.values()}), 4)
         self.assertNotIn("submissions", str(self.views))
