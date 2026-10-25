@@ -1,0 +1,90 @@
+name: Arena GLM53 NW2 real S + calibrated Modelica S/D + lock
+
+on:
+  push:
+    branches: [experiment/arena-glm53-nw2-e2e]
+    paths:
+      - 'data/synthetic/arena_glm53_nw2_*'
+      - 'scripts/arena_glm53_nw2.py'
+      - 'scripts/arena_s_real.py'
+      - 'scripts/arena_sp_producers.py'
+      - '.github/workflows/arena-glm53-nw2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nw2-integrated-round:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out frozen experimental branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13.16'
+      - name: Install locked molecular composition dependencies
+        run: |
+          python -m venv /tmp/igc-nw2
+          /tmp/igc-nw2/bin/python -m pip install --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
+      - name: Prepare exact S request and construction-only calibration (NO provider inference)
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 prepare --out artifacts/arena-glm53-nw2
+      - name: Verify actual authenticated response and seal S after provider call
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 pre-solver --out artifacts/arena-glm53-nw2
+      - name: Retrieve immutable SystemDynamics and MSL sources
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz
+          sha256sum /tmp/igc-modelica/msl.tar.gz
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+      - name: Execute ONLY S selected Modelica candidates after ATMS
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          set -o pipefail
+          if test -f artifacts/arena-glm53-nw2/S/run-s-selected.mos; then
+            docker run --rm --user "$(id -u):$(id -g)" \
+              --workdir /results -e HOME=/tmp \
+              -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+              -v "$PWD/poc/short_wrappers:/evidence:ro" \
+              -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+              -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+              -v "$PWD/artifacts/arena-glm53-nw2/calibration:/composer:ro" \
+              -v "$PWD/artifacts/arena-glm53-nw2/S:/results" \
+              "$IGC_OMC_IMAGE" omc /results/run-s-selected.mos 2>&1 | tee artifacts/arena-glm53-nw2/S/openmodelica.log
+          fi
+      - name: Independently simulate both D enumerated candidates with same calibration
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" \
+            --workdir /results -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/arena-glm53-nw2/calibration:/composer:ro" \
+            -v "$PWD/artifacts/arena-glm53-nw2/D:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-enumeration.mos 2>&1 | tee artifacts/arena-glm53-nw2/D/openmodelica.log
+      - name: Physically verify solver traces and freeze native prediction LOCK (NO reserve)
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 post-solver --out artifacts/arena-glm53-nw2
+      - name: Archive all prepared, captured, verified and LOCKED artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arena-glm53-nw2-integrated-no-reserve
+          path: artifacts/arena-glm53-nw2/
+          retention-days: 30
+          if-no-files-found: warn
