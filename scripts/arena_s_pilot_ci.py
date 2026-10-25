@@ -54,9 +54,9 @@ def setup(out:Path)->None:
         ("D-view",views["D"])):
         exclusive_json(out/(name+".json"),value)
     (out/"calibration").mkdir()
-    from .compose_molecular_candidates import render_modelica
-    (out/"calibration/GeneratedMolecularCandidates.mo").write_text(
-        render_modelica(eval_plan,calibrated),encoding="utf-8")
+    from .arena_s_pilot_physics import composer_bytes
+    (out/"calibration/GeneratedMolecularCandidates.mo").write_bytes(
+        composer_bytes(eval_plan,calibrated))
     report=prepare_enumeration(composed,calibrated,plan,eval_plan,supports,
                                fit,primary,fit_receipt,out/"enumeration")
     print(json.dumps({"status":"PUBLIC_CI_CALIBRATED_PREPARED_NOT_EXECUTED",
