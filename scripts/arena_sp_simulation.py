@@ -12,6 +12,7 @@ import re
 from .arena_round import hash_obj, exclusive_json
 from .arena_sp_producers import ProviderError
 from .arena_sp_handoff import verify_handoff, simulation_selection
+from .arena_s_real import verify_s_only_seal, ORIGIN as S_REAL_ORIGIN, TEST_ORIGIN as S_TEST_ORIGIN
 from .fm_b3_dynamic_evaluation import (
     render_evaluation_modelica, render_openmodelica_script,
     assess_trace, result_prefix, class_name, digest as file_digest
@@ -28,10 +29,16 @@ def check(condition: bool, message: str) -> None:
 
 def prepare_s(seal: dict, draft: dict, package: dict,
               catalog: dict, views: dict, composed: dict,
-              supports: dict, plan: dict, out: Path) -> dict:
-    verify_handoff(seal,draft,package,catalog,views,composed,supports)
-    check(seal["origin"] == "MOCK_SYNTHETIC",
-          "V0 S dry-run requires an explicitly synthetic proposal")
+              supports: dict, plan: dict, out: Path,
+              *, s_capture: dict | None = None) -> dict:
+    if seal.get("origin") in (S_REAL_ORIGIN, S_TEST_ORIGIN):
+        check(isinstance(s_capture, dict), "S_CAPTURE_EVIDENCE_REQUIRED")
+        verify_s_only_seal(seal,package,catalog,views,composed,supports,
+                           s_capture["response"],s_capture["draft"],s_capture["receipt"])
+    else:
+        verify_handoff(seal,draft,package,catalog,views,composed,supports)
+        check(seal["origin"] == "MOCK_SYNTHETIC",
+              "Unknown S handoff origin")
     check(plan.get("synthetic") is True and
           plan.get("empirical_or_causal_claim") is False and
           supports.get("origin_ref") == plan.get("id"),
@@ -50,10 +57,11 @@ def prepare_s(seal: dict, draft: dict, package: dict,
     (out/"run-s-selected.mos").write_text(mos,encoding="utf-8")
     manifest = {
         "schema":"igc-arena-s-simulation/0.1",
-        "status":"S_SIMULATION_PREPARED_MOCK_ONLY",
+        "status":("S_SIMULATION_PREPARED_MOCK_ONLY" if seal["origin"] == "MOCK_SYNTHETIC"
+                  else "S_SIMULATION_PREPARED_CAPTURED_NOT_SCORED"),
         "synthetic":True,
         "empirical_adequacy_evaluated":False,
-        "S_provider_origin":"MOCK_SYNTHETIC",
+        "S_provider_origin":seal["origin"],
         "handoff_hash":seal["handoff_hash"],
         "selection_hash":hash_obj(selection),
         "composed_hash":hash_obj(composed),
@@ -70,9 +78,14 @@ def prepare_s(seal: dict, draft: dict, package: dict,
 
 def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
              out: Path, log: Path) -> dict:
-    check(manifest.get("status")=="S_SIMULATION_PREPARED_MOCK_ONLY"
-          and manifest.get("S_provider_origin")=="MOCK_SYNTHETIC",
-          "not a synthetic S-preparation manifest")
+    origin = seal.get("origin")
+    check(origin in ("MOCK_SYNTHETIC", S_REAL_ORIGIN, S_TEST_ORIGIN)
+          and manifest.get("S_provider_origin") == origin,
+          "S simulation origin or manifest mismatch")
+    check(manifest.get("status") ==
+          ("S_SIMULATION_PREPARED_MOCK_ONLY" if origin == "MOCK_SYNTHETIC"
+           else "S_SIMULATION_PREPARED_CAPTURED_NOT_SCORED"),
+          "S simulation manifest status mismatch")
     check(manifest.get("handoff_hash")==seal["handoff_hash"]
           and manifest.get("composed_hash")==hash_obj(composed)
           and manifest.get("plan_hash")==hash_obj(plan),
@@ -113,7 +126,8 @@ def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
         traces[candidate_id]=metrics
     report={
         "schema":"igc-arena-s-simulation/0.1",
-        "status":"S_MOCK_MODEL_EXECUTION_PASS_SYNTHETIC",
+        "status":("S_MOCK_MODEL_EXECUTION_PASS_SYNTHETIC" if origin == "MOCK_SYNTHETIC"
+                  else "S_CAPTURED_MODEL_EXECUTION_PASS_SYNTHETIC"),
         "source_handoff_hash":seal["handoff_hash"],
         "source_manifest_hash":hash_obj(manifest),
         "simulated_ids":list(expected),
@@ -121,7 +135,9 @@ def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
         "trace_checks":traces,
         "openmodelica_log_sha256":file_digest(log),
         "empirical_adequacy_evaluated":False,
-        "real_s_provider_called":False,
+        "real_s_provider_called":origin == S_REAL_ORIGIN,
+        "provider_attestation":("MOCK_ONLY" if origin in ("MOCK_SYNTHETIC", S_TEST_ORIGIN)
+                                else "LOCAL_CAPTURE_ONLY_NOT_INDEPENDENT"),
         "lane_submission_created":False,
         "holdout_accessed":False
     }
@@ -144,13 +160,22 @@ def main():
     for key in ("draft","package","catalog","views-dir","supports"):
         prep.add_argument("--"+key,required=True,type=Path)
     verify.add_argument("--log",required=True,type=Path)
+    prep.add_argument("--s-archive",type=Path,
+                      help="S-only captured provider response, draft and receipt")
     args=p.parse_args()
     seal,composed,plan=read(args.handoff),read(args.composed),read(args.plan)
     if args.action=="prepare":
-        views={lane:read(args.views_dir/(lane+".json")) for lane in ("S","P")}
+        is_single=seal.get("origin") in (S_REAL_ORIGIN,S_TEST_ORIGIN)
+        views={lane:read(args.views_dir/(lane+".json"))
+               for lane in (("S",) if is_single else ("S","P"))}
+        check(not is_single or args.s_archive is not None,
+              "S_CAPTURE_EVIDENCE_REQUIRED")
+        record=({name:read(args.s_archive/(filename+".json")) for name,filename in (
+            ("response","response"),("draft","s-draft"),("receipt","receipt"))}
+            if is_single else None)
         report=prepare_s(seal,read(args.draft),read(args.package),
                          read(args.catalog),views,composed,read(args.supports),
-                         plan,args.out)
+                         plan,args.out,s_capture=record)
     else:
         report=verify_s(read(args.out/"s-execution-plan.json"),seal,
                         composed,plan,args.out,args.log)
