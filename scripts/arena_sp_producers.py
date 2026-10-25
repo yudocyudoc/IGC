@@ -191,7 +191,7 @@ def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) ->
     cleaned = raw.strip()
     if cleaned.startswith("```"):
         import re
-        match = re.fullmatch(r"```(?:json)?\\s*([\\s\\S]*?)\\s*```", cleaned, flags=re.I)
+        match = re.fullmatch(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, flags=re.I)
         if match:
             cleaned = match.group(1).strip()
     try:
