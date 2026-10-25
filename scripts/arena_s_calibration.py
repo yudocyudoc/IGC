@@ -16,7 +16,7 @@ from pathlib import Path
 from .arena_round import hash_obj, exclusive_json, numbers
 from .arena_sp_producers import ProviderError
 from .compose_molecular_candidates import render_modelica
-from .fm_b5_parameter_identifiability import grid_fit, sample_times
+from .fm_b5_parameter_identifiability import grid_fit, sample_times, simulate
 from .validate_fm_a_contract import canonical_structure_hash, validate_references
 
 SCHEMA = "igc-arena-s-calibration/0.1"
@@ -38,7 +38,7 @@ def calibrate(composed: dict, modelica_plan: dict,
           "CALIBRATION_OBSERVABLE_MISMATCH")
     allowed={"schema","synthetic","parameter_ranges","calibration",
              "held_out_discrimination","numerics","uncertainty_rule",
-             "synthetic_data_generation","note"}
+             "synthetic_data_generation","absolute_adequacy_rule","note"}
     check(fit_plan.get("schema") == "igc-arena-s-fit-config/0.1"
           and fit_plan.get("synthetic") is True
           and set(fit_plan) <= allowed
@@ -81,6 +81,26 @@ def calibrate(composed: dict, modelica_plan: dict,
     check(len(composed["candidates"]) == 2
           and {c["id"].rsplit(":",1)[-1] for c in composed["candidates"]} ==
           {"CS-01","CS-02"}, "CALIBRATION_REQUIRES_TWO_STRUCTURES")
+    sigma=float(fit_plan["synthetic_data_generation"]["noise_standard_deviation"])
+    adequacy_rule=fit_plan.get("absolute_adequacy_rule")
+    check(isinstance(adequacy_rule,dict)
+          and type(adequacy_rule.get("max_rmse_noise_sd")) in (int,float)
+          and type(adequacy_rule.get("max_physical_bound_noise_sd")) in (int,float)
+          and all(math.isfinite(float(adequacy_rule[key]))
+                  and float(adequacy_rule[key]) > 0
+                  for key in ("max_rmse_noise_sd","max_physical_bound_noise_sd"))
+          and sigma > 0 and math.isfinite(sigma),
+          "CALIBRATION_ABSOLUTE_ADEQUACY_RULE_INVALID")
+    physical_limit=float(adequacy_rule["max_physical_bound_noise_sd"])*sigma
+    amplitude_in=float(calibration["input_amplitude"])
+    duration_in=float(calibration["input_duration"])
+    physical_consistency=all(
+        -physical_limit <= y <= amplitude_in*min(t,duration_in)+physical_limit
+        for t,y in zip(times,observed))
+    # The evaluation pulse is public; reserved responses are never read here.
+    pulse = fit_plan["held_out_discrimination"]
+    eval_times=sample_times(float(pulse["stop_time"]),
+                            float(pulse["observation_interval"]))
     result = deepcopy(composed)
     structures = {s["id"]:s for s in result["structures"]}
     fits={}
@@ -94,6 +114,19 @@ def calibrate(composed: dict, modelica_plan: dict,
               "CALIBRATION_STAGE_COUNT_MISMATCH")
         fit = grid_fit(fit_plan,stage_count,times,observed)
         best = fit["best_fit"]
+        adequate=physical_consistency and best["rmse"] <= (
+            float(adequacy_rule["max_rmse_noise_sd"])*sigma)
+        # B5 profile-grid uncertainty: diagnostic envelope from construction
+        # supported parameter points, NOT a probability-calibrated interval.
+        trial_curves=[
+            simulate(stage_count,point["maxThroughput"],point["responseTime"],
+                     float(pulse["input_amplitude"]),float(pulse["input_duration"]),
+                     float(pulse["stop_time"]),float(pulse["observation_interval"]),
+                     float(fit_plan["numerics"]["integration_step"]))
+            for point in fit["supported_grid_points"]]
+        envelope=[{"time":t,"minimum":min(row[i] for row in trial_curves),
+                   "maximum":max(row[i] for row in trial_curves)}
+                  for i,t in enumerate(eval_times)]
         for stage in stage_ids:
             bindings={binding["parameter_id"]:binding for binding
                       in stage["parameter_bindings"]}
@@ -107,7 +140,11 @@ def calibrate(composed: dict, modelica_plan: dict,
             "best_fit":{k:best[k] for k in ("maxThroughput","responseTime","rmse","sse")},
             "uncertainty_set":fit["parameter_uncertainty_set"],
             "compatible_grid_points":fit["approx_95_percent_grid_set_size"],
-            "total_grid_points":len(fit["all_grid_points"])}
+            "total_grid_points":len(fit["all_grid_points"]),
+            "absolute_adequacy":("ADEQUATE" if adequate else "INADEQUATE"),
+            "absolute_rmse_threshold":float(adequacy_rule["max_rmse_noise_sd"])*sigma,
+            "physical_input_bound_passed":physical_consistency,
+            "prediction_envelope_rk4":envelope}
     validate_references(result)
     # Explicit predeclared discrimination pulse from B5. No future data read.
     pulse = fit_plan["held_out_discrimination"]
@@ -138,7 +175,13 @@ def calibrate(composed: dict, modelica_plan: dict,
         "input_composed_hash":hash_obj(composed),
         "calibrated_composed_hash":hash_obj(result),
         "evaluation_plan_hash":hash_obj(evaluation_plan),
-        "fits":fits, "holdout_accessed":False,
+        "fits":fits,
+        "absolute_adequacy_status":("AT_LEAST_ONE_ADEQUATE"
+           if any(fit["absolute_adequacy"]=="ADEQUATE" for fit in fits.values())
+           else "NO_ADEQUATE_STRUCTURE"),
+        "absolute_adequacy_rule":adequacy_rule,
+        "uncertainty_status":"SUPPORTED_GRID_ENVELOPES_RK4_PARITY_PENDING",
+        "holdout_accessed":False,
         "models_identified_as_truth":False,
         "fitting_is_not_evidence_of_model_truth":True}
     report["report_hash"]=hash_obj(report)
