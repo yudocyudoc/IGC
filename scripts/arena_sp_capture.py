@@ -130,6 +130,8 @@ def run_capture(package:dict,catalog:dict,*, authorization:str,
         raise ProviderError("unknown capture method")
     if capture_method=="INJECTED_TEST_SENDER" and sender is urlopen:
         raise ProviderError("TEST_SENDER_REQUIRED")
+    if capture_method=="PYTHON_URLLIB" and sender is not urlopen:
+        raise ProviderError("LIVE_CAPTURE_REQUIRES_REAL_HTTP_TRANSPORT")
     # Guard against rerunning a partial campaign after a timeout. No retry.
     output_dir.mkdir(parents=True,exist_ok=False)
     exclusive_json(output_dir/"manifest.json",{
