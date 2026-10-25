@@ -1,0 +1,32 @@
+{
+  "schema": "igc-fm-b2-candidate-supports/0.1",
+  "synthetic": true,
+  "origin_ref": "urn:igc:composition-plan:serial-chain-b3@0.1",
+  "assumptions": [
+    {
+      "id": "urn:igc:assumption:pilot-CS-01-possible",
+      "description": "One-stage hypothesis remains eligible before new evidence; not verified."
+    },
+    {
+      "id": "urn:igc:assumption:pilot-CS-02-possible",
+      "description": "Two-stage hypothesis remains eligible before new evidence; not verified."
+    }
+  ],
+  "justifications": [
+    {
+      "id": "urn:igc:justification:pilot-CS-01",
+      "candidate_id": "urn:igc:candidate:CS-01",
+      "antecedent_ids": [
+        "urn:igc:assumption:pilot-CS-01-possible"
+      ]
+    },
+    {
+      "id": "urn:igc:justification:pilot-CS-02",
+      "candidate_id": "urn:igc:candidate:CS-02",
+      "antecedent_ids": [
+        "urn:igc:assumption:pilot-CS-02-possible"
+      ]
+    }
+  ],
+  "nogoods": []
+}
