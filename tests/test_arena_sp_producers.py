@@ -81,6 +81,14 @@ class ArenaSPTests(unittest.TestCase):
         self.assertFalse(result["claims_of_truth"])
         self.assertEqual(result["status"], "PROVIDER_DRAFTS_NOT_LANE_SUBMISSIONS")
 
+    def test_real_glm_fenced_json_is_normalized(self):
+        responses=raw_results(self.package)
+        raw=responses["S_GLM"]["result"]["response"]
+        responses["S_GLM"]["result"]["response"]="```json\\n"+raw+"\\n```"
+        parsed=parse_responses(self.package,responses,self.catalog)
+        self.assertEqual(parsed["S"]["selected_candidate_ids"],
+                         ["urn:igc:candidate:CS-02"])
+
     def test_glm_invented_candidate_not_admitted(self):
         responses = raw_results(self.package)
         responses["S_GLM"]["result"]["response"] = json.dumps({
