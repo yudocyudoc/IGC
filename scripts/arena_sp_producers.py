@@ -20,7 +20,7 @@ from .arena_round import (SCHEMA as ROUND_SCHEMA, RoundError, canonical, hash_ob
 SCHEMA = "igc-arena-sp-provider/0.1"
 AUTHORIZATION = "RUN_ARENA_SP_MAX3"
 MODELS = {
-    "S_GLM": "@cf/zai-org/glm-4.7-flash",
+    "S_GLM": "@cf/zai-org/glm-5.3-flash",
     "P_CLEF": "@cf/cloudflare/clef",
     "P_CLAIRIC": "@cf/cloudflare/clairic",
 }
