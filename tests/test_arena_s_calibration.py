@@ -89,6 +89,16 @@ class CalibrationTests(unittest.TestCase):
         self.assertEqual(report["uncertainty_status"],
                          "SUPPORTED_GRID_ENVELOPES_RK4_PARITY_PENDING")
 
+    def test_trial_clock_mapping_cannot_be_rewritten(self):
+        self.primary["calibration_times"]=list(self.primary["times"])
+        self.primary["times"]=[t-8 for t in self.primary["times"]]
+        self.primary["independent_trial_reset_at_t0"]=True
+        calibrated,plan,receipt=calibrate(self.composed,self.plan,self.fit,self.primary)
+        self.assertFalse(receipt["holdout_accessed"])
+        self.primary["times"][2] += .5
+        with self.assertRaisesRegex(ProviderError,"CALIBRATION_TRIAL_TIME_MAPPING_INVALID"):
+            calibrate(self.composed,self.plan,self.fit,self.primary)
+
     def test_wrong_construction_grid_is_rejected(self):
         self.primary["times"][-1] += 0.25
         with self.assertRaisesRegex(ProviderError,"CALIBRATION_TIME_GRID_MISMATCH"):
