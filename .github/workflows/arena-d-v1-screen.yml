@@ -1,0 +1,116 @@
+name: Arena D1 observation screen and Modelica parity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_d_v01.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'tests/test_arena_d_v1_screen.py'
+      - 'data/synthetic/arena_d_v01_visible.json'
+      - 'data/synthetic/arena_d_v1_screen_protocol.json'
+      - '.github/workflows/arena-d-v1-screen.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d1-evidence:
+    name: D1 instrument-bounded screen + OpenModelica parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Checkout exact proposed code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Offline tests and no-provider negative controls
+        run: |
+          python -m py_compile scripts/arena_d_v1_screen.py tests/test_arena_d_v1_screen.py
+          python -m unittest discover -s tests -p 'test_arena_d_v1_screen.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
+      - name: Construct only the visible observational screen
+        run: |
+          python -m scripts.arena_d_v1_screen evaluate \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --output artifacts/arena-d-v1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          directory=Path('artifacts/arena-d-v1')
+          r=json.loads((directory/'screen.json').read_text())
+          assert r['grid_evaluations']==108
+          assert len(r['results'])==6
+          assert r['no_structural_falsification'] is True
+          cmds=[]
+          for c in r['results']:
+            name='Dfit_'+c['structure_hash'][7:19]
+            cmds.extend([
+              f'loadFile("/work/artifacts/arena-d-v1/{name}.mo");',
+              'print(getErrorString());',
+              f'checkModel({name});',
+              'print(getErrorString());',
+              f'simulate({name}, stopTime=8, numberOfIntervals=160, outputFormat="csv");',
+              'print(getErrorString());'
+            ])
+          (directory/'d1.mos').write_text('\n'.join(cmds)+'\n')
+          PY
+      - name: Independently simulate best-grid models in pinned OpenModelica
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d-v1 \
+            "$OMC_IMAGE" omc d1.mos 2>&1 | tee artifacts/arena-d-v1/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d-v1/omc.log; then
+            echo 'Modelica reported errors' >&2
+            exit 1
+          fi
+      - name: Numerical parity checks against actual CSV trajectories
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_d_v1_screen import compare_omc_csv
+          root=Path("artifacts/arena-d-v1")
+          case=json.loads(Path('data/synthetic/arena_d_v01_visible.json').read_text())
+          results=json.loads((root/'screen.json').read_text())
+          checks=[]
+          for entry in results['results']:
+            name='Dfit_'+entry['structure_hash'][7:19]
+            csv=root/(name+'_res.csv')
+            assert csv.is_file(), 'MISSING_OMC_CSV:'+name
+            t=[x['t'] for x in case['construction']['observations']]
+            p=entry['best_grid']['predicted']
+            checks.append({'candidate_id':entry['candidate_id'],
+                          **compare_omc_csv(csv,list(zip(t,p)),atol=.012)})
+          assert len(checks)==6
+          (root/'omc-parity.json').write_text(json.dumps(checks,indent=2)+'\n')
+          print('D1_SIX_FITTED_MODELS_MATCH_PINNED_OPENMODELICA')
+          PY
+      - name: Repair root-owned container file permissions and curate auditable artifacts
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/arena-d-v1 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v1
+            mkdir -p artifacts/arena-d-v1/evidence
+            shopt -s nullglob
+            for file in artifacts/arena-d-v1/*.json artifacts/arena-d-v1/*.mo artifacts/arena-d-v1/*_res.csv artifacts/arena-d-v1/*.mos artifacts/arena-d-v1/omc.log; do
+              cp "$file" artifacts/arena-d-v1/evidence/
+            done
+          fi
+      - name: Archive actual D1 evidence regardless of earlier gate
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-d-v1-screen-modelica-evidence
+          path: artifacts/arena-d-v1/evidence/
+          retention-days: 30
+          if-no-files-found: warn
