@@ -1,0 +1,8 @@
+{
+  "schema": "igc-sd-prompt-factorial-trigger/0.1",
+  "purpose": "COMPARE_V2_V21_WITH_AND_WITHOUT_STRUCTURE_ON_NEW_CASES",
+  "authorization": "RUN_SD21_FACTORIAL_8_CALLS",
+  "max_calls": 8,
+  "retries": 0,
+  "holdout_access": false
+}
