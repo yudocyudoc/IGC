@@ -30,11 +30,20 @@ def check(condition: bool, message: str) -> None:
 def prepare_s(seal: dict, draft: dict, package: dict,
               catalog: dict, views: dict, composed: dict,
               supports: dict, plan: dict, out: Path,
-              *, s_capture: dict | None = None) -> dict:
+              *, s_capture: dict | None = None,
+              calibration: dict | None = None) -> dict:
     if seal.get("origin") in (S_REAL_ORIGIN, S_TEST_ORIGIN):
         check(isinstance(s_capture, dict), "S_CAPTURE_EVIDENCE_REQUIRED")
         verify_s_only_seal(seal,package,catalog,views,composed,supports,
-                           s_capture["response"],s_capture["draft"],s_capture["receipt"])
+                           s_capture["response"],s_capture["draft"],s_capture["receipt"],
+                           calibration=calibration)
+        if seal["origin"] == S_REAL_ORIGIN:
+            check(isinstance(calibration,dict)
+                  and calibration.get("report_hash") == seal["calibration_receipt_hash"]
+                  and calibration.get("calibrated_composed_hash") == hash_obj(composed)
+                  and calibration.get("evaluation_plan_hash") == hash_obj(plan)
+                  and calibration.get("construction_hash") == views["S"]["primary_hash"],
+                  "S_REAL_REQUIRES_CALIBRATED_PARAMETERS")
     else:
         verify_handoff(seal,draft,package,catalog,views,composed,supports)
         check(seal["origin"] == "MOCK_SYNTHETIC",
@@ -67,6 +76,7 @@ def prepare_s(seal: dict, draft: dict, package: dict,
         "composed_hash":hash_obj(composed),
         "support_plan_hash":hash_obj(supports),
         "plan_hash":hash_obj(plan),
+        "calibration_receipt_hash":seal.get("calibration_receipt_hash"),
         "simulated_ids":[x["candidate_id"] for x in selection["selected"]],
         "atms_rejected_ids":[x["candidate_id"] for x in selection["rejected"]],
         "modelica_sha256":file_digest(out/(PACKAGE+".mo")),
@@ -162,6 +172,8 @@ def main():
     verify.add_argument("--log",required=True,type=Path)
     prep.add_argument("--s-archive",type=Path,
                       help="S-only captured provider response, draft and receipt")
+    prep.add_argument("--calibration",type=Path,
+                      help="construction-only grid fit bound to S seal")
     args=p.parse_args()
     seal,composed,plan=read(args.handoff),read(args.composed),read(args.plan)
     if args.action=="prepare":
@@ -175,7 +187,8 @@ def main():
             if is_single else None)
         report=prepare_s(seal,read(args.draft),read(args.package),
                          read(args.catalog),views,composed,read(args.supports),
-                         plan,args.out,s_capture=record)
+                         plan,args.out,s_capture=record,
+                         calibration=read(args.calibration) if args.calibration else None)
     else:
         report=verify_s(read(args.out/"s-execution-plan.json"),seal,
                         composed,plan,args.out,args.log)
