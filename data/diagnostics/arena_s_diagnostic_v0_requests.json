@@ -1,0 +1,74 @@
+{
+  "requests": [
+    {
+      "case_id": "Q7",
+      "endpoint": "@cf/zai-org/glm-4.7-flash",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters. State is: {\"catalog\":[{\"candidate_id\":\"urn:igc:candidate:CS-01\",\"stages\":1,\"structure\":\"single-stage serial queue\"},{\"candidate_id\":\"urn:igc:candidate:CS-02\",\"stages\":2,\"structure\":\"two-stage serial queue\"}],\"construction\":{\"calibration_times\":[0,2,4,6,8],\"independent_trial_reset_at_t0\":true,\"input_profile\":{\"amplitude\":0.8,\"duration\":2,\"initial_stocks_zero\":true,\"kind\":\"pulse\"},\"investigation_id\":\"IGC-DIAG-Q7\",\"observable_id\":\"delivered\",\"sources\":[\"SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR\"],\"times\":[-8,-6,-4,-2,0],\"unit\":\"units\",\"values\":[0,1.03901,1.62243,1.57682,1.61348]},\"observability\":{\"instrument\":\"Delivered cumulative output; new evaluation trial resets all stocks at t=0.\",\"kind\":\"proxy\",\"unit\":\"units\"},\"question\":\"Given construction data from an earlier reset trial, which of the predeclared queue mechanisms remain plausible? Do not infer generating truth from names. If evidence is insufficient, retain alternatives or abstain.\",\"retrieval\":null,\"target_times\":[0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16],\"task\":\"propose_and_criticize_causal_structures\"}"
+          }
+        ],
+        "temperature": 0.1,
+        "max_completion_tokens": 600,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    },
+    {
+      "case_id": "R4",
+      "endpoint": "@cf/zai-org/glm-4.7-flash",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters. State is: {\"catalog\":[{\"candidate_id\":\"urn:igc:candidate:CS-01\",\"stages\":1,\"structure\":\"single-stage serial queue\"},{\"candidate_id\":\"urn:igc:candidate:CS-02\",\"stages\":2,\"structure\":\"two-stage serial queue\"}],\"construction\":{\"calibration_times\":[0,2,4,6,8],\"independent_trial_reset_at_t0\":true,\"input_profile\":{\"amplitude\":0.8,\"duration\":2,\"initial_stocks_zero\":true,\"kind\":\"pulse\"},\"investigation_id\":\"IGC-DIAG-R4\",\"observable_id\":\"delivered\",\"sources\":[\"SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR\"],\"times\":[-8,-6,-4,-2,0],\"unit\":\"units\",\"values\":[0,0.19823,0.96423,1.41543,1.37626]},\"observability\":{\"instrument\":\"Delivered cumulative output; new evaluation trial resets all stocks at t=0.\",\"kind\":\"proxy\",\"unit\":\"units\"},\"question\":\"Given construction data from an earlier reset trial, which of the predeclared queue mechanisms remain plausible? Do not infer generating truth from names. If evidence is insufficient, retain alternatives or abstain.\",\"retrieval\":null,\"target_times\":[0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16],\"task\":\"propose_and_criticize_causal_structures\"}"
+          }
+        ],
+        "temperature": 0.1,
+        "max_completion_tokens": 600,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    },
+    {
+      "case_id": "M9",
+      "endpoint": "@cf/zai-org/glm-4.7-flash",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters. State is: {\"catalog\":[{\"candidate_id\":\"urn:igc:candidate:CS-01\",\"stages\":1,\"structure\":\"single-stage serial queue\"},{\"candidate_id\":\"urn:igc:candidate:CS-02\",\"stages\":2,\"structure\":\"two-stage serial queue\"}],\"construction\":{\"calibration_times\":[0,2,4,6,8],\"independent_trial_reset_at_t0\":true,\"input_profile\":{\"amplitude\":0.8,\"duration\":2,\"initial_stocks_zero\":true,\"kind\":\"pulse\"},\"investigation_id\":\"IGC-DIAG-M9\",\"observable_id\":\"delivered\",\"sources\":[\"SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR\"],\"times\":[-8,-6,-4,-2,0],\"unit\":\"units\",\"values\":[0,0.99622,1.53402,1.62231,1.65568]},\"observability\":{\"instrument\":\"Delivered cumulative output; new evaluation trial resets all stocks at t=0.\",\"kind\":\"proxy\",\"unit\":\"units\"},\"question\":\"Given construction data from an earlier reset trial, which of the predeclared queue mechanisms remain plausible? Do not infer generating truth from names. If evidence is insufficient, retain alternatives or abstain.\",\"retrieval\":null,\"target_times\":[0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16],\"task\":\"propose_and_criticize_causal_structures\"}"
+          }
+        ],
+        "temperature": 0.1,
+        "max_completion_tokens": 600,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    },
+    {
+      "case_id": "T2",
+      "endpoint": "@cf/zai-org/glm-4.7-flash",
+      "body": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters. State is: {\"catalog\":[{\"candidate_id\":\"urn:igc:candidate:CS-01\",\"stages\":1,\"structure\":\"single-stage serial queue\"},{\"candidate_id\":\"urn:igc:candidate:CS-02\",\"stages\":2,\"structure\":\"two-stage serial queue\"}],\"construction\":{\"calibration_times\":[0,2,4,6,8],\"independent_trial_reset_at_t0\":true,\"input_profile\":{\"amplitude\":0.8,\"duration\":2,\"initial_stocks_zero\":true,\"kind\":\"pulse\"},\"investigation_id\":\"IGC-DIAG-T2\",\"observable_id\":\"delivered\",\"sources\":[\"SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR\"],\"times\":[-8,-6,-4,-2,0],\"unit\":\"units\",\"values\":[0,0.06209,0.7751,1.2254,1.53719]},\"observability\":{\"instrument\":\"Delivered cumulative output; new evaluation trial resets all stocks at t=0.\",\"kind\":\"proxy\",\"unit\":\"units\"},\"question\":\"Given construction data from an earlier reset trial, which of the predeclared queue mechanisms remain plausible? Do not infer generating truth from names. If evidence is insufficient, retain alternatives or abstain.\",\"retrieval\":null,\"target_times\":[0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16],\"task\":\"propose_and_criticize_causal_structures\"}"
+          }
+        ],
+        "temperature": 0.1,
+        "max_completion_tokens": 600,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    }
+  ],
+  "provider": "Cloudflare Workers AI connected API",
+  "status": "PREPARED_NO_INFERENCE"
+}
