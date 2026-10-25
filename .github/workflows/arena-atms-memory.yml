@@ -12,6 +12,8 @@ on:
       - 'scripts/arena_s_submission.py'
       - 'scripts/arena_s_pilot_enumeration.py'
       - 'scripts/arena_s_pilot_lock.py'
+      - 'scripts/arena_s_pilot_physics.py'
+      - 'tests/test_arena_s_pilot_physics.py'
       - 'tests/test_arena_s_pilot.py'
       - 'tests/test_arena_s_real.py'
       - 'tests/test_arena_s_calibration.py'
@@ -49,6 +51,8 @@ on:
       - 'scripts/arena_s_submission.py'
       - 'scripts/arena_s_pilot_enumeration.py'
       - 'scripts/arena_s_pilot_lock.py'
+      - 'scripts/arena_s_pilot_physics.py'
+      - 'tests/test_arena_s_pilot_physics.py'
       - 'tests/test_arena_s_pilot.py'
       - 'tests/test_arena_s_real.py'
       - 'tests/test_arena_s_calibration.py'
@@ -163,6 +167,7 @@ jobs:
           /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_real.py' -v
           /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_calibration.py' -v
                     /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot.py' -v
+                    /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot_physics.py' -v
       - name: Create S/P inference requests for review (zero provider calls)
         run: |
           mkdir -p artifacts/arena-sp-preparation
