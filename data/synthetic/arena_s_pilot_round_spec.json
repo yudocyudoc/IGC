@@ -1,0 +1,58 @@
+{
+  "schema": "igc-arena-round/0.1",
+  "synthetic": true,
+  "investigation_id": "INV-S-STRUCTURAL-PILOT-NEW-WORLDS",
+  "round_id": "V0-S-STRUCTURAL-PILOT-001",
+  "question": "Given the input-output construction observations, which predeclared queue mechanisms remain plausible, what is not identifiable, and which admissible input perturbation could distinguish them?",
+  "observable_id": "delivered",
+  "as_known_at": "2026-10-24T09:00:00Z",
+  "allowed_lanes": [
+    "B0",
+    "D",
+    "S",
+    "P"
+  ],
+  "target_times": [
+    10,
+    12,
+    16
+  ],
+  "observability": {
+    "kind": "proxy",
+    "unit": "units",
+    "instrument": "synthetic cumulative delivery on independent experimental trial; initial stocks reset at t=0"
+  },
+  "evaluation_metric": "RMSE",
+  "blindness_claim": "NOT_ESTABLISHED",
+  "max_retries": 0,
+  "budgets": {
+    "B0": {
+      "llm_calls": 0,
+      "tokens": 0,
+      "simulations": 0,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "D": {
+      "llm_calls": 0,
+      "tokens": 0,
+      "simulations": 4,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "S": {
+      "llm_calls": 1,
+      "tokens": 4000,
+      "simulations": 2,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "P": {
+      "llm_calls": 0,
+      "tokens": 0,
+      "simulations": 0,
+      "human_minutes": 0,
+      "retries": 0
+    }
+  }
+}
