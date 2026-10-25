@@ -36,11 +36,15 @@ jobs:
           python -m py_compile scripts/arena_d_v1_screen.py tests/test_arena_d_v1_screen.py
           python -m unittest discover -s tests -p 'test_arena_d_v1_screen.py' -v
           python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
-      - name: Construct only the visible observational screen
+      - name: Construct D0 lineage and only visible D1 observational screen
         run: |
+          python -m scripts.arena_d_v01 prepare \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --out artifacts/arena-d-v1-d0
           python -m scripts.arena_d_v1_screen evaluate \
             --input data/synthetic/arena_d_v01_visible.json \
             --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --parent-event artifacts/arena-d-v1-d0/memory-event.json \
             --output artifacts/arena-d-v1
           python - <<'PY'
           import json
