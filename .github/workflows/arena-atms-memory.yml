@@ -7,6 +7,19 @@ on:
       - 'scripts/arena_memory.py'
       - 'tests/test_arena_sp_capture.py'
       - 'scripts/arena_sp_capture.py'
+      - 'scripts/arena_s_real.py'
+      - 'scripts/arena_s_calibration.py'
+      - 'scripts/arena_s_submission.py'
+      - 'scripts/arena_s_pilot_enumeration.py'
+      - 'scripts/arena_s_pilot_lock.py'
+      - 'scripts/arena_s_pilot_physics.py'
+      - 'scripts/arena_s_pilot_ci.py'
+      - 'tests/test_arena_s_pilot_physics.py'
+      - 'tests/test_arena_s_pilot.py'
+      - 'tests/test_arena_s_real.py'
+      - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
       - 'scripts/arena_sp_verify_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
@@ -30,12 +43,25 @@ on:
       - 'scripts/fm_b2_atms_candidate_reasoning.py'
       - 'scripts/f3_candidate_selection.py'
   pull_request:
-    branches: [fm-12-13-atms-llm-ablation]
+    branches: [fm-12-13-atms-llm-ablation, feature/arena-atms-memory-core]
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
       - 'tests/test_arena_sp_capture.py'
       - 'scripts/arena_sp_capture.py'
+      - 'scripts/arena_s_real.py'
+      - 'scripts/arena_s_calibration.py'
+      - 'scripts/arena_s_submission.py'
+      - 'scripts/arena_s_pilot_enumeration.py'
+      - 'scripts/arena_s_pilot_lock.py'
+      - 'scripts/arena_s_pilot_physics.py'
+      - 'scripts/arena_s_pilot_ci.py'
+      - 'tests/test_arena_s_pilot_physics.py'
+      - 'tests/test_arena_s_pilot.py'
+      - 'tests/test_arena_s_real.py'
+      - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
       - 'scripts/arena_sp_verify_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
@@ -135,11 +161,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Install existing hash-locked molecular dependencies for S-only tests
+        run: |
+          python -m venv /tmp/igc-s-contracts
+          /tmp/igc-s-contracts/bin/python -m pip install --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
       - name: Test independent S/P requests and provider response validation without inference
         run: |
-          python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
-          python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
-          python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_real.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_calibration.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_g3.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_modelica_bytes.py' -v
+                    /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot.py' -v
+                    /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot_physics.py' -v
       - name: Create S/P inference requests for review (zero provider calls)
         run: |
           mkdir -p artifacts/arena-sp-preparation
@@ -302,6 +338,35 @@ jobs:
           tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
           test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
           test -f /tmp/igc-modelica/MSL/Modelica/package.mo
+
+      - name: Prepare PUBLIC non-blind pilot with independently calibrated structures
+        run: |
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_s_pilot_ci prepare --out artifacts/arena-s-pilot-ci
+
+      - name: Simulate calibrated two-model pilot with physical pulse and parity check
+        run: |
+          set -o pipefail
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/arena-s-pilot-ci/calibration:/composer:ro" \
+            -v "$PWD/artifacts/arena-s-pilot-ci/enumeration:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-enumeration.mos 2>&1 | tee artifacts/arena-s-pilot-ci/enumeration/openmodelica.log
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_s_pilot_ci verify --out artifacts/arena-s-pilot-ci
+
+      - name: Archive non-blind calibrated pilot solver validation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-s-pilot-calibrated-openmodelica-ci
+          path: artifacts/arena-s-pilot-ci/
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Check and simulate only ATMS-admissible molecular alternatives
         run: |

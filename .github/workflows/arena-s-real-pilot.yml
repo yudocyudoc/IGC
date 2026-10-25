@@ -1,0 +1,56 @@
+name: Arena S-only pilot contracts
+on:
+  push:
+    branches: [feature/arena-s-real-pilot-v0]
+    paths:
+      - 'scripts/arena_s_real.py'
+      - 'scripts/arena_s_calibration.py'
+      - 'scripts/arena_s_submission.py'
+      - 'scripts/arena_s_pilot_enumeration.py'
+      - 'scripts/arena_s_pilot_lock.py'
+      - 'scripts/arena_s_pilot_physics.py'
+      - 'scripts/arena_s_pilot_ci.py'
+      - 'tests/test_arena_s_pilot_physics.py'
+      - 'tests/test_arena_s_pilot.py'
+      - 'scripts/arena_sp_producers.py'
+      - 'scripts/arena_sp_simulation.py'
+      - 'tests/test_arena_s_real.py'
+      - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
+      - 'data/synthetic/arena_s_pilot_round_spec.json'
+      - 'data/synthetic/arena_s_pilot_catalog.json'
+      - 'data/synthetic/arena_s_pilot_supports.json'
+      - 'data/synthetic/arena_s_pilot_fit_config.json'
+      - '.github/workflows/arena-s-real-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  s-only-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install existing hash-locked dependencies
+        run: |
+          python -m venv /tmp/igc-s-pilot
+          /tmp/igc-s-pilot/bin/python -m pip install --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
+      - name: Test old and new S/P contracts without provider calls
+        run: |
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_real.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_calibration.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_g3.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_modelica_bytes.py' -v
+                    /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot.py' -v
+                    /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot_physics.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
