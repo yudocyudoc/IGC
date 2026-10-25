@@ -1,0 +1,218 @@
+{
+  "spec": {
+    "protocol": "IGC_DIAGNOSTIC_V0_4_WORLDS",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "max_provider_calls": 4,
+    "max_retries": 0,
+    "temperature": 0.1,
+    "max_completion_tokens": 600,
+    "sigma": 0.08,
+    "construction": {
+      "input_amplitude": 0.8,
+      "input_duration": 2,
+      "samples": [
+        0,
+        2,
+        4,
+        6,
+        8
+      ]
+    },
+    "evaluation": {
+      "input_amplitude": 3,
+      "input_duration": 2,
+      "score_times": [
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        12,
+        16
+      ]
+    },
+    "absolute_fit_rule": {
+      "rmse_max": 0.24,
+      "physically_impossible_bound": 0.24
+    },
+    "structural_candidates": [
+      {
+        "candidate_id": "urn:igc:candidate:CS-01",
+        "stages": 1,
+        "structure": "single-stage serial queue"
+      },
+      {
+        "candidate_id": "urn:igc:candidate:CS-02",
+        "stages": 2,
+        "structure": "two-stage serial queue"
+      }
+    ],
+    "selection_metric": "G3 survival / false rejection / voluntary abstention; point RMSE per candidate; D enumerates both; no oracle best-of-D claim",
+    "holdout_policy": "Generate and reveal only after recording S raw responses and D predictions. This is operator-known synthetic generation, NOT externally blind. Not a causal validation nor an independent attestation.",
+    "status": "PREREGISTERED_INPUT_ONLY"
+  },
+  "cases": [
+    {
+      "case_id": "Q7",
+      "construction": {
+        "investigation_id": "IGC-DIAG-Q7",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -6,
+          -4,
+          -2,
+          0
+        ],
+        "calibration_times": [
+          0,
+          2,
+          4,
+          6,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          1.03901,
+          1.62243,
+          1.57682,
+          1.61348
+        ],
+        "sources": [
+          "SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 0.8,
+          "duration": 2,
+          "initial_stocks_zero": true
+        }
+      }
+    },
+    {
+      "case_id": "R4",
+      "construction": {
+        "investigation_id": "IGC-DIAG-R4",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -6,
+          -4,
+          -2,
+          0
+        ],
+        "calibration_times": [
+          0,
+          2,
+          4,
+          6,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          0.19823,
+          0.96423,
+          1.41543,
+          1.37626
+        ],
+        "sources": [
+          "SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 0.8,
+          "duration": 2,
+          "initial_stocks_zero": true
+        }
+      }
+    },
+    {
+      "case_id": "M9",
+      "construction": {
+        "investigation_id": "IGC-DIAG-M9",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -6,
+          -4,
+          -2,
+          0
+        ],
+        "calibration_times": [
+          0,
+          2,
+          4,
+          6,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          0.99622,
+          1.53402,
+          1.62231,
+          1.65568
+        ],
+        "sources": [
+          "SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 0.8,
+          "duration": 2,
+          "initial_stocks_zero": true
+        }
+      }
+    },
+    {
+      "case_id": "T2",
+      "construction": {
+        "investigation_id": "IGC-DIAG-T2",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -6,
+          -4,
+          -2,
+          0
+        ],
+        "calibration_times": [
+          0,
+          2,
+          4,
+          6,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          0.06209,
+          0.7751,
+          1.2254,
+          1.53719
+        ],
+        "sources": [
+          "SYNTHETIC_DIAGNOSTIC_PRIVATE_GENERATOR"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 0.8,
+          "duration": 2,
+          "initial_stocks_zero": true
+        }
+      }
+    }
+  ]
+}
