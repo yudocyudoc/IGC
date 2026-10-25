@@ -37,6 +37,17 @@ def calibrate(composed: dict, modelica_plan: dict,
           and primary.get("unit") == "units",
           "CALIBRATION_OBSERVABLE_MISMATCH")
     calibration = fit_plan["calibration"]
+    input_profile = primary.get("input_profile")
+    check(isinstance(input_profile, dict)
+          and input_profile.get("kind") == "pulse"
+          and input_profile.get("initial_stocks_zero") is True
+          and type(input_profile.get("amplitude")) in (int,float)
+          and type(input_profile.get("duration")) in (int,float)
+          and math.isclose(float(input_profile["amplitude"]),
+                           float(calibration["input_amplitude"]),rel_tol=0,abs_tol=1e-12)
+          and math.isclose(float(input_profile["duration"]),
+                           float(calibration["input_duration"]),rel_tol=0,abs_tol=1e-12),
+          "CALIBRATION_INPUT_PROFILE_MISMATCH")
     times = numbers(primary["times"])
     observed = numbers(primary["values"])
     expected = sample_times(float(calibration["stop_time"]),
