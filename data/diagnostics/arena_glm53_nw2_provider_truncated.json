@@ -1,0 +1,27 @@
+{
+  "schema": "igc-nw2-provider-response/0.1",
+  "round_id": "ARENA-GLM53-NW2-20261024",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "attempt_sequence": 2,
+  "previous_attempt": "HTTP_401_NO_MODEL_INFERENCE",
+  "source": "authenticated Cloudflare connector",
+  "status": "PROVIDER_RETURNED_NO_USABLE_JSON",
+  "http_status": 200,
+  "success": true,
+  "finish_reason": "length",
+  "response_content": "",
+  "usage": {
+    "prompt_tokens": 564,
+    "completion_tokens": 1400,
+    "total_tokens": 1964,
+    "neurons": 71.32727813720703
+  },
+  "reasoning_content_present": true,
+  "reasoning_content_not_archived": true,
+  "request_body_sha256": "sha256:a784a3b4b731e4e9e428620a5f64306da747aacadab176a778f2a0a571783893",
+  "no_retry": true,
+  "simulation_not_authorized": true,
+  "lock_not_authorized": true,
+  "holdout_not_opened": true,
+  "interpretation": "Transport worked after reconnect; response was truncated in internal reasoning, no final JSON. This is a provider/output failure, not S scientific abstention."
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "igc-nw2-config-probe/0.1",
+  "purpose": "CONFIGURATION_ONLY_NOT_ARENA_RETRY_OR_S_SUBMISSION",
+  "round_id": "ARENA-GLM53-NW2-20261024",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "previous_original_request_sha256": "sha256:a784a3b4b731e4e9e428620a5f64306da747aacadab176a778f2a0a571783893",
+  "changes": [
+    "split original prompt at literal ' State is: ' into system/user roles (semantics preserved)",
+    "temperature 0 versus 0.1",
+    "max_completion_tokens 4096 versus 1400"
+  ],
+  "frozen_before_call": true,
+  "attempts_allowed": 1,
+  "retries_allowed": 0,
+  "holdout_status": "NOT_ACCESSED",
+  "body": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters."
+      },
+      {
+        "role": "user",
+        "content": "State is: {\"catalog\": [{\"candidate_id\": \"urn:igc:candidate:CS-01\", \"stages\": 1, \"structure\": \"single-stage serial queue\", \"verification_status\": \"CATALOGUE_DECLARATION_ONLY\"}, {\"candidate_id\": \"urn:igc:candidate:CS-02\", \"stages\": 2, \"structure\": \"two-stage serial queue\", \"verification_status\": \"CATALOGUE_DECLARATION_ONLY\"}], \"construction\": {\"calibration_times\": [0, 2, 4, 6, 8], \"independent_trial_reset_at_t0\": true, \"input_profile\": {\"amplitude\": 0.8, \"duration\": 2, \"initial_stocks_zero\": true, \"kind\": \"pulse\"}, \"investigation_id\": \"IGC-NW2-INDEPENDENT-PULSE\", \"observable_id\": \"delivered\", \"sources\": [\"IGC_NW2_SYNTHETIC_CONSTRUCTION_SAMPLE_PRIOR_TO_RESERVE\"], \"times\": [-8, -6, -4, -2, 0], \"unit\": \"units\", \"values\": [0.061033, 0.46697, 1.131079, 1.442287, 1.489232]}, \"observability\": {\"instrument\": \"Synthetic delivered cumulative output from a NEW independent reset trial at t=0; construction has relative times [-8,0], and separately logged within-trial calibration times [0,8]. No held-out values supplied.\", \"kind\": \"proxy\", \"unit\": \"units\"}, \"question\": \"Given sparse noisy delivered cumulative output from a previous independent reset trial, which serial-queue structures remain plausible in the declared two-model catalogue? Explain uncertainties and propose a falsifying experiment. Do not assert generating truth from mechanism labels.\", \"retrieval\": null, \"target_times\": [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16], \"task\": \"propose_and_criticize_causal_structures\"}"
+      }
+    ],
+    "temperature": 0,
+    "max_completion_tokens": 4096,
+    "reasoning_effort": "low"
+  }
+}

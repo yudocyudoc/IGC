@@ -1,0 +1,377 @@
+name: Arena GLM53 NW2 real S + calibrated Modelica S/D + lock
+
+on:
+  push:
+    branches: [experiment/arena-glm53-nw2-e2e]
+    paths:
+      - 'data/synthetic/arena_glm53_nw2_*'
+      - 'scripts/arena_glm53_nw2.py'
+      - 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V3.json'
+      - 'scripts/arena_s_real.py'
+      - 'scripts/arena_sp_producers.py'
+      - '.github/workflows/arena-glm53-nw2.yml'
+  pull_request:
+    branches: [feature/arena-s-real-pilot-v0]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nw2-integrated-round:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out frozen experimental branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13.16'
+      - name: Install locked molecular composition dependencies
+        run: |
+          python -m venv /tmp/igc-nw2
+          /tmp/igc-nw2/bin/python -m pip install --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
+      - name: Prepare exact S request and construction-only calibration (NO provider inference)
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 prepare --out artifacts/arena-glm53-nw2
+      - name: Verify actual authenticated response and seal S after provider call
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 pre-solver --out artifacts/arena-glm53-nw2
+      - name: Retrieve immutable SystemDynamics and MSL sources
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz
+          sha256sum /tmp/igc-modelica/msl.tar.gz
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+      - name: Execute ONLY S selected Modelica candidates after ATMS
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          set -o pipefail
+          if test -f artifacts/arena-glm53-nw2/S/run-s-selected.mos; then
+            docker run --rm --user "$(id -u):$(id -g)" \
+              --workdir /results -e HOME=/tmp \
+              -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+              -v "$PWD/poc/short_wrappers:/evidence:ro" \
+              -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+              -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+              -v "$PWD/artifacts/arena-glm53-nw2/calibration:/composer:ro" \
+              -v "$PWD/artifacts/arena-glm53-nw2/S:/results" \
+              "$IGC_OMC_IMAGE" omc /results/run-s-selected.mos 2>&1 | tee artifacts/arena-glm53-nw2/S/openmodelica.log
+          fi
+      - name: Independently simulate both D enumerated candidates with same calibration
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" \
+            --workdir /results -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/arena-glm53-nw2/calibration:/composer:ro" \
+            -v "$PWD/artifacts/arena-glm53-nw2/D:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-enumeration.mos 2>&1 | tee artifacts/arena-glm53-nw2/D/openmodelica.log
+      - name: Physically verify solver traces and freeze native prediction LOCK (NO reserve)
+        if: ${{ hashFiles('data/synthetic/arena_glm53_nw2_response.json') != '' }}
+        run: |
+          /tmp/igc-nw2/bin/python -m scripts.arena_glm53_nw2 post-solver --out artifacts/arena-glm53-nw2
+      - name: Archive all prepared, captured, verified and LOCKED artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arena-glm53-nw2-integrated-no-reserve
+          path: artifacts/arena-glm53-nw2/
+          retention-days: 30
+          if-no-files-found: warn
+
+
+  glm53-one-shot-probe:
+    # GitHub confirms that this existing workflow receives pull_request events.
+    # GitHub may suppress push-triggered runs for commits from an integration.
+    # Only the one commit ADDING the V4 marker may initiate a provider call.
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    concurrency:
+      group: igc-glm53-v4-single-use-probe
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
+    steps:
+      - name: Checkout immutable PR head to inspect the exact last commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Gate provider call to unique newly added V4 marker only
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V4.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+            echo 'V4_MARKER_ADDED_IN_PR_HEAD; diagnostic eligible'
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'NO_V4_MARKER_ADDED; skip API call'
+          fi
+      - name: Verify pinned experiment request and V4 trigger without network
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python3 -m py_compile scripts/arena_glm53_github_probe.py
+          python3 -m unittest discover -s tests -p 'test_arena_glm53_github_probe.py' -v
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          marker=json.loads(Path('data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_V4.json').read_text())
+          assert marker == {
+              'schema':'igc-glm53-github-one-shot-trigger/0.1',
+              'run_ref':'NW2-SYSTEM-USER-T0-4096-ONE-SHOT-V4',
+              'purpose':'CONFIGURATION_ONLY_NOT_ARENA_S_SUBMISSION',
+              'provider_calls_max':1,
+              'provider_retries':0,
+              'holdout_accessed':False,
+          }, 'TRIGGER_CHANGED'
+          print('V4_GATE_AND_CONTRACT_VALIDATED')
+          PY
+      - name: Submit exactly one GLM5.3 call with IGC repository secrets
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python3 -m scripts.arena_glm53_github_probe
+      - name: Save diagnostic result on success, rate-limit or invalid JSON
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nw2-glm53-v3-probe-once
+          path: artifacts/glm53-nw2-github-probe/
+          retention-days: 30
+          if-no-files-found: warn
+
+  igc-cloudflare-credentials-check:
+    # Read-only: no AI inference and no repository write.
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Checkout immutable PR head (no persisted credentials)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Gate nonbillable credential check on unique marker
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/IGC_CLOUDFLARE_CREDENTIAL_CHECK_V1.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify IGC Actions Secrets and read-only Workers AI catalog
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
+          from pathlib import Path
+
+          marker = json.loads(Path('data/diagnostics/IGC_CLOUDFLARE_CREDENTIAL_CHECK_V1.json').read_text())
+          assert marker == {
+              'schema': 'igc-cloudflare-credential-check/0.1',
+              'purpose': 'READ_ONLY_NO_MODEL_INFERENCE',
+              'run_ref': 'IGC-CF-CREDENTIALS-ONCE-2026-10-25',
+          }, 'INVALID_CREDENTIAL_CHECK_MARKER'
+          account = os.environ.get('CLOUDFLARE_ACCOUNT_ID', '').strip()
+          token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
+          print('IGC_ACCOUNT_ID_FORMAT=' + ('PASS' if re.fullmatch(r'[0-9a-fA-F]{32}', account) else 'FAIL'))
+          print('IGC_API_TOKEN_PRESENT=' + ('PASS' if bool(token) else 'FAIL'))
+          if not re.fullmatch(r'[0-9a-fA-F]{32}', account) or not token:
+              raise SystemExit('IGC_SECRETS_MISSING_OR_INVALID_NO_NETWORK')
+          model = '@cf/zai-org/glm-5.3-flash'
+          url = 'https://api.cloudflare.com/client/v4/accounts/' + account + '/ai/models/search?' + urlencode({'search': model})
+          req = Request(url, headers={'Authorization': 'Bearer ' + token, 'Accept':'application/json'}, method='GET')
+          try:
+              with urlopen(req, timeout=35) as resp:
+                  code = resp.status
+                  result = json.load(resp)
+          except HTTPError as exc:
+              raise SystemExit('WORKERS_AI_READ_AUTH_FAILED_HTTP_' + str(exc.code)) from None
+          except (URLError, OSError, ValueError):
+              raise SystemExit('WORKERS_AI_READ_CONNECTION_OR_JSON_ERROR') from None
+          if code != 200 or not isinstance(result, dict) or result.get('success') is not True:
+              raise SystemExit('WORKERS_AI_READ_API_NOT_SUCCESSFUL')
+          print('IGC_WORKERS_AI_AUTHENTICATED_READ=PASS')
+          print('NO_MODEL_INFERENCE=CONFIRMED')
+          PY
+
+  sd-system-ab-v1:
+    # Four paired prompts on two unseen construction views, no holdout.
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    concurrency:
+      group: igc-sd-system-ab-v1-once
+      cancel-in-progress: false
+    steps:
+      - name: Checkout immutable source revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Gate only NEW A/B marker added in HEAD commit
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/ARENA_SD_AB_V1_AUTHORIZE_ONCE.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+            echo 'SD_AB_V1_UNIQUE_MARKER_PRESENT'
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'SD_AB_NOT_AUTHORIZED_NO_PROVIDER_CALL'
+          fi
+      - name: Verify exact frozen prompt pair and scoring plan without inference
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python3 -m py_compile scripts/arena_sd_system_ab_v1.py
+          python3 -m unittest discover -s tests -p 'test_arena_sd_system_ab_v1.py' -v
+          python3 -m scripts.arena_sd_system_ab_v1 check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          marker=json.loads(Path('data/diagnostics/ARENA_SD_AB_V1_AUTHORIZE_ONCE.json').read_text())
+          assert marker == {
+              'schema':'igc-sd-prompt-ab-trigger/0.1',
+              'purpose':'COMPARE_SYSTEM_PROMPT_BASELINE_V2_ON_NEW_CASES_ONLY',
+              'authorization':'RUN_SDA_V1_4_CALLS',
+              'max_calls':4,
+              'retries':0,
+              'holdout_access':False,
+          }, 'INVALID_AB_TRIGGER'
+          print('SD_AB_V1_PREGATE_VERIFIED')
+          PY
+      - name: Execute four bounded Cloudflare calls with IGC Secrets
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IGC_SD_AB_AUTHORIZATION: RUN_SDA_V1_4_CALLS
+        run: |
+          python3 -m scripts.arena_sd_system_ab_v1 execute
+      - name: Preserve responses and partial provider errors
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arena-sd-system-ab-v1-raw
+          path: artifacts/arena-sd-system-ab-v1/
+          retention-days: 90
+          if-no-files-found: warn
+
+  sd-system-ab-preflight:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Offline paired-data integrity checks only (zero provider calls)
+        run: |
+          python3 -m py_compile scripts/arena_sd_system_ab_v1.py
+          python3 -m unittest discover -s tests -p 'test_arena_sd_system_ab_v1.py' -v
+          python3 -m scripts.arena_sd_system_ab_v1 check
+
+  sd-system-v21-factorial-preflight:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Checkout immutable PR head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Check 2x2 factorial fixtures without inference
+        run: |
+          python3 -m py_compile scripts/arena_sd_system_v21_factorial.py
+          python3 -m unittest discover -s tests -p test_arena_sd_system_v21_factorial.py -v
+          python3 -m scripts.arena_sd_system_v21_factorial check
+
+  sd-system-v21-factorial:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    concurrency:
+      group: igc-sd-system-v21-factorial-once
+      cancel-in-progress: false
+    steps:
+      - name: Checkout immutable PR head, no saved credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Unique marker must be newly ADDED in HEAD commit
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/ARENA_SD_V21_FACTORIAL_AUTHORIZE_ONCE.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+            echo 'SD21_FACTORIAL_MARKER_ADDED'
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'SD21_NOT_AUTHORIZED_NO_INFERENCE'
+          fi
+      - name: Validate frozen paired inputs and one-use authorization
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python3 -m unittest discover -s tests -p test_arena_sd_system_v21_factorial.py -v
+          python3 -m scripts.arena_sd_system_v21_factorial check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          marker=json.loads(Path('data/diagnostics/ARENA_SD_V21_FACTORIAL_AUTHORIZE_ONCE.json').read_text())
+          assert marker=={
+            'schema':'igc-sd-prompt-factorial-trigger/0.1',
+            'purpose':'COMPARE_V2_V21_WITH_AND_WITHOUT_STRUCTURE_ON_NEW_CASES',
+            'authorization':'RUN_SD21_FACTORIAL_8_CALLS',
+            'max_calls':8,'retries':0,'holdout_access':False,
+          }, 'INVALID_SD21_AUTHORIZATION_MARKER'
+          print('SD21_AUTHORIZATION_VERIFIED')
+          PY
+      - name: Execute at most eight real GLM5.3 calls (zero retries)
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IGC_SD21_AUTHORIZATION: RUN_SD21_FACTORIAL_8_CALLS
+        run: python3 -m scripts.arena_sd_system_v21_factorial execute
+      - name: Archive full/partial results on fail or success
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arena-sd-system-v21-factorial-raw
+          path: artifacts/arena-sd-system-v21-factorial/
+          retention-days: 90
+          if-no-files-found: warn

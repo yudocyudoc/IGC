@@ -1,0 +1,20 @@
+{
+  "schema": "igc-arena-public-catalog/0.1",
+  "synthetic": true,
+  "round_id": "ARENA-GLM53-NW2-20261024",
+  "source": "Two fixed serial queue alternatives, symmetrically disclosed; no truth or admissibility status",
+  "candidates": [
+    {
+      "candidate_id": "urn:igc:candidate:CS-01",
+      "stages": 1,
+      "structure": "single-stage serial queue",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    },
+    {
+      "candidate_id": "urn:igc:candidate:CS-02",
+      "stages": 2,
+      "structure": "two-stage serial queue",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    }
+  ]
+}

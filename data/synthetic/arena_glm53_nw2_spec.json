@@ -1,0 +1,68 @@
+{
+  "schema": "igc-arena-round/0.1",
+  "synthetic": true,
+  "investigation_id": "IGC-NW2-INDEPENDENT-PULSE",
+  "round_id": "ARENA-GLM53-NW2-20261024",
+  "question": "Given sparse noisy delivered cumulative output from a previous independent reset trial, which serial-queue structures remain plausible in the declared two-model catalogue? Explain uncertainties and propose a falsifying experiment. Do not assert generating truth from mechanism labels.",
+  "observable_id": "delivered",
+  "as_known_at": "2026-10-25T04:30:00Z",
+  "allowed_lanes": [
+    "B0",
+    "D",
+    "S",
+    "P"
+  ],
+  "target_times": [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "observability": {
+    "kind": "proxy",
+    "unit": "units",
+    "instrument": "Synthetic delivered cumulative output from a NEW independent reset trial at t=0; construction has relative times [-8,0], and separately logged within-trial calibration times [0,8]. No held-out values supplied."
+  },
+  "evaluation_metric": "RMSE",
+  "blindness_claim": "NOT_ESTABLISHED",
+  "max_retries": 0,
+  "budgets": {
+    "B0": {
+      "llm_calls": 0,
+      "tokens": 0,
+      "simulations": 0,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "D": {
+      "llm_calls": 0,
+      "tokens": 0,
+      "simulations": 4,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "S": {
+      "llm_calls": 1,
+      "tokens": 4000,
+      "simulations": 2,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "P": {
+      "llm_calls": 2,
+      "tokens": 4000,
+      "simulations": 0,
+      "human_minutes": 0,
+      "retries": 0
+    }
+  }
+}

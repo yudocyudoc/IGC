@@ -1,0 +1,60 @@
+name: Diagnostic GLM5.3 one-shot (GitHub Secrets, no holdout)
+
+on:
+  push:
+    branches: [experiment/arena-glm53-nw2-e2e]
+    paths:
+      - 'data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_NW2.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: glm53-nw2-provider-diagnostic-singleton
+  cancel-in-progress: false
+
+jobs:
+  glm53-config-probe:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/experiment/arena-glm53-nw2-e2e' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
+    steps:
+      - name: Checkout versioned NW2 config (never the holdout)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Verify frozen request and parse contracts without network
+        run: |
+          python3 -m py_compile scripts/arena_glm53_github_probe.py
+          python3 -m unittest discover -s tests -p 'test_arena_glm53_github_probe.py' -v
+      - name: Check explicit trigger (no reusable scheduled calls)
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          marker = json.loads(Path('data/diagnostics/GLM53_GITHUB_PROBE_TRIGGER_NW2.json').read_text())
+          assert marker == {
+              'schema': 'igc-glm53-github-one-shot-trigger/0.1',
+              'run_ref': 'NW2-SYSTEM-USER-T0-4096-ONE-SHOT',
+              'purpose': 'CONFIGURATION_ONLY_NOT_ARENA_S_SUBMISSION',
+              'provider_calls_max': 1,
+              'provider_retries': 0,
+              'holdout_accessed': False,
+          }, 'INVALID_TRIGGER'
+          print('TRIGGER_VALID_NO_HOLDOUT')
+          PY
+      - name: Single actual GLM5.3 request (fail closed on 429/invalid JSON)
+        run: |
+          python3 -m scripts.arena_glm53_github_probe
+      - name: Retain diagnostic outcome even on rate limit or invalid JSON
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nw2-glm53-github-probe-once
+          path: artifacts/glm53-nw2-github-probe/
+          retention-days: 30
+          if-no-files-found: warn
