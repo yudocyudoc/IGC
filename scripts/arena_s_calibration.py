@@ -215,8 +215,10 @@ def main() -> None:
     exclusive_json(out/"calibrated-composed.json",fitted)
     exclusive_json(out/"evaluation-plan.json",plan)
     exclusive_json(out/"calibration-receipt.json",report)
-    (out/"GeneratedMolecularCandidates.mo").write_text(
-        render_modelica(plan,fitted),encoding="utf-8")
+    # Bytes, not newline-translated text: Windows must match the solver digest.
+    from .arena_s_pilot_physics import composer_bytes
+    (out/"GeneratedMolecularCandidates.mo").write_bytes(
+        composer_bytes(plan,fitted))
     print(json.dumps({"status":report["status"],
                       "report_hash":report["report_hash"]}))
 
