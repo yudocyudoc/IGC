@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
       - 'scripts/arena_sp_handoff.py'
       - 'tests/test_arena_custodian.py'
@@ -30,6 +31,7 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
       - 'scripts/arena_sp_handoff.py'
       - 'tests/test_arena_custodian.py'
@@ -216,6 +218,62 @@ jobs:
             --schema-dir artifacts/fm-b-molecular-composer/linkml \
             --output-dir artifacts/fm-b-molecular-composer | tee artifacts/fm-b-molecular-composer/composer.log
 
+      - name: Seal independent MOCK S/P selection before ANY Modelica execution
+        run: |
+          mkdir -p artifacts/arena-sp-independent/views
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import prepare,canonical
+          from scripts.arena_sp_producers import build_requests,parse_responses
+          from scripts.arena_sp_handoff import seal_handoff,p_submission,simulation_selection
+          root=Path('data/synthetic')
+          out=Path('artifacts/arena-sp-independent')
+          load=lambda p:json.loads(p.read_text(encoding='utf-8'))
+          spec=load(root/'arena_v0_b3_round_spec.json')
+          primary=load(root/'arena_v0_b3_primary.json')
+          catalog=load(root/'arena_sp_public_catalog.json')
+          supports=load(root/'fm_b3_dynamic_supports.json')
+          composed=load(Path('artifacts/fm-b-molecular-composer/composed_candidates.json'))
+          views=prepare(spec,primary)
+          package=build_requests(views,spec,catalog)
+          raw={'S_GLM':{'success':True,'result':{'response':json.dumps({
+                  'selected_candidate_ids':['urn:igc:candidate:CS-02'],
+                  'rationale':'SYNTHETIC MOCK selection for solver contract only',
+                  'falsifier':'Pulse discriminates calibrated alternatives',
+                  'unknowns':['No real provider inference'],
+                  'next_test':'Perturb arrival rate'})}},
+               'P_CLEF':{'success':True,'result':{'answers':{'assessment':{
+                  'choice':'INSUFFICIENT','probabilities':{
+                  'INSUFFICIENT':.85,'CS_01':.05,'CS_02':.05,'EQUIVALENT':.05}}}}},
+               'P_CLAIRIC':{'success':True,'result':{'answers':{
+                  'observed_increment':{'value':2.0}}}}}
+          draft=parse_responses(package,raw,catalog)
+          seal=seal_handoff(draft,package,catalog,views,composed,supports,
+                            origin='MOCK_SYNTHETIC')
+          selection=simulation_selection(seal,composed,supports)
+          assert [x['candidate_id'] for x in selection['selected']]==[
+                'urn:igc:candidate:CS-02']
+          assert p_submission(seal,views['P'])['status']=='ABSTAINED'
+          for lane in ('S','P'):
+              (out/'views'/(lane+'.json')).write_bytes(canonical(views[lane])+b'\n')
+          for name,doc in [('package.json',package),('draft.json',draft),
+                           ('handoff.json',seal),('p-mock-abstention.json',
+                           p_submission(seal,views['P']))]:
+              (out/name).write_bytes(canonical(doc)+b'\n')
+          print('S_P_MOCK_HANDOFF_LOCKED_BEFORE_SOLVER',seal['handoff_hash'])
+          PY
+          python -m scripts.arena_sp_simulation prepare \
+            --handoff artifacts/arena-sp-independent/handoff.json \
+            --draft artifacts/arena-sp-independent/draft.json \
+            --package artifacts/arena-sp-independent/package.json \
+            --catalog data/synthetic/arena_sp_public_catalog.json \
+            --views-dir artifacts/arena-sp-independent/views \
+            --composed artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --supports data/synthetic/fm_b3_dynamic_supports.json \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --out artifacts/arena-sp-independent/simulation
+
       - name: Apply ATMS and prepare simulations for admissible explanations only
         run: |
           /tmp/igc-linkml-locked/bin/python scripts/fm_b3_dynamic_evaluation.py prepare \
@@ -263,6 +321,30 @@ jobs:
           test -s artifacts/fm-b3-molecular-dynamics/b3-cs_02_res.csv
           test ! -e artifacts/fm-b3-molecular-dynamics/b3-cs_03_res.csv
 
+      - name: Independently simulate only frozen ATMS-admitted MOCK S candidate
+        run: |
+          set -o pipefail
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-molecular-composer:/composer:ro" \
+            -v "$PWD/artifacts/arena-sp-independent/simulation:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-s-selected.mos 2>&1 | tee artifacts/arena-sp-independent/simulation/s-openmodelica.log
+          test -s artifacts/arena-sp-independent/simulation/b3-cs_02_res.csv
+          test ! -e artifacts/arena-sp-independent/simulation/b3-cs_01_res.csv
+          test ! -e artifacts/arena-sp-independent/simulation/b3-cs_03_res.csv
+          python -m scripts.arena_sp_simulation verify \
+            --handoff artifacts/arena-sp-independent/handoff.json \
+            --composed artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --out artifacts/arena-sp-independent/simulation \
+            --log artifacts/arena-sp-independent/simulation/s-openmodelica.log
+
       - name: Assess stock-flow coherence and compare retained explanations
         run: |
           /tmp/igc-linkml-locked/bin/python scripts/fm_b3_dynamic_evaluation.py verify \
@@ -305,6 +387,15 @@ jobs:
         with:
           name: arena-v0-b3-construction-lock
           path: artifacts/arena-v0-b3-lock/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Archive S/P sealed MOCK pre-simulation and independent Modelica outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-sp-independent-atms-modelica-mock
+          path: artifacts/arena-sp-independent/
           retention-days: 14
           if-no-files-found: warn
 
