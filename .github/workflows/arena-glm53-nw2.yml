@@ -285,3 +285,18 @@ jobs:
           path: artifacts/arena-sd-system-ab-v1/
           retention-days: 90
           if-no-files-found: warn
+
+  sd-system-ab-preflight:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Offline paired-data integrity checks only (zero provider calls)
+        run: |
+          python3 -m py_compile scripts/arena_sd_system_ab_v1.py
+          python3 -m unittest discover -s tests -p 'test_arena_sd_system_ab_v1.py' -v
+          python3 -m scripts.arena_sd_system_ab_v1 check
