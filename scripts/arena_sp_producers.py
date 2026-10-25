@@ -171,14 +171,14 @@ def _unwrap(raw: dict) -> dict:
     return result
 
 
-def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) -> dict:
+
+def parse_s_response(package: dict, response: dict, catalog: dict) -> dict:
+    """Parse S independently of P, preserving the original strict candidate checks."""
     _validate_schedule(package)
-    if set(responses) != set(ORDER):
-        raise ProviderError("three independent provider responses required")
-    ids = {x["candidate_id"] for x in catalog["candidates"]}
     if hash_obj(catalog) != package["manifest"]["catalog_hash"]:
-        raise ProviderError("catalog mismatch on decoding")
-    s, clef, clairic = (_unwrap(responses[k]) for k in ORDER)
+        raise ProviderError("catalog mismatch on S decoding")
+    ids = {x["candidate_id"] for x in catalog["candidates"]}
+    s = _unwrap(response)
     raw = s.get("response")
     if not isinstance(raw, str):
         choices = s.get("choices")
@@ -211,6 +211,21 @@ def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) ->
     if not isinstance(s_out.get("unknowns"), list) or not all(
        isinstance(x, str) for x in s_out["unknowns"]):
         raise ProviderError("S unknowns must be strings")
+
+    return {"selected_candidate_ids": chosen,
+            "rationale": s_out["rationale"], "falsifier": s_out["falsifier"],
+            "unknowns": s_out["unknowns"], "next_test": s_out["next_test"]}
+
+
+def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) -> dict:
+    _validate_schedule(package)
+    if set(responses) != set(ORDER):
+        raise ProviderError("three independent provider responses required")
+    ids = {x["candidate_id"] for x in catalog["candidates"]}
+    if hash_obj(catalog) != package["manifest"]["catalog_hash"]:
+        raise ProviderError("catalog mismatch on decoding")
+    s_out = parse_s_response(package, responses["S_GLM"], catalog)
+    clef, clairic = (_unwrap(responses[k]) for k in ORDER[1:])
     a = clef.get("answers", {}).get("assessment", {})
     if not isinstance(a, dict) or a.get("choice") not in CHOICES:
         raise ProviderError("Clef missing approved assessment choice")
