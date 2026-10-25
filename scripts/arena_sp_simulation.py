@@ -39,7 +39,7 @@ def prepare_s(seal: dict, draft: dict, package: dict,
                            calibration=calibration)
         if seal["origin"] == S_REAL_ORIGIN:
             check(isinstance(calibration,dict)
-                  and calibration.get("report_hash") == seal["calibration_receipt_hash"]
+                  and hash_obj(calibration) == seal["calibration_receipt_hash"]
                   and calibration.get("calibrated_composed_hash") == hash_obj(composed)
                   and calibration.get("evaluation_plan_hash") == hash_obj(plan)
                   and calibration.get("construction_hash") == views["S"]["primary_hash"],
