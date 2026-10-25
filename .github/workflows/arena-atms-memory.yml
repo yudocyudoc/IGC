@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'data/synthetic/arena_sp_public_catalog.json'
+      - 'tests/test_arena_sp_producers.py'
+      - 'scripts/arena_sp_producers.py'
       - 'docs/ARENA_V0_ROUND_LOCK.md'
       - 'data/synthetic/arena_v0_b3_primary.json'
       - 'data/synthetic/arena_v0_b3_round_spec.json'
@@ -23,6 +26,9 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'data/synthetic/arena_sp_public_catalog.json'
+      - 'tests/test_arena_sp_producers.py'
+      - 'scripts/arena_sp_producers.py'
       - 'docs/ARENA_V0_ROUND_LOCK.md'
       - 'data/synthetic/arena_v0_b3_primary.json'
       - 'data/synthetic/arena_v0_b3_round_spec.json'
@@ -100,6 +106,43 @@ jobs:
           path: artifacts/arena-memory-m0/
           retention-days: 14
           if-no-files-found: warn
+
+  arena-sp-provider-contracts:
+    needs: memory-atms-contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test independent S/P requests and provider response validation without inference
+        run: python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+      - name: Create S/P inference requests for review (zero provider calls)
+        run: |
+          mkdir -p artifacts/arena-sp-preparation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import prepare,canonical
+          from scripts.arena_sp_producers import build_requests
+          root=Path('data/synthetic')
+          spec=json.loads((root/'arena_v0_b3_round_spec.json').read_text())
+          primary=json.loads((root/'arena_v0_b3_primary.json').read_text())
+          catalog=json.loads((root/'arena_sp_public_catalog.json').read_text())
+          views=prepare(spec,primary)
+          package=build_requests(views,spec,catalog)
+          assert package['manifest']['calls_made']==0
+          Path('artifacts/arena-sp-preparation/requests.json').write_bytes(canonical(package)+b'\n')
+          print('SP_PREPARED_NO_INFERENCE',package['manifest']['requests_hash'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-sp-producer-preparation-no-inference
+          path: artifacts/arena-sp-preparation/
+          retention-days: 14
 
   molecular-shared-atms-regression:
     needs: memory-atms-contracts
