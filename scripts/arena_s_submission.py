@@ -31,7 +31,7 @@ def s_submission(*, seal: dict, package: dict, catalog: dict, views: dict,
                  base_composed: dict, base_plan: dict, evaluation_plan: dict,
                  fit_plan: dict, manifest: dict, verified_report: dict,
                  simulation_dir: Path, log: Path,
-                 human_minutes: float) -> dict:
+                 human_minutes: float, composer_file: Path | None = None) -> dict:
     """Requires actual S capture, fully replayable fit, solver log and CSV."""
     require(seal.get("origin") == ORIGIN, "S_ONLY_REAL_CAPTURE_REQUIRED")
     require(type(human_minutes) in (int,float) and math.isfinite(human_minutes)
@@ -43,7 +43,7 @@ def s_submission(*, seal: dict, package: dict, catalog: dict, views: dict,
     require(manifest.get("calibration_receipt_hash") == hash_obj(calibration),
             "S_SIMULATION_FIT_RECEIPT_MISMATCH")
     actual = verify_s(manifest, seal, composed, evaluation_plan,
-                      simulation_dir, log)
+                      simulation_dir, log, composer_file=composer_file)
     require(actual == verified_report
             and actual["status"] == "S_CAPTURED_MODEL_EXECUTION_PASS_SYNTHETIC",
             "S_SIMULATION_REPORT_UNVERIFIED")
@@ -133,7 +133,7 @@ def main():
                  "archive","calibration","base-composed","base-plan",
                  "evaluation-plan","fit-plan","out"):
         p.add_argument("--"+name,required=True)
-    for name in ("manifest","report","simulation-dir","log"):
+    for name in ("manifest","report","simulation-dir","log","composer-file"):
         p.add_argument("--"+name)
     p.add_argument("--human-minutes",required=True,type=float)
     args=p.parse_args()
@@ -155,12 +155,13 @@ def main():
     if not common["seal"]["S"]["selection"]:
         result=s_abstention(**common)
     else:
-        require(all((args.manifest,args.report,args.simulation_dir,args.log)),
+        require(all((args.manifest,args.report,args.simulation_dir,args.log,args.composer_file)),
                 "S_SIMULATION_EVIDENCE_REQUIRED")
         result=s_submission(
             **common,manifest=read(args.manifest),
             verified_report=read(args.report),
-            simulation_dir=Path(args.simulation_dir),log=Path(args.log))
+            simulation_dir=Path(args.simulation_dir),log=Path(args.log),
+            composer_file=Path(args.composer_file))
     exclusive_json(Path(args.out),result)
     print(json.dumps({"status":"S_LANE_LOCKABLE_NOT_EVALUATED",
                       "proposals":len(result["proposals"]),
