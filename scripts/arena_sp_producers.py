@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
@@ -240,7 +241,8 @@ def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) ->
 
 
 def run_authorized(package: dict, *, authorization: str, env: dict | None = None,
-                   sender: Callable = urlopen) -> dict[str, dict]:
+                   sender: Callable = urlopen, on_result: Callable | None = None,
+                   clock: Callable = time.perf_counter) -> dict[str, dict]:
     """Bounded provider calls, no retries, never invoked by CI."""
     _validate_schedule(package)
     if authorization != AUTHORIZATION:
@@ -259,6 +261,7 @@ def run_authorized(package: dict, *, authorization: str, env: dict | None = None
         request = Request(url, data=canonical(req["body"]), method="POST",
                           headers={"Authorization": "Bearer " + token,
                                    "Content-Type": "application/json", "Accept": "application/json"})
+        started = clock()
         try:
             with sender(request, timeout=150) as response:
                 raw_results[req["model_name"]] = json.load(response)
@@ -266,6 +269,10 @@ def run_authorized(package: dict, *, authorization: str, env: dict | None = None
             # Fail closed, no retries, no unauthorized fallbacks.
             raise ProviderError("PROVIDER_CALL_FAILED_NO_RETRY:" + type(exc).__name__) from None
         _unwrap(raw_results[req["model_name"]])
+        if on_result is not None:
+            # Callback errors abort the campaign; no subsequent call is made.
+            on_result(req["model_name"], raw_results[req["model_name"]],
+                      max(0.0, (clock() - started) * 1000.0))
     return raw_results
 
 
