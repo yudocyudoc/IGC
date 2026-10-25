@@ -47,6 +47,9 @@ def s_submission(*, seal: dict, package: dict, catalog: dict, views: dict,
     require(actual == verified_report
             and actual["status"] == "S_CAPTURED_MODEL_EXECUTION_PASS_SYNTHETIC",
             "S_SIMULATION_REPORT_UNVERIFIED")
+    require(all(calibration["fits"][cid]["absolute_adequacy"]=="ADEQUATE"
+                for cid in seal["S"]["selection"]),
+            "S_SELECTED_STRUCTURE_FAILS_ABSOLUTE_ADEQUACY")
     tokens = receipt["usage"]["token_total"]
     require(type(tokens) is int and tokens >= 0,
             "S_TOKEN_USAGE_NOT_OBSERVABLE")
@@ -66,11 +69,21 @@ def s_submission(*, seal: dict, package: dict, catalog: dict, views: dict,
             require(bool(found) and all(math.isfinite(x) for x in found),
                     "S_TARGET_TIME_NOT_IN_SIMULATION")
             predicted.append(found[-1])
+        fit=calibration["fits"][candidate_id]
+        envelopes=[]
+        for target in view["target_times"]:
+            matches=[x for x in fit["prediction_envelope_rk4"]
+                     if abs(x["time"]-float(target))<1e-9]
+            require(len(matches)==1,"S_UNCERTAINTY_TARGET_MISSING")
+            envelopes.append({"minimum":matches[0]["minimum"],
+                              "maximum":matches[0]["maximum"]})
         predictions.append({
             "candidate_id":candidate_id, "kind":"modelica_calibrated_s_candidate",
             "mechanism":"S selected from predeclared structural catalogue; not new topology",
             "predictions":predicted,"trace_sha256":trace["csv_sha256"],
-            "fit_receipt_hash":calibration["report_hash"]})
+            "fit_receipt_hash":calibration["report_hash"],
+            "absolute_adequacy":fit["absolute_adequacy"],
+            "uncertainty_envelope_rk4_not_solver_verified":envelopes})
     status="SUBMITTED" if predictions else "ABSTAINED"
     submission={
         "schema":SCHEMA,"round_id":view["round_id"],"lane":"S",
@@ -98,8 +111,10 @@ def s_abstention(*, seal: dict, package: dict, catalog: dict, views: dict,
                  base_plan: dict, evaluation_plan: dict, fit_plan: dict,
                  human_minutes: float) -> dict:
     """A valid abstention does not need Modelica or a fake prediction."""
-    require(seal.get("origin") == ORIGIN and not seal["S"]["selection"],
-            "S_ABSTENTION_ONLY_AFTER_REAL_NO_STRUCTURE")
+    require(seal.get("origin")==ORIGIN and (
+        not seal["S"]["selection"] or
+        calibration.get("absolute_adequacy_status")=="NO_ADEQUATE_STRUCTURE"),
+        "S_ABSTENTION_REQUIRES_EMPTY_SELECTION_OR_NO_ABSOLUTE_FIT")
     require(type(human_minutes) in (int,float) and math.isfinite(human_minutes)
             and human_minutes >= 0, "S_HUMAN_MINUTES_MUST_BE_MEASURED")
     verify_s_only_seal(seal,package,catalog,views,composed,supports,
@@ -115,14 +130,19 @@ def s_abstention(*, seal: dict, package: dict, catalog: dict, views: dict,
         "view_hash":view["view_hash"],"status":"ABSTAINED",
         "producer":"glm-s-only-calibrated-modelica-v0",
         "proposals":[],
-        "unknowns":seal["S"]["unknowns"]+
-            ["No structural candidate selected; insufficient evidence or uncertainty"],
+        "unknowns":seal["S"]["unknowns"]+[
+            "No adequate catalogue structure under construction-only absolute gate"
+            if calibration.get("absolute_adequacy_status")=="NO_ADEQUATE_STRUCTURE"
+            else "No structural candidate selected; insufficient evidence or uncertainty"],
         "objections":[],
         "cost":{"llm_calls":1,"tokens":tokens,"simulations":0,
                 "human_minutes":human_minutes,"retries":0},
         "cost_note":"Provider usage observed; abstention before model execution",
         "capture_receipt_hash":receipt["receipt_hash"],
-        "calibration_receipt_hash":hash_obj(calibration)}
+        "calibration_receipt_hash":hash_obj(calibration),
+        "abstention_origin":("ABSOLUTE_CONSTRUCTION_GATE" if
+            calibration.get("absolute_adequacy_status")=="NO_ADEQUATE_STRUCTURE"
+            else "S_SELECTION_EMPTY")}
     validate_submission(submission,view)
     return submission
 
@@ -152,7 +172,8 @@ def main():
         base_plan=read(args.base_plan),
         evaluation_plan=read(args.evaluation_plan),fit_plan=read(args.fit_plan),
         human_minutes=args.human_minutes)
-    if not common["seal"]["S"]["selection"]:
+    if (not common["seal"]["S"]["selection"] or
+        common["calibration"]["absolute_adequacy_status"]=="NO_ADEQUATE_STRUCTURE"):
         result=s_abstention(**common)
     else:
         require(all((args.manifest,args.report,args.simulation_dir,args.log,args.composer_file)),
