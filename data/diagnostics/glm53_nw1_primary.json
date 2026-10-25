@@ -1,0 +1,36 @@
+{
+  "investigation_id": "IGC-NEW-WORLD-NW1",
+  "observable_id": "delivered",
+  "unit": "units",
+  "times": [
+    -8,
+    -6,
+    -4,
+    -2,
+    0
+  ],
+  "calibration_times": [
+    0,
+    2,
+    4,
+    6,
+    8
+  ],
+  "independent_trial_reset_at_t0": true,
+  "values": [
+    0,
+    0.412223,
+    1.290737,
+    1.557226,
+    1.60856
+  ],
+  "sources": [
+    "SYNTHETIC_NEW_WORLD_NW1_OPERATOR_GENERATED_CONSTRUCTION_ONLY"
+  ],
+  "input_profile": {
+    "kind": "pulse",
+    "amplitude": 0.8,
+    "duration": 2,
+    "initial_stocks_zero": true
+  }
+}
