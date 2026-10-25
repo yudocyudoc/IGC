@@ -1,0 +1,36 @@
+{
+  "investigation_id": "IGC-NW2-INDEPENDENT-PULSE",
+  "observable_id": "delivered",
+  "unit": "units",
+  "times": [
+    -8,
+    -6,
+    -4,
+    -2,
+    0
+  ],
+  "calibration_times": [
+    0,
+    2,
+    4,
+    6,
+    8
+  ],
+  "independent_trial_reset_at_t0": true,
+  "values": [
+    0.061033,
+    0.46697,
+    1.131079,
+    1.442287,
+    1.489232
+  ],
+  "sources": [
+    "IGC_NW2_SYNTHETIC_CONSTRUCTION_SAMPLE_PRIOR_TO_RESERVE"
+  ],
+  "input_profile": {
+    "kind": "pulse",
+    "amplitude": 0.8,
+    "duration": 2,
+    "initial_stocks_zero": true
+  }
+}
