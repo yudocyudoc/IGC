@@ -19,6 +19,11 @@ from .fm_b3_dynamic_evaluation import (
 )
 
 
+from .arena_s_pilot_physics import (
+    composer_bytes, composer_hash, COMPOSER, verify_loaded_composer,
+    verify_physical_input,
+)
+
 PACKAGE = "ArenaSProposalDynamics"
 
 
@@ -63,6 +68,8 @@ def prepare_s(seal: dict, draft: dict, package: dict,
     mos = render_openmodelica_script(plan,composed,selection,
                                     package_name=PACKAGE)
     (out/(PACKAGE+".mo")).write_text(modelica,encoding="utf-8")
+    # Prepare the exact source which must be mounted at /composer for solver.
+    (out/COMPOSER).write_bytes(composer_bytes(plan,composed))
     (out/"run-s-selected.mos").write_text(mos,encoding="utf-8")
     manifest = {
         "schema":"igc-arena-s-simulation/0.1",
@@ -80,6 +87,7 @@ def prepare_s(seal: dict, draft: dict, package: dict,
         "simulated_ids":[x["candidate_id"] for x in selection["selected"]],
         "atms_rejected_ids":[x["candidate_id"] for x in selection["rejected"]],
         "modelica_sha256":file_digest(out/(PACKAGE+".mo")),
+        "loaded_composer_sha256":composer_hash(plan,composed),
         "mos_sha256":file_digest(out/"run-s-selected.mos"),
     }
     exclusive_json(out/"s-execution-plan.json",manifest)
@@ -87,7 +95,8 @@ def prepare_s(seal: dict, draft: dict, package: dict,
 
 
 def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
-             out: Path, log: Path) -> dict:
+             out: Path, log: Path,
+             *, composer_file: Path | None = None) -> dict:
     origin = seal.get("origin")
     check(origin in ("MOCK_SYNTHETIC", S_REAL_ORIGIN, S_TEST_ORIGIN)
           and manifest.get("S_provider_origin") == origin,
@@ -103,6 +112,12 @@ def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
     check(file_digest(out/(PACKAGE+".mo")) == manifest["modelica_sha256"]
           and file_digest(out/"run-s-selected.mos") == manifest["mos_sha256"],
           "S modelica or solver instructions tampered")
+    if origin in (S_REAL_ORIGIN, S_TEST_ORIGIN):
+        check(manifest.get("loaded_composer_sha256") ==
+              composer_hash(plan,composed),"S_COMPOSER_HASH_MISMATCH")
+        verify_loaded_composer(composer_file,
+                               manifest["loaded_composer_sha256"],
+                               plan, composed)
     expected=manifest["simulated_ids"]
     check(expected==seal["S"]["selection"] and expected,
           "S simulation changed selected candidates")
@@ -131,7 +146,10 @@ def verify_s(manifest: dict, seal: dict, composed: dict, plan: dict,
         metrics=assess_trace(result,stage_ids,
                              float(plan["simulation"]["start_time"]),
                              float(plan["simulation"]["stop_time"]),
-                             int(plan["simulation"]["intervals"]))
+                             int(plan["simulation"]["intervals"]),
+                             allow_extra_event_samples=(origin in (S_REAL_ORIGIN,S_TEST_ORIGIN)))
+        if origin in (S_REAL_ORIGIN,S_TEST_ORIGIN):
+            verify_physical_input(result,plan)
         metrics["csv_sha256"]=file_digest(result)
         traces[candidate_id]=metrics
     report={
@@ -170,6 +188,8 @@ def main():
     for key in ("draft","package","catalog","views-dir","supports"):
         prep.add_argument("--"+key,required=True,type=Path)
     verify.add_argument("--log",required=True,type=Path)
+    verify.add_argument("--composer-file",type=Path,
+                        help="actual /composer/GeneratedMolecularCandidates.mo loaded by solver")
     prep.add_argument("--s-archive",type=Path,
                       help="S-only captured provider response, draft and receipt")
     prep.add_argument("--calibration",type=Path,
@@ -191,7 +211,8 @@ def main():
                          calibration=read(args.calibration) if args.calibration else None)
     else:
         report=verify_s(read(args.out/"s-execution-plan.json"),seal,
-                        composed,plan,args.out,args.log)
+                        composed,plan,args.out,args.log,
+                        composer_file=args.composer_file)
         exclusive_json(args.out/"s-verification.json",report)
     print(json.dumps({"status":report["status"],
                       "simulated_ids":report.get("simulated_ids",[]),
