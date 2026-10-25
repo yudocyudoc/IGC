@@ -9,6 +9,7 @@ import unittest
 from scripts.arena_sp_capture import (usage_of, build_receipt, check_receipt,
                                       run_capture)
 from scripts.arena_sp_producers import AUTHORIZATION,ProviderError,ORDER
+from scripts.arena_sp_verify_capture import verify_archive
 from test_arena_sp_producers import bundle,raw_results,MockResponse
 from scripts.arena_sp_producers import build_requests
 
@@ -60,6 +61,24 @@ class ProviderCaptureTests(unittest.TestCase):
         check_receipt(receipt,self.package,self.results)
         with self.assertRaisesRegex(ProviderError,"MOCK_IS_NOT_LIVE"):
             check_receipt(receipt,self.package,self.results,require_live=True)
+
+    def test_offline_archive_replays_all_hashed_journal_entries(self):
+        observed=[]
+        receipt=self.run_campaign_test(observed)
+        result=verify_archive(self.package,self.catalog,self.directory)
+        self.assertEqual(result["status"],
+                         "ARCHIVE_CONSISTENT_NOT_INDEPENDENTLY_ATTESTED")
+        self.assertEqual(result["receipt_hash"],receipt["receipt_hash"])
+        self.assertFalse(result["external_attestation"])
+
+    def test_offline_verifier_rejects_changed_call_journal(self):
+        self.run_campaign_test([])
+        first=self.directory/"call-1.json"
+        data=json.loads(first.read_text(encoding="utf-8"))
+        data["response"]["result"]["response"]="replaced"
+        first.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ProviderError,"CALL_JOURNAL_TAMPERED"):
+            verify_archive(self.package,self.catalog,self.directory)
 
     def test_concurrent_or_accidental_replay_of_directory_is_rejected(self):
         seen=[]
