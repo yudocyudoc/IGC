@@ -12,6 +12,8 @@ on:
       - 'tests/test_arena_s_calibration.py'
       - 'data/synthetic/arena_s_pilot_round_spec.json'
       - 'data/synthetic/arena_s_pilot_catalog.json'
+      - 'data/synthetic/arena_s_pilot_supports.json'
+      - 'data/synthetic/arena_s_pilot_fit_config.json'
       - '.github/workflows/arena-s-real-pilot.yml'
   workflow_dispatch:
 
