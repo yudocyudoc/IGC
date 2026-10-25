@@ -57,6 +57,15 @@ class CalibrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ProviderError,"FIT_PLAN_MUST_EXCLUDE_GENERATOR_TRUTH"):
             calibrate(self.composed,self.plan,self.fit,self.primary)
 
+    def test_neutral_atms_supports_keep_both_structures(self):
+        from scripts.fm_b2_atms_candidate_reasoning import apply_supports
+        supports=read("data/synthetic/arena_s_pilot_supports.json")
+        selection=apply_supports(self.composed,supports)
+        self.assertEqual(
+            {item["candidate_id"] for item in selection["selected"]},
+            {"urn:igc:candidate:CS-01","urn:igc:candidate:CS-02"})
+        self.assertEqual(selection["rejected"],[])
+
     def test_wrong_construction_grid_is_rejected(self):
         self.primary["times"][-1] += 0.25
         with self.assertRaisesRegex(ProviderError,"CALIBRATION_TIME_GRID_MISMATCH"):
