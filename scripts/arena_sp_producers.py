@@ -186,8 +186,16 @@ def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) ->
             raw = choices[0].get("message", {}).get("content")
     if not isinstance(raw, str):
         raise ProviderError("S response missing textual proposal")
+    # Some real GLM responses wrap a valid JSON object in a markdown fence.
+    # Remove only an entire enclosing fence; schema/IDs remain strictly checked.
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        import re
+        match = re.fullmatch(r"```(?:json)?\\s*([\\s\\S]*?)\\s*```", cleaned, flags=re.I)
+        if match:
+            cleaned = match.group(1).strip()
     try:
-        s_out = json.loads(raw)
+        s_out = json.loads(cleaned)
     except (TypeError, ValueError) as exc:
         raise ProviderError("S response is not JSON") from exc
     if not isinstance(s_out, dict):
