@@ -47,6 +47,27 @@ Las predicciones del comparador y de S solo podrán compararse después de verif
 - **No invocar CI con credenciales**. Las pruebas usan respuestas falsas, no consumen modelos.
 - **No fusionar** hasta confirmar tests, solver y revisión adversativa. No interpretar una petición HTTP capturada como atestación independiente.
 
+
+## Correcciones de la revisión Astra (PR #17, segunda iteración)
+
+Los dos defectos P1 están abordados de forma localizada y sometidos a tests adversativos:
+
+- `arena_s_pilot_physics.py` exige el `GeneratedMolecularCandidates.mo` efectivamente montado en `/composer` al verificar S o D, con igualdad exacta respecto de `render_modelica(evaluation_plan,calibrated_composed)`. El verificador de S requiere `--composer-file /composer/GeneratedMolecularCandidates.mo` (o ruta equivalente dentro del runner real) y la entrega final S vuelve a comprobarlo; D también requiere `--composer-file`. El archivo preparado queda en los artefactos de preparación para montar la misma copia. Un hash de archivo sin controlar qué monta el runner NO constituye atestación independiente.
+- `verify_physical_input` coteja **cada** muestra de `acceptedTotal` con el pulso declarado (una sola excitación rectangular, offset=0, estados iniciales a cero, amplitud positiva, periodo posterior al horizonte). Tol. absoluta 0.005 unidades para esta fixture. Una traza de ceros con balances perfectos debe rechazarse. Si cambia el perfil, cambiar explícitamente el contrato; no aceptar un driver desconocido de forma silenciosa.
+- S real y D utilizan `assess_trace(...,allow_extra_event_samples=True)` (comprobación de rejilla, monotonía y balances intacta). La ruta vieja MOCK conserva su contrato anterior.
+- `tests/test_arena_s_pilot_physics.py` verifica rechazo del pulso ausente y del compositor diferente, y admisión de filas de eventos adicionales. Estos tests son sintéticos.
+
+### Decisiones científicas antes de una reserva
+
+- Los tiempos puntuados de la **nueva prueba** son `[0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16]`. La construcción se representa con reloj global anterior al reinicio `[-8,-6,-4,-2,0]` y adicionalmente `calibration_times=[0,2,4,6,8]`. La conversión queda comprobada con `independent_trial_reset_at_t0=True`. No mezclar ambos relojes ni reinterpretar antiguos artefactos del piloto.
+- `absolute_adequacy_rule` fija antes de nueva evidencia: RMSE máxima 3σ y coherencia de entrada/acumulación con tolerancia de 3σ sobre cada observación. Estos límites son **reglas operativas diagnósticas**, no un nivel alfa estadístico ni una prueba universal de especificación. El calibrador reporta `AT_LEAST_ONE_ADEQUATE` o `NO_ADEQUATE_STRUCTURE`; nunca etiqueta "verdad".
+- Para cada estructura, se preserva la envolvente del conjunto de parámetros compatibles con construcción `prediction_envelope_rk4`. Las entregas S/D acompañan sus predicciones puntuales OpenModelica con esta envolvente etiquetada **RK4 no validado por solver**; no confundirla con un intervalo predictivo estadístico ni adjudicar mecanismos solo por su error puntual. Una selección S con ajuste absolutamente inadecuado no pasa a entrega S; una abstención impuesta por el gate se distingue de una abstención voluntaria de S.
+- La integración de CI ejecuta un **generador público y no ciego**, dos modelos calibrados, pulso OpenModelica y comparación numérica RK4 por rejilla, exigiendo máximo error absoluto <=0.03 unidades. Su verde probará compatibilidad numérica para esa fixture, no descubrimiento, identificación general ni evaluación empírica.
+- B0 permanece como control técnico secundario: persistencia/OLS de la construcción anterior no son un pronóstico causal ajustado al reinicio. Para comparar científicamente S y D es el enumerador sobre el mismo conjunto de modelos, parámetros, perturbaciones y presupuesto.
+- `next_test` de S sigue siendo texto, la perturbación sigue fijada antes de S y **no** hay prueba de elección autónoma del experimento. No se ha probado todavía un mundo externo ni una reserva realmente aislada. La etiqueta de `NO_ADEQUATE_STRUCTURE` es observable aun en un control mal especificado, pero no garantiza detectar cualquier generador externo.
+
+No fusionar hasta ver el CI del último commit y nueva revisión adversativa de Astra. 
+
 ## Encargo de revisión para GPT-6-Astra (Extra High)
 
 Actúa como revisor adversativo independiente de PR #17 contra el informe de brechas del 24 de octubre. Revisa exclusivamente el diff y los contratos necesarios de #16, sin modificar el código.
