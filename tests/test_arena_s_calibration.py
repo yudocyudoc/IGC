@@ -34,7 +34,10 @@ class CalibrationTests(unittest.TestCase):
                 cal["input_duration"],cal["stop_time"],
                 cal["observation_interval"],
                 self.fit["numerics"]["integration_step"]),
-            "sources":["construction-only-test-fixture"]}
+            "sources":["construction-only-test-fixture"],
+            "input_profile":{"kind":"pulse","amplitude":cal["input_amplitude"],
+                             "duration":cal["input_duration"],
+                             "initial_stocks_zero":True}}
             
     def test_two_independent_parameter_fits_and_pulse(self):
         result,plan,receipt=calibrate(
