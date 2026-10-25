@@ -68,6 +68,17 @@ Los dos defectos P1 están abordados de forma localizada y sometidos a tests adv
 
 No fusionar hasta ver el CI del último commit y nueva revisión adversativa de Astra. 
 
+## Cierre localizado de revisión Astra R2 (HEAD 7fb5a7b)
+
+- **G3 mixto:** `arena_s_submission.s_g3_disposition` compara **solo las selecciones selladas de S** con la adecuación absoluta obtenida de construcción. No sustituye propuestas por opciones no seleccionadas. Se preserva `original_selected_candidate_ids`, el subconjunto conservado y el descarte con motivo, RMSE, umbral y comprobación física. Una entrega mixta es `SUBMITTED` con predicciones únicamente de los supervivientes; `cost.simulations` refleja todos los candidatos realmente ejecutados según el informe de solver verificado (no solo el número de propuestas entregadas).
+- **Selección S totalmente inadecuada:** produce `ABSTAINED` con origen `S_SELECTED_NO_ADEQUATE_STRUCTURE` aunque haya una alternativa adecuada **no elegida por S**. Se conserva esa selección errónea para medir falsos descartes/errores del productor. Si todo el catálogo es inadecuado, se mantiene `ABSOLUTE_CONSTRUCTION_GATE`; si S no eligió nada, `S_SELECTION_EMPTY`. Una abstención antes de simular cuesta cero simulaciones; si hay evidencia completa de simulaciones previas, se verifican y se cuentan. No se permite reportar evidencia parcial de solver como ejecución validada.
+- **Windows CRLF:** `arena_s_calibration` y `arena_s_pilot_ci` escriben `GeneratedMolecularCandidates.mo` mediante `composer_bytes` y `write_bytes`. Se mantiene la igualdad **estricta de bytes**; no se cambian tolerancias ni se normaliza silenciosamente una fuente diferente.
+- **Regresión:** `tests/test_arena_s_g3.py` comprueba selección mixta, selección exclusivamente inadecuada, negativa de abstención injustificada y conteo de simulaciones ya ejecutadas. `tests/test_arena_s_modelica_bytes.py` prueba ambos productores de Modelica, comparación canónica y rechazo explícito de una transformación simulada a CRLF. Son pruebas de contrato: las pruebas del solver/modelos y de entrada física siguen en CI por separado.
+
+**Regla de lectura prepiloto:** contabilizar separadamente (a) propuestas originales de S, (b) candidatos eliminados por G3, (c) supervivientes con predicción y (d) abstención —voluntaria de S o causada por ausencia de candidato adecuado entre sus propias selecciones—. Una simulación efectuada de una alternativa después rechazada se incluye en costo. Una selección equivocada de S es resultado experimental, no error de transporte. La puntuación reservada sigue siendo RMSE puntual: no convertir envolventes RK4 en intervalos probabilísticos ni atribuir ventaja a ATMS sin ablación.
+
+El PR permanece en Draft. **La siguiente acción es ejecutar el piloto acotado**, no una fase adicional de protocolos; ningún resultado sintético de regresión equivale a una inferencia S real o a ceguera externa.
+
 ## Encargo de revisión para GPT-6-Astra (Extra High)
 
 Actúa como revisor adversativo independiente de PR #17 contra el informe de brechas del 24 de octubre. Revisa exclusivamente el diff y los contratos necesarios de #16, sin modificar el código.
