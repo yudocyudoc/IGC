@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_capture.py'
+      - 'scripts/arena_sp_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
       - 'scripts/arena_sp_handoff.py'
@@ -31,6 +33,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_capture.py'
+      - 'scripts/arena_sp_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
       - 'scripts/arena_sp_handoff.py'
@@ -133,6 +137,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
           python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
+          python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
       - name: Create S/P inference requests for review (zero provider calls)
         run: |
           mkdir -p artifacts/arena-sp-preparation
