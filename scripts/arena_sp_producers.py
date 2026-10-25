@@ -247,7 +247,7 @@ def parse_responses(package: dict, responses: dict[str, dict], catalog: dict) ->
     output = {"schema": SCHEMA, "round_id": package["manifest"]["round_id"],
               "status": "PROVIDER_DRAFTS_NOT_LANE_SUBMISSIONS",
               "S": {"lane": "S", "status": "CANDIDATES_PROPOSED_NOT_SIMULATED",
-                    "selected_candidate_ids": chosen, "rationale": s_out["rationale"],
+                    "selected_candidate_ids": s_out["selected_candidate_ids"], "rationale": s_out["rationale"],
                     "falsifier": s_out["falsifier"], "unknowns": s_out["unknowns"],
                     "next_test": s_out["next_test"]},
               "P": {"lane": "P", "status": "JUDGEMENTS_NOT_TOPOLOGIES",
