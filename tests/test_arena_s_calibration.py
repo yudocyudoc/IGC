@@ -20,7 +20,7 @@ class CalibrationTests(unittest.TestCase):
         self.plan["candidates"]=self.plan["candidates"][:2]
         self.catalog=read("data/synthetic/fm_a_structural_candidates.json")
         self.composed=compose(self.plan,self.catalog)
-        self.fit=read("data/synthetic/fm_b5_identifiability_plan.json")
+        self.fit=read("data/synthetic/arena_s_pilot_fit_config.json")
         self.fit["parameter_ranges"]["maxThroughput"]={
             "minimum":1.6,"maximum":1.8,"step":0.2}
         self.fit["parameter_ranges"]["responseTime"]={
@@ -51,6 +51,11 @@ class CalibrationTests(unittest.TestCase):
         self.assertNotEqual(hash_obj(result),hash_obj(self.composed))
         verify_calibration(receipt,self.composed,result,self.plan,plan,
                            self.fit,self.primary)
+
+    def test_fit_plan_rejects_hidden_generator_truth(self):
+        self.fit["synthetic_data_generation"]["truth_structure"]="CS-02"
+        with self.assertRaisesRegex(ProviderError,"FIT_PLAN_MUST_EXCLUDE_GENERATOR_TRUTH"):
+            calibrate(self.composed,self.plan,self.fit,self.primary)
 
     def test_wrong_construction_grid_is_rejected(self):
         self.primary["times"][-1] += 0.25
