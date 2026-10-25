@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts.arena_round import prepare
+from scripts.arena_round import prepare,hash_obj
 from scripts.arena_s_calibration import calibrate
 from scripts.arena_s_pilot_enumeration import prepare_enumeration
 from scripts.arena_s_pilot_lock import build_lock
@@ -55,6 +55,59 @@ class PilotTests(unittest.TestCase):
             script=(out/"run-enumeration.mos").read_text()
             self.assertEqual(script.count("simulate("),2)
             self.assertEqual(manifest["status"],"ENUMERATION_PREPARED_NOT_EXECUTED")
+
+    def test_locally_fabricated_s_capture_prepares_real_origin_modelica(self):
+        # Deliberately forge the local receipt: tests the real-origin CODE PATH,
+        # not a provider invocation or independently attested provenance.
+        from scripts.arena_sp_producers import build_requests,parse_s_response
+        from scripts.arena_sp_capture import usage_of
+        from scripts.arena_s_real import seal_s_only
+        from scripts.arena_sp_simulation import prepare_s
+        calibrated,eval_plan,cal_receipt=calibrate(
+            self.composed,self.plan,self.fit,self.primary)
+        supports=read("data/synthetic/arena_s_pilot_supports.json")
+        catalog=read("data/synthetic/arena_s_pilot_catalog.json")
+        package=build_requests(self.views,self.spec,catalog)
+        response={"success":True,"result":{
+            "response":json.dumps({
+                "selected_candidate_ids":["urn:igc:candidate:CS-02"],
+                "rationale":"Two-stage model remains plausible",
+                "falsifier":"New pulse could reject proposed structure",
+                "unknowns":["Capacity uncertain"],
+                "next_test":"Predeclared pulse"}),
+            "usage":{"prompt_tokens":100,"completion_tokens":50}}}
+        draft=parse_s_response(package,response,catalog)
+        receipt={
+            "schema":"igc-arena-s-single-capture/0.1",
+            "run_ref":"test-only-locally-fabricated-not-attested",
+            "capture_method":"PYTHON_URLLIB","mock":False,
+            "requests_hash":package["manifest"]["requests_hash"],
+            "catalog_hash":hash_obj(catalog),
+            "view_hash":self.views["S"]["view_hash"],
+            "request_body_hash":package["requests"][0]["body_hash"],
+            "response_hash":hash_obj(response),
+            "parsed_s_hash":hash_obj(draft),
+            "calls_completed":1,"retries":0,"duration_ms":1.0,
+            "usage":usage_of(response),"independent_attestation":False,
+            "empirical_causality":"NOT_PROVEN"}
+        receipt["receipt_hash"]=hash_obj(receipt)
+        seal=seal_s_only(package,catalog,{"S":self.views["S"]},
+            calibrated,supports,response,draft,receipt,
+            calibration=cal_receipt)
+        self.assertFalse(seal["eligible_for_empirical_scoring"])
+        with TemporaryDirectory() as folder:
+            report=prepare_s(seal,draft,package,catalog,
+                {"S":self.views["S"]},calibrated,supports,eval_plan,
+                Path(folder)/"S",
+                s_capture={"response":response,"draft":draft,"receipt":receipt},
+                calibration=cal_receipt)
+            self.assertEqual(report["status"],
+                "S_SIMULATION_PREPARED_CAPTURED_NOT_SCORED")
+            modelica=(Path(folder)/"S"/"ArenaSProposalDynamics.mo").read_text()
+            self.assertIn("Evaluate_CS_02",modelica)
+            self.assertNotIn("Evaluate_CS_01",modelica)
+            self.assertEqual(report["simulated_ids"],
+                ["urn:igc:candidate:CS-02"])
 
     def test_b0_d_s_lock_with_p_skipped(self):
         v=self.views
