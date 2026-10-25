@@ -126,11 +126,15 @@ def verify_s_capture(package: dict, catalog: dict, response: dict,
     check(receipt.get("independent_attestation") is False
           and receipt.get("empirical_causality") == "NOT_PROVEN"
           and receipt.get("capture_method") in
-          ("PYTHON_URLLIB", "INJECTED_TEST_SENDER")
-          and receipt.get("mock") is (receipt["capture_method"] != "PYTHON_URLLIB"),
+          ("PYTHON_URLLIB", "INJECTED_TEST_SENDER", "CLOUDFLARE_CONNECTED_API")
+          and receipt.get("mock") is (receipt["capture_method"] == "INJECTED_TEST_SENDER")
+          and (receipt["capture_method"] != "CLOUDFLARE_CONNECTED_API"
+               or (receipt.get("duration_ms") is None
+                   and receipt.get("duration_status") == "NOT_OBSERVED")),
           "S_CAPTURE_CLAIMS_INVALID")
     if require_live:
-        check(receipt["capture_method"] == "PYTHON_URLLIB"
+        check(receipt["capture_method"] in
+              ("PYTHON_URLLIB", "CLOUDFLARE_CONNECTED_API")
               and receipt["mock"] is False, "MOCK_IS_NOT_REAL_S_PROVIDER")
     # Even PYTHON_URLLIB is not independently attested; the operator can
     # fabricate a local receipt. These checks prove consistency only.
