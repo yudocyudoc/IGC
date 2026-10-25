@@ -1,0 +1,8 @@
+{
+  "schema": "igc-sd-prompt-ab-trigger/0.1",
+  "purpose": "COMPARE_SYSTEM_PROMPT_BASELINE_V2_ON_NEW_CASES_ONLY",
+  "authorization": "RUN_SDA_V1_4_CALLS",
+  "max_calls": 4,
+  "retries": 0,
+  "holdout_access": false
+}
