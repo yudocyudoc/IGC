@@ -148,14 +148,32 @@ def prepare(spec: dict, primary: dict, retrieval: dict[str, dict] | None = None)
 def b0_submission(view: dict, spec: dict) -> dict:
     require(view["lane"] == "B0", "baseline only")
     observed = numbers(view["primary"]["values"])
-    predictions = [observed[-1]] * len(spec["target_times"])
+    times = numbers(view["primary"]["times"])
+    horizon = numbers(spec["target_times"])
+    persistence = [observed[-1]] * len(horizon)
+    # Unweighted OLS on construction observations only. No reserve, ATMS or
+    # solver access. At least two strictly increasing times are required.
+    require(len(times) >= 2, "linear baseline requires two observations")
+    mean_t = sum(times) / len(times)
+    mean_y = sum(observed) / len(observed)
+    denom = sum((t - mean_t) ** 2 for t in times)
+    require(denom > 0, "linear baseline requires distinct measurement times")
+    slope = sum((t - mean_t) * (y - mean_y)
+                for t, y in zip(times, observed)) / denom
+    linear = [mean_y + slope * (t - mean_t) for t in horizon]
+    require(all(isfinite(x) for x in linear), "linear baseline overflowed")
     return {"schema": SCHEMA, "round_id": spec["round_id"], "lane": "B0",
             "view_hash": view["view_hash"], "status": "SUBMITTED",
-            "producer": "persistence_baseline_v0",
-            "proposals": [{"candidate_id": "B0-PERSISTENCE", "kind": "baseline",
-                           "predictions": predictions,
-                           "mechanism": "last observation held constant"}],
-            "unknowns": ["No structural identification or exogenous drivers"],
+            "producer": "deterministic_persistence_and_ols_v1",
+            "proposals": [
+                {"candidate_id": "B0-PERSISTENCE", "kind": "baseline",
+                 "predictions": persistence,
+                 "mechanism": "last observation held constant"},
+                {"candidate_id": "B0-LINEAR-OLS", "kind": "baseline",
+                 "predictions": linear,
+                 "mechanism": "unweighted linear trend fitted to construction only"}
+            ],
+            "unknowns": ["Neither baseline discovers a causal structure or exogenous drivers"],
             "objections": [], "cost": {key: 0 for key in COST_UNITS}}
 
 
