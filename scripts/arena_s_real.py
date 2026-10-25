@@ -137,7 +137,8 @@ def verify_s_capture(package: dict, catalog: dict, response: dict,
 
 
 def seal_s_only(package: dict, catalog: dict, views: dict, composed: dict,
-                supports: dict, response: dict, draft: dict, receipt: dict) -> dict:
+                supports: dict, response: dict, draft: dict, receipt: dict,
+                calibration: dict | None = None) -> dict:
     """ATMS admit a single S proposal without waiting for P."""
     verify_s_capture(package, catalog, response, draft, receipt)
     check(views["S"].get("view_hash") == package["manifest"]["view_hashes"]["S"],
@@ -145,6 +146,14 @@ def seal_s_only(package: dict, catalog: dict, views: dict, composed: dict,
     check(set(x["candidate_id"] for x in catalog["candidates"]) ==
           set(x["id"] for x in composed["candidates"]),
           "S_CATALOG_COMPOSITION_MISMATCH")
+    if calibration is not None:
+        check(calibration.get("status") == "PARAMETERS_FITTED_CONSTRUCTION_ONLY"
+              and calibration.get("report_hash") == hash_obj({
+                  k:v for k,v in calibration.items() if k != "report_hash"})
+              and calibration.get("construction_hash") == views["S"]["primary_hash"]
+              and calibration.get("calibrated_composed_hash") == hash_obj(composed)
+              and calibration.get("holdout_accessed") is False,
+              "S_CALIBRATION_PROVENANCE_INVALID")
     selection = apply_supports(composed, supports)
     allowed = {item["candidate_id"]: item for item in selection["selected"]}
     rejected = {item["candidate_id"] for item in selection["rejected"]}
@@ -163,6 +172,7 @@ def seal_s_only(package: dict, catalog: dict, views: dict, composed: dict,
         "provider_response_hash": hash_obj(response),
         "provider_receipt_hash": receipt["receipt_hash"],
         "provider_draft_hash": hash_obj(draft),
+        "calibration_receipt_hash": (hash_obj(calibration) if calibration else None),
         "catalog_hash": hash_obj(catalog),
         "atms_support_plan_hash": hash_obj(supports),
         "composed_candidates_hash": hash_obj(composed),
@@ -185,12 +195,13 @@ def seal_s_only(package: dict, catalog: dict, views: dict, composed: dict,
 
 def verify_s_only_seal(seal: dict, package: dict, catalog: dict, views: dict,
                        composed: dict, supports: dict, response: dict,
-                       draft: dict, receipt: dict) -> None:
+                       draft: dict, receipt: dict,
+                       calibration: dict | None = None) -> None:
     check(seal.get("handoff_hash") == hash_obj({
         k: v for k, v in seal.items() if k != "handoff_hash"}),
         "S_HANDOFF_TAMPERED")
     check(seal == seal_s_only(package, catalog, views, composed, supports,
-                             response, draft, receipt),
+                             response, draft, receipt, calibration=calibration),
           "S_HANDOFF_DEPENDENCY_MISMATCH")
 
 
@@ -203,6 +214,8 @@ def main() -> None:
     seal = actions.add_parser("seal")
     for name in ("package", "catalog", "views-dir", "composed",
                  "supports", "archive", "out"):
+        seal.add_argument("--calibration", type=str)
+    for name in ():
         seal.add_argument("--" + name, required=True)
     args = p.parse_args()
     read = lambda path: json.loads(Path(path).read_text(encoding="utf-8"))
@@ -217,7 +230,8 @@ def main() -> None:
             {"S": read(Path(args.views_dir)/"S.json")},
             read(args.composed), read(args.supports),
             read(archive/"response.json"), read(archive/"s-draft.json"),
-            read(archive/"receipt.json"))
+            read(archive/"receipt.json"),
+            calibration=read(args.calibration) if args.calibration else None)
         exclusive_json(Path(args.out), out)
     print(json.dumps({"status": "S_ONLY_CAPTURED" if args.action == "capture"
                       else "S_ONLY_HANDOFF_LOCKED_NOT_EVALUATED",
