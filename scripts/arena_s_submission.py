@@ -85,8 +85,44 @@ def s_submission(*, seal: dict, package: dict, catalog: dict, views: dict,
                 "human_minutes":human_minutes,"retries":0},
         "cost_note":"Provider-reported tokens; operator-measured human minutes; no cash value inferred",
         "capture_receipt_hash":receipt["receipt_hash"],
-        "calibration_receipt_hash":calibration["report_hash"],
+        "calibration_receipt_hash":hash_obj(calibration),
         "modelica_report_hash":verified_report["report_hash"]}
+    validate_submission(submission,view)
+    return submission
+
+
+
+def s_abstention(*, seal: dict, package: dict, catalog: dict, views: dict,
+                 composed: dict, supports: dict, response: dict, draft: dict,
+                 receipt: dict, calibration: dict, base_composed: dict,
+                 base_plan: dict, evaluation_plan: dict, fit_plan: dict,
+                 human_minutes: float) -> dict:
+    """A valid abstention does not need Modelica or a fake prediction."""
+    require(seal.get("origin") == ORIGIN and not seal["S"]["selection"],
+            "S_ABSTENTION_ONLY_AFTER_REAL_NO_STRUCTURE")
+    require(type(human_minutes) in (int,float) and math.isfinite(human_minutes)
+            and human_minutes >= 0, "S_HUMAN_MINUTES_MUST_BE_MEASURED")
+    verify_s_only_seal(seal,package,catalog,views,composed,supports,
+                       response,draft,receipt,calibration=calibration)
+    verify_calibration(calibration,base_composed,composed,base_plan,
+                       evaluation_plan,fit_plan,views["S"]["primary"])
+    tokens=receipt["usage"]["token_total"]
+    require(type(tokens) is int and tokens >= 0,
+            "S_TOKEN_USAGE_NOT_OBSERVABLE")
+    view=views["S"]
+    submission={
+        "schema":SCHEMA,"round_id":view["round_id"],"lane":"S",
+        "view_hash":view["view_hash"],"status":"ABSTAINED",
+        "producer":"glm-s-only-calibrated-modelica-v0",
+        "proposals":[],
+        "unknowns":seal["S"]["unknowns"]+
+            ["No structural candidate selected; insufficient evidence or uncertainty"],
+        "objections":[],
+        "cost":{"llm_calls":1,"tokens":tokens,"simulations":0,
+                "human_minutes":human_minutes,"retries":0},
+        "cost_note":"Provider usage observed; abstention before model execution",
+        "capture_receipt_hash":receipt["receipt_hash"],
+        "calibration_receipt_hash":hash_obj(calibration)}
     validate_submission(submission,view)
     return submission
 
@@ -95,14 +131,15 @@ def main():
     p=argparse.ArgumentParser(description="Create S submission from verified captured real run")
     for name in ("seal","package","catalog","views-dir","composed","supports",
                  "archive","calibration","base-composed","base-plan",
-                 "evaluation-plan","fit-plan","manifest","report",
-                 "simulation-dir","log","out"):
+                 "evaluation-plan","fit-plan","out"):
         p.add_argument("--"+name,required=True)
+    for name in ("manifest","report","simulation-dir","log"):
+        p.add_argument("--"+name)
     p.add_argument("--human-minutes",required=True,type=float)
     args=p.parse_args()
     read=lambda name:json.loads(Path(name).read_text(encoding="utf-8"))
     archive=Path(args.archive)
-    result=s_submission(
+    common=dict(
         seal=read(args.seal),package=read(args.package),
         catalog=read(args.catalog),
         views={"S":read(Path(args.views_dir)/"S.json")},
@@ -114,11 +151,18 @@ def main():
         base_composed=read(args.base_composed),
         base_plan=read(args.base_plan),
         evaluation_plan=read(args.evaluation_plan),fit_plan=read(args.fit_plan),
-        manifest=read(args.manifest),verified_report=read(args.report),
-        simulation_dir=Path(args.simulation_dir),log=Path(args.log),
         human_minutes=args.human_minutes)
+    if not common["seal"]["S"]["selection"]:
+        result=s_abstention(**common)
+    else:
+        require(all((args.manifest,args.report,args.simulation_dir,args.log)),
+                "S_SIMULATION_EVIDENCE_REQUIRED")
+        result=s_submission(
+            **common,manifest=read(args.manifest),
+            verified_report=read(args.report),
+            simulation_dir=Path(args.simulation_dir),log=Path(args.log))
     exclusive_json(Path(args.out),result)
-    print(json.dumps({"status":"S_LANE_SUBMITTED_NOT_EVALUATED",
+    print(json.dumps({"status":"S_LANE_LOCKABLE_NOT_EVALUATED",
                       "proposals":len(result["proposals"]),
                       "hash":hash_obj(result)}))
 
