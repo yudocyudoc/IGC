@@ -1,0 +1,53 @@
+{
+  "schema": "igc-diagnostic-external-provider-output/0.1",
+  "case_id": "R4",
+  "request_source": "data/diagnostics/arena_s_diagnostic_v0_requests.json",
+  "source": "Cloudflare connector authenticated POST Workers AI; does not constitute arena_s_real capture receipt",
+  "attempts": 1,
+  "provider_result": {
+    "result": {
+      "id": "chatcmpl-83124a0d7a5d2703",
+      "object": "chat.completion",
+      "created": 1792904814,
+      "model": "@cf/zai-org/glm-4.7-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "```json\n{\n  \"selected_candidate_ids\": [\n    \"urn:igc:candidate:CS-01\",\n    \"urn:igc:candidate:CS-02\"\n  ],\n  \"rationale\": \"The provided data is a cumulative proxy for delivered output, which is the expected observable for a serial queue. The input is a pulse of duration 2, and the cumulative output shows a rise and a plateau. A single-stage serial queue (CS-01) is the simplest structure that can produce this behavior. A two-stage serial queue (CS-02) is also plausible, as it can produce a similar cumulative profile, potentially with a different shape or rate of rise. Both structures are consistent with the data and the observable definition. The data does not provide enough information to distinguish between them.\",\n  \"falsifier\": \"The data does not provide enough information to distinguish between the two candidates. The cumulative output profile is consistent with both a single-stage and a two-stage serial queue. The calibration times and values do not provide enough information to distinguish between the two candidates. The data does not provide enough information to distinguish between the two candidates.\",\n  \"unknowns\": [\n    \"The exact shape of the cumulative output profile for a two-stage serial queue.\",\n    \"The exact shape of the cumulative output profile for a single-stage serial queue.\",\n    \"The exact shape of the cumulative output profile for a two-stage serial queue with different parameters.\",\n    \"The exact shape of the cumulative output profile for a single-stage serial queue with different parameters.\"\n  ],\n  \"next_test\": \"Run a simulation of both CS-01 and CS-02 with the provided input profile and compare the cumulative output profiles. If the profiles are identical, the data is insufficient to distinguish between the two candidates. If the profiles are different, the data may be sufficient to distinguish between the two candidates.\"\n}\n```",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "tool_calls": [],
+            "reasoning": null,
+            "reasoning_content": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 154827,
+          "token_ids": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": null,
+      "usage": {
+        "prompt_tokens": 409,
+        "completion_tokens": 384,
+        "total_tokens": 793,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 16.2271
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "kv_transfer_params": null
+    },
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "status": 200
+  }
+}
