@@ -66,7 +66,7 @@ def prepare_enumeration(base_composed:dict, composed:dict,
 
 def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
                            base_plan:dict,plan:dict,fit_plan:dict,
-                           supports:dict,fit_receipt:dict,view:dict,
+                           supports:dict,fit_receipt:dict,primary:dict,view:dict,
                            out:Path,log:Path,human_minutes:float)->dict:
     require(manifest.get("record_hash")==hash_obj({
         k:v for k,v in manifest.items() if k!="record_hash"}),
@@ -82,8 +82,10 @@ def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
     require(file_digest(out/(PACKAGE+".mo"))==manifest["modelica_hash"]
             and file_digest(out/"run-enumeration.mos")==manifest["mos_hash"],
             "ENUMERATION_SOLVER_INPUT_TAMPERED")
+    require(hash_obj(primary)==hash_obj(view["primary"]),
+            "ENUMERATION_CONSTRUCTION_VIEW_MISMATCH")
     verify_calibration(fit_receipt,base_composed,composed,base_plan,
-                       plan,fit_plan,view["primary"])
+                       plan,fit_plan,primary)
     selection=apply_supports(composed,supports)
     require(hash_obj(selection)==manifest["selection_hash"]
             and not selection["rejected"],"ENUMERATION_SUPPORTS_CHANGED")
@@ -155,7 +157,8 @@ def main():
     if args.action=="prepare":
         report=prepare_enumeration(**common,primary=read(args.primary),out=args.out)
     else:
-        report=enumeration_submission(**common,view=read(args.view),
+        report=enumeration_submission(**common,primary=read(args.primary),
+            view=read(args.view),
             manifest=read(args.out/"enumeration-plan.json"),out=args.out,
             log=args.log,human_minutes=args.human_minutes)
         exclusive_json(args.out/"enumeration-submission.json",report)
