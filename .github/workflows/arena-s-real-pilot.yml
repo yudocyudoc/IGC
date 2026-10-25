@@ -16,6 +16,8 @@ on:
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_s_real.py'
       - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
       - 'data/synthetic/arena_s_pilot_round_spec.json'
       - 'data/synthetic/arena_s_pilot_catalog.json'
       - 'data/synthetic/arena_s_pilot_supports.json'
@@ -47,6 +49,8 @@ jobs:
           /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
           /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_real.py' -v
           /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_calibration.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_g3.py' -v
+          /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_modelica_bytes.py' -v
                     /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot.py' -v
                     /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot_physics.py' -v
           /tmp/igc-s-pilot/bin/python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
