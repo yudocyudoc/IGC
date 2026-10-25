@@ -214,9 +214,8 @@ def main() -> None:
     seal = actions.add_parser("seal")
     for name in ("package", "catalog", "views-dir", "composed",
                  "supports", "archive", "out"):
-        seal.add_argument("--calibration", type=str)
-    for name in ():
         seal.add_argument("--" + name, required=True)
+    seal.add_argument("--calibration", type=str)
     args = p.parse_args()
     read = lambda path: json.loads(Path(path).read_text(encoding="utf-8"))
     if args.action == "capture":
