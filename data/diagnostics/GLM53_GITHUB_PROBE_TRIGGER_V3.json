@@ -1,0 +1,8 @@
+{
+  "schema": "igc-glm53-github-one-shot-trigger/0.1",
+  "run_ref": "NW2-SYSTEM-USER-T0-4096-ONE-SHOT-V3",
+  "purpose": "CONFIGURATION_ONLY_NOT_ARENA_S_SUBMISSION",
+  "provider_calls_max": 1,
+  "provider_retries": 0,
+  "holdout_accessed": false
+}
