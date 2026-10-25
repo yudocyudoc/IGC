@@ -95,7 +95,7 @@ class HandoffTests(unittest.TestCase):
                          origin="MOCK_SYNTHETIC",provenance={"mock":False})
 
     def test_real_origin_requires_provider_receipt(self):
-        with self.assertRaisesRegex(ProviderError,"independently sealed response receipt"):
+        with self.assertRaisesRegex(ProviderError,"original raw responses and audited receipt"):
             seal_handoff(self.draft,self.pkg,self.catalog,self.views,
                          self.composed,self.supports,
                          origin="CLOUDFLARE_VERIFIED_RUN")
