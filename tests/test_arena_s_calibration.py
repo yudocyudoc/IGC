@@ -66,6 +66,29 @@ class CalibrationTests(unittest.TestCase):
             {"urn:igc:candidate:CS-01","urn:igc:candidate:CS-02"})
         self.assertEqual(selection["rejected"],[])
 
+    def test_out_of_catalog_physical_impossibility_fails_absolute_gate(self):
+        self.primary["values"]=[0,10,20,30,40]
+        calibrated,plan,report=calibrate(self.composed,self.plan,
+                                         self.fit,self.primary)
+        self.assertEqual(report["absolute_adequacy_status"],
+                         "NO_ADEQUATE_STRUCTURE")
+        self.assertTrue(all(fit["absolute_adequacy"]=="INADEQUATE"
+                            for fit in report["fits"].values()))
+        self.assertFalse(any(fit["physical_input_bound_passed"]
+                             for fit in report["fits"].values()))
+
+    def test_construction_compatible_grid_produces_uncertainty_envelope(self):
+        calibrated,plan,report=calibrate(self.composed,self.plan,
+                                         self.fit,self.primary)
+        for fit in report["fits"].values():
+            envelope=fit["prediction_envelope_rk4"]
+            self.assertEqual(len(envelope),33)
+            self.assertEqual(envelope[0]["time"],0)
+            self.assertEqual(envelope[-1]["time"],16)
+            self.assertTrue(all(p["minimum"]<=p["maximum"] for p in envelope))
+        self.assertEqual(report["uncertainty_status"],
+                         "SUPPORTED_GRID_ENVELOPES_RK4_PARITY_PENDING")
+
     def test_wrong_construction_grid_is_rejected(self):
         self.primary["times"][-1] += 0.25
         with self.assertRaisesRegex(ProviderError,"CALIBRATION_TIME_GRID_MISMATCH"):
