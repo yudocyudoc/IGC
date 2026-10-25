@@ -1,0 +1,17 @@
+{
+  "schema": "igc-glm53-nw1-request/0.1",
+  "round_id": "ARENA-GLM53-NW1-20261024",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "body": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters. State is: {\"catalog\": [{\"candidate_id\": \"urn:igc:candidate:CS-01\", \"stages\": 1, \"structure\": \"single-stage serial queue\", \"verification_status\": \"CATALOGUE_DECLARATION_ONLY\"}, {\"candidate_id\": \"urn:igc:candidate:CS-02\", \"stages\": 2, \"structure\": \"two-stage serial queue\", \"verification_status\": \"CATALOGUE_DECLARATION_ONLY\"}], \"construction\": {\"calibration_times\": [0, 2, 4, 6, 8], \"independent_trial_reset_at_t0\": true, \"input_profile\": {\"amplitude\": 0.8, \"duration\": 2, \"initial_stocks_zero\": true, \"kind\": \"pulse\"}, \"investigation_id\": \"IGC-NEW-WORLD-NW1\", \"observable_id\": \"delivered\", \"sources\": [\"SYNTHETIC_NEW_WORLD_NW1_OPERATOR_GENERATED_CONSTRUCTION_ONLY\"], \"times\": [-8, -6, -4, -2, 0], \"unit\": \"units\", \"values\": [0, 0.412223, 1.290737, 1.557226, 1.60856]}, \"observability\": {\"instrument\": \"Synthetic delivered cumulative output from a NEW independent reset trial at t=0; construction has relative times [-8,0], and separately logged within-trial calibration times [0,8]. No held-out values supplied.\", \"kind\": \"proxy\", \"unit\": \"units\"}, \"question\": \"Given sparse noisy delivered-output construction from a previous reset trial, which predeclared one- and two-stage bounded serial queue models remain structurally plausible, what evidence could falsify each, and can the construction support their distinction? The next trial is a fresh reset with an independent pulse.\", \"retrieval\": null, \"target_times\": [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16], \"task\": \"propose_and_criticize_causal_structures\"}"
+      }
+    ],
+    "temperature": 0.1,
+    "max_completion_tokens": 1400,
+    "reasoning_effort": "low"
+  },
+  "provenance": "Prepared from pinned construction/spec/catalog, no reserve."
+}
