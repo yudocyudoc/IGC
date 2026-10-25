@@ -112,6 +112,41 @@ class SingleProviderTests(unittest.TestCase):
             with self.assertRaisesRegex(ProviderError,"S_RECEIPT_TAMPERED"):
                 verify_s_capture(self.package,self.catalog,response,draft,tampered)
 
+    def test_real_claim_cannot_simulate_without_calibration(self):
+        # This locally fabricated receipt illustrates why capture is NOT
+        # independent attestation. The downstream fit gate must still close.
+        from scripts.arena_sp_simulation import prepare_s
+        with TemporaryDirectory() as tmp:
+            response,draft,receipt=self.captured(Path(tmp)/"run")
+            receipt["capture_method"]="PYTHON_URLLIB"
+            receipt["mock"]=False
+            receipt["receipt_hash"]=hash_obj({
+                k:v for k,v in receipt.items() if k!="receipt_hash"})
+            seal=seal_s_only(self.package,self.catalog,
+                {"S":self.views["S"]},self.composed,self.supports,
+                response,draft,receipt)
+            plan=read("data/synthetic/fm_b3_dynamic_plan.json")
+            with self.assertRaisesRegex(ProviderError,
+                                       "S_REAL_REQUIRES_CALIBRATED_PARAMETERS"):
+                prepare_s(seal,draft,self.package,self.catalog,
+                    {"S":self.views["S"]},self.composed,self.supports,
+                    plan,Path(tmp)/"solver",
+                    s_capture={"response":response,"draft":draft,"receipt":receipt})
+
+    def test_empty_selection_remains_explicit_abstention(self):
+        with TemporaryDirectory() as tmp:
+            response=copy.deepcopy(self.response)
+            answer=json.loads(response["result"]["response"])
+            answer["selected_candidate_ids"]=[]
+            response["result"]["response"]=json.dumps(answer)
+            self.response=response
+            raw,draft,receipt=self.captured(Path(tmp)/"run")
+            seal=seal_s_only(self.package,self.catalog,
+                {"S":self.views["S"]},self.composed,self.supports,
+                raw,draft,receipt)
+            self.assertEqual(seal["S"]["state"],"ABSTAINED_NO_STRUCTURE")
+            self.assertEqual(seal["S"]["selection"],[])
+
     def test_zero_calls_without_authorization_and_no_replay(self):
         called=[]
         def sender(request,timeout):
