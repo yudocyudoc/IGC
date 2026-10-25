@@ -1,0 +1,169 @@
+{
+  "schema": "igc-sd-prompt-ab/0.1",
+  "state": "FROZEN_BEFORE_INFERENCE",
+  "purpose": "PAIRED_PROMPT_DIAGNOSTIC_NO_FORMAL_ARENA_S_SUBMISSION",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "temperature": 0,
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "authorized_provider_calls": 4,
+  "retries": 0,
+  "baseline_system": "You are SD-AI proposing candidate system-dynamics mechanisms, not asserting truth. Use ONLY the candidate_id values in the public catalog. Never write Modelica or numeric trajectories. Return exactly one JSON object: {\"selected_candidate_ids\":[\"...\"],\"rationale\":\"...\",\"falsifier\":\"...\",\"unknowns\":[\"...\"],\"next_test\":\"...\"}. You may select zero candidates if information is insufficient. Do not access reserve, other lane submissions, or hidden world parameters.",
+  "v2_system_path": "data/prompts/arena_sd_system_v2.txt",
+  "truth_commitment": "sha256:bcf4ae82747ef5656b7279a16ca56063952f670272cc15d62b95c9d382e46943",
+  "evidence_boundary": "TWO NEW SYNTHETIC CONSTRUCTION FIXTURES; no model holdout supplied; operator-generated, independent external blindness NOT established",
+  "question": "Given sparse and noisy cumulative delivered output from a completed independent reset pulse trial, which candidate queue mechanisms remain plausible? Explain what the observations do and do not distinguish, and propose the most discriminating feasible next experiment without claiming to know the generating truth.",
+  "public_catalog": [
+    {
+      "candidate_id": "urn:igc:candidate:CS-01",
+      "stages": 1,
+      "structure": "single-stage serial queue",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    },
+    {
+      "candidate_id": "urn:igc:candidate:CS-02",
+      "stages": 2,
+      "structure": "two-stage serial queue",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    }
+  ],
+  "observability": {
+    "kind": "proxy",
+    "unit": "units",
+    "instrument": "Synthetic delivered cumulative output (units) from one completed pulse trial; reported construction times are relative [-8,0], and calibration_times are time since that trial's reset; no held-out values are provided. A proposed new experiment must reset the stocks again."
+  },
+  "target_times": [
+    0.25,
+    0.5,
+    1,
+    1.5,
+    2,
+    3,
+    4,
+    6,
+    8,
+    12
+  ],
+  "cases": [
+    {
+      "case_id": "WA",
+      "construction": {
+        "investigation_id": "IGC-SDA-WA-20261025",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -7,
+          -6,
+          -4,
+          0
+        ],
+        "calibration_times": [
+          0,
+          1,
+          2,
+          4,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          0.367387,
+          0.912382,
+          1.263904,
+          1.259423
+        ],
+        "sources": [
+          "IGC_SDA_V1_CONSTRUCTION_ONLY"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 0.85,
+          "duration": 1.5,
+          "initial_stocks_zero": true
+        }
+      }
+    },
+    {
+      "case_id": "WB",
+      "construction": {
+        "investigation_id": "IGC-SDA-WB-20261025",
+        "observable_id": "delivered",
+        "unit": "units",
+        "times": [
+          -8,
+          -7.5,
+          -7,
+          -6,
+          -5,
+          -3,
+          0
+        ],
+        "calibration_times": [
+          0,
+          0.5,
+          1,
+          2,
+          3,
+          5,
+          8
+        ],
+        "independent_trial_reset_at_t0": true,
+        "values": [
+          0,
+          0.037466,
+          0.219484,
+          0.908888,
+          1.682783,
+          2.284047,
+          2.39946
+        ],
+        "sources": [
+          "IGC_SDA_V1_CONSTRUCTION_ONLY"
+        ],
+        "input_profile": {
+          "kind": "pulse",
+          "amplitude": 1.2,
+          "duration": 2,
+          "initial_stocks_zero": true
+        }
+      }
+    }
+  ],
+  "order": [
+    {
+      "case_id": "WA",
+      "variant": "v2"
+    },
+    {
+      "case_id": "WA",
+      "variant": "baseline"
+    },
+    {
+      "case_id": "WB",
+      "variant": "baseline"
+    },
+    {
+      "case_id": "WB",
+      "variant": "v2"
+    }
+  ],
+  "preregistered_comparison": {
+    "primary": "Compare within-case adequacy of system-dynamics reasoning and proposed falsification on same visible evidence; verdict CONDITIONAL",
+    "checks": [
+      "exact JSON and catalog compliance",
+      "correct cumulative-stock/flow semantics and experiment/reset timing",
+      "plausible rival parameter/structure analysis without inventing feedback or generator truth",
+      "test specifies manipulable input/observation schedule AND qualitatively divergent expectations",
+      "no claim that parsimony alone falsifies complex rival"
+    ],
+    "summary_rule": "Keep both if adequate; any pruning requires reasoned physical contradiction. Do not reward pruning itself. Compare narrative merits explicitly; no objective causal discovery inference from two cases.",
+    "exclude": [
+      "model truth or parameters in user prompt",
+      "open any reserve",
+      "train/tune v2 on response",
+      "conflate prose fluency with predictive advantage",
+      "claim independent-blind or prediction scoring"
+    ]
+  }
+}
