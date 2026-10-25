@@ -61,3 +61,31 @@ python -m scripts.arena_round evaluate \
 ## Siguiente gate
 
 Implementar custodia independiente, preregistro previo a una nueva generación de mundo, producción autónoma y sellada de S/P, B0 fuerte y contabilidad íntegra; solo entonces abrir reserva y medir valor científico. Continuar también con recuperación FTS/semántica y conformidad completa ATMS sin reabrir su adopción.
+
+
+## S/P — integración de productores y límite del corte (2026-10-24)
+
+scripts/arena_sp_producers.py incorpora, sin duplicar un backend cloud, los mismos formatos de petición de la campaña EPI-04/EPI-06 de short:
+- S_GLM -> @cf/zai-org/glm-4.7-flash: propuesta/critica de candidatos causales dentro de un catálogo público independiente, **sin** generar código Modelica ni cifras de predicción.
+- P_CLEF -> @cf/cloudflare/clef: juicio tipado sobre suficiencia/identificabilidad de evidencia de construcción.
+- P_CLAIRIC -> @cf/cloudflare/clairic: comprobación aritmética de un incremento visible; se contrasta con el oráculo determinista. No sustituye calibración ni identifica parámetros.
+
+Los tres cuerpos se construyen a partir de las vistas de su vía y del catálogo previo; no contienen entregas, diagnósticos ni predicciones de D. S y P no reciben resultados mutuos. El paquete guarda hashes de cada petición, cuenta fija MAX3 y manifiesto PREPARED_NO_INFERENCE. Se comprueba identidad de casos, permisos declarados, origen del catálogo, integridad de solicitudes, respuestas tipadas y candidatos inventados. Si el proveedor propone estructura no admitida, no se convierte en una simulación ni en juicio causal.
+
+La CLI permite preparar sin credenciales:
+
+~~~bash
+python -m scripts.arena_sp_producers prepare \
+  --spec data/synthetic/arena_v0_b3_round_spec.json \
+  --views-dir /ruta/vistas-generadas \
+  --catalog data/synthetic/arena_sp_public_catalog.json \
+  --out /ruta/sp-requests.json
+~~~
+
+La llamada real es una operación separada y requiere **autorización específica** RUN_ARENA_SP_MAX3 y credenciales existentes CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN. No se ejecuta en CI y no se ha hecho inferencia durante este corte. No copiar credenciales al repositorio, logs ni conversación. No se ha añadido una nueva conexión de doble autenticación, ni se ha tocado el Worker.
+
+Las respuestas se interpretan como PROVIDER_DRAFTS_NOT_LANE_SUBMISSIONS: **para S falta traducir/validar su selección en un modelo admisible y ejecutar predicciones**, y para P faltan formalizar los juicios como LaneSubmission con presupuesto medido. No puede falsificarse una ronda S/P completada con outputs mock. La cifra de tres llamadas representa solo el techo técnico; el costo real en tokens/tiempo deberá contabilizarse con trazas del proveedor.
+
+Fuente interna de compatibilidad: short/experiment/epi-04-triangulation (prepare.py, run_cloudflare.py, evaluate.py) y short/experiment/epi-06-atomic-questions. La conexión de la Arena utiliza los mismos endpoints, pero sus prompts y validadores son experimentales propios.
+
+El workflow Arena publica arena-sp-producer-preparation-no-inference; son solicitudes de una fixture pública sintética, **sin** respuestas de IA ni gold.
