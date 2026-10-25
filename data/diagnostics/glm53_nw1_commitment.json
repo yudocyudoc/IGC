@@ -1,0 +1,17 @@
+{
+  "protocol": "IGC-GLM53-ONE-NEW-WORLD-V1",
+  "round_id": "ARENA-GLM53-NW1-20261024",
+  "generator_commitment": "sha256:5c9baec2beb43724d3a8552527d847066be2a18efdf2758e58d940419988acee",
+  "hash_algorithm": "SHA256 of Python json.dumps(secret, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')",
+  "visibility": "Generator truth and nonce stored outside repository until after pre-evaluation lock",
+  "real_model": "@cf/zai-org/glm-5.3-flash",
+  "provider_invocations_max": 1,
+  "provider_retries": 0,
+  "model_payload": {
+    "temperature": 0.1,
+    "max_completion_tokens": 1400,
+    "reasoning_effort": "low"
+  },
+  "evaluation_status": "NO_RESERVED_DATA_SEEN_BY_MODEL",
+  "limitation": "Operator chose generator and can access secret: no external custodian or independent blindness"
+}
