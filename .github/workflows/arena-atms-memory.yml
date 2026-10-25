@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_handoff.py'
+      - 'scripts/arena_sp_handoff.py'
       - 'tests/test_arena_custodian.py'
       - 'scripts/arena_custodian.py'
       - 'data/synthetic/arena_sp_public_catalog.json'
@@ -28,6 +30,8 @@ on:
     paths:
       - 'scripts/arena_atms.py'
       - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_handoff.py'
+      - 'scripts/arena_sp_handoff.py'
       - 'tests/test_arena_custodian.py'
       - 'scripts/arena_custodian.py'
       - 'data/synthetic/arena_sp_public_catalog.json'
@@ -124,7 +128,9 @@ jobs:
         with:
           python-version: '3.13'
       - name: Test independent S/P requests and provider response validation without inference
-        run: python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+          python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
       - name: Create S/P inference requests for review (zero provider calls)
         run: |
           mkdir -p artifacts/arena-sp-preparation
