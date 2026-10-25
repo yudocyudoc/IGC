@@ -120,7 +120,8 @@ def run_capture(package:dict,catalog:dict,*, authorization:str,
                 output_dir:Path,run_ref:str,
                 sender:Callable=urlopen,
                 capture_method:str="PYTHON_URLLIB",
-                clock:Callable=time.perf_counter) -> dict:
+                clock:Callable=time.perf_counter,
+                env:dict | None=None) -> dict:
     """Single use; journal every successful call before the next API call."""
     _validate_schedule(package)
     if authorization != AUTHORIZATION:
@@ -145,7 +146,7 @@ def run_capture(package:dict,catalog:dict,*, authorization:str,
         exclusive_json(output_dir/f"call-{len(observations)}.json",
                        {"observation":obs,"response":response})
     responses=run_authorized(package,authorization=authorization,
-                             sender=sender,on_result=observed,clock=clock)
+                             sender=sender,on_result=observed,clock=clock,env=env)
     draft=parse_responses(package,responses,catalog)
     receipt=build_receipt(package,responses,observations,
                           run_ref=run_ref,capture_method=capture_method)
