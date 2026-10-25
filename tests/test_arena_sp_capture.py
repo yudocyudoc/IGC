@@ -34,7 +34,7 @@ class ProviderCaptureTests(unittest.TestCase):
             return MockResponse(self.results[ORDER[idx]])
         return sender
 
-    def run(self,observed,*,responses_with_usage=False):
+    def run_campaign_test(self,observed):
         clock_count=[0]
         def clock():
             clock_count[0]+=1
@@ -46,7 +46,7 @@ class ProviderCaptureTests(unittest.TestCase):
 
     def test_three_calls_journaled_without_guessing_tokens(self):
         called=[]
-        receipt=self.run(called)
+        receipt=self.run_campaign_test(called)
         self.assertEqual(len(called),3)
         self.assertEqual(receipt["calls_completed"],3)
         self.assertIsNone(receipt["tokens"])
@@ -63,9 +63,9 @@ class ProviderCaptureTests(unittest.TestCase):
 
     def test_concurrent_or_accidental_replay_of_directory_is_rejected(self):
         seen=[]
-        self.run(seen)
+        self.run_campaign_test(seen)
         with self.assertRaises(FileExistsError):
-            self.run(seen)
+            self.run_campaign_test(seen)
         self.assertEqual(len(seen),3)
 
     def test_failed_second_call_stops_and_never_marks_complete(self):
@@ -80,7 +80,7 @@ class ProviderCaptureTests(unittest.TestCase):
         self.assertFalse((self.directory/"call-2.json").exists())
         self.assertFalse((self.directory/"completed.json").exists())
         with self.assertRaises(FileExistsError):
-            self.run(observed)
+            self.run_campaign_test(observed)
         self.assertEqual(len(observed),2)
 
     def test_no_authorization_no_call_no_directory(self):
@@ -105,7 +105,7 @@ class ProviderCaptureTests(unittest.TestCase):
         self.results["P_CLEF"]["result"]["usage"]={"input_tokens":13,"output_tokens":11}
         self.results["P_CLAIRIC"]["result"]["usage"]={"total_tokens":6}
         seen=[]
-        receipt=self.run(seen)
+        receipt=self.run_campaign_test(seen)
         self.assertEqual(receipt["tokens"],62)
         self.assertEqual(receipt["tokens_status"],"REPORTED_ALL")
         self.assertEqual(receipt["cost_status"],"PROVIDER_CURRENCY_NOT_VERIFIED")
@@ -113,7 +113,7 @@ class ProviderCaptureTests(unittest.TestCase):
 
     def test_receipt_tampering_invalidates_integrity(self):
         called=[]
-        receipt=self.run(called)
+        receipt=self.run_campaign_test(called)
         changed=copy.deepcopy(receipt)
         changed["observations"][0]["duration_ms"]+=2
         with self.assertRaisesRegex(ProviderError,"TAMPERED"):
@@ -121,7 +121,7 @@ class ProviderCaptureTests(unittest.TestCase):
 
     def test_response_hash_mismatch_rejected(self):
         called=[]
-        receipt=self.run(called)
+        receipt=self.run_campaign_test(called)
         responses=copy.deepcopy(self.results)
         responses["S_GLM"]["result"]["response"]="changed after sealed"
         with self.assertRaisesRegex(ProviderError,"CAPTURE_MISMATCH"):
