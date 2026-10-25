@@ -57,7 +57,21 @@ def calibrate(composed: dict, modelica_plan: dict,
           and math.isclose(float(input_profile["duration"]),
                            float(calibration["input_duration"]),rel_tol=0,abs_tol=1e-12),
           "CALIBRATION_INPUT_PROFILE_MISMATCH")
-    times = numbers(primary["times"])
+    recorded_times = numbers(primary["times"])
+    # For the Arena pilot, construction and the held-out perturbation are two
+    # separate reset trials. Construction is placed at [-T,0] on the global
+    # view timeline; fitting uses the explicit within-trial [0,T] axis.
+    if "calibration_times" in primary:
+        check(primary.get("independent_trial_reset_at_t0") is True,
+              "CALIBRATION_RESET_DECLARATION_MISSING")
+        times = numbers(primary["calibration_times"])
+        origin=float(calibration["stop_time"])
+        check(len(times)==len(recorded_times) and all(
+            abs(global_t-(trial_t-origin)) < 1e-9
+            for global_t,trial_t in zip(recorded_times,times)),
+            "CALIBRATION_TRIAL_TIME_MAPPING_INVALID")
+    else:
+        times = recorded_times
     observed = numbers(primary["values"])
     expected = sample_times(float(calibration["stop_time"]),
                             float(calibration["observation_interval"]))
