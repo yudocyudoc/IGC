@@ -129,21 +129,35 @@ def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
                    if abs(t-float(target))<=1e-6]
             require(bool(found),"ENUMERATION_MISSING_TARGET_TIME")
             predictions.append(found[-1])
+        fit=fit_receipt["fits"][candidate_id]
+        envelopes=[]
+        for target in view["target_times"]:
+            matches=[x for x in fit["prediction_envelope_rk4"]
+                     if abs(x["time"]-float(target))<1e-9]
+            require(len(matches)==1,"ENUMERATION_UNCERTAINTY_TARGET_MISSING")
+            envelopes.append({"minimum":matches[0]["minimum"],
+                              "maximum":matches[0]["maximum"]})
         proposals.append({
             "candidate_id":candidate_id,"kind":"calibrated_enumeration_modelica",
             "mechanism":"Enumerated fixed structural alternative fit to same construction",
             "predictions":predictions,"trace_sha256":file_digest(path),
-            "fit_receipt_hash":fit_receipt["report_hash"]})
+            "fit_receipt_hash":fit_receipt["report_hash"],
+            "absolute_adequacy":fit["absolute_adequacy"],
+            "uncertainty_envelope_rk4_not_solver_verified":envelopes})
     response={
         "schema":ROUND_SCHEMA,"round_id":view["round_id"],"lane":"D",
         "view_hash":view["view_hash"],"status":"SUBMITTED",
         "producer":"two-structure-calibrated-enumeration-v0",
         "proposals":proposals,
-        "unknowns":["Enumerating a catalogue is not free topology discovery"],
+        "unknowns":["Enumerating a catalogue is not free topology discovery",
+             "No mechanism claim if all calibration fits fail the absolute gate"
+             if fit_receipt["absolute_adequacy_status"]=="NO_ADEQUATE_STRUCTURE"
+             else "Parameter envelopes are RK4 diagnostics; OpenModelica parity pending"],
         "objections":[],
         "cost":{"llm_calls":0,"tokens":0,"simulations":len(proposals),
                 "human_minutes":human_minutes,"retries":0},
         "cost_note":"Solver and measured operator effort; no LLM calls.",
+        "absolute_adequacy_status":fit_receipt["absolute_adequacy_status"],
         "source_manifest_hash":manifest["record_hash"],
         "openmodelica_log_sha256":file_digest(log)}
     validate_submission(response,view)
