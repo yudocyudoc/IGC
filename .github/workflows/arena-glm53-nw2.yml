@@ -300,3 +300,78 @@ jobs:
           python3 -m py_compile scripts/arena_sd_system_ab_v1.py
           python3 -m unittest discover -s tests -p 'test_arena_sd_system_ab_v1.py' -v
           python3 -m scripts.arena_sd_system_ab_v1 check
+
+  sd-system-v21-factorial-preflight:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Checkout immutable PR head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Check 2x2 factorial fixtures without inference
+        run: |
+          python3 -m py_compile scripts/arena_sd_system_v21_factorial.py
+          python3 -m unittest discover -s tests -p test_arena_sd_system_v21_factorial.py -v
+          python3 -m scripts.arena_sd_system_v21_factorial check
+
+  sd-system-v21-factorial:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.head.ref == 'experiment/arena-glm53-nw2-e2e' && github.event.pull_request.head.repo.full_name == 'yudocyudoc/IGC' && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    concurrency:
+      group: igc-sd-system-v21-factorial-once
+      cancel-in-progress: false
+    steps:
+      - name: Checkout immutable PR head, no saved credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Unique marker must be newly ADDED in HEAD commit
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq 'data/diagnostics/ARENA_SD_V21_FACTORIAL_AUTHORIZE_ONCE.json'; then
+            echo 'allowed=true' >> "$GITHUB_OUTPUT"
+            echo 'SD21_FACTORIAL_MARKER_ADDED'
+          else
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'SD21_NOT_AUTHORIZED_NO_INFERENCE'
+          fi
+      - name: Validate frozen paired inputs and one-use authorization
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python3 -m unittest discover -s tests -p test_arena_sd_system_v21_factorial.py -v
+          python3 -m scripts.arena_sd_system_v21_factorial check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          marker=json.loads(Path('data/diagnostics/ARENA_SD_V21_FACTORIAL_AUTHORIZE_ONCE.json').read_text())
+          assert marker=={
+            'schema':'igc-sd-prompt-factorial-trigger/0.1',
+            'purpose':'COMPARE_V2_V21_WITH_AND_WITHOUT_STRUCTURE_ON_NEW_CASES',
+            'authorization':'RUN_SD21_FACTORIAL_8_CALLS',
+            'max_calls':8,'retries':0,'holdout_access':False,
+          }, 'INVALID_SD21_AUTHORIZATION_MARKER'
+          print('SD21_AUTHORIZATION_VERIFIED')
+          PY
+      - name: Execute at most eight real GLM5.3 calls (zero retries)
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IGC_SD21_AUTHORIZATION: RUN_SD21_FACTORIAL_8_CALLS
+        run: python3 -m scripts.arena_sd_system_v21_factorial execute
+      - name: Archive full/partial results on fail or success
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arena-sd-system-v21-factorial-raw
+          path: artifacts/arena-sd-system-v21-factorial/
+          retention-days: 90
+          if-no-files-found: warn
