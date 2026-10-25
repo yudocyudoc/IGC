@@ -83,11 +83,23 @@ jobs:
           (root/"g2-report.json").write_text(json.dumps(results,indent=2)+"\n")
           print("D0_1_SIX_MODELS_OPENMODELICA_G2_PASS")
           PY
-      - name: Retain genuine Modelica and verification artifacts
+      - name: Normalize container ownership and curate only audit evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/arena-d-v01 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v01
+            mkdir -p artifacts/arena-d-v01/evidence
+            shopt -s nullglob
+            for file in artifacts/arena-d-v01/*.json artifacts/arena-d-v01/*.mo artifacts/arena-d-v01/*_res.csv artifacts/arena-d-v01/*.mos artifacts/arena-d-v01/omc.log; do
+              cp "$file" artifacts/arena-d-v01/evidence/
+            done
+          fi
+      - name: Retain curated Modelica and verification artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: arena-d-v01-synthetic-evidence
-          path: artifacts/arena-d-v01/
+          path: artifacts/arena-d-v01/evidence/
           retention-days: 30
           if-no-files-found: warn
