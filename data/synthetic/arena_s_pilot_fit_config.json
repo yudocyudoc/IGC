@@ -40,5 +40,10 @@
   "synthetic_data_generation": {
     "noise_standard_deviation": 0.08
   },
-  "note": "Only visible calibration assumptions and predeclared test profile. No truth mechanism, parameters, or generation seeds."
+  "note": "Only visible calibration assumptions and predeclared test profile. No truth mechanism, parameters, or generation seeds.",
+  "absolute_adequacy_rule": {
+    "max_rmse_noise_sd": 3,
+    "max_physical_bound_noise_sd": 3,
+    "interpretation": "Diagnostic absolute gate on construction only. Does not prove structural truth; any candidate with inadequate construction fit cannot be declared plausible."
+  }
 }
