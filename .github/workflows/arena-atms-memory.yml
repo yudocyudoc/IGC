@@ -18,6 +18,8 @@ on:
       - 'tests/test_arena_s_pilot.py'
       - 'tests/test_arena_s_real.py'
       - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
       - 'scripts/arena_sp_verify_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
@@ -58,6 +60,8 @@ on:
       - 'tests/test_arena_s_pilot.py'
       - 'tests/test_arena_s_real.py'
       - 'tests/test_arena_s_calibration.py'
+      - 'tests/test_arena_s_g3.py'
+      - 'tests/test_arena_s_modelica_bytes.py'
       - 'scripts/arena_sp_verify_capture.py'
       - 'scripts/arena_sp_simulation.py'
       - 'tests/test_arena_sp_handoff.py'
@@ -168,6 +172,8 @@ jobs:
           /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
           /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_real.py' -v
           /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_calibration.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_g3.py' -v
+          /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_modelica_bytes.py' -v
                     /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot.py' -v
                     /tmp/igc-s-contracts/bin/python -m unittest discover -s tests -p 'test_arena_s_pilot_physics.py' -v
       - name: Create S/P inference requests for review (zero provider calls)
