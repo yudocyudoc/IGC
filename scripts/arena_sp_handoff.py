@@ -15,6 +15,7 @@ from .arena_round import (SCHEMA as ROUND_SCHEMA, COST_UNITS, RoundError,
 from .arena_sp_producers import (SCHEMA as PROVIDER_SCHEMA, ProviderError,
                                  _validate_schedule)
 from .fm_b2_atms_candidate_reasoning import apply_supports
+from .arena_sp_capture import check_receipt
 
 SCHEMA = "igc-arena-sp-handoff/0.1"
 ORIGINS = {"MOCK_SYNTHETIC", "CLOUDFLARE_VERIFIED_RUN"}
@@ -26,7 +27,8 @@ def ensure(condition: bool, message: str) -> None:
 
 
 def verify_draft(draft: dict, package: dict, catalog: dict,
-                 views: dict, *, origin: str, provenance: dict | None) -> None:
+                 views: dict, *, origin: str, provenance: dict | None,
+                 responses: dict | None = None) -> None:
     _validate_schedule(package)
     ensure(origin in ORIGINS, "unknown S/P inference provenance")
     ensure(draft.get("schema") == PROVIDER_SCHEMA and
@@ -51,23 +53,26 @@ def verify_draft(draft: dict, package: dict, catalog: dict,
                "cross-lane provider result")
     no_hidden(draft)
     if origin == "CLOUDFLARE_VERIFIED_RUN":
-        ensure(isinstance(provenance, dict) and
-               provenance.get("schema") == "igc-arena-provider-receipt/0.1" and
-               provenance.get("requests_hash") == manifest["requests_hash"] and
-               provenance.get("response_hashes") == draft["response_hashes"] and
-               provenance.get("calls_completed") == 3 and
-               provenance.get("mock") is False,
-               "real provider run requires independently sealed response receipt")
+        ensure(isinstance(provenance,dict) and isinstance(responses,dict),
+               "real provider run requires original raw responses and audited receipt")
+        check_receipt(provenance,package,responses,require_live=True)
+        ensure(provenance["response_hashes"] == draft["response_hashes"],
+               "draft does not match captured raw responses")
+        ensure(provenance["retries"] == 0 and provenance["calls_completed"] == 3,
+               "provider call budget violated")
     else:
-        ensure(provenance is None, "mock fixture cannot present a provider receipt")
+        ensure(provenance is None and responses is None,
+               "mock fixture cannot present a provider receipt")
 
 
 def seal_handoff(draft: dict, package: dict, catalog: dict, views: dict,
                  composed: dict, support_plan: dict,
                  *, origin: str = "MOCK_SYNTHETIC",
-                 provenance: dict | None = None) -> dict:
+                 provenance: dict | None = None,
+                 responses: dict | None = None) -> dict:
     """Admit S selections through existing FM-B2 ATMS; seal P with source links."""
-    verify_draft(draft, package, catalog, views, origin=origin, provenance=provenance)
+    verify_draft(draft, package, catalog, views, origin=origin,
+                 provenance=provenance, responses=responses)
     selected_catalog = {x["candidate_id"] for x in catalog["candidates"]}
     composed_ids = {x["id"] for x in composed["candidates"]}
     ensure(selected_catalog == composed_ids,
@@ -85,6 +90,9 @@ def seal_handoff(draft: dict, package: dict, catalog: dict, views: dict,
     frozen = {
         "schema": SCHEMA, "round_id": draft["round_id"], "origin": origin,
         "synthetic": True, "eligible_for_empirical_scoring": False,
+        "provider_attestation": "LOCAL_CAPTURE_ONLY_NOT_INDEPENDENT" if
+                                origin == "CLOUDFLARE_VERIFIED_RUN" else
+                                "MOCK_ONLY",
         "provider_draft_hash": draft["output_hash"],
         "provider_package_hash": hash_obj(package),
         "catalog_hash": hash_obj(catalog),
@@ -113,12 +121,14 @@ def seal_handoff(draft: dict, package: dict, catalog: dict, views: dict,
 
 
 def verify_handoff(seal: dict, draft: dict, package: dict, catalog: dict, views: dict,
-                   composed: dict, support_plan: dict) -> None:
+                   composed: dict, support_plan: dict,
+                   responses: dict | None = None) -> None:
     copy = dict(seal)
     integrity = copy.pop("handoff_hash", None)
     ensure(integrity == hash_obj(copy), "HANDOFF_TAMPERED")
     expect = seal_handoff(draft,package,catalog,views,composed,support_plan,
-                          origin=seal["origin"],provenance=seal.get("provenance"))
+                          origin=seal["origin"],provenance=seal.get("provenance"),
+                          responses=responses)
     ensure(expect == seal, "HANDOFF_DEPENDENCY_MISMATCH")
 
 
@@ -183,12 +193,14 @@ def main() -> int:
         p.add_argument("--"+key,required=True,type=Path)
     p.add_argument("--origin",choices=sorted(ORIGINS),default="MOCK_SYNTHETIC")
     p.add_argument("--receipt",type=Path)
+    p.add_argument("--responses",type=Path)
     args=p.parse_args()
     read=lambda path: json.loads(path.read_text(encoding="utf-8"))
     seal=seal_handoff(read(args.draft),read(args.package),read(args.catalog),
                       {l:read(args.views_dir/(l+".json")) for l in ("S","P")},
                       read(args.composed),read(args.support_plan),
-                      origin=args.origin,provenance=read(args.receipt) if args.receipt else None)
+                      origin=args.origin,provenance=read(args.receipt) if args.receipt else None,
+                      responses=read(args.responses) if args.responses else None)
     exclusive_json(args.out,seal)
     print(json.dumps({"status":"S_P_HANDOFF_LOCKED_NOT_EVALUATED",
                       "origin":seal["origin"],"s_candidates":len(seal["S"]["admitted"]),
