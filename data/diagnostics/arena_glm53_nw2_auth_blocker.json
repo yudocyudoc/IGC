@@ -1,0 +1,18 @@
+{
+  "schema": "igc-nw2-provider-attempt/0.1",
+  "round_id": "ARENA-GLM53-NW2-20261024",
+  "status": "BLOCKED_AUTHENTICATION_NO_PROVIDER_RESULT",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "prepared_request_hash": "sha256:a784a3b4b731e4e9e428620a5f64306da747aacadab176a778f2a0a571783893",
+  "preparation_ci_run": "https://github.com/yudocyudoc/IGC/actions/runs/40167148525",
+  "attempted_transport": "Cloudflare connected API",
+  "http_status": 401,
+  "error_class": "AUTHENTICATION_ERROR",
+  "calls_completed": 0,
+  "provider_output_archived": false,
+  "simulation_performed": false,
+  "prediction_lock_created": false,
+  "holdout_opened": false,
+  "retry_performed": false,
+  "note": "Provider rejected the connected account credentials. No model response. Reconnect Cloudflare before creating a fresh authorized capture attempt; do not synthesize provider evidence or claim NW2 completion."
+}
