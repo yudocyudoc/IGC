@@ -7,6 +7,7 @@ import unittest
 
 from scripts.arena_round import prepare, hash_obj, validate_submission
 from scripts.arena_sp_producers import build_requests, parse_responses, ProviderError
+from scripts.arena_sp_capture import build_receipt,usage_of
 from scripts.arena_sp_handoff import (seal_handoff, verify_handoff,
                                       simulation_selection, p_submission)
 ROOT=Path(__file__).resolve().parents[1]
@@ -98,6 +99,71 @@ class HandoffTests(unittest.TestCase):
             seal_handoff(self.draft,self.pkg,self.catalog,self.views,
                          self.composed,self.supports,
                          origin="CLOUDFLARE_VERIFIED_RUN")
+
+    def captured_fixture(self, with_usage=True):
+        response=self.fake([CID(2)])
+        if with_usage:
+            response["S_GLM"]["result"]["usage"]={
+                "prompt_tokens":60,"completion_tokens":20}
+            response["P_CLEF"]["result"]["usage"]={
+                "input_tokens":20,"output_tokens":10}
+            response["P_CLAIRIC"]["result"]["usage"]={
+                "total_tokens":5}
+        observations=[]
+        for i,name in enumerate(("S_GLM","P_CLEF","P_CLAIRIC")):
+            observations.append({
+                "sequence":i+1,"model_name":name,
+                "response_hash":hash_obj(response[name]),
+                "duration_ms":12.0,
+                "usage":usage_of(response[name])})
+        receipt=build_receipt(self.pkg,response,observations,
+                              run_ref="local-synthetic-no-network",
+                              capture_method="PYTHON_URLLIB")
+        draft=parse_responses(self.pkg,response,self.catalog)
+        return draft,response,receipt
+
+    def test_real_handoff_requires_original_responses(self):
+        draft,responses,receipt=self.captured_fixture()
+        with self.assertRaisesRegex(ProviderError,"original raw responses"):
+            seal_handoff(draft,self.pkg,self.catalog,self.views,
+                         self.composed,self.supports,
+                         origin="CLOUDFLARE_VERIFIED_RUN",provenance=receipt)
+
+    def test_local_capture_linkage_and_p_tokens(self):
+        draft,responses,receipt=self.captured_fixture()
+        seal=seal_handoff(draft,self.pkg,self.catalog,self.views,
+                          self.composed,self.supports,
+                          origin="CLOUDFLARE_VERIFIED_RUN",
+                          provenance=receipt,responses=responses)
+        self.assertFalse(seal["eligible_for_empirical_scoring"])
+        self.assertEqual(seal["provider_attestation"],
+                         "LOCAL_CAPTURE_ONLY_NOT_INDEPENDENT")
+        p=p_submission(seal,self.views["P"],actual_provider_evidence=True)
+        self.assertEqual(p["status"],"SUBMITTED")
+        self.assertEqual(p["cost"]["llm_calls"],2)
+        self.assertEqual(p["cost"]["tokens"],35)
+        with self.assertRaisesRegex(ProviderError,"differs from provider"):
+            p_submission(seal,self.views["P"],actual_provider_evidence=True,
+                         tokens=0)
+
+    def test_real_p_abstains_from_submission_if_token_usage_unavailable(self):
+        draft,responses,receipt=self.captured_fixture(with_usage=False)
+        seal=seal_handoff(draft,self.pkg,self.catalog,self.views,
+                          self.composed,self.supports,
+                          origin="CLOUDFLARE_VERIFIED_RUN",
+                          provenance=receipt,responses=responses)
+        with self.assertRaisesRegex(ProviderError,"P_TOKEN_USAGE_NOT_OBSERVABLE"):
+            p_submission(seal,self.views["P"],actual_provider_evidence=True)
+
+    def test_provider_receipt_must_match_raw_reply_bytes(self):
+        draft,responses,receipt=self.captured_fixture()
+        tampered=copy.deepcopy(responses)
+        tampered["P_CLAIRIC"]["result"]["answers"]["observed_increment"]["value"]=999
+        with self.assertRaisesRegex(ProviderError,"CAPTURE_MISMATCH"):
+            seal_handoff(draft,self.pkg,self.catalog,self.views,
+                         self.composed,self.supports,
+                         origin="CLOUDFLARE_VERIFIED_RUN",
+                         provenance=receipt,responses=tampered)
 
     def test_change_in_support_plan_after_seal_fails(self):
         s=self.seal()
