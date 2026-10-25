@@ -1,0 +1,116 @@
+{
+  "schema": "igc-arena-nw1-prediction-freeze/0.1",
+  "round_id": "ARENA-GLM53-NW1-20261024",
+  "backend": "FM_B5_RK4_LOCAL_NOT_OPENMODELICA",
+  "provider_response_archived": true,
+  "original_S_selected": [
+    "urn:igc:candidate:CS-01",
+    "urn:igc:candidate:CS-02"
+  ],
+  "G3": {
+    "CS-01": {
+      "rmse": 0.126196221,
+      "adequate": true,
+      "fit_parameters": {
+        "maxThroughput": 1.2,
+        "responseTime": 1.6
+      },
+      "supported_parameter_points": 14
+    },
+    "CS-02": {
+      "rmse": 0.02546175,
+      "adequate": true,
+      "fit_parameters": {
+        "maxThroughput": 1.2,
+        "responseTime": 1
+      },
+      "supported_parameter_points": 28
+    }
+  },
+  "target_times": [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "D_predictions": {
+    "CS-01": [
+      0.21175502,
+      0.75117681,
+      1.35117681,
+      1.95117681,
+      2.55117681,
+      3.15117681,
+      4.33223282,
+      5.10498487,
+      5.51860923,
+      5.85851176,
+      5.95589546,
+      5.98379636,
+      5.99408035
+    ],
+    "CS-02": [
+      0.04897995,
+      0.28325214,
+      0.66142676,
+      1.12688287,
+      1.64527788,
+      2.19578194,
+      3.34755261,
+      4.46666691,
+      5.22844044,
+      5.83595478,
+      5.96599117,
+      5.99006118,
+      5.99487244
+    ]
+  },
+  "S_predictions": {
+    "CS-01": [
+      0.21175502,
+      0.75117681,
+      1.35117681,
+      1.95117681,
+      2.55117681,
+      3.15117681,
+      4.33223282,
+      5.10498487,
+      5.51860923,
+      5.85851176,
+      5.95589546,
+      5.98379636,
+      5.99408035
+    ],
+    "CS-02": [
+      0.04897995,
+      0.28325214,
+      0.66142676,
+      1.12688287,
+      1.64527788,
+      2.19578194,
+      3.34755261,
+      4.46666691,
+      5.22844044,
+      5.83595478,
+      5.96599117,
+      5.99006118,
+      5.99487244
+    ]
+  },
+  "HOLDOUT_CONSUMED": false,
+  "evidence_limitations": [
+    "local operator knows secret",
+    "comparison S-D predictions algebraically identical with identical fitted parameters",
+    "no OpenModelica trace for NW1",
+    "not native Arena LOCK"
+  ]
+}
