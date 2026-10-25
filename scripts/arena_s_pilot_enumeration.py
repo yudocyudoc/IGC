@@ -20,6 +20,11 @@ from .fm_b3_dynamic_evaluation import (
 )
 from .arena_s_calibration import verify_calibration
 
+from .arena_s_pilot_physics import (
+    COMPOSER, composer_bytes, composer_hash,
+    verify_loaded_composer, verify_physical_input,
+)
+
 PACKAGE = "ArenaEnumeratedDynamics"
 SCHEMA = "igc-arena-enumeration/0.1"
 
@@ -49,6 +54,7 @@ def prepare_enumeration(base_composed:dict, composed:dict,
                                               package_name=PACKAGE),encoding="utf-8")
     mos.write_text(render_openmodelica_script(plan,composed,selection,
                                                package_name=PACKAGE),encoding="utf-8")
+    (out/COMPOSER).write_bytes(composer_bytes(plan,composed))
     record={
         "schema":SCHEMA,"status":"ENUMERATION_PREPARED_NOT_EXECUTED",
         "synthetic":True,"empirical_truth_evaluated":False,
@@ -58,7 +64,8 @@ def prepare_enumeration(base_composed:dict, composed:dict,
         "fit_receipt_hash":hash_obj(fit_receipt),
         "selection_hash":hash_obj(selection),
         "candidate_ids":sorted(expected),
-        "modelica_hash":file_digest(mo),"mos_hash":file_digest(mos)}
+        "modelica_hash":file_digest(mo),"mos_hash":file_digest(mos),
+        "loaded_composer_sha256":composer_hash(plan,composed)}
     record["record_hash"]=hash_obj(record)
     exclusive_json(out/"enumeration-plan.json",record)
     return record
@@ -67,7 +74,8 @@ def prepare_enumeration(base_composed:dict, composed:dict,
 def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
                            base_plan:dict,plan:dict,fit_plan:dict,
                            supports:dict,fit_receipt:dict,primary:dict,view:dict,
-                           out:Path,log:Path,human_minutes:float)->dict:
+                           out:Path,log:Path,human_minutes:float,
+                           composer_file:Path | None = None)->dict:
     require(manifest.get("record_hash")==hash_obj({
         k:v for k,v in manifest.items() if k!="record_hash"}),
         "ENUMERATION_MANIFEST_TAMPERED")
@@ -82,6 +90,10 @@ def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
     require(file_digest(out/(PACKAGE+".mo"))==manifest["modelica_hash"]
             and file_digest(out/"run-enumeration.mos")==manifest["mos_hash"],
             "ENUMERATION_SOLVER_INPUT_TAMPERED")
+    require(manifest.get("loaded_composer_sha256")==composer_hash(plan,composed),
+            "ENUMERATION_COMPOSER_HASH_MISMATCH")
+    verify_loaded_composer(composer_file,manifest["loaded_composer_sha256"],
+                           plan,composed)
     require(hash_obj(primary)==hash_obj(view["primary"]),
             "ENUMERATION_CONSTRUCTION_VIEW_MISMATCH")
     verify_calibration(fit_receipt,base_composed,composed,base_plan,
@@ -108,7 +120,9 @@ def enumeration_submission(*, manifest:dict,base_composed:dict,composed:dict,
         path=out/(result_prefix(candidate_id)+"_res.csv")
         trace=assess_trace(path,stage_ids,float(plan["simulation"]["start_time"]),
                            float(plan["simulation"]["stop_time"]),
-                           int(plan["simulation"]["intervals"]))
+                           int(plan["simulation"]["intervals"]),
+                           allow_extra_event_samples=True)
+        verify_physical_input(path,plan)
         predictions=[]
         for target in view["target_times"]:
             found=[v for t,v in zip(trace["times"],trace["delivered_series"])
@@ -145,7 +159,7 @@ def main():
                     "fit-plan","supports","fit-receipt","primary","out"):
             sub.add_argument("--"+key,required=True,type=Path)
         if name=="submit":
-            for key in ("view","log"):
+            for key in ("view","log","composer-file"):
                 sub.add_argument("--"+key,required=True,type=Path)
             sub.add_argument("--human-minutes",required=True,type=float)
     args=p.parse_args()
@@ -160,7 +174,8 @@ def main():
         report=enumeration_submission(**common,primary=read(args.primary),
             view=read(args.view),
             manifest=read(args.out/"enumeration-plan.json"),out=args.out,
-            log=args.log,human_minutes=args.human_minutes)
+            log=args.log,human_minutes=args.human_minutes,
+            composer_file=args.composer_file)
         exclusive_json(args.out/"enumeration-submission.json",report)
     print(json.dumps({"status":report.get("status","ENUMERATION_LANE_READY"),
                       "hash":hash_obj(report)}))
