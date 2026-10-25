@@ -58,15 +58,11 @@ def validate_protocol(protocol, data):
             all(b > a for a, b in zip(times, times[1:])), "INVALID_NEW_TRIAL_TIMES")
     require(times[-1] > data["construction"]["observations"][0]["t"],
             "UNINFORMATIVE_TRIAL_SCHEDULE")
-    expected = 0
-    for n in range(1, data["resources"]["max_stocks"] + 1):
-        for loss in ((False, True) if data["resources"]["allow_loss"] else (False,)):
-            expected += len(grid["capacity"]) * len(grid["response_time"]) * (
-                len(grid["loss_time"]) if loss else 1)
-            if expected >= maximum:
-                break
-        if expected >= maximum:
-            break
+    # Count precisely the candidates the bounded generator actually emits.
+    candidates = generate(data)["candidates"]
+    expected = sum(len(grid["capacity"]) * len(grid["response_time"]) *
+                   (len(grid["loss_time"]) if c["structure"]["loss"] else 1)
+                   for c in candidates)
     # Fail closed instead of silently truncating one topology's parameter search.
     if expected > maximum:
         raise ScreenError("GRID_BUDGET_EXCEEDED")
@@ -223,9 +219,25 @@ def assess(data, protocol):
                       "nor evidence of the unique causal generator.")}
 
 
-def write_evaluation(data, protocol, root):
+def write_evaluation(data, protocol, root, parent_event):
+    """Require an actual upstream D0 event; never synthesize a fake ancestor."""
+    require(type(parent_event) is dict and
+            set(parent_event) == {"schema", "arm_id", "round_id", "event_type",
+                                  "iteration", "source_hash", "payload_hash",
+                                  "previous_event_hash", "event_hash"},
+            "BAD_PARENT_EVENT")
+    checkhash = digest({k: v for k, v in parent_event.items() if k != "event_hash"})
+    require(parent_event["event_hash"] == checkhash, "TAMPERED_PARENT_EVENT")
+    require(parent_event["arm_id"] == "D" and
+            parent_event["round_id"] == data["round_id"] and
+            parent_event["iteration"] == 0 and
+            parent_event["event_type"] == "HYPOTHESIS_PROPOSED" and
+            parent_event["previous_event_hash"] is None,
+            "PARENT_NOT_D0_ROOT")
     require(not root.exists(), "OUTPUT_ALREADY_EXISTS")
     result = assess(data, protocol)
+    require(parent_event["source_hash"] == result["input_hash"],
+            "PARENT_DIFFERENT_EVIDENCE")
     root.mkdir(parents=True, exist_ok=False)
     (root / "screen.json").write_bytes(canonical(result) + b"\n")
     # Retain evidence of the SAME D hypothesis family and own-arm only.
@@ -241,15 +253,11 @@ def write_evaluation(data, protocol, root):
         text = text.replace("model " + raw_name, "model " + name).replace(
             "end " + raw_name + ";", "end " + name + ";")
         (root / (name + ".mo")).write_text(text, encoding="utf-8")
-    first = trace_event(arm_id="D", round_id=data["round_id"],
-                        event_type="HYPOTHESIS_PROPOSED", iteration=0,
-                        source_hash=original["input_hash"],
-                        payload_hash=digest(original))
     second = trace_event(arm_id="D", round_id=data["round_id"],
                          event_type="SIMULATION_REPORTED", iteration=0,
                          source_hash=original["input_hash"], payload_hash=digest(result),
-                         previous_event_hash=first["event_hash"])
-    (root / "memory-events.json").write_bytes(canonical([first, second]) + b"\n")
+                         previous_event_hash=parent_event["event_hash"])
+    (root / "memory-events.json").write_bytes(canonical([parent_event, second]) + b"\n")
     return result
 
 
@@ -279,12 +287,15 @@ def main():
     p.add_argument("--output", type=Path)
     p.add_argument("--csv", type=Path)
     p.add_argument("--candidate-id")
+    p.add_argument("--parent-event", type=Path)
     args = p.parse_args()
     data = json.loads(args.input.read_text())
     protocol = json.loads(args.protocol.read_text())
     if args.command == "evaluate":
-        require(args.output is not None, "MISSING_OUTPUT")
-        result = write_evaluation(data, protocol, args.output)
+        require(args.output is not None and args.parent_event is not None,
+                "MISSING_OUTPUT_OR_PARENT_EVENT")
+        parent_event = json.loads(args.parent_event.read_text())
+        result = write_evaluation(data, protocol, args.output, parent_event)
         print(json.dumps({"conclusion": result["conclusion"],
                           "grid_evaluations": result["grid_evaluations"],
                           "eligible_count": len(result["eligible_ids"])}))
