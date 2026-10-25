@@ -39,6 +39,9 @@ class PilotTests(unittest.TestCase):
             "sources":["synthetic-construction-only-fixture"],
             "input_profile":{"kind":"pulse","amplitude":cal["input_amplitude"],
                 "duration":cal["input_duration"],"initial_stocks_zero":True}}
+        self.primary["calibration_times"]=list(self.primary["times"])
+        self.primary["times"]=[t-cal["stop_time"] for t in self.primary["calibration_times"]]
+        self.primary["independent_trial_reset_at_t0"]=True
         self.spec=spec
         self.views=prepare(self.spec,self.primary)
 
@@ -113,7 +116,7 @@ class PilotTests(unittest.TestCase):
         v=self.views
         mk=lambda cid:{"candidate_id":cid,"kind":"modelica_calibrated",
                         "mechanism":"Synthetic queue model",
-                        "predictions":[1.,2.,3.]}
+                        "predictions":[float(i) for i,_ in enumerate(v["S"]["target_times"])]}
         s={"schema":self.spec["schema"],"round_id":self.spec["round_id"],
            "lane":"S","view_hash":v["S"]["view_hash"],"status":"SUBMITTED",
            "producer":"test-only","proposals":[mk("urn:igc:candidate:CS-02")],
