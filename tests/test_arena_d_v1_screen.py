@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from scripts.arena_v0_contract import INPUT_SCHEMA, ArenaContractError, digest
-from scripts.arena_d_v01 import generate
+from scripts.arena_d_v01 import generate, prepare
 from scripts.arena_d_v1_screen import (
     SCHEMA, ScreenError, assess, compare_omc_csv, integrate, validate_protocol,
     write_evaluation,
@@ -124,8 +124,11 @@ class D1Tests(unittest.TestCase):
 
     def test_event_artifacts_are_hash_linked_not_atms(self):
         with tempfile.TemporaryDirectory() as tmp:
+            d0=Path(tmp)/"d0"
+            prepare(fixture(), d0)
+            original=json.loads((d0/"memory-event.json").read_text())
             dest=Path(tmp)/"d1"
-            results=write_evaluation(fixture(),protocol(),dest)
+            results=write_evaluation(fixture(),protocol(),dest,original)
             self.assertTrue((dest/"screen.json").exists())
             self.assertEqual(len(list(dest.glob("Dfit_*.mo"))),6)
             events=json.loads((dest/"memory-events.json").read_text())
@@ -133,6 +136,20 @@ class D1Tests(unittest.TestCase):
             self.assertEqual(events[1]["previous_event_hash"],events[0]["event_hash"])
             self.assertEqual(events[1]["event_type"],"SIMULATION_REPORTED")
             self.assertEqual(events[1]["payload_hash"],digest(results))
+
+    def test_d1_rejects_tampered_parent_or_cross_round(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d0=Path(tmp)/"d0"
+            prepare(fixture(),d0)
+            event=json.loads((d0/"memory-event.json").read_text())
+            corrupt=deepcopy(event)
+            corrupt["event_hash"]="sha256:"+"9"*64
+            with self.assertRaisesRegex(ScreenError,"TAMPERED_PARENT_EVENT"):
+                write_evaluation(fixture(),protocol(),Path(tmp)/"bad",corrupt)
+            changed=fixture()
+            changed["round_id"]="DIFFERENT"
+            with self.assertRaisesRegex(ScreenError,"PARENT_NOT_D0_ROOT"):
+                write_evaluation(changed,protocol(),Path(tmp)/"wrong",event)
 
     def test_omc_parity_fails_wrong_output(self):
         with tempfile.TemporaryDirectory() as tmp:
