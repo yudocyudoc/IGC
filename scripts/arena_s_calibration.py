@@ -36,6 +36,15 @@ def calibrate(composed: dict, modelica_plan: dict,
     check(primary.get("observable_id") == "delivered"
           and primary.get("unit") == "units",
           "CALIBRATION_OBSERVABLE_MISMATCH")
+    allowed={"schema","synthetic","parameter_ranges","calibration",
+             "held_out_discrimination","numerics","uncertainty_rule",
+             "synthetic_data_generation","note"}
+    check(fit_plan.get("schema") == "igc-arena-s-fit-config/0.1"
+          and fit_plan.get("synthetic") is True
+          and set(fit_plan) <= allowed
+          and set(fit_plan.get("synthetic_data_generation",{})) ==
+              {"noise_standard_deviation"},
+          "FIT_PLAN_MUST_EXCLUDE_GENERATOR_TRUTH")
     calibration = fit_plan["calibration"]
     input_profile = primary.get("input_profile")
     check(isinstance(input_profile, dict)
