@@ -84,7 +84,7 @@ class ArenaSPTests(unittest.TestCase):
     def test_real_glm_fenced_json_is_normalized(self):
         responses=raw_results(self.package)
         raw=responses["S_GLM"]["result"]["response"]
-        responses["S_GLM"]["result"]["response"]="```json\\n"+raw+"\\n```"
+        responses["S_GLM"]["result"]["response"]="```json\n"+raw+"\n```"
         parsed=parse_responses(self.package,responses,self.catalog)
         self.assertEqual(parsed["S"]["selected_candidate_ids"],
                          ["urn:igc:candidate:CS-02"])
