@@ -48,8 +48,8 @@
       "retries": 0
     },
     "P": {
-      "llm_calls": 0,
-      "tokens": 0,
+      "llm_calls": 2,
+      "tokens": 4000,
       "simulations": 0,
       "human_minutes": 0,
       "retries": 0
