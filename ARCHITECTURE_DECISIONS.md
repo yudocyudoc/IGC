@@ -59,3 +59,12 @@
 - **Motivo:** demostrar el contrato vertical F0 antes de seleccionar e integrar una implementación completa en F3.
 - **Consecuencia:** no se atribuye al prototipo soporte para retraction/versionado, ciclo completo, escalabilidad ni suite de conformidad.
 - **Verificación:** diez pruebas y etapa `atms_reasoning` pasan en GitHub Actions; [run #78](https://github.com/yudocyudoc/IGC/actions/runs/39339123071).
+
+## ADR-0009 — Arena con tres brazos autónomos, Clef después; consolidación sin destruir historia (2026-10-25)
+
+- **Decisión del investigador:** primero tres métodos independientes de generación de hipótesis: **D** determinista sin composición molecular, **B** metodología original SD-AI Buffalo sin moléculas y **M** molecular con su catálogo/compositor. Cada uno aporta su modelo nativo y un adaptador **propio** a OpenModelica; se comparan sus consecuencias y pueden iterar solo con retroalimentación propia.
+- **Cuarto brazo pospuesto:** **Clef (C)** se añade únicamente después del corte experimental de D/B/M para medir qué cambia. No asumir que Clef genera topologías/ecuaciones por haber demostrado capacidad de clasificación; distinguir tareas y límites al definir su experimento posterior. **Clairic** permanece como recurso/antecedente numérico separado.
+- **Memoria:** ATMS es la proyección razonada de soportes, supuestos y dependencias de **hipótesis, simulaciones, contradicciones e iteraciones**. Un ledger bitemporal conserva los eventos y artefactos originales; ATMS no sustituye almacenamiento ni prueba verdad causal. La memoria visible para revisar un brazo excluye productos de los rivales.
+- **Repositorio:** `IGC/main` es base integrada; no borrar ramas, PRs, commits o artefactos experimentales de `IGC`/`short`, no fusionar automáticamente PRs apilados; promover solo módulos auditados desde PRs pequeños con pruebas.
+- **Alcance de verificación inicial:** `scripts/arena_v0_contract.py` y CI de V0.0 verifican **solo contratos de entrada, aislamiento lógico de paquetes, feedback y trazas**. No demuestran generadores D/B/M, OpenModelica común, custodia blind, memoria ATMS de producción ni cuarto brazo Clef.
+- **Documento rector:** `docs/ARENA_IGC_ATMS_PLAN_IMPLEMENTACION_V1_3_2026-10-25.md`, con las fases posteriores mencionadas sin diseñarlas.
