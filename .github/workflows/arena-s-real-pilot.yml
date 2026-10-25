@@ -9,6 +9,7 @@ on:
       - 'scripts/arena_s_pilot_enumeration.py'
       - 'scripts/arena_s_pilot_lock.py'
       - 'scripts/arena_s_pilot_physics.py'
+      - 'scripts/arena_s_pilot_ci.py'
       - 'tests/test_arena_s_pilot_physics.py'
       - 'tests/test_arena_s_pilot.py'
       - 'scripts/arena_sp_producers.py'
