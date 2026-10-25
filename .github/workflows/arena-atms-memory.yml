@@ -331,6 +331,35 @@ jobs:
           test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
           test -f /tmp/igc-modelica/MSL/Modelica/package.mo
 
+      - name: Prepare PUBLIC non-blind pilot with independently calibrated structures
+        run: |
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_s_pilot_ci prepare --out artifacts/arena-s-pilot-ci
+
+      - name: Simulate calibrated two-model pilot with physical pulse and parity check
+        run: |
+          set -o pipefail
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/arena-s-pilot-ci/calibration:/composer:ro" \
+            -v "$PWD/artifacts/arena-s-pilot-ci/enumeration:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-enumeration.mos 2>&1 | tee artifacts/arena-s-pilot-ci/enumeration/openmodelica.log
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_s_pilot_ci verify --out artifacts/arena-s-pilot-ci
+
+      - name: Archive non-blind calibrated pilot solver validation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-s-pilot-calibrated-openmodelica-ci
+          path: artifacts/arena-s-pilot-ci/
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Check and simulate only ATMS-admissible molecular alternatives
         run: |
           set -o pipefail
