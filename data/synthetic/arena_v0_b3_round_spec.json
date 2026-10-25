@@ -1,0 +1,58 @@
+{
+  "schema": "igc-arena-round/0.1",
+  "synthetic": true,
+  "investigation_id": "INV-MOLECULAR-B3-REGRESSION",
+  "round_id": "V0-B3-PUBLIC-REGRESSION-001",
+  "question": "Can predeclared one-stage and two-stage molecular queue models produce distinguishable predictions under the same synthetic load?",
+  "observable_id": "delivered",
+  "as_known_at": "2026-10-24T09:00:00Z",
+  "allowed_lanes": [
+    "B0",
+    "D",
+    "S",
+    "P"
+  ],
+  "target_times": [
+    6,
+    8,
+    10
+  ],
+  "observability": {
+    "kind": "proxy",
+    "unit": "units",
+    "instrument": "synthetic cumulative counter; illustrative only; not an empirical observation"
+  },
+  "evaluation_metric": "RMSE",
+  "blindness_claim": "NOT_ESTABLISHED",
+  "max_retries": 0,
+  "budgets": {
+    "B0": {
+      "llm_calls": 4,
+      "tokens": 4000,
+      "simulations": 8,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "D": {
+      "llm_calls": 4,
+      "tokens": 4000,
+      "simulations": 4,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "S": {
+      "llm_calls": 4,
+      "tokens": 4000,
+      "simulations": 8,
+      "human_minutes": 30,
+      "retries": 0
+    },
+    "P": {
+      "llm_calls": 4,
+      "tokens": 4000,
+      "simulations": 8,
+      "human_minutes": 30,
+      "retries": 0
+    }
+  }
+}

@@ -1,0 +1,415 @@
+name: Arena ATMS + temporal memory (M0)
+on:
+  push:
+    branches: [feature/arena-atms-memory-core]
+    paths:
+      - 'scripts/arena_atms.py'
+      - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_capture.py'
+      - 'scripts/arena_sp_capture.py'
+      - 'scripts/arena_sp_verify_capture.py'
+      - 'scripts/arena_sp_simulation.py'
+      - 'tests/test_arena_sp_handoff.py'
+      - 'scripts/arena_sp_handoff.py'
+      - 'tests/test_arena_custodian.py'
+      - 'scripts/arena_custodian.py'
+      - 'data/synthetic/arena_sp_public_catalog.json'
+      - 'tests/test_arena_sp_producers.py'
+      - 'scripts/arena_sp_producers.py'
+      - 'docs/ARENA_V0_ROUND_LOCK.md'
+      - 'data/synthetic/arena_v0_b3_primary.json'
+      - 'data/synthetic/arena_v0_b3_round_spec.json'
+      - 'tests/test_arena_b3_lock.py'
+      - 'tests/test_arena_round.py'
+      - 'scripts/arena_b3_lock.py'
+      - 'scripts/arena_round.py'
+      - 'tests/test_arena_atms_memory.py'
+      - 'data/synthetic/arena_memory_m0.json'
+      - '.github/workflows/arena-atms-memory.yml'
+      - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
+      - 'scripts/fm_b2_atms_candidate_reasoning.py'
+      - 'scripts/f3_candidate_selection.py'
+  pull_request:
+    branches: [fm-12-13-atms-llm-ablation]
+    paths:
+      - 'scripts/arena_atms.py'
+      - 'scripts/arena_memory.py'
+      - 'tests/test_arena_sp_capture.py'
+      - 'scripts/arena_sp_capture.py'
+      - 'scripts/arena_sp_verify_capture.py'
+      - 'scripts/arena_sp_simulation.py'
+      - 'tests/test_arena_sp_handoff.py'
+      - 'scripts/arena_sp_handoff.py'
+      - 'tests/test_arena_custodian.py'
+      - 'scripts/arena_custodian.py'
+      - 'data/synthetic/arena_sp_public_catalog.json'
+      - 'tests/test_arena_sp_producers.py'
+      - 'scripts/arena_sp_producers.py'
+      - 'docs/ARENA_V0_ROUND_LOCK.md'
+      - 'data/synthetic/arena_v0_b3_primary.json'
+      - 'data/synthetic/arena_v0_b3_round_spec.json'
+      - 'tests/test_arena_b3_lock.py'
+      - 'tests/test_arena_round.py'
+      - 'scripts/arena_b3_lock.py'
+      - 'scripts/arena_round.py'
+      - 'tests/test_arena_atms_memory.py'
+      - 'data/synthetic/arena_memory_m0.json'
+      - '.github/workflows/arena-atms-memory.yml'
+      - 'docs/ARENA_ATMS_M0_IMPLEMENTACION.md'
+permissions:
+  contents: read
+jobs:
+  memory-atms-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Run adversarial ATMS and memory unit tests
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_atms_memory.py' -v
+          python -m unittest discover -s tests -p 'test_f3_candidate_selection.py' -v
+          python -m unittest discover -s tests -p 'test_arena_round.py' -v
+          python -m unittest discover -s tests -p 'test_arena_b3_lock.py' -v
+          python -m unittest discover -s tests -p 'test_arena_custodian.py' -v
+      - name: Retrieve hypothesis and its minimal supporting environments
+        run: |
+          mkdir -p artifacts/arena-memory-m0
+          python -m scripts.arena_memory \
+            --events data/synthetic/arena_memory_m0.json \
+            --case INV-CAF-M0 \
+            --as-known-at '2026-10-20T10:00:00Z' \
+            --lane D \
+            --query 'abandono espera' \
+            --output artifacts/arena-memory-m0/retrieval.json
+          python -m scripts.arena_memory \
+            --events data/synthetic/arena_memory_m0.json \
+            --case INV-CAF-M0 \
+            --as-known-at '2026-10-20T10:00:00Z' \
+            --lane D \
+            --query 'abandono espera' \
+            --backend fts5 \
+            --output artifacts/arena-memory-m0/retrieval-fts5.json
+      - name: Check manifest and no hidden/future leakage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-memory-m0/retrieval.json')
+          r=json.loads(p.read_text(encoding='utf-8'))
+          assert r['holdout_accessed'] is False
+          assert r['items'] and r['items'][0]['logical_support']['minimal_environments'] == [
+            ['count-b', 'waiting-mechanism']]
+          assert r['items'][0]['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert 'gold-model' not in p.read_text(encoding='utf-8')
+          assert 'Respuesta verdadera oculta' not in p.read_text(encoding='utf-8')
+          assert 'No presente en snapshot' not in p.read_text(encoding='utf-8')
+          fts=json.loads(Path('artifacts/arena-memory-m0/retrieval-fts5.json').read_text(encoding='utf-8'))
+          assert fts['retrieval_backend']=='FTS5_V0'
+          assert [x['id'] for x in fts['items']]==[x['id'] for x in r['items']]
+          assert fts['items'][0]['logical_support']==r['items'][0]['logical_support']
+          assert fts['holdout_accessed'] is False
+          print('M0_FTS5_ATMS_PASS_SYNTHETIC',fts['reproducibility_hash'])
+          print('M0_ATMS_RETRIEVAL_PASS_SYNTHETIC',r['reproducibility_hash'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-atms-memory-m0
+          path: artifacts/arena-memory-m0/
+          retention-days: 14
+          if-no-files-found: warn
+
+  arena-sp-provider-contracts:
+    needs: memory-atms-contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test independent S/P requests and provider response validation without inference
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_sp_producers.py' -v
+          python -m unittest discover -s tests -p 'test_arena_sp_handoff.py' -v
+          python -m unittest discover -s tests -p 'test_arena_sp_capture.py' -v
+      - name: Create S/P inference requests for review (zero provider calls)
+        run: |
+          mkdir -p artifacts/arena-sp-preparation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import prepare,canonical
+          from scripts.arena_sp_producers import build_requests
+          root=Path('data/synthetic')
+          spec=json.loads((root/'arena_v0_b3_round_spec.json').read_text())
+          primary=json.loads((root/'arena_v0_b3_primary.json').read_text())
+          catalog=json.loads((root/'arena_sp_public_catalog.json').read_text())
+          views=prepare(spec,primary)
+          package=build_requests(views,spec,catalog)
+          assert package['manifest']['calls_made']==0
+          Path('artifacts/arena-sp-preparation/requests.json').write_bytes(canonical(package)+b'\n')
+          print('SP_PREPARED_NO_INFERENCE',package['manifest']['requests_hash'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-sp-producer-preparation-no-inference
+          path: artifacts/arena-sp-preparation/
+          retention-days: 14
+
+  molecular-shared-atms-regression:
+    needs: memory-atms-contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install existing hash-locked molecular dependencies
+        run: |
+          python -m venv /tmp/igc-arena-linkml
+          /tmp/igc-arena-linkml/bin/python -m pip install \
+            --require-hashes --no-deps -r requirements-f1a-linkml.lock.txt
+      - name: Verify old FM-B2 and FM-B3 contracts against shared Arena ATMS
+        run: |
+          /tmp/igc-arena-linkml/bin/python -m unittest discover \
+            -s tests -p 'test_fm_b2_atms_molecular_candidates.py' -v
+          /tmp/igc-arena-linkml/bin/python -m unittest discover \
+            -s tests -p 'test_fm_b3_dynamic_evaluation.py' -v
+
+  arena-molecular-openmodelica:
+    needs: molecular-shared-atms-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      IGC_OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13.16"
+
+      - name: Install hash-locked LinkML validation dependencies
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer artifacts/fm-b3-molecular-dynamics
+          python -m venv /tmp/igc-linkml-locked
+          /tmp/igc-linkml-locked/bin/python -m pip install --require-hashes --no-deps --requirement requirements-f1a-linkml.lock.txt
+
+      - name: Test B1 composition, B2 reasoning and B3 dynamics contracts
+        run: |
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b_molecular_composer.py' -v
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b2_atms_molecular_candidates.py' -v
+          /tmp/igc-linkml-locked/bin/python -m unittest discover -s tests -p 'test_fm_b3_dynamic_evaluation.py' -v
+
+      - name: Compose three distinct candidate structures with LinkML contracts
+        run: |
+          mkdir -p artifacts/fm-b-molecular-composer/linkml
+          for top_class in ConceptualModelRequest MoleculeDefinition SystemModelCandidate SystemStructureRevision; do
+            /tmp/igc-linkml-locked/bin/gen-json-schema --top-class "$top_class" schema/source/igc.yaml > "artifacts/fm-b-molecular-composer/linkml/${top_class}.schema.json"
+          done
+          /tmp/igc-linkml-locked/bin/python scripts/compose_molecular_candidates.py \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --schema-dir artifacts/fm-b-molecular-composer/linkml \
+            --output-dir artifacts/fm-b-molecular-composer | tee artifacts/fm-b-molecular-composer/composer.log
+
+      - name: Seal independent MOCK S/P selection before ANY Modelica execution
+        run: |
+          mkdir -p artifacts/arena-sp-independent/views
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import prepare,canonical
+          from scripts.arena_sp_producers import build_requests,parse_responses
+          from scripts.arena_sp_handoff import seal_handoff,p_submission,simulation_selection
+          root=Path('data/synthetic')
+          out=Path('artifacts/arena-sp-independent')
+          load=lambda p:json.loads(p.read_text(encoding='utf-8'))
+          spec=load(root/'arena_v0_b3_round_spec.json')
+          primary=load(root/'arena_v0_b3_primary.json')
+          catalog=load(root/'arena_sp_public_catalog.json')
+          supports=load(root/'fm_b3_dynamic_supports.json')
+          composed=load(Path('artifacts/fm-b-molecular-composer/composed_candidates.json'))
+          views=prepare(spec,primary)
+          package=build_requests(views,spec,catalog)
+          raw={'S_GLM':{'success':True,'result':{'response':json.dumps({
+                  'selected_candidate_ids':['urn:igc:candidate:CS-02'],
+                  'rationale':'SYNTHETIC MOCK selection for solver contract only',
+                  'falsifier':'Pulse discriminates calibrated alternatives',
+                  'unknowns':['No real provider inference'],
+                  'next_test':'Perturb arrival rate'})}},
+               'P_CLEF':{'success':True,'result':{'answers':{'assessment':{
+                  'choice':'INSUFFICIENT','probabilities':{
+                  'INSUFFICIENT':.85,'CS_01':.05,'CS_02':.05,'EQUIVALENT':.05}}}}},
+               'P_CLAIRIC':{'success':True,'result':{'answers':{
+                  'observed_increment':{'value':2.0}}}}}
+          draft=parse_responses(package,raw,catalog)
+          seal=seal_handoff(draft,package,catalog,views,composed,supports,
+                            origin='MOCK_SYNTHETIC')
+          selection=simulation_selection(seal,composed,supports)
+          assert [x['candidate_id'] for x in selection['selected']]==[
+                'urn:igc:candidate:CS-02']
+          assert p_submission(seal,views['P'])['status']=='ABSTAINED'
+          for lane in ('S','P'):
+              (out/'views'/(lane+'.json')).write_bytes(canonical(views[lane])+b'\n')
+          for name,doc in [('package.json',package),('draft.json',draft),
+                           ('handoff.json',seal),('p-mock-abstention.json',
+                           p_submission(seal,views['P']))]:
+              (out/name).write_bytes(canonical(doc)+b'\n')
+          print('S_P_MOCK_HANDOFF_LOCKED_BEFORE_SOLVER',seal['handoff_hash'])
+          PY
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_sp_simulation prepare \
+            --handoff artifacts/arena-sp-independent/handoff.json \
+            --draft artifacts/arena-sp-independent/draft.json \
+            --package artifacts/arena-sp-independent/package.json \
+            --catalog data/synthetic/arena_sp_public_catalog.json \
+            --views-dir artifacts/arena-sp-independent/views \
+            --composed artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --supports data/synthetic/fm_b3_dynamic_supports.json \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --out artifacts/arena-sp-independent/simulation
+
+      - name: Apply ATMS and prepare simulations for admissible explanations only
+        run: |
+          /tmp/igc-linkml-locked/bin/python scripts/fm_b3_dynamic_evaluation.py prepare \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --support-plan data/synthetic/fm_b3_dynamic_supports.json \
+            --catalog data/synthetic/fm_a_structural_candidates.json \
+            --candidates artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --composition-report artifacts/fm-b-molecular-composer/composition-report.json \
+            --output-dir artifacts/fm-b3-molecular-dynamics
+
+      - name: Fetch immutable SystemDynamics and MSL sources
+        run: |
+          mkdir -p /tmp/igc-modelica/SystemDynamics /tmp/igc-modelica/MSL
+          curl --fail --location --silent --show-error https://github.com/modelica-3rdparty/SystemDynamics/archive/b986a2ea354ab550d627a392f857ad7c9997d961.tar.gz --output /tmp/igc-modelica/systemdynamics.tar.gz
+          curl --fail --location --silent --show-error https://github.com/modelica/ModelicaStandardLibrary/archive/6626538a236a34a390655b55d5e8c906bfe31772.tar.gz --output /tmp/igc-modelica/msl.tar.gz
+          sha256sum /tmp/igc-modelica/systemdynamics.tar.gz | tee artifacts/fm-b3-molecular-dynamics/systemdynamics.archive.sha256
+          sha256sum /tmp/igc-modelica/msl.tar.gz | tee artifacts/fm-b3-molecular-dynamics/msl.archive.sha256
+          tar -xzf /tmp/igc-modelica/systemdynamics.tar.gz --strip-components=1 -C /tmp/igc-modelica/SystemDynamics
+          tar -xzf /tmp/igc-modelica/msl.tar.gz --strip-components=1 -C /tmp/igc-modelica/MSL
+          test -f /tmp/igc-modelica/SystemDynamics/SystemDynamics/package.mo
+          test -f /tmp/igc-modelica/MSL/Modelica/package.mo
+
+      - name: Check and simulate only ATMS-admissible molecular alternatives
+        run: |
+          set -o pipefail
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-molecular-composer:/composer:ro" \
+            -v "$PWD/artifacts/fm-b3-molecular-dynamics:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-admissible-candidates.mos 2>&1 | tee artifacts/fm-b3-molecular-dynamics/openmodelica.log
+          for class in B3MolecularDynamics.Evaluate_CS_01 B3MolecularDynamics.Evaluate_CS_02; do
+            grep -Fq "Check of ${class} completed successfully" artifacts/fm-b3-molecular-dynamics/openmodelica.log
+          done
+          if grep -Eq "Error:|Failed to load|Class .* not found" artifacts/fm-b3-molecular-dynamics/openmodelica.log; then
+            echo "OpenModelica reported a model or simulation error" >&2
+            exit 1
+          fi
+          test -s artifacts/fm-b3-molecular-dynamics/b3-cs_01_res.csv
+          test -s artifacts/fm-b3-molecular-dynamics/b3-cs_02_res.csv
+          test ! -e artifacts/fm-b3-molecular-dynamics/b3-cs_03_res.csv
+
+      - name: Independently simulate only frozen ATMS-admitted MOCK S candidate
+        run: |
+          set -o pipefail
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --workdir /results \
+            -e HOME=/tmp \
+            -e MODELICAPATH=/opt/modelica:/opt/systemdynamics \
+            -v "$PWD/poc/short_wrappers:/evidence:ro" \
+            -v "/tmp/igc-modelica/MSL:/opt/modelica:ro" \
+            -v "/tmp/igc-modelica/SystemDynamics:/opt/systemdynamics:ro" \
+            -v "$PWD/artifacts/fm-b-molecular-composer:/composer:ro" \
+            -v "$PWD/artifacts/arena-sp-independent/simulation:/results" \
+            "$IGC_OMC_IMAGE" omc /results/run-s-selected.mos 2>&1 | tee artifacts/arena-sp-independent/simulation/s-openmodelica.log
+          test -s artifacts/arena-sp-independent/simulation/b3-cs_02_res.csv
+          test ! -e artifacts/arena-sp-independent/simulation/b3-cs_01_res.csv
+          test ! -e artifacts/arena-sp-independent/simulation/b3-cs_03_res.csv
+          /tmp/igc-linkml-locked/bin/python -m scripts.arena_sp_simulation verify \
+            --handoff artifacts/arena-sp-independent/handoff.json \
+            --composed artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --out artifacts/arena-sp-independent/simulation \
+            --log artifacts/arena-sp-independent/simulation/s-openmodelica.log
+
+      - name: Assess stock-flow coherence and compare retained explanations
+        run: |
+          /tmp/igc-linkml-locked/bin/python scripts/fm_b3_dynamic_evaluation.py verify \
+            --plan data/synthetic/fm_b3_dynamic_plan.json \
+            --support-plan data/synthetic/fm_b3_dynamic_supports.json \
+            --catalog data/synthetic/fm_a_structural_candidates.json \
+            --candidates artifacts/fm-b-molecular-composer/composed_candidates.json \
+            --composition-report artifacts/fm-b-molecular-composer/composition-report.json \
+            --openmodelica-log artifacts/fm-b3-molecular-dynamics/openmodelica.log \
+            --image "$IGC_OMC_IMAGE" \
+            --output-dir artifacts/fm-b3-molecular-dynamics | tee artifacts/fm-b3-molecular-dynamics/verification.log
+
+      - name: Lock verified FM-B3 predictions alongside B0 without reserve
+        run: |
+          python -m scripts.arena_b3_lock \
+            --spec data/synthetic/arena_v0_b3_round_spec.json \
+            --primary data/synthetic/arena_v0_b3_primary.json \
+            --report artifacts/fm-b3-molecular-dynamics/b3-dynamic-evaluation.json \
+            --simulation-dir artifacts/fm-b3-molecular-dynamics \
+            --run-ref "github-actions:${GITHUB_RUN_ID}" \
+            --output-dir artifacts/arena-v0-b3-lock
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_round import verify_lock
+          p=Path('artifacts/arena-v0-b3-lock/prediction-lock.json')
+          lock=json.loads(p.read_text(encoding='utf-8'))
+          verify_lock(lock)
+          assert lock['evaluation_status']=='LOCKED_NOT_EVALUATED'
+          assert [x['candidate_id'] for x in lock['submissions']['D']['proposals']]==[
+            'urn:igc:candidate:CS-01','urn:igc:candidate:CS-02']
+          assert lock['submissions']['S']['status']=='NOT_IMPLEMENTED'
+          assert lock['submissions']['P']['status']=='NOT_IMPLEMENTED'
+          print('ARENA_B3_PREDICTION_LOCK_PASS_SYNTHETIC',lock['lock_hash'])
+          PY
+
+      - name: Archive Arena construction and prediction lock
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-v0-b3-construction-lock
+          path: artifacts/arena-v0-b3-lock/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Archive S/P sealed MOCK pre-simulation and independent Modelica outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-sp-independent-atms-modelica-mock
+          path: artifacts/arena-sp-independent/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload B3 dynamic evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-v0-atms-molecular-modelica
+          path: artifacts/fm-b3-molecular-dynamics/
+          if-no-files-found: error

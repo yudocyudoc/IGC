@@ -1,0 +1,26 @@
+{
+  "schema": "igc-arena-public-catalog/0.1",
+  "synthetic": true,
+  "round_id": "V0-B3-PUBLIC-REGRESSION-001",
+  "source": "data/synthetic/fm_b3_dynamic_plan.json (public catalogue reference; no D submission or simulated outputs)",
+  "candidates": [
+    {
+      "candidate_id": "urn:igc:candidate:CS-01",
+      "stages": 1,
+      "structure": "one serial queue with input and delivered output",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    },
+    {
+      "candidate_id": "urn:igc:candidate:CS-02",
+      "stages": 2,
+      "structure": "two serial queues with common source/sink",
+      "verification_status": "CATALOGUE_DECLARATION_ONLY"
+    },
+    {
+      "candidate_id": "urn:igc:candidate:CS-03",
+      "stages": 3,
+      "structure": "three serial queues, potentially unsupported by current assumptions",
+      "verification_status": "REQUIRES_ATMS_ADMISSIBILITY"
+    }
+  ]
+}

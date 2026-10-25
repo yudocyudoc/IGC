@@ -1,0 +1,18 @@
+{
+  "investigation_id": "INV-MOLECULAR-B3-REGRESSION",
+  "observable_id": "delivered",
+  "unit": "units",
+  "times": [
+    0,
+    2,
+    4
+  ],
+  "values": [
+    0,
+    2,
+    4
+  ],
+  "sources": [
+    "fixture:illustrative-public-construction-not-empirical"
+  ]
+}

@@ -9,9 +9,9 @@ import math
 from typing import Any
 
 try:
-    from .f0_atms_probe import AtmsProbe
+    from .arena_atms import ATMS, Rule, ENGINE_VERSION
 except ImportError:
-    from f0_atms_probe import AtmsProbe
+    from arena_atms import ATMS, Rule, ENGINE_VERSION
 
 
 class CandidateSelectionError(ValueError):
@@ -93,14 +93,17 @@ def select_candidates(
                 or not set(nogood) <= known):
             raise CandidateSelectionError("each nogood must cite unique known assumption ids")
 
-    atms = AtmsProbe()
-    for assumption_id in assumption_ids:
-        atms.assume(assumption_id)
-    for proposal in proposals:
-        atms.justify(tuple(proposal["assumption_ids"]),
-                     proposal_nodes[proposal["candidate_id"]])
-    for nogood in nogoods:
-        atms.add_nogood(frozenset(nogood))
+    proposal_rules = [
+        Rule("proposal:" + proposal["candidate_id"],
+             tuple(proposal["assumption_ids"]),
+             proposal_nodes[proposal["candidate_id"]])
+        for proposal in proposals
+    ]
+    atms = ATMS(
+        set(assumption_ids), set(),
+        proposal_rules,
+        {frozenset(nogood) for nogood in nogoods}
+    )
 
     selected = []
     rejected = []
@@ -122,7 +125,7 @@ def select_candidates(
         candidate["mechanism_hypothesis"]["statement"] = proposal["mechanism_statement"]
         candidate["status"] = "SYNTHETIC_ATMS_SELECTED"
         candidate["atms_selection"] = {
-            "engine": "f0-atms-feasibility/0.1",
+            "engine": ENGINE_VERSION,
             "production_engine_selected": False,
             "node": node,
             "minimal_supporting_environments": labels,
@@ -135,7 +138,7 @@ def select_candidates(
     return {
         "schema": "igc-atms-candidate-selection/0.1",
         "synthetic": True,
-        "prototype": "f0-atms-feasibility/0.1",
+        "prototype": ENGINE_VERSION,
         "production_engine_selected": False,
         "selected": selected,
         "rejected": rejected,
