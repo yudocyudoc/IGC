@@ -137,6 +137,26 @@ jobs:
           assert r['inference_source']=='REAL_CLOUDFLARE_WORKERS_AI'
           print('BUFFALO_ORIGINAL_RECEIVED_PHYSICAL_CONSTRUCTION_FEEDBACK_REAL_CLOUD',r['variable_count'])
           PY
+      - name: Adjudicate REAL Buffalo revision through strict G0 and real OpenModelica G2
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_b_physical_outcome \
+            --native artifacts/b-physical-live/native-output.json \
+            --prior-native artifacts/b-physical-source/revision-live/native-output.json \
+            --feedback artifacts/b-feedback.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b-physical-evaluation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('artifacts/b-physical-evaluation/adjudication.json').read_text())
+          assert result['arm_id']=='B'
+          assert result['parent_native_sha256']=='sha256:d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9'
+          assert result['heldout_evaluation']=='NOT_RUN'
+          assert result['original_budget']=='EXTENDED_SEPARATE_EXPERIMENT_NOT_ORIGINAL_B_ROUND'
+          print('BUFFALO_OWN_PHYSICAL_MODEL_ADJUDICATED',result['g0_status'],result['g2_status'],result.get('construction_change'))
+          PY
       - name: Archive complete diagnostic and all transport receipts including failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -146,4 +166,5 @@ jobs:
             artifacts/b-feedback.json
             artifacts/b-physical-offline/
             artifacts/b-physical-live/
+            artifacts/b-physical-evaluation/
           retention-days: 30
