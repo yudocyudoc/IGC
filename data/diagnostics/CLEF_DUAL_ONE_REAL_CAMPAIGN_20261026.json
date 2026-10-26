@@ -1,0 +1,13 @@
+{
+  "schema": "igc-clef-two-real-pilots-one-campaign/0.1",
+  "model": "@cf/cloudflare/clef",
+  "max_calls": 17,
+  "numeric_cases": 8,
+  "semantic_cases": 9,
+  "source_m3_real_solver_run_id": 40298421985,
+  "never_see_oracle": true,
+  "not_an_active_igc_arm": true,
+  "no_retry": true,
+  "no_merging_into_main": true,
+  "separate_user_authorization": true
+}
