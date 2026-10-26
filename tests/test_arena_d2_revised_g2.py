@@ -45,12 +45,21 @@ class RevisedD2ModelicaTests(unittest.TestCase):
         original=list(self.original)
         fake=copy.deepcopy(original[0])
         fake["report"]["results"][0]["revised_best_parameters"]["response_time"]=999
+        # Recompute the trace hash to probe the semantic gate, not only the
+        # earlier tamper-evident event hash gate.
+        from scripts.arena_v0_contract import digest
+        fake["d2_trace_event"]["payload_hash"]=digest(fake["report"])
+        fake["d2_trace_event"]["event_hash"]=digest({
+            k:v for k,v in fake["d2_trace_event"].items() if k!="event_hash"})
         original[0]=fake
         with self.assertRaisesRegex(ValueError,"D2_PARAMETER_OUTSIDE_GRID"):
             verify_lineage(DATA,PROTOCOL,*original)
         original=list(self.original)
         fake=copy.deepcopy(original[0])
         fake["report"]["results"][0]["structure_changed"]=True
+        fake["d2_trace_event"]["payload_hash"]=digest(fake["report"])
+        fake["d2_trace_event"]["event_hash"]=digest({
+            k:v for k,v in fake["d2_trace_event"].items() if k!="event_hash"})
         original[0]=fake
         with self.assertRaisesRegex(ValueError,"D2_UNAUTHORIZED_STRUCTURE_OR_PARAMETER"):
             verify_lineage(DATA,PROTOCOL,*original)
@@ -65,6 +74,14 @@ class RevisedD2ModelicaTests(unittest.TestCase):
         original=list(self.original)
         fake=copy.deepcopy(original[2])
         fake["other_arm_result"]={"M":"adversarial"}
+        # An extra foreign field must fail even when its hash is reattached
+        # to a hand-edited report; the original trial contract remains strict.
+        from scripts.arena_v0_contract import digest
+        original[0]=copy.deepcopy(original[0])
+        original[0]["report"]["trial_hash"]=digest(fake)
+        original[0]["d2_trace_event"]["payload_hash"]=digest(original[0]["report"])
+        original[0]["d2_trace_event"]["event_hash"]=digest({
+            k:v for k,v in original[0]["d2_trace_event"].items() if k!="event_hash"})
         original[2]=fake
         from scripts.arena_d_atms_bridge import BridgeError
         with self.assertRaises(BridgeError):
