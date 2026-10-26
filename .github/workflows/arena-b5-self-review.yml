@@ -1,0 +1,204 @@
+name: Arena Buffalo B5 — self contradiction one-shot real inference
+on:
+  push:
+    branches: [feature/arena-b5-self-contradiction-20261026]
+  pull_request:
+    branches: [feature/arena-b4-blind-diagnostic-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  b5-self-revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download B4 original real native response, no re-inference
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-b4-blind-complete-audit
+          run-id: 40393509770
+          github-token: ${{ github.token }}
+          path: artifacts/b5-b4-original
+      - name: Download B4 physical G2 result by actual pinned original Modelica
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-b4-uncued-postonly-g0-g2-adjudication
+          run-id: 40394222878
+          github-token: ${{ github.token }}
+          path: artifacts/b5-b4-physical
+      - name: Freeze neutral own-explanation-versus-own-G2 without identifying suspect equation
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_b5_own_discrepancy.py scripts/arena_b_physical_outcome.py
+          node --check scripts/arena_b_openrouter_cloudflare.mjs
+          python -m scripts.arena_b5_own_discrepancy \
+            --native artifacts/b5-b4-original/b4-live/native-output.json \
+            --adjudication artifacts/b5-b4-physical/adjudication.json \
+            --out artifacts/b5-feedback.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/b5-feedback.json').read_text())
+          assert x['parent_own_explanation_verbatim'].find('near 0.35, 1.05, and 2.45')>=0
+          assert len(x['comparisons'])==3
+          assert 'ramp' not in x['instructions'].lower()
+          assert 'utilization' not in x['instructions'].lower()
+          assert x['other_arms_included'] is False
+          assert x['holdout']=='NOT_RUN'
+          print('B5_OWN_G2_VS_OWN_EXPECTATION_FEEDBACK_AUTHENTICATED')
+          PY
+      - name: Obtain pinned original SD AI Buffalo engine
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Verify parent as currentModel delivered to actual Buffalo engine, zero real calls
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b5-b4-original/b4-live/native-output.json
+          BUFFALO_SELF_DISCREPANCY: ${{ github.workspace }}/artifacts/b5-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b5-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const fs=require('node:fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/b5-offline/receipt.json'));
+          if(r.status!=='OFFLINE_BUFFALO_B5_SELF_REVIEW_CONTRACT_PASS'||
+             !r.current_model_seen||!r.b5_feedback_seen||
+             !r.no_suspect_equation_hint||r.live_provider_calls!==0||
+             r.intercepted_http_calls!==1||!r.structured_request_seen)
+            throw Error('BUFFALO_B5_CURRENTMODEL_OFFLINE_CONTRACT_FAILED');
+          console.log('ORIGINAL_BUFFALO_B5_SELF_REVIEW_OFFLINE_VERIFIED_NO_PROVIDER');
+          JS
+      - name: Authorize one separately bounded B5 call only on NEW marker commit
+        id: grant
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != push ] || [ "$ATTEMPT" != 1 ] ||
+             [ "$REF" != refs/heads/feature/arena-b5-self-contradiction-20261026 ] ||
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+               grep -Fxq data/diagnostics/BUFFALO_B5_ONE_REAL_SELF_REVIEW_20261026.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'B5_NO_NEW_MARKER_NO_REMOTE_CALL'
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('data/diagnostics/BUFFALO_B5_ONE_REAL_SELF_REVIEW_20261026.json').read_text())
+          assert m=={
+           'schema':'igc-b5-one-real-self-critique/0.1',
+           'model':'@cf/zai-org/glm-5.3-flash',
+           'max_real_calls':1,
+           'parent_b4_sha256':'c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb',
+           'parent_b4_G2_sha256':'2e97c1f7d87d75c3c91649c340d97c6ff0557bfcc30a1456f1d4bda6cd9e3533',
+           'prior_b4_real_run_id':40393509770,
+           'without_ramp_equation_hint':True,
+           'from_own_explanation_and_own_G2_only':True,
+           'no_other_arm_data':True,'no_holdout':True,
+           'no_automatic_retries':True,'new_experiment':True,
+           'researcher_authorized':True
+          }
+          print('B5_ONE_REAL_PROVIDER_CALL_SEPARATELY_AUTHORIZED')
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: One real B5 Buffalo hypothesis revision, never auto retry
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b5-b4-original/b4-live/native-output.json
+          BUFFALO_SELF_DISCREPANCY: ${{ github.workspace }}/artifacts/b5-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b5-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_B5_SELF_CONTRADICTION
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('artifacts/b5-live')
+          receipt=json.loads((p/'receipt.json').read_text())
+          assert receipt['status']=='REAL_CLOUDFLARE_BUFFALO_B5_SELF_REVIEW_RETURNED'
+          assert receipt['live_provider_calls']==receipt['intercepted_http_calls']==1
+          assert receipt['b5_feedback_seen'] and receipt['current_model_seen']
+          assert receipt['raw_cloudflare_preserved']
+          print('BUFFALO_B5_REAL_NATIVE_OUTPUT_CAPTURED',receipt['variable_count'],
+                receipt['relationship_count'])
+          PY
+      - name: SAVE real model, provider response and exact prompt before evaluating
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b5-self-review-real-raw-before-physical-adjudication
+          path: |
+            artifacts/b5-feedback.json
+            artifacts/b5-live/
+          retention-days: 45
+          if-no-files-found: warn
+      - name: Physically adjudicate B5 alone, compare to own B4 (never repair automatically)
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          test -s artifacts/b5-live/cloudflare-raw.json
+          test -s artifacts/b5-live/native-output.json
+          python -m scripts.arena_b_physical_outcome \
+            --native artifacts/b5-live/native-output.json \
+            --prior-native artifacts/b5-b4-original/b4-live/native-output.json \
+            --feedback artifacts/b5-feedback.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b5-adjudication
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('artifacts/b5-adjudication/adjudication.json').read_text())
+          assert d['schema']=='igc-b5-self-review-physical-adjudication/0.1'
+          assert d['heldout_evaluation']=='NOT_RUN'
+          assert d['parent_native_sha256']=='sha256:c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb'
+          print('B5_SELF_REVIEW_PHYSICAL_RESULT',d['g0_status'],d['g2_status'],
+                d.get('rmse_n3'),d.get('construction_change'),d.get('blocked_reason'))
+          PY
+      - name: Normalize Docker output permissions
+        if: always()
+        run: |
+          if [ -d artifacts/b5-adjudication ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b5-adjudication
+          fi
+      - name: Complete audit zip source files, including negative outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b5-self-review-complete-audit
+          path: |
+            artifacts/b5-feedback.json
+            artifacts/b5-offline/
+            artifacts/b5-live/
+            artifacts/b5-adjudication/
+          retention-days: 45
+          if-no-files-found: warn
