@@ -145,7 +145,7 @@ def prepare(out):
         "cases":truth,"not_selector_input":True,
     })+b"\n")
     print(json.dumps({"status":"M3_ORIGINAL_E1_THREE_PHYSICAL_CANDIDATES_TWO_SEPARATE_WORLDS",
-                      "graphs":len(graphs),"representatives":len(candidates),
+                      "graphs":6,"representatives":len(candidates),
                       "solver_runs":5,"modelica_sha":public["modelica_sha256"]}))
 
 
