@@ -4,7 +4,9 @@
  */
 import {createHash} from "node:crypto";
 export const CF_MODEL="@cf/zai-org/glm-5.3-flash";
-export const OR_SLUG="z-ai/glm-5.3";
+// Deliberately NOT a real OpenRouter catalog model: namespaced virtual alias
+// triggers the unmodified Buffalo ModelCapabilities.OPEN_ROUTER code path.
+export const OR_SLUG="cloudflare/glm-5.3-flash";
 export const CF_MODE="CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA";
 export const digest=x=>"sha256:"+createHash("sha256").update(typeof x==="string"?x:JSON.stringify(x)).digest("hex");
 
