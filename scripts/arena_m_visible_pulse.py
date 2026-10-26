@@ -175,14 +175,13 @@ def main():
     # Original backend wrote default probe to test broad behavior; here the
     # public pulse is the *only* experimental source.
     cmds=[
-        "getVersion();",'loadModel(Modelica, {"4.0.0"});',
-        'loadModel(SystemDynamics, {"2.1.2"});',
+        "getVersion();",
         'loadFile("/repo/src/modelica/IGCMolecules.mo");',
         'loadFile("/repo/src/modelica/IGCInformationMolecules.mo");',
         'loadFile("/repo/'+str(a.out.relative_to(ROOT))+'/ArenaMGenerated.mo");',
         'checkModel(ArenaMGenerated.'+name+');',
         'print(getErrorString());',
-        'simulate(ArenaMGenerated.'+name+',startTime=0,stopTime=4,numberOfIntervals=80,method="dassl",tolerance=1e-8,outputFormat="csv",fileNamePrefix="/repo/'+str(a.out.relative_to(ROOT))+'/m-visible");',
+        'simulate(ArenaMGenerated.'+name+',startTime=0,stopTime=4,numberOfIntervals=80,method="dassl",tolerance=1e-8,outputFormat="csv",fileNamePrefix="'+str(a.out.relative_to(ROOT))+'/m-visible");',
         'print(getErrorString());'
     ]
     (a.out/"simulate.mos").write_text("\n".join(cmds)+"\n")
