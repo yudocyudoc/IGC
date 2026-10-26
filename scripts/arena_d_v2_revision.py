@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import math
+import re
 from pathlib import Path
 
 from scripts.arena_v0_contract import canonical, digest, trace_event
@@ -80,6 +81,8 @@ def _read_own_ledger(ledger, data, *, as_known_at):
     prior_screen = find("d1:screen", "ArenaDScreen")
     d0_bundle = find("d0:bundle", "ArenaDNativeBundle")
     records = [r.payload for r in own.values() if r.entity_type == "ArenaTraceEnvelope"]
+    check(event_id(case_id, round_id, "d2:revision") not in own,
+          "D2_ALREADY_RECORDED_FOR_ROUND")
     d0 = next((r for r in records if r.get("event_type") == "HYPOTHESIS_PROPOSED"
                and r.get("iteration") == 0), None)
     d1 = next((r for r in records if r.get("event_type") == "SIMULATION_REPORTED"
@@ -88,7 +91,10 @@ def _read_own_ledger(ledger, data, *, as_known_at):
     checked_trace({k: v for k, v in d0.items() if k != "kind"})
     checked_trace({k: v for k, v in d1.items() if k != "kind"})
     check(d1["previous_event_hash"] == d0["event_hash"] and
-          d1["payload_hash"] == digest(prior_screen), "INVALID_D1_PROVENANCE")
+          d1["payload_hash"] == digest(prior_screen) and
+          d0["source_hash"] == prior_screen["input_hash"] and
+          d0["payload_hash"] == digest(d0_bundle),
+          "INVALID_D1_PROVENANCE")
     return prior_screen, d0_bundle, d1
 
 
@@ -106,8 +112,7 @@ def validate_trial(data, protocol, prior, trial):
     check(trial["pulse"] == data["construction"]["input_profile"],
           "TRIAL_INPUT_CHANGED")
     check(isinstance(trial["source_csv_hash"], str) and
-          len(trial["source_csv_hash"]) == 71 and
-          trial["source_csv_hash"].startswith("sha256:"),
+          re.fullmatch(r"sha256:[0-9a-f]{64}", trial["source_csv_hash"]) is not None,
           "MISSING_WORLD_CSV_PROVENANCE")
     obs = trial["measurement"]
     check(type(obs) is dict and set(obs) == {"t", "delivered"} and
