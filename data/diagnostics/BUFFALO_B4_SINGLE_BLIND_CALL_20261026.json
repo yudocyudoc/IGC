@@ -1,0 +1,15 @@
+{
+  "schema": "igc-b4-blind-one-new-call/0.1",
+  "max_provider_calls": 1,
+  "max_output_tokens": 7000,
+  "previous_mechanistic_cue_experiment_run_id": 40290192821,
+  "new_separate_experiment": true,
+  "original_b2_model_bytes_sha256": "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9",
+  "historical_b2_simulation_run_id": 40283017108,
+  "blind_feedback_schema": "igc-b-blind-construction-residuals/0.1",
+  "researcher_authorized": true,
+  "no_cross_arm_information": true,
+  "no_mechanistic_cue": true,
+  "no_holdout_information": true,
+  "no_automatic_retries": true
+}

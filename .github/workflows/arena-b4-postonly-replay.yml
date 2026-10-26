@@ -1,0 +1,127 @@
+name: Arena B4 post-only OpenModelica replay — never re-call LLM
+on:
+  push:
+    branches: [feature/arena-b4-blind-diagnostic-20261026]
+  pull_request:
+    branches: [feature/arena-b3-archive-replay-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  b4-no-provider-adjudication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore real B4 byte-exact Cloudflare result only (no provider call)
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-b4-blind-complete-audit
+          run-id: 40393509770
+          github-token: ${{ github.token }}
+          path: artifacts/b4-archived
+      - name: Restore original real B2 native model for parent authentication
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/b4-parent
+      - name: Confirm EXACT real B4 output and authenticated uncued transport before adjudication
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('artifacts/b4-archived')
+          receipt=json.loads((root/'b4-live/receipt.json').read_text())
+          fb=json.loads((root/'b4-neutral-feedback.json').read_text())
+          raw=json.loads((root/'b4-live/cloudflare-raw.json').read_text())
+          native=(root/'b4-live/native-output.json').read_bytes()
+          assert hashlib.sha256(native).hexdigest()=='c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb'
+          assert receipt['status']=='REAL_CLOUDFLARE_BUFFALO_BLIND_B4_RETURNED'
+          assert receipt['cf_http_status']==200
+          assert receipt['live_provider_calls']==receipt['intercepted_http_calls']==1
+          assert receipt['blind_feedback_seen'] and receipt['current_model_seen']
+          assert receipt['mechanistic_hint_in_feedback'] is False
+          assert len(fb['points'])==4 and fb['schema']=='igc-b-blind-construction-residuals/0.1'
+          assert raw['result']['choices'][0]['finish_reason']=='stop'
+          assert json.loads(native)['model']['variables'].__len__()==16
+          print('B4_ARCHIVED_B2_BLIND_REAL_PROVIDER_NATIVE_BYTE_VERIFIED_NO_REINFERENCE')
+          PY
+          python -m py_compile scripts/arena_b_physical_outcome.py
+      - name: Evaluate previously archived B4 actual native with strict translator and OpenModelica
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_b_physical_outcome \
+            --native artifacts/b4-archived/b4-live/native-output.json \
+            --prior-native artifacts/b4-parent/revision-live/native-output.json \
+            --feedback artifacts/b4-archived/b4-neutral-feedback.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b4-posthoc-physical
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/b4-posthoc-physical/adjudication.json')
+          r=json.loads(p.read_text())
+          assert r['schema']=='igc-b4-blind-physical-adjudication/0.1'
+          assert r['experiment_variant']=='B4_UNCUED_ORIGINAL_B2'
+          assert r['heldout_evaluation']=='NOT_RUN'
+          assert r['arm_id']=='B'
+          assert r['revised_native_sha256']=='sha256:c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb'
+          print('B4_BLIND_REAL_PHYSICAL_ADJUDICATION',r['g0_status'],
+                r['g2_status'],r.get('construction_change'),r.get('blocked_reason'))
+          PY
+      - name: Audit mechanics with exact native equations and bounded increment comparison
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          source=Path('artifacts/b4-archived/b4-live/native-output.json')
+          vs=json.loads(source.read_text())['model']['variables']
+          by={x['name']:x for x in vs}
+          observations=json.loads(Path('data/synthetic/arena_b_native_visible.json').read_text())['construction']['observations']
+          one=observations[1]['delivered'];two=observations[2]['delivered']
+          assert by['nominal capacity']['equation']=='0.7'
+          assert by['capacity ramp']['equation']=='TIME'
+          assert by['completions']['equation']=='completion_capacity * capacity_utilization'
+          assert by['completion capacity']['equation']=='nominal_capacity * capacity_utilization * capacity_ramp'
+          assert all(0<=p['y']<=1 for p in by['capacity ramp']['graphicalFunction']['points'])
+          assert all(0<=p['y']<=1 for p in by['capacity utilization from pressure']['graphicalFunction']['points'])
+          assert two-one>0.7+1e-8
+          info={
+            'schema':'igc-b4-blind-physical-mechanism-observation/0.1',
+            'self_inferred_nominal_capacity_items_per_hour':0.7,
+            'observed_interval_1_2_increment':two-one,
+            'capacity_ramp_points':by['capacity ramp']['graphicalFunction']['points'],
+            'one_hour_exact_match_under_b4_cap':'IMPOSSIBLE_WITH_EXACT_NOISELESS_OBSERVATIONS',
+            'necessary_symmetric_observation_error_bound_items_at_least':(two-one-0.7)/2,
+            'completed_double_utilization_factor_removed':False,
+            'g3_instrument_error_bound':'UNSPECIFIED',
+            'heldout':'NOT_RUN',
+            'physical_adjudication':json.loads(Path('artifacts/b4-posthoc-physical/adjudication.json').read_text()),
+          }
+          Path('artifacts/b4-posthoc-physical/interpretable-observation.json').write_text(json.dumps(info,indent=2)+'\n')
+          print('B4_BLIND_UNPROMPTED_CAPACITY_REVISED_BUT_RATE_BOUND_STILL_LOW')
+          PY
+      - name: Normalize Docker-owned output files
+        if: always()
+        run: |
+          if [ -d artifacts/b4-posthoc-physical ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b4-posthoc-physical
+            chmod -R u+rX artifacts/b4-posthoc-physical
+          fi
+      - name: Archive standalone B4 adjudication linked to original immutable LLM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b4-uncued-postonly-g0-g2-adjudication
+          path: |
+            artifacts/b4-posthoc-physical/
+          retention-days: 45
+          if-no-files-found: warn

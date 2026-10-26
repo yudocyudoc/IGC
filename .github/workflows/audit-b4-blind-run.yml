@@ -1,0 +1,43 @@
+name: Audit B4 exact authorized push and provider step (read only)
+on:
+  pull_request:
+    branches: [feature/arena-b3-archive-replay-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Query B4 push run using GitHub Actions API, never invoke LLM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request
+          base='https://api.github.com/repos/yudocyudoc/IGC'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          def read(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=30) as f:
+                  return json.load(f)
+          target='898406da16eb2d7805c622071301cc4d37f91fa5'
+          url=base+'/actions/workflows/arena-b4-blind-diagnostic.yml/runs?event=push&per_page=60'
+          runs=[x for x in read(url)['workflow_runs'] if x['head_sha']==target]
+          print('B4_BLIND_AUTHORIZED_PUSH_RUN='+json.dumps([
+              {'id':x['id'],'status':x['status'],'conclusion':x['conclusion'],
+               'html_url':x['html_url']} for x in runs]))
+          for run in runs:
+              jobs=read(base+'/actions/runs/'+str(run['id'])+'/jobs')
+              for j in jobs.get('jobs',[]):
+                  print('B4_BLIND_PUSH_STEPS='+json.dumps({
+                    'run_id':run['id'],'job':j['name'],'conclusion':j.get('conclusion'),
+                    'steps':[{'name':s['name'],'status':s['status'],
+                              'conclusion':s.get('conclusion')}
+                             for s in j.get('steps',[])
+                             if ('Authorize at most one' in s['name'] or
+                                 'Execute ONE real' in s['name'] or
+                                 'Retain EXACT' in s['name'] or
+                                 'Adjudicate B4' in s['name'])]}))
+          if not runs:raise SystemExit('B4_AUTHORIZED_PUSH_NOT_REGISTERED')
+          PY

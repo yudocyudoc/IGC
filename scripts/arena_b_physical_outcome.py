@@ -36,7 +36,14 @@ def main():
     feedback=json.loads(a.feedback.read_text())
     if feedback["parent_native_bytes_sha256"]!="sha256:"+PARENT_HASH:
         raise ValueError("WRONG_OWN_CONSTRUCTION_FEEDBACK")
-    if feedback.get("no_cross_arm_information") is not True:
+    blind=feedback.get("schema")=="igc-b-blind-construction-residuals/0.1"
+    if blind:
+        from scripts.arena_b4_blind_feedback import validate_blind
+        validate_blind(feedback)
+        if feedback["scope"]["competing_arm_data_included"] is not False or (
+                feedback["scope"]["reserved_data_included"] is not False):
+            raise ValueError("B4_FOREIGN_SOURCE_OR_HELDOUT")
+    elif feedback.get("no_cross_arm_information") is not True:
         raise ValueError("CROSSARM_FEEDBACK_FORBIDDEN")
     visible=json.loads(a.visible.read_text())
     native_bytes=a.native.read_bytes()
@@ -58,7 +65,8 @@ def main():
                                            if revised[n]!=baseline[n])
     }
     outcome={
-        "schema":"igc-b3-own-physical-feedback-adjudication/0.1","arm_id":"B",
+        "schema":("igc-b4-blind-physical-adjudication/0.1" if blind else "igc-b3-own-physical-feedback-adjudication/0.1"),"arm_id":"B",
+        "experiment_variant":"B4_UNCUED_ORIGINAL_B2" if blind else "B3_WITH_MECHANISTIC_CUE",
         "parent_native_sha256":"sha256:"+PARENT_HASH,
         "revised_native_sha256":"sha256:"+hashlib.sha256(native_bytes).hexdigest(),
         "origin":"REAL_CLOUDFLARE_ORIGINAL_BUFFALO_CURRENTMODEL",
