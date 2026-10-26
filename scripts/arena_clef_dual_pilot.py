@@ -223,7 +223,7 @@ def prepare(source_dir,output):
     (out/"freeze.json").write_text(json.dumps({
       "schema":SCHEMA,"source_manifest_sha256":sha((source_dir/"candidate-manifest.json").read_bytes()),
       "source_csv_sha256":{n:sha((source_dir/"candidates"/(n.lower()+"_res.csv")).read_bytes()) for n in NAMES},
-      "source_case_sha256":{n:sha((source_dir/"cases/case-"+n+".json").read_bytes()) for n in ("alpha","beta")},
+      "source_case_sha256":{n:sha((source_dir/"cases"/("case-"+n+".json")).read_bytes()) for n in ("alpha","beta")},
       "public_requests_sha256":sha(public_doc),"provider_calls_budget":MAX_REAL_CALLS,
       "no_numeric_holdout":True,"simulations_already_archived":True,
       "experimental_repetition":False
