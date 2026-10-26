@@ -1,0 +1,41 @@
+name: Audit Buffalo physical live-marker push (read only)
+on:
+  push:
+    branches: [audit/buffalo-physical-feedback-run]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Query all push runs for the exact authorization commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          base='https://api.github.com/repos/yudocyudoc/IGC'
+          hdr={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+               'Accept':'application/vnd.github+json'}
+          def get(u):
+              with urllib.request.urlopen(urllib.request.Request(u,headers=hdr),timeout=30) as f:
+                  return json.load(f)
+          target='d459fbe4203004f8a75457435aaf4364b5980c06'
+          data=get(base+'/actions/workflows/arena-b-physical-feedback.yml/runs?event=push&per_page=50')
+          matches=[x for x in data['workflow_runs'] if x['head_sha']==target]
+          print('REAL_ONE_USE_PUSH_RUNS='+json.dumps([
+              {'id':v['id'],'status':v['status'],'conclusion':v['conclusion'],
+               'url':v['html_url']} for v in matches]))
+          for v in matches:
+              jobs=get(base+'/actions/runs/'+str(v['id'])+'/jobs')
+              print('REAL_ONE_USE_PUSH_JOBS='+json.dumps([
+                  {'name':j['name'],'conclusion':j.get('conclusion'),
+                   'steps':[{'name':s['name'],'conclusion':s.get('conclusion')}
+                            for s in j.get('steps',[])
+                            if ('Gate exactly one' in s['name'] or
+                                'Real Cloudflare original' in s['name'] or
+                                'Adjudicate REAL Buffalo' in s['name'])]}
+                  for j in jobs.get('jobs',[])]))
+          if not matches:raise SystemExit('MISSING_REAL_MARKER_PUSH_RUN')
+          PY
