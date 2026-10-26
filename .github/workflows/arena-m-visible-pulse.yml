@@ -1,0 +1,89 @@
+name: Arena M1 one independent Short molecular hypothesis on common visible pulse
+on:
+  push:
+    branches: [feature/arena-m-visible-pulse-v01]
+  pull_request:
+    branches: [feature/arena-m-short-e1-independent-v0]
+permissions:
+  contents: read
+concurrency:
+  group: arena-m-visible-pulse
+  cancel-in-progress: false
+jobs:
+  m-one-pulse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test molecular-only model construction, budget and independent conservation negatives
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_m_visible_pulse.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_visible_verify.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_short_e1.py' -v
+      - name: Build exactly one typed molecular candidate before checking fit
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m_visible_pulse --input data/synthetic/arena_m_v0_visible.json --out artifacts/arena-m-visible
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('artifacts/arena-m-visible')
+          n=json.loads((r/'native-graph.json').read_text())
+          s=json.loads((r/'submission.json').read_text())
+          t=json.loads((r/'translation-receipt.json').read_text())
+          assert n["candidate_universe_count"]==6 and len(s["hypothesis_ids"])==1
+          assert t["g2_status"]=="NOT_RUN_BY_GENERATOR"
+          assert t["number_simulations_planned"]==1
+          assert n["selection_used_construction_observations"] is False
+          print("ARENA_M_PRE_EVALUATION_ONE_STRUCTURE_LOCKED",n["canonical_graph_sha256"])
+          PY
+      - name: Install original Short E1 Modelica dependencies without vendoring
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/arena-m-home" "$RUNNER_TEMP/arena-m-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/arena-m-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/arena-m-libs/systemdynamics"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/arena-m-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/arena-m-libs/systemdynamics" rev-parse HEAD)"
+      - name: Real OpenModelica simulation under the PUBLIC 1.7/hour two-hour pulse
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/arena-m-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/arena-m-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/arena-m-visible/simulate.mos 2>&1 | tee artifacts/arena-m-visible/omc.log
+          if grep -Eq 'Error:|Simulation execution failed|Failed to load|Class .* not found' artifacts/arena-m-visible/omc.log; then
+            echo "OPENMODELICA_FAILED"
+            exit 1
+          fi
+      - name: Independently check real OpenModelica material conservation and construction residual
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m_visible_verify --csv artifacts/arena-m-visible/m-visible_res.csv --visible data/synthetic/arena_m_v0_visible.json --out artifacts/arena-m-visible/g2-construction-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/arena-m-visible/g2-construction-report.json').read_text())
+          assert r["status"]=="G2_SIMULATED_CONDITIONALLY"
+          assert r["g3_heldout"]=="NOT_RUN"
+          print("ONE_MOLECULAR_SIMULATION_G2_AND_MASS_BALANCE_PASS")
+          PY
+      - name: Preserve native structure, Modelica, receipt, actual CSV and failures
+        if: always()
+        run: |
+          if [ -d artifacts/arena-m-visible ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/arena-m-visible; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-m-real-common-pulse-evidence
+          path: artifacts/arena-m-visible/
+          retention-days: 30
