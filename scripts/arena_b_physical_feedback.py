@@ -29,7 +29,8 @@ def make_feedback(native_path, csv_path, report_path, visible_path):
     # not a newline. Preserve the authenticated file bytes unchanged and
     # explicitly accept only this known exact legacy footer.
     report_raw=locked(report_path,PARENT_REPORT_SHA).decode("utf8")
-    report,tail=json.JSONDecoder().raw_decode(report_raw)
+    report,end=json.JSONDecoder().raw_decode(report_raw)
+    tail=report_raw[end:]
     require(tail.strip() in ("", r"\\n"),"UNEXPECTED_LEGACY_REPORT_TRAILER")
     visible=json.loads(Path(visible_path).read_text())
     require(set(visible)=={
