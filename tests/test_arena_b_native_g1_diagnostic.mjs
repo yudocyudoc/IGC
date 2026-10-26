@@ -17,7 +17,9 @@ test("native prose and ambiguous division remain unchanged and are diagnosed",()
  m.model.variables[2].equation="Backlog // processing_signal";
  const r=diagnose(m);const codes=r.issues.map(i=>i.code);
  assert(codes.includes("PROSE_OR_PLACEHOLDER"));
- assert(codes.includes("AMBIGUOUS_COMMENT_OR_OPERATOR"));
+ assert(codes.includes("ZERO_SAFE_DIVISION_REQUIRES_ADAPTER"));
+ assert(codes.includes("PROSE_OR_PLACEHOLDER"));
+ assert(!codes.includes("AMBIGUOUS_COMMENT_OR_OPERATOR"));
  assert(codes.includes("UNRESOLVED_SYMBOL"));
  assert.equal(m.model.variables[2].equation,"Backlog // processing_signal");
 });
@@ -33,4 +35,20 @@ test("invalid provider output cannot be declared successful",()=>{
  assert.equal(r.status,"G1_ISSUES_FOUND");
  assert(r.issues.some(i=>i.code==="VARIABLES_MISSING"));
  assert.equal(r.g2_executed,false);
+});
+
+test("Buffalo zero-safe division is a translation limitation, not an invalid equation",()=>{
+ const m=base();m.model.variables.push({name:"Reference",type:"variable",units:"items",equation:"1"});
+ m.model.variables.push({name:"Ratio",type:"variable",units:"dimensionless",equation:"Backlog // Reference"});
+ const r=diagnose(m);
+ assert(r.issues.some(x=>x.code==="ZERO_SAFE_DIVISION_REQUIRES_ADAPTER"&&x.category==="ADAPTER"));
+ assert(!r.issues.some(x=>x.code==="AMBIGUOUS_COMMENT_OR_OPERATOR"));
+ assert.equal(r.g1_certified,false);
+});
+test("detects unit product contradiction in the real style",()=>{
+ const m=base();m.model.variables.push({name:"processing signal",type:"variable",units:"items",equation:"Backlog"});
+ m.model.variables.push({name:"completion capacity",type:"variable",units:"items per hour",equation:"1"});
+ m.model.variables[2].equation="completion_capacity * processing_signal";
+ const r=diagnose(m);
+ assert(r.issues.some(x=>x.code==="DIMENSIONAL_PRODUCT_MISMATCH"));
 });
