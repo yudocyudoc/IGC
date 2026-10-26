@@ -52,3 +52,16 @@ test("detects unit product contradiction in the real style",()=>{
  const r=diagnose(m);
  assert(r.issues.some(x=>x.code==="DIMENSIONAL_PRODUCT_MISMATCH"));
 });
+
+test("graphical function is adapter-obligation, not ignored or auto G1-pass",()=>{
+ const m=base();
+ m.model.variables.push({name:"pulse shape",type:"variable",units:"dimensionless",
+   equation:"TIME",graphicalFunction:{points:[{x:0,y:0},{x:0.001,y:1},{x:2,y:1}]}});
+ const r=diagnose(m);
+ assert(r.issues.some(x=>x.code==="GRAPHICAL_LOOKUP_NEEDS_ADAPTER"&&x.category==="ADAPTER"));
+ assert(!r.issues.some(x=>x.code==="MALFORMED_GRAPHICAL_FUNCTION"));
+ const bad=base();
+ bad.model.variables.push({name:"Lookup",type:"variable",equation:"TIME",
+   graphicalFunction:{points:[{x:0,y:1},{x:0,y:0}]}});
+ assert(diagnose(bad).issues.some(x=>x.code==="MALFORMED_GRAPHICAL_FUNCTION"));
+});
