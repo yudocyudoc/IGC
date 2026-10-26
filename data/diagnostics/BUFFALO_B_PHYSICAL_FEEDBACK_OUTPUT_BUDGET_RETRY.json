@@ -1,0 +1,16 @@
+{
+  "schema": "igc-b-physical-output-limit-one-call-retry/0.1",
+  "calls": 1,
+  "additional_retries_permitted": 0,
+  "original_failed_run_id": 40286989747,
+  "previous_max_completion_tokens": 3500,
+  "new_max_completion_tokens": 7000,
+  "previous_finish_reason": "length",
+  "previous_raw_response_sha256": "ceef68e23d3d9f267a164c0de10dc6a05495e58e970c59eeabb2f0f5040f8e6f",
+  "original_parent_sha256": "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9",
+  "separate_extension_after_original_budget": true,
+  "no_cross_arm_data": true,
+  "source_run_before_retry": "https://github.com/yudocyudoc/IGC/actions/runs/40286989747",
+  "purpose": "single user-authorized complete JSON response from original Buffalo after physical construction feedback",
+  "note": "The previous Cloudflare inference reached 3500 output tokens with finish_reason=length. The old provider response is retained, not repaired or submitted as a model."
+}

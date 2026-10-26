@@ -10,7 +10,14 @@ export const OR_SLUG="cloudflare/glm-5.3-flash";
 export const CF_MODE="CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA";
 export const digest=x=>"sha256:"+createHash("sha256").update(typeof x==="string"?x:JSON.stringify(x)).digest("hex");
 
-export function requestToCloudflare(orBody) {
+export function requestToCloudflare(orBody, options={}) {
+  // Only a separately authorized physical-feedback extension may increase
+  // output budget. The first real B3 call hit the former 3500-token cap
+  // (finish_reason=length); keep all earlier experiments at exactly 3500.
+  if(Object.keys(options).some(k=>k!=="physicalRevision") ||
+     (options.physicalRevision!==undefined && typeof options.physicalRevision!=="boolean"))
+    throw Error("INVALID_TOKEN_BUDGET_OPTIONS");
+  const cap=options.physicalRevision===true?7000:3500;
   if(orBody?.model!==OR_SLUG)throw Error("OPENROUTER_MODEL_MISMATCH");
   if(orBody?.response_format?.type!=="json_schema")throw Error("BUFFALO_SCHEMA_NOT_REQUESTED");
   const schema=orBody.response_format.json_schema?.schema;
@@ -25,7 +32,7 @@ export function requestToCloudflare(orBody) {
   return {
     messages:orBody.messages.map(({role,content})=>({role,content})),
     response_format:{type:"json_schema",json_schema:schema},
-    max_completion_tokens:Math.min(orBody.max_completion_tokens??3500,3500),
+    max_completion_tokens:Math.min(orBody.max_completion_tokens??cap,cap),
     reasoning_effort:"low",
     stream:false
   };
