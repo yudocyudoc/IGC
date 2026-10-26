@@ -1,0 +1,9 @@
+{
+  "schema": "igc-b-cf-virtual-openrouter-authorization/0.1",
+  "calls": 1,
+  "retries": 0,
+  "cloud_model": "@cf/zai-org/glm-5.3-flash",
+  "no_other_arms": true,
+  "purpose": "original-buffalo-nodejs-sdk->virtual-openrouter->real-cloudflare-workers-ai",
+  "upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc"
+}
