@@ -119,21 +119,47 @@ def verify(out):
           and doc["parameters_reestimated"] is False
           and doc["equations_changed"] is False,"PROTOCOL_CHANGED")
     rows={k:read(out/(k.lower()+"_res.csv")) for k in ("B2","B3")}
+    # Euler has a one-time-step source convention: the recorded 'arrivals'
+    # at t=0 is 0, even though the declarative pulse starts at 0.
+    # Verify conservation against the ACTUAL discretized arrival flow
+    # independently, not against an ideal rectangle with different timing.
+    integrated={}
+    for k,series in rows.items():
+        acc=0.0
+        integrated[k]=[(series[0][0],0.0)]
+        for i in range(1,len(series)):
+            tprev,prev=series[i-1];t,cur=series[i]
+            acc+=value(prev,"arrivals")*(t-tprev)
+            integrated[k].append((t,acc))
+    def area(key,t):
+        found=[x for when,x in integrated[key] if abs(t-when)<1e-8]
+        check(len(found)==1,"MISSING_DISCRETIZED_ARRIVAL_INTEGRAL")
+        return found[0]
     result=[]
     maxbal={"B2":0.0,"B3":0.0}
+    max_input_difference=0.
+    max_ideal_pulse_difference=0.
     for t in TIMES:
         obs={}
+        input_area={}
         for k in rows:
             r=at(rows[k],t)
             delivered=value(r,"delivered_work")
             pending=value(r,"pending_work")
-            input_total=RATE*min(t,2.)
+            input_total=area(k,t)
             maxbal[k]=max(maxbal[k],abs(delivered+pending-input_total))
+            input_area[k]=input_total
+            max_ideal_pulse_difference=max(max_ideal_pulse_difference,
+                                            abs(input_total-RATE*min(t,2.)))
             obs[k]=delivered
+        max_input_difference=max(max_input_difference,
+                                  abs(input_area["B2"]-input_area["B3"]))
         result.append({"t_hours":t,"B2_delivered":obs["B2"],
                        "B3_delivered":obs["B3"],
+                       "discretized_input_items":input_area["B2"],
                        "difference_B3_minus_B2":obs["B3"]-obs["B2"]})
-    check(max(maxbal.values())<0.03,"NOT_SAME_INPUT_OR_CONSERVATION_FAILED")
+    check(max(maxbal.values())<1e-8 and max_input_difference<1e-9,
+          "NOT_SAME_DISCRETIZED_INPUT_OR_MATERIAL_CONSERVATION_FAILED")
     early=[abs(r["difference_B3_minus_B2"]) for r in result if r["t_hours"]<=2]
     outp={
       "schema":"igc-b-frozen-low-util-prediction-contrast/0.1",
@@ -146,6 +172,9 @@ def verify(out):
       "max_early_absolute_gap_items":max(early),
       "early_predictions_separate":max(early)>doc["predeclared_min_divergence_items"],
       "material_balance_max_items":maxbal,
+      "common_input_integral_max_difference_items":max_input_difference,
+      "discretized_input_vs_ideal_rectangular_pulse_max_difference_items":max_ideal_pulse_difference,
+      "Euler_source_event_boundary_caveat":"t0 source 0; dt=0.125 startup shift, so t2 integrates 0.75 not ideal 0.8 items",
       "trajectory":result,
       "native_b2_sha256":"sha256:"+B2,
       "native_b3_sha256":"sha256:"+B3,
