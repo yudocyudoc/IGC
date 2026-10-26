@@ -20,6 +20,7 @@ jobs:
       - name: Checkout PR head, no persisted credentials
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
           persist-credentials: false
       - name: Gated single-call run (no replays; no automatic mock substitution)
@@ -32,14 +33,14 @@ jobs:
           if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || [ "$GITHUB_HEAD_REF" != feature/arena-b-buffalo-independent-v0 ] || \
              [ "$GITHUB_REPOSITORY" != yudocyudoc/IGC ] || \
              ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | \
-             grep -Fxq data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE.json; then
+             grep -Fxq data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE_V2.json; then
             echo "NO_UNIQUE_B1_MARKER_NO_PROVIDER_CALL"
             exit 0
           fi
           python3 - <<'PY'
           import json
           from pathlib import Path
-          authorization=json.loads(Path('data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE.json').read_text())
+          authorization=json.loads(Path('data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE_V2.json').read_text())
           assert authorization == {
               'schema':'igc-buffalo-b1-authorization/0.1',
               'authorization':'RUN_BUFFALO_B1_SINGLE_PROVIDER_CALL',
