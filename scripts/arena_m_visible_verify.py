@@ -82,14 +82,22 @@ def verify(rows, visible, native, catalog):
                        "residual":simulated-observed})
     nonzero=[p for p in points if p["time"]>0]
     rmse=math.sqrt(sum(p["residual"]**2 for p in nonzero)/len(nonzero))
-    return {"schema":"igc-arena-m-common-pulse-check/0.2",
+    rmse_all=math.sqrt(sum(p["residual"]**2 for p in points)/len(points))
+    return {"schema":"igc-arena-m-common-pulse-check/0.3",
        "engine":"OPENMODELICA_REAL_CSV","status":"G2_SIMULATED_CONDITIONALLY",
        "input_pulse":visible["construction"]["input_profile"],
        "material_stock_ports":material_ports,
        "excluded_non_global_stock_telemetry":"inTransit",
        "technical_samples":len(times),"max_material_balance_residual":max_balance,
        "construction_only":True,"observations":points,"rmse_items":rmse,
-       "g3_heldout":"NOT_RUN","g0_semantic_role_mapping":"PROVISIONAL",
+       "rmse_all_observations_items":rmse_all,
+       "rmse_noninitial_observations_items":rmse,
+       "rmse_denominators":{"all_observations":len(points),
+                            "noninitial_observations":len(nonzero)},
+       "g3_construction_status":"DESCRIPTIVE_ONLY_NO_INSTRUMENT_BOUND",
+       "reserved_evaluation_status":"NOT_RUN",
+       "g3_heldout":"NOT_RUN",  # legacy archived M1 key; DO NOT interpret holdout as G3
+       "g0_semantic_role_mapping":"PROVISIONAL",
        "causal_identification":"NOT_DEMONSTRATED",
        "warning":"The E1 inTransit signal only counts Shipment. This audit sums all typed material states and terminal deliveries."}
 
