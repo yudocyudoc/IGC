@@ -23,7 +23,7 @@ def get(row, name):
 
 
 def material_stock_ports(native, catalog):
-    if native.get("arm_id") != "M" or native.get("method") != "short-e1-one-minimal-molecular-candidate/0.1":
+    if native.get("arm_id") != "M" or native.get("method") not in {"short-e1-one-minimal-molecular-candidate/0.1", "short-e1-own-feedback-parameter-step/0.1"}:
         raise ValueError("NOT_ORIGINAL_M_NATIVE_SUBMISSION")
     classes={c["id"]:c for c in catalog["classes"]}
     ports=[]
