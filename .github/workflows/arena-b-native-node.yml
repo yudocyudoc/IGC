@@ -84,6 +84,49 @@ jobs:
             throw Error('INVALID_JSON_ACCIDENTALLY_ACCEPTED');
           console.log('OPENROUTER_INVALID_JSON_REJECTED_WITHOUT_REPAIR');
           JS
+      - name: Verify pure OpenRouter-to-Cloudflare protocol mapping (no provider)
+        run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
+      - name: Buffalo official NodeJS → virtual OpenRouter → synthetic Cloudflare
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-cf-virtual-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const r=require('./artifacts/buffalo-cf-virtual-offline/receipt.json');
+          if(r.status!=='OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS' ||
+             r.live_provider_calls!==0 || r.intercepted_http_calls!==1 ||
+             !r.structured_request_seen || !r.buffalo_inferred_arrivals_as_inflow)
+              throw Error('BUFFALO_CF_VIRTUAL_PATH_FAILED');
+          console.log('BUFFALO_CLOUDFLARE_VIRTUAL_OPENROUTER_TRANSPORT_READY');
+          JS
+      - name: Verify new one-use Cloudflare-through-OpenRouter grant
+        id: cfbridge
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ "$GITHUB_RUN_ATTEMPT" = "1" ] &&
+             [ "$GITHUB_HEAD_REF" = "feature/arena-b-native-node-engine-v01" ] &&
+             git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+             grep -Fxq data/diagnostics/BUFFALO_CF_VIRTUAL_OPENROUTER_ONE_CALL.json; then
+            node -e 'const p=require("./data/diagnostics/BUFFALO_CF_VIRTUAL_OPENROUTER_ONE_CALL.json"); if(p.schema!=="igc-b-cf-virtual-openrouter-authorization/0.1"||p.calls!==1||p.retries!==0||p.cloud_model!=="@cf/zai-org/glm-5.3-flash"||p.no_other_arms!==true)throw Error("UNAUTHORIZED_CF_BRIDGE_CALL")'
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            echo "NO_NEW_VIRTUAL_CF_GRANT_NO_EXTERNAL_CALL"
+          fi
+      - name: Run original Buffalo SDK on virtual OpenRouter with REAL Cloudflare Workers AI
+        if: ${{ steps.cfbridge.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-cf-virtual-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/arena_b_openrouter_cloudflare.mjs
       - name: Check one-use authorizing marker in HEAD
         id: grant
         run: |
@@ -119,4 +162,6 @@ jobs:
             artifacts/buffalo-native-live/
             artifacts/buffalo-openrouter-valid/
             artifacts/buffalo-openrouter-invalid/
+            artifacts/buffalo-cf-virtual-offline/
+            artifacts/buffalo-cf-virtual-live/
           retention-days: 30
