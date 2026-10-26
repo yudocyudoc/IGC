@@ -25,7 +25,12 @@ def locked(path, expected):
 def make_feedback(native_path, csv_path, report_path, visible_path):
     native=json.loads(locked(native_path,PARENT_NATIVE_SHA))
     rows=list(csv.DictReader(locked(csv_path,PARENT_CSV_SHA).decode("utf-8-sig").splitlines()))
-    report=json.loads(locked(report_path,PARENT_REPORT_SHA))
+    # Earlier CI wrote the two literal characters backslash+n after JSON,
+    # not a newline. Preserve the authenticated file bytes unchanged and
+    # explicitly accept only this known exact legacy footer.
+    report_raw=locked(report_path,PARENT_REPORT_SHA).decode("utf8")
+    report,tail=json.JSONDecoder().raw_decode(report_raw)
+    require(tail.strip() in ("", r"\\n"),"UNEXPECTED_LEGACY_REPORT_TRAILER")
     visible=json.loads(Path(visible_path).read_text())
     require(set(visible)=={
         "schema","investigation_id","round_id","question","source_snapshot_hash",
