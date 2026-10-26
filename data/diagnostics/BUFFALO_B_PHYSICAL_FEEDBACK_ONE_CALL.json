@@ -1,0 +1,25 @@
+{
+  "schema": "igc-b-own-physical-one-call-extension/0.1",
+  "calls": 1,
+  "retries": 0,
+  "extension_iteration": 2,
+  "not_part_of_original_round_budget": true,
+  "parent_bytes_sha256": "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9",
+  "source_solver_run": 40283017108,
+  "original_parent_run": 40259178852,
+  "cross_arm_data_allowed": false,
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "purpose": "one real original Buffalo currentModel revision after it receives own OpenModelica construction residuals",
+  "not_a_holdout": true,
+  "original_visible_budget": {
+    "max_llm_calls": 1,
+    "iteration_limit": 2,
+    "already_completed": true
+  },
+  "evaluation_requirements": [
+    "G0_FAIL_CLOSED",
+    "G2_REAL_IF_SUPPORTED",
+    "G3_CONSTRUCTION_ONLY",
+    "HOLDOUT_NOT_RUN"
+  ]
+}
