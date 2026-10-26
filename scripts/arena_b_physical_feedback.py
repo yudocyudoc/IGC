@@ -31,7 +31,7 @@ def make_feedback(native_path, csv_path, report_path, visible_path):
     report_raw=locked(report_path,PARENT_REPORT_SHA).decode("utf8")
     report,end=json.JSONDecoder().raw_decode(report_raw)
     tail=report_raw[end:]
-    require(tail.strip() in ("", r"\\n"),"UNEXPECTED_LEGACY_REPORT_TRAILER")
+    require(tail.strip() in ("", chr(92)+"n"),"UNEXPECTED_LEGACY_REPORT_TRAILER")
     visible=json.loads(Path(visible_path).read_text())
     require(set(visible)=={
         "schema","investigation_id","round_id","question","source_snapshot_hash",
