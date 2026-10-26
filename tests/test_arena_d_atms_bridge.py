@@ -139,7 +139,7 @@ class DAtmsMemoryTests(unittest.TestCase):
             events=json.loads((root/"d1"/"memory-events.json").read_text())
             self.assertEqual(events[1]["previous_event_hash"],events[0]["event_hash"])
             # No synthetic confirmation of OpenModelica; it must be truly run in CI.
-            with self.assertRaisesRegex(FileNotFoundError,"Dfit_"):
+            with self.assertRaisesRegex(BridgeError,"MISSING_G2_ARTIFACT"):
                 validated_bundle(inp,p,root/"d0",root/"d1")
             events[1]["payload_hash"]="sha256:"+"0"*64
             (root/"d1"/"memory-events.json").write_text(json.dumps(events))
