@@ -1,0 +1,17 @@
+{
+  "schema": "igc-b-own-physical-one-call-extension/0.1",
+  "calls": 1,
+  "retries": 0,
+  "extension_iteration": 2,
+  "not_part_of_original_round_budget": true,
+  "parent_bytes_sha256": "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9",
+  "source_solver_run": 40283017108,
+  "original_parent_run": 40259178852,
+  "cross_arm_data_allowed": false,
+  "canceled_marker_commit": "fe77a97c3063b82c355e3a12f40f1fcec2237a5b",
+  "cancelled_run_id": 40286504081,
+  "reason": "PREVIOUS_PUSH_CANCELLED_BEFORE_ANY_JOBS",
+  "experimental_purpose": "one first actual Cloudflare call: Buffalo own OpenModelica residual feedback via original currentModel",
+  "no_retries": true,
+  "no_holdout": true
+}
