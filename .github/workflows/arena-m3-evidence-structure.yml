@@ -112,6 +112,52 @@ jobs:
             assert all(c['max_material_balance']<0.015 for c in x['scored_candidates'])
           print('M3_SELECTIONS_RECORDED_BEFORE_UNSEALING',a['chosen_id'],b['chosen_id'])
           PY
+      - name: Adversarial evidence control — swap observations and require abstention outside fixed family
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import copy,json
+          from pathlib import Path
+          from scripts.arena_v0_contract import digest
+          root=Path('artifacts/arena-m3/cases')
+          alpha=json.loads((root/'case-alpha.json').read_text())
+          beta=json.loads((root/'case-beta.json').read_text())
+          # Keep the SAME public case ID; change only evidence. Correct
+          # selector must now choose a different structure, not a fixed name.
+          switched=copy.deepcopy(alpha)
+          switched['construction_observations']=beta['construction_observations']
+          switched['source_snapshot_hash']=digest(beta['construction_observations'])
+          (root/'challenge-swapped.json').write_text(json.dumps(switched))
+          # A physically impossible under these frozen models vector must be
+          # refused, not forcibly fit to the simplest structure.
+          unknown=copy.deepcopy(alpha)
+          unknown['construction_observations']=[
+              {'t':t,'delivered':0.0} for t in (0,1,2,3)]
+          unknown['source_snapshot_hash']=digest(unknown['construction_observations'])
+          (root/'challenge-outside.json').write_text(json.dumps(unknown))
+          PY
+          for challenge in swapped outside; do
+            python -m scripts.arena_m3_select \
+              --manifest artifacts/arena-m3/candidate-manifest.json \
+              --case "artifacts/arena-m3/cases/challenge-${challenge}.json" \
+              --csv-root artifacts/arena-m3 \
+              --catalog experiments/e0/catalog.json \
+              --out "artifacts/arena-m3/cases/challenge-${challenge}-selection.json"
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/arena-m3/cases')
+          original=json.loads((root/'case-alpha-selection.json').read_text())
+          swapped=json.loads((root/'challenge-swapped-selection.json').read_text())
+          outside=json.loads((root/'challenge-outside-selection.json').read_text())
+          assert original['chosen_id']=='C00'
+          assert swapped['chosen_id']=='C01' and swapped['case_id']==original['case_id']
+          assert outside['status']=='ABSTAIN' and outside['chosen_id'] is None
+          assert outside['reason']=='ALL_FIXED_E1_STRUCTURES_MISS_CONSTRUCTION_TOLERANCE'
+          print('M3_EMPIRICAL_EVIDENCE_SWAP_CHANGED_STRUCTURE_WITH_SAME_CASE_ID')
+          print('M3_OUT_OF_FAMILY_CONSTRUCTION_ABSTENTION',outside['reason'])
+          PY
       - name: Unseal ONLY AFTER selecting; compare material source paths and later-time trajectories
         run: |
           set -euo pipefail
