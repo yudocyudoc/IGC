@@ -32,3 +32,13 @@ El adaptador actual es deliberadamente parcial: acepta variables escalares, expr
 **B1: una generación real con el proceso de Buffalo**, mediante un proveedor elegido, guardando la respuesta bruta, token usage e identidad de modelo. Ningún candidato será sustituido por la fixture si la respuesta real falla. Después, traducir los modelos que estén dentro del subconjunto soportado y simularlos. Más adelante adaptar el motor cualitativo original si la comparación indica que agrega una perspectiva distinta; no usar técnicas moleculares para mejorar B.
 
 **La meta no es que B converja a D. La meta es contar con una explicación independiente, simulable o claramente declarada no simulable, para una deliberación posterior.**
+
+## B1 — ensayo real controlado (extensión posterior a B0)
+
+Se añadió el transporte `scripts/arena_b_provider_once.py`, cuya configuración usa `@cf/zai-org/glm-5.3-flash` por el mismo endpoint Cloudflare ya comprobado en los experimentos históricos de IGC, **pero con el prompt de proceso cuantitativo Buffalo**, no con los prompts del brazo determinista, el molecular o las pruebas A/B antiguas.
+
+El workflow `.github/workflows/arena-b-buffalo-b1-once.yml` sólo intenta una inferencia cuando el commit de cabeza del PR incorpora **por primera vez** el marcador `data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE.json`. Presupuesto **1 llamada, 0 reintentos, max_completion_tokens=4096**, sin `gold` y sin credenciales en artefactos. Conserva solicitud, respuesta original, estado y consumo; la aceptación a `sd-json` y traducción se registran por separado.
+
+**Criterio estricto:** respuesta truncada, JSON incorrecto, variables sin ecuación, funciones o estructuras fuera del subconjunto permitido no reciben reparaciones implícitas ni modelos de catálogo. Si el modelo del proveedor sí es traducible, se compila directamente en OpenModelica; una compilación fallida es otra observación del experimento. Una respuesta del proveedor no demuestra por sí sola validez causal.
+
+El nombre de origen `BUFFALO_PROCESS_PORT_LIVE` distingue explícitamente este método del **motor NodeJS oficial completo**. La marca `origin` es metadato, no prueba criptográfica; la evidencia es la respuesta cruda y su huella asociada al paquete solicitado.
