@@ -29,8 +29,14 @@ def sample(rows, times):
     values=[]
     for t in times:
         hit=[r for r in rows if abs(get(r,"time")-t)<1e-7]
-        require(len(hit)==1,"M3_MISSING_OR_DUPLICATE_SOLVER_TIME")
-        values.append(get(hit[0],"deliveredTotal"))
+        require(bool(hit),"M3_MISSING_SOLVER_TIME")
+        # OpenModelica may write both sides of an event (t=2 pulse switch)
+        # and duplicate its final row. Cumulative delivered must be continuous;
+        # accept duplicates ONLY when the material observable agrees.
+        actual=[get(row,"deliveredTotal") for row in hit]
+        require(max(actual)-min(actual)<1e-5,
+                "M3_CONFLICTING_EVENT_TIME_DELIVERIES")
+        values.append(actual[-1])
     return values
 
 
