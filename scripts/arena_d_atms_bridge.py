@@ -15,7 +15,7 @@ from typing import Any
 from scripts.arena_v0_contract import (
     INPUT_SCHEMA, digest, validate_visible_input, validate_submission, arm_view,
 )
-from scripts.arena_atms import project, events_from_ledger, ATMSError
+from scripts.arena_atms import project, ATMSError
 from scripts.ledger import Ledger
 from scripts.arena_d_v01 import generate, verify_csv
 from scripts.arena_d_v1_screen import assess, compare_omc_csv
@@ -215,7 +215,17 @@ def snapshot(*, db, case_id, round_id, as_known_at):
     allowed = [r for r in revisions
                if r.access_policy == POLICY and
                r.entity_id.startswith(f"arena:{case_id}:{round_id}:D:")]
-    events = events_from_ledger(allowed)
+    events = []
+    for revision in allowed:
+        if revision.entity_type != "ArenaATMSNode":
+            continue
+        item = dict(revision.payload)
+        check(revision.entity_id == event_id(case_id, round_id, "logic:" + str(item.get("id"))),
+              "LOGICAL_ID_ENTITY_MISMATCH")
+        item.update(recorded_at=revision.recorded_at,
+                    access_policy=revision.access_policy,
+                    investigation_id=revision.case_id)
+        events.append(item)
     engine, manifest = project(events, as_known_at=as_known_at,
                                lane="D", investigation_id=case_id)
     compatible = sorted(n for n in engine.labels if n.startswith("DCOMPATIBLE:")
