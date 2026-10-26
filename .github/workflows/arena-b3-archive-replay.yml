@@ -38,7 +38,7 @@ jobs:
           path: artifacts/b-physical-solver
       - uses: actions/download-artifact@v4
         with:
-          name: buffalo-b3-audit-complete-with-modelica
+          name: buffalo-own-physical-feedback-original-native-proof
           run-id: 40286989747
           github-token: ${{ github.token }}
           path: artifacts/b3-previous-truncated
@@ -254,7 +254,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: buffalo-own-physical-feedback-original-native-proof
+          name: buffalo-b3-audit-complete-with-modelica
           path: |
             artifacts/b-feedback.json
             artifacts/b3-astra-evidence-manifest.json
