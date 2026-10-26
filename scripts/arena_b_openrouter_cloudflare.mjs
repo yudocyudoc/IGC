@@ -205,6 +205,18 @@ try {
       "If data are insufficient, explain limitations. No other arm outputs are available.";
     }
   }
+  if(BLIND){
+    const suspicious=[
+      "candidate_mechanism_observation","derived_exact_relation",
+      "utilization^2","utilization squared","double counting",
+      "double counted","suspect equation","suspected equation",
+      "0.6 items/h","0.75 items/h"
+    ];
+    if(suspicious.some(x=>userPrompt.toLowerCase().includes(x)))
+      throw Error("B4_BLIND_PROMPT_CONTAINS_MECHANISM_CUE");
+    await save("blind-user-prompt-exact.json",{text:userPrompt,sha256:hash(userPrompt),
+      status:"REAL_PROMPT_TEXT_PRIOR_TO_BUFFALO_SDK",parent_as_current_model:true});
+  }
   // Instrument the transport BEFORE dynamic-importing the original SDK.
   // All other fetch calls are blocked to prevent accidental real network access.
   globalThis.fetch=async function openRouterOfflineIntercept(request,init={}){
