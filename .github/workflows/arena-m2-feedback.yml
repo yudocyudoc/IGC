@@ -1,0 +1,102 @@
+name: Arena M2 one own-feedback revision, verified M1 to OpenModelica
+on:
+  push:
+    branches: [feature/arena-m2-own-feedback-revision-v01]
+  pull_request:
+    branches: [feature/arena-m-visible-pulse-v01]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-m2-own-feedback-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  m2-own-feedback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore authentic prior M1 artifacts (no reconstruction of prior results)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-m-real-common-pulse-evidence
+          run-id: 40271768284
+          github-token: ${{ github.token }}
+          path: artifacts/m1-parent
+      - name: Offline M2 negative controls using the actual prior M1 CSV
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_m2_feedback.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_visible_verify.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_visible_pulse.py' -v
+      - name: Deliver own diagnostic; generate single versioned M2 candidate before evaluation
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m2_feedback --visible data/synthetic/arena_m_v0_visible.json --parent-dir artifacts/m1-parent --out artifacts/arena-m2
+          test -f artifacts/arena-m2/ArenaM2Generated.mo
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=Path('artifacts/arena-m2')
+          n=json.loads((r/'native-graph.json').read_text())
+          s=json.loads((r/'submission.json').read_text())
+          e=json.loads((r/'memory-events.json').read_text())
+          assert n['arm_id']=='M' and n['candidate_universe_count']==1
+          assert s['iteration']==1 and len(s['hypothesis_ids'])==1
+          assert len(n['parameter_edits'])==2 and all(x['before']==0.5 and x['after']==1.0 for x in n['parameter_edits'])
+          assert [x['event_type'] for x in e]==['FEEDBACK_DELIVERED','HYPOTHESIS_REVISED']
+          print('M2_NATIVE_AND_MEMORY_REVISION_LOCKED_BEFORE_G2',n['canonical_graph_sha256'])
+          PY
+      - name: Install exactly original Short E1 simulation dependencies
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/arena-m2-home" "$RUNNER_TEMP/arena-m2-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/arena-m2-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/arena-m2-libs/systemdynamics"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/arena-m2-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/arena-m2-libs/systemdynamics" rev-parse HEAD)"
+      - name: Simulate the ONE revised molecular structure in real OpenModelica
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/arena-m2-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/arena-m2-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/arena-m2/simulate.mos 2>&1 | tee artifacts/arena-m2/omc.log
+          if grep -Eq 'Error:|Simulation execution failed|Failed to load|Class .* not found' artifacts/arena-m2/omc.log; then
+            echo "OMC_M2_FAILURE"
+            exit 1
+          fi
+          test -s artifacts/arena-m2/m2-visible_res.csv
+      - name: Independent physical conservation and construction-only comparison
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m2_compare --visible data/synthetic/arena_m_v0_visible.json --parent-dir artifacts/m1-parent --revised-dir artifacts/arena-m2 --out artifacts/arena-m2/real-comparison.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('artifacts/arena-m2/real-comparison.json').read_text())
+          assert r['simulation_status']=='G2_PASS'
+          assert r['holdout_status']=='NOT_RUN'
+          assert r['topology_unchanged'] and len(r['parameter_edits'])==2
+          assert r['revision_mass_balance_max_items']<0.015
+          print('M2_REVISED_G2_VALID',r['outcome'])
+          PY
+      - name: Preserve all model/feedback/lineage/solver data, including failed attempts
+        if: always()
+        run: |
+          if [ -d artifacts/arena-m2 ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/arena-m2; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-m2-own-feedback-real-openmodelica
+          path: artifacts/arena-m2/
+          retention-days: 45
+          if-no-files-found: warn
