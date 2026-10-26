@@ -242,7 +242,7 @@ def answer_probability(raw,question):
         p=float(val)
     elif isinstance(val,dict):
         p=None
-        for field in ("probability","p_true","probability_true","yes_probability","probability_yes"):
+        for field in ("noul","probability","p_true","probability_true","yes_probability","probability_yes"):
             if isinstance(val.get(field),(float,int)):
                 p=float(val[field]);break
         if p is None:
@@ -361,6 +361,14 @@ def grade(out):
           "false_exclusions":sum(len(x["false_exclusions"]) for x in rs),
           "false_strong_supports":sum(len(x["false_strong_supports"]) for x in rs),
         }
+        if track=="semantic":
+            summary["tracks"][track]["matched_lexical_baseline_exact_sets"]=sum(
+                x["baseline"]["matched_text_lexical_baseline"]==x["oracle_support"]
+                for x in rs)
+        if track=="numeric":
+            summary["tracks"][track]["m3_original_conditional_unique_choices"]=sum(
+                x["baseline"]["M3_fixed_policy"]["status"]=="SELECTED_CONDITIONALLY"
+                for x in rs)
     (out/"results.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False)+"\n")
     print("CLEF_TWO_PILOTS_GRADED",json.dumps(summary["tracks"],sort_keys=True))
     return summary
