@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from scripts.arena_m3_prepare import ROOT, family, prepare
-from scripts.arena_m3_select import decide, validate_case, validate_manifest
+from scripts.arena_m3_select import decide, validate_case, validate_manifest, sample
 
 
 class M3EvidenceSelectionTests(unittest.TestCase):
@@ -83,6 +83,20 @@ class M3EvidenceSelectionTests(unittest.TestCase):
         broken["construction_observations"][2]["delivered"]=float("nan")
         with self.assertRaisesRegex(ValueError,"M3_INVALID_OBSERVATIONS"):
             validate_case(broken)
+
+    def test_omc_pulse_boundary_duplicate_event_rows_are_continuous(self):
+        rows=[{"time":"1.0","deliveredTotal":"0.4"},
+              {"time":"2.0","deliveredTotal":"1.2"},
+              {"time":"2.000000000004","deliveredTotal":"1.200000000002"},
+              {"time":"2.000000000004","deliveredTotal":"1.200000000002"},
+              {"time":"3.0","deliveredTotal":"2.0"},
+              {"time":"6.0","deliveredTotal":"3.4"},
+              {"time":"6.0","deliveredTotal":"3.4"}]
+        self.assertEqual(len(sample(rows,[1,2,3,6])),4)
+        rows[2]["deliveredTotal"]="1.5"
+        with self.assertRaisesRegex(ValueError,
+                "M3_CONFLICTING_EVENT_TIME_DELIVERIES"):
+            sample(rows,[2])
 
     def test_no_posthoc_threshold_edits(self):
         with tempfile.TemporaryDirectory(prefix="m3test-",dir=ROOT) as temp:
