@@ -25,21 +25,23 @@ const SCENARIO=process.env.BUFFALO_CF_MODE??"offline";
 const PRIOR=process.env.BUFFALO_PRIOR_OUTPUT??null;
 const PHYSICAL=process.env.BUFFALO_PHYSICAL_FEEDBACK??null;
 const BLIND=process.env.BUFFALO_BLIND_FEEDBACK??null;
-const OWN_FEEDBACK=PHYSICAL||BLIND;
-const PRIOR_SHA256=OWN_FEEDBACK?
+const SELF=process.env.BUFFALO_SELF_DISCREPANCY??null;
+const OWN_FEEDBACK=PHYSICAL||BLIND||SELF;
+const PRIOR_SHA256=SELF?"c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb":OWN_FEEDBACK?
   "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9":
   "76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864";
 const PHYSICAL_SCHEMA="igc-b-own-physical-construction-feedback/0.1";
 const BLIND_SCHEMA="igc-b-blind-construction-residuals/0.1";
 const CF_REAL_FEEDBACK_AUTH="RUN_SINGLE_CF_AI_PHYSICAL_FEEDBACK";
 const CF_REAL_BLIND_AUTH="RUN_SINGLE_CF_AI_BLIND_B4";
+const CF_REAL_SELF_AUTH="RUN_SINGLE_CF_AI_B5_SELF_CONTRADICTION";
 const hash=v=>"sha256:"+createHash("sha256").update(typeof v==="string"?v:JSON.stringify(v)).digest("hex");
 const receipt={schema:"igc-b-openrouter-cloudflare/0.1",model:MODEL,
   upstream_sha:UPSTREAM_SHA,scenario:SCENARIO,
   transport:CF_MODE,real_model:CF_MODEL,live_provider_calls:0,
   intercepted_http_calls:0,original_upstream_modified:false,model_returned:false,
-  structured_request_seen:false,status:"INITIALIZED",iteration:OWN_FEEDBACK?2:PRIOR?1:0,
-  feedback_type:BLIND?"BLIND_B2_CONSTRUCTION_ONLY":PHYSICAL?"OWN_B2_PHYSICAL_CONSTRUCTION":"G1_OR_INITIAL"};
+  structured_request_seen:false,status:"INITIALIZED",iteration:SELF?3:OWN_FEEDBACK?2:PRIOR?1:0,
+  feedback_type:SELF?"B5_OWN_B4_EXPLANATION_VS_G2":BLIND?"BLIND_B2_CONSTRUCTION_ONLY":PHYSICAL?"OWN_B2_PHYSICAL_CONSTRUCTION":"G1_OR_INITIAL"};
 
 const syntheticModel={
   specs:{startTime:0,stopTime:8,dt:0.1,timeUnits:"Hour",integrationMethod:"Euler"},
@@ -66,10 +68,10 @@ await mkdir(OUT,{recursive:false});
 const originals={fetch:globalThis.fetch};
 try {
   if(!["offline","live"].includes(SCENARIO))throw Error("INVALID_SCENARIO");
-  if(PHYSICAL && BLIND)throw Error("PHYSICAL_AND_BLIND_MUTUALLY_EXCLUSIVE");
+  if([PHYSICAL,BLIND,SELF].filter(Boolean).length>1)throw Error("MUTUALLY_EXCLUSIVE_PHYSICAL_FEEDBACK_VARIANTS");
   if(OWN_FEEDBACK && !PRIOR)throw Error("PHYSICAL_REQUIRES_PRIOR_NATIVE_MODEL");
   if(SCENARIO==="live" && (
-     process.env.BUFFALO_CF_AUTH!==(BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
+     process.env.BUFFALO_CF_AUTH!==(SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
      process.env.GITHUB_RUN_ATTEMPT!=="1"))throw Error("CLOUDFLARE_LIVE_NOT_AUTHORIZED");
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
   if(visible.schema!=="igc-arena-visible-input/0.1")throw Error("BAD_VISIBLE_SCHEMA");
@@ -85,7 +87,49 @@ try {
       throw Error("INVALID_NATIVE_PARENT");
     parentModel=priorOutput.model; // Buffalo owns the exact previous native model.
     const diagnostic=diagnose(priorOutput);
-    if(BLIND){
+    if(SELF){
+      const fb=JSON.parse(await readFile(SELF,"utf8"));
+      const expectedKeys=["schema","arm_id","parent_native_bytes_sha256","parent_g2_bytes_sha256",
+        "parent_own_explanation_verbatim","comparisons","original_iteration_budget_finished",
+        "separately_authorized_followup","holdout","other_arms_included","causal_truth",
+        "native_simulator_lookup_parity","instructions"].sort().join("|");
+      if(Object.keys(fb).sort().join("|")!==expectedKeys ||
+         fb.schema!=="igc-b5-own-explanation-vs-physical-simulation/0.1" ||
+         fb.arm_id!=="B" || fb.parent_native_bytes_sha256!=="sha256:"+actual ||
+         fb.parent_g2_bytes_sha256!=="sha256:2e97c1f7d87d75c3c91649c340d97c6ff0557bfcc30a1456f1d4bda6cd9e3533" ||
+         fb.parent_own_explanation_verbatim!==priorOutput.supportingInfo.explanation ||
+         !Array.isArray(fb.comparisons)||fb.comparisons.length!==3||
+         fb.comparisons.some((r,i)=>r.t_hour!==[1,2,4][i] ||
+             Math.abs(r.own_equations_minus_own_explanation_items-
+                (r.own_equations_openmodelica_delivered_items-
+                 r.own_explanation_expected_delivered_approximately_items))>1e-9)||
+         fb.original_iteration_budget_finished!==true ||
+         fb.separately_authorized_followup!==true ||
+         fb.holdout!=="NOT_RUN"||fb.other_arms_included!==false ||
+         fb.causal_truth!=="UNKNOWN" ||
+         fb.native_simulator_lookup_parity!=="NOT_CERTIFIED" ||
+         /ramp|utilization\\^2|double count|suspect equation|fix the|capacity limit/i.test(fb.instructions))
+         throw Error("INVALID_B5_SELF_FEEDBACK_OR_HINT");
+      receipt.b5_feedback_seen=false;
+      receipt.feedback_sha256=hash(fb);
+      receipt.parent_bytes_sha256=fb.parent_native_bytes_sha256;
+      receipt.parent_variables=parentModel.variables.length;
+      receipt.extension_after_original_budget=true;
+      receipt.construction_only=true;
+      receipt.no_suspect_equation_hint=true;
+      await save("b5-self-feedback-sent.json",fb);
+      userPrompt=visible.question+"\\n\\nThis is a NEW separately authorized review of YOUR "+
+        "previous Buffalo-native model, passed as currentModel. YOUR own previous "+
+        "explanation and the observable results of YOUR same model simulated with "+
+        "OpenModelica are provided here: "+JSON.stringify(fb)+
+        "\\nDecide independently if your previous explanation is consistent with "+
+        "your own equations and simulation; if it is not, revise your model or "+
+        "retract the earlier expectations, or explicitly state evidence is insufficient. "+
+        "Do not presuppose a particular cause. Discuss limitations; never claim "+
+        "held-out predictive validation. Return one complete native Buffalo JSON model.";
+      await save("b5-user-prompt-exact.json",{text:userPrompt,
+        sha256:hash(userPrompt),parent_as_current_model:true});
+    } else if(BLIND){
       const fb=JSON.parse(await readFile(BLIND,"utf8"));
       const keys=[
         "schema","arm_id","origin","experiment","parent_native_bytes_sha256",
@@ -247,11 +291,12 @@ try {
       if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
         throw Error("BUFFALO_CURRENTMODEL_NOT_DELIVERED");
       if(body.messages.at(-1)?.role!=="user"||!body.messages.at(-1)?.content.endsWith(userPrompt))
-        throw Error(BLIND?"BLIND_FEEDBACK_NOT_DELIVERED":PHYSICAL?"PHYSICAL_FEEDBACK_NOT_DELIVERED":"G1_FEEDBACK_NOT_DELIVERED");
+        throw Error(SELF?"B5_FEEDBACK_NOT_DELIVERED":BLIND?"BLIND_FEEDBACK_NOT_DELIVERED":PHYSICAL?"PHYSICAL_FEEDBACK_NOT_DELIVERED":"G1_FEEDBACK_NOT_DELIVERED");
       // Buffalo LLMWrapper collapses separate user turns (background + prompt)
       // into a single message joined by blank lines. Only the suffix is exact.
       receipt.current_model_seen=true;
-      if(BLIND)receipt.blind_feedback_seen=true;
+      if(SELF)receipt.b5_feedback_seen=true;
+      else if(BLIND)receipt.blind_feedback_seen=true;
       else if(PHYSICAL)receipt.physical_feedback_seen=true;
       else receipt.g1_feedback_seen=true;
     }
@@ -340,7 +385,8 @@ try {
   receipt.buffalo_inferred_arrivals_as_inflow=
     result?.model?.variables?.find(v=>v.name==="Backlog")?.inflows?.includes("Arrivals")??false;
   receipt.status=receipt.model_returned?
-    (BLIND?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_BLIND_B4_RETURNED":"OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS"):
+    (SELF?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_B5_SELF_REVIEW_RETURNED":"OFFLINE_BUFFALO_B5_SELF_REVIEW_CONTRACT_PASS"):
+    BLIND?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_BLIND_B4_RETURNED":"OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS"):
     PHYSICAL?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_PHYSICAL_REVISION_RETURNED":"OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS"):
     PRIOR?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_REVISION_RETURNED":"OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"):
     (SCENARIO==="live"?"REAL_CLOUDFLARE_NATIVE_BUFFALO_MODEL_RETURNED":"OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS")):
@@ -356,10 +402,11 @@ try {
   if(SCENARIO==="offline") {
     if(!["OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS","OFFLINE_BUFFALO_REVISION_CONTRACT_PASS",
          "OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS",
-         "OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS"].includes(receipt.status) ||
+         "OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS",
+         "OFFLINE_BUFFALO_B5_SELF_REVIEW_CONTRACT_PASS"].includes(receipt.status) ||
        !receipt.buffalo_inferred_arrivals_as_inflow ||
        !receipt.structured_request_seen || receipt.intercepted_http_calls!==1 ||
-       receipt.live_provider_calls!==0 || (PRIOR && (!receipt.current_model_seen||(BLIND?!receipt.blind_feedback_seen:PHYSICAL?!receipt.physical_feedback_seen:!receipt.g1_feedback_seen))))process.exitCode=1;
+       receipt.live_provider_calls!==0 || (PRIOR && (!receipt.current_model_seen||(SELF?!receipt.b5_feedback_seen:BLIND?!receipt.blind_feedback_seen:PHYSICAL?!receipt.physical_feedback_seen:!receipt.g1_feedback_seen))))process.exitCode=1;
   } else if(!receipt.model_returned || receipt.live_provider_calls!==1) {
     process.exitCode=1;
   }
