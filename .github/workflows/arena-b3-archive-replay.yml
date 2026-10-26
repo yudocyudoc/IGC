@@ -219,6 +219,14 @@ jobs:
           assert result['original_budget']=='EXTENDED_SEPARATE_EXPERIMENT_NOT_ORIGINAL_B_ROUND'
           print('BUFFALO_OWN_PHYSICAL_MODEL_ADJUDICATED',result['g0_status'],result['g2_status'],result.get('construction_change'))
           PY
+      - name: Normalize OpenModelica root-owned generated files before artifact packaging
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/b-physical-evaluation ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b-physical-evaluation
+            chmod -R u+rX artifacts/b-physical-evaluation
+          fi
       - name: Preserve native-source SHA and solver hashes for Astra
         if: ${{ steps.grant.outputs.allowed == 'true' && success() }}
         run: |
@@ -242,14 +250,6 @@ jobs:
           (root/'b3-astra-evidence-manifest.json').write_text(json.dumps(manifest,indent=2)+'\\n')
           print('ASTRA_AUDIT_SHA_MANIFEST',len(manifest['files']))
           PY
-      - name: Normalize OpenModelica root-owned generated files before artifact packaging
-        if: always()
-        run: |
-          set -euo pipefail
-          if [ -d artifacts/b-physical-evaluation ]; then
-            sudo chown -R "$(id -u):$(id -g)" artifacts/b-physical-evaluation
-            chmod -R u+rX artifacts/b-physical-evaluation
-          fi
       - name: Archive complete diagnostic and all transport receipts including failure
         if: always()
         uses: actions/upload-artifact@v4
