@@ -21,12 +21,14 @@ const OUT=resolve(process.env.BUFFALO_OUTPUT??"artifacts/buffalo-openrouter-clou
 const ROOT=resolve(process.env.SDAI_ROOT??"upstream/sd-ai");
 const INPUT=resolve(process.env.BUFFALO_VISIBLE_INPUT??"data/synthetic/arena_b_native_visible.json");
 const SCENARIO=process.env.BUFFALO_CF_MODE??"offline";
+const PRIOR=process.env.BUFFALO_PRIOR_OUTPUT??null;
+const PRIOR_SHA256="76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864";
 const hash=v=>"sha256:"+createHash("sha256").update(typeof v==="string"?v:JSON.stringify(v)).digest("hex");
 const receipt={schema:"igc-b-openrouter-cloudflare/0.1",model:MODEL,
   upstream_sha:UPSTREAM_SHA,scenario:SCENARIO,
   transport:CF_MODE,real_model:CF_MODEL,live_provider_calls:0,
   intercepted_http_calls:0,original_upstream_modified:false,model_returned:false,
-  structured_request_seen:false,status:"INITIALIZED"};
+  structured_request_seen:false,status:"INITIALIZED",iteration:PRIOR?1:0};
 
 const syntheticModel={
   specs:{startTime:0,stopTime:8,dt:0.1,timeUnits:"Hour",integrationMethod:"Euler"},
@@ -58,6 +60,34 @@ try {
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
   if(visible.schema!=="igc-arena-visible-input/0.1")throw Error("BAD_VISIBLE_SCHEMA");
   if(Object.keys(visible.construction||{}).some(k=>/gold|holdout|other.arm/i.test(k)))throw Error("FORBIDDEN_INPUT");
+  let parentModel={variables:[],relationships:[]};
+  let userPrompt=visible.question;
+  if(PRIOR){
+    const bytes=await readFile(PRIOR);
+    const actual=createHash("sha256").update(bytes).digest("hex");
+    if(actual!==PRIOR_SHA256)throw Error("PARENT_ARTIFACT_HASH_MISMATCH");
+    const priorOutput=JSON.parse(bytes.toString("utf8"));
+    if(!Array.isArray(priorOutput?.model?.variables)||!Array.isArray(priorOutput?.model?.relationships))
+      throw Error("INVALID_NATIVE_PARENT");
+    parentModel=priorOutput.model; // Buffalo owns the exact previous native model.
+    const diagnostic=diagnose(priorOutput);
+    const findings=diagnostic.issues.filter(x=>x.category==="G1").map(x=>({code:x.code,path:x.path}));
+    if(!findings.length)throw Error("NO_G1_FINDINGS_FOR_REVISION");
+    const feedback={schema:"igc-b-native-g1-feedback/0.1",iteration:1,
+      parent_bytes_sha256:"sha256:"+actual,diagnostic_schema:diagnostic.schema,
+      findings,adapter_only:diagnostic.issues.filter(x=>x.category==="ADAPTER").map(x=>x.code),
+      scope:"Technical G1 feedback from your own previous model; not external observations or rival models."};
+    await save("parent-g1-diagnostic.json",diagnostic);
+    await save("revision-feedback.json",feedback);
+    receipt.parent_bytes_sha256=feedback.parent_bytes_sha256;
+    receipt.feedback_sha256=hash(feedback);
+    receipt.parent_variables=parentModel.variables.length;
+    userPrompt=visible.question+"\n\nRevision of YOUR previous model (passed as currentModel). "+
+      "G1 technical feedback: "+JSON.stringify(findings)+". "+
+      "Keep Buffalo quantitative SD-AI methodology and documented zero-safe // division semantics. "+
+      "Please revise equations and declared units if needed, without inventing observations or parameters. "+
+      "If data are insufficient, explain limitations. No other arm outputs are available.";
+  }
   // Instrument the transport BEFORE dynamic-importing the original SDK.
   // All other fetch calls are blocked to prevent accidental real network access.
   globalThis.fetch=async function openRouterOfflineIntercept(request,init={}){
@@ -83,6 +113,15 @@ try {
     receipt.request_sha256=hash(body);
     receipt.schema_sha256=hash(schema);
     receipt.message_role_sequence=body.messages?.map(m=>m.role);
+    if(PRIOR){
+      const priorMessage=JSON.stringify(parentModel,null,2);
+      if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
+        throw Error("BUFFALO_CURRENTMODEL_NOT_DELIVERED");
+      if(body.messages.at(-1)?.role!=="user"||body.messages.at(-1)?.content!==userPrompt)
+        throw Error("G1_FEEDBACK_NOT_DELIVERED");
+      receipt.current_model_seen=true;
+      receipt.g1_feedback_seen=true;
+    }
     await save("intercepted-request-metadata.json",{
       http_method:method,url_origin:url.origin,url_path:url.pathname,
       model:body.model,response_format:responseFormat.type,
@@ -150,8 +189,15 @@ try {
       observability:visible.observability}),
     maxTokens:8000,timeoutMinutes:2
   };
-  const result=await engine.generate(visible.question,{variables:[],relationships:[]},params);
+  const result=await engine.generate(userPrompt,parentModel,params);
   await save("native-output.json",result);
+  if(PRIOR && Array.isArray(result?.model?.variables)){
+    const after=diagnose(result);
+    await save("revised-g1-diagnostic.json",after);
+    receipt.revised_g1_status=after.status;
+    receipt.revised_g1_issue_count=after.issues.filter(x=>x.category==="G1").length;
+    receipt.revision_changed_model=JSON.stringify(result.model)!==JSON.stringify(parentModel);
+  }
   receipt.model_returned=Array.isArray(result?.model?.variables)&&
                           Array.isArray(result?.model?.relationships);
   receipt.native_error=result?.err??null;
@@ -160,7 +206,8 @@ try {
   receipt.buffalo_inferred_arrivals_as_inflow=
     result?.model?.variables?.find(v=>v.name==="Backlog")?.inflows?.includes("Arrivals")??false;
   receipt.status=receipt.model_returned?
-    (SCENARIO==="live"?"REAL_CLOUDFLARE_NATIVE_BUFFALO_MODEL_RETURNED":"OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS"):
+    (PRIOR?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_REVISION_RETURNED":"OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"):
+    (SCENARIO==="live"?"REAL_CLOUDFLARE_NATIVE_BUFFALO_MODEL_RETURNED":"OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS")):
     "BUFFALO_RETURNED_NO_NATIVE_MODEL";
 } catch(e) {
   receipt.error_type=e?.name??"Error";
@@ -171,10 +218,10 @@ try {
   await save("receipt.json",receipt);
   console.log(JSON.stringify(receipt));
   if(SCENARIO==="offline") {
-    if(receipt.status!=="OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS" ||
+    if(!["OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS","OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"].includes(receipt.status) ||
        !receipt.buffalo_inferred_arrivals_as_inflow ||
        !receipt.structured_request_seen || receipt.intercepted_http_calls!==1 ||
-       receipt.live_provider_calls!==0)process.exitCode=1;
+       receipt.live_provider_calls!==0 || (PRIOR && (!receipt.current_model_seen||!receipt.g1_feedback_seen)))process.exitCode=1;
   } else if(!receipt.model_returned || receipt.live_provider_calls!==1) {
     process.exitCode=1;
   }
