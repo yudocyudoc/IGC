@@ -87,7 +87,7 @@ def table_function(name, points):
     for (xa, ya), (xb, yb) in zip(pairs[:-1], pairs[1:]):
         lines.append(f"    elseif x < {num(xb)} then")
         slope = (yb - ya) / (xb - xa)
-        lines.append(f"      y := {num(ya)} + (x - {num(xa)}) * {num(slope)};")
+        lines.append(f"      y := {num(ya)} + (x - {num(xa)}) * ({num(slope)});")
     lines.extend(["    else", f"      y := {num(pairs[-1][1])};",
                   "    end if;", f"  end {fn};"])
     return fn, lines
