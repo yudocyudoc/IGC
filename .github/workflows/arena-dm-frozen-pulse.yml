@@ -1,0 +1,113 @@
+name: Arena frozen D2 versus M2 — discriminating high-arrival pulse
+on:
+  push:
+    branches: [feature/arena-dm-frozen-discriminating-pulse-20261026]
+  pull_request:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frozen-predictions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore immutable G2-verified D2 model (not evaluator)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-d2-own-revised-six-openmodelica-g2
+          run-id: 40284851680
+          github-token: ${{ github.token }}
+          path: artifacts/frozen-d2
+      - name: Restore immutable independently simulated M2 candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-m2-own-feedback-real-openmodelica
+          run-id: 40283319745
+          github-token: ${{ github.token }}
+          path: artifacts/frozen-m2
+      - name: Verify both input native Modelica byte hashes and permit EXTERNAL excitation alteration only
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_dm_frozen_pulse.py
+          python -m scripts.arena_dm_frozen_pulse emit \
+            --d artifacts/frozen-d2/D2fit_1b03f4d80336.mo \
+            --m artifacts/frozen-m2/ArenaM2Generated.mo \
+            --out artifacts/dm-frozen
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('artifacts/dm-frozen')
+          m=json.loads((p/'manifest.json').read_text())
+          assert m['stimulation']['rate_items_per_hour']==4.0
+          assert m['frozen_graphs'] and m['parameter_fit'] is False
+          assert m['D_original_SHA256']=='sha256:c0bec9482f045b9f5cfc652c08d72eb1f0492ecf31865073d530094d26de3750'
+          assert m['M_original_SHA256']=='sha256:8c7dfad2d9e3b4ef2619f4d9bb468bbab5dbd7c3cb3f30801b84f050df85f2f9'
+          print('FROZEN_D2_M2_MODELS_AUDITED_ONLY_STIMULUS_AMPLITUDE_CHANGED')
+          PY
+      - name: D2 — simulate exact same graph and revised grid parameters with pulse 4
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824 \
+            omc artifacts/dm-frozen/d2.mos 2>&1 | tee artifacts/dm-frozen/d2-omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/dm-frozen/d2-omc.log; then exit 1; fi
+          test -s artifacts/dm-frozen/d2_res.csv
+      - name: M2 — pin original Short E1 SystemDynamics 2.1.2 and Modelica 4.0.0
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/dm-home" "$RUNNER_TEMP/dm-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/dm-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/dm-libs/systemdynamics"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/dm-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/dm-libs/systemdynamics" rev-parse HEAD)"
+      - name: M2 — simulate same Short native molecular candidate with pulse 4
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/dm-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/dm-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/dm-frozen/m2.mos 2>&1 | tee artifacts/dm-frozen/m2-omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/dm-frozen/m2-omc.log; then exit 1; fi
+          test -s artifacts/dm-frozen/m2_res.csv
+      - name: Compare frozen predictions and independent material balances (NOT a model winner)
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_dm_frozen_pulse verify \
+            --d artifacts/frozen-d2/D2fit_1b03f4d80336.mo \
+            --m artifacts/frozen-m2/ArenaM2Generated.mo \
+            --out artifacts/dm-frozen
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('artifacts/dm-frozen/comparison.json').read_text())
+          assert a['status']=='G2_BOTH_FROZEN_MODELS_REAL_OPENMODELICA_AND_MASS_BALANCED'
+          assert a['no_observations_to_rank_accuracy'] and a['winner'] is None
+          assert a['g3_predictive_validation']=='NOT_RUN'
+          print('D_M_DIFFERENCE_OVER_CAPACITY_PULSE',
+                a['prediction_discriminated_at_some_predeclared_time'],
+                a['maximum_absolute_gap_items'])
+          PY
+      - name: Restore ownership of simulation outputs before archiving
+        if: always()
+        run: |
+          if [ -d artifacts/dm-frozen ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/dm-frozen
+            chmod -R u+rX artifacts/dm-frozen
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-frozen-d2-m2-high-pulse-predictions
+          path: artifacts/dm-frozen/
+          retention-days: 45
+          if-no-files-found: warn
