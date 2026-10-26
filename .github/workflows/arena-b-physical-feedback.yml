@@ -49,6 +49,7 @@ jobs:
             --visible data/synthetic/arena_b_native_visible.json \
             --out artifacts/b-feedback.json
           node --check scripts/arena_b_openrouter_cloudflare.mjs
+          python -m py_compile scripts/arena_b_physical_outcome.py scripts/arena_b_native_to_modelica.py
       - name: Fetch unmodified native Buffalo quantitative engine
         run: |
           set -euo pipefail
