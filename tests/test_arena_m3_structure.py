@@ -18,7 +18,7 @@ class M3EvidenceSelectionTests(unittest.TestCase):
                           for i in (0,1,2)],[0,1,2])
         self.assertTrue(all(sum(x["role"]=="report" for x in v[1]["instances"])==0
                             for v in paths.values()))
-        self.assertEqual([len(x[1]["instances"]) for x in paths.values()],[4,5,6])
+        self.assertEqual([len(paths[i][1]["instances"]) for i in (0,1,2)],[4,5,6])
 
     def test_emits_five_original_backend_simulations_and_hides_source_key(self):
         # Preparation under repo root is required for trusted absolute Modelica
