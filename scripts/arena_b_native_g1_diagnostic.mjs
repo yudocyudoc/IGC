@@ -33,6 +33,15 @@ export function diagnose(document){
  for(let i=0;i<variables.length;i++){
   const v=variables[i],p=`model.variables[${i}]`; if(!v||typeof v.equation!=="string")continue;
   const e=v.equation.trim();
+  const points=v.graphicalFunction?.points;
+  if(Array.isArray(points)&&points.length){
+   add("GRAPHICAL_LOOKUP_NEEDS_ADAPTER",p+".graphicalFunction",
+      `${points.length} declared points; interpolation/extrapolation must be checked`,"ADAPTER");
+   if(points.length<2||points.some((pt,j)=>!Number.isFinite(pt?.x)||!Number.isFinite(pt?.y)||
+      (j>0&&pt.x<=points[j-1]?.x)))
+      add("MALFORMED_GRAPHICAL_FUNCTION",p+".graphicalFunction","Need finite, strictly increasing x values");
+  }
+
   if(e.includes("//"))add("ZERO_SAFE_DIVISION_REQUIRES_ADAPTER",p+".equation",e,"ADAPTER");
   if(/\/\*|\*\//.test(e))add("UNSUPPORTED_COMMENT_SYNTAX",p+".equation",e);
   if(/\b(profile over time|TBD|unknown|placeholder)\b/i.test(e))add("PROSE_OR_PLACEHOLDER",p+".equation",e);
