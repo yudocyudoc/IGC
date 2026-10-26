@@ -90,7 +90,7 @@ try {
         {status:429,headers:{"content-type":"application/json"}});
     const payload={
       id:"OFFLINE-OPENROUTER-STUB",object:"chat.completion",created:1761444000,
-      model:MODEL,
+      system_fingerprint:"offline-schema-fixture-no-real-provider",model:MODEL,
       choices:[{index:0,finish_reason:"stop",
         message:{role:"assistant",content:SCENARIO==="invalid_json"?"NOT_JSON":JSON.stringify(syntheticModel)}}],
       usage:{prompt_tokens:0,completion_tokens:0,total_tokens:0}
