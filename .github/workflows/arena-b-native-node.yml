@@ -51,6 +51,39 @@ jobs:
              !r.inferred_inflow_by_buffalo.includes("Arrivals")) throw Error("NATIVE_ENGINE_FAIL");
           console.log("ORIGINAL_QUANTITATIVE_ENGINE_WRAPPER_POSTPROCESS_PASS");
           JS
+      - name: Exercise REAL upstream OpenRouter SDK route with synthetic HTTP response (zero cost)
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-openrouter-valid
+          BUFFALO_MOCK_SCENARIO: valid
+        run: |
+          node scripts/arena_b_openrouter_mock.mjs
+          node - <<'JS'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/buffalo-openrouter-valid/receipt.json'));
+          if(r.status!=='OFFLINE_OPENROUTER_NATIVE_ENGINE_PASS' ||
+             !r.structured_request_seen || !r.buffalo_inferred_arrivals_as_inflow ||
+             r.intercepted_http_calls!==1 || r.live_provider_calls!==0)
+            throw Error('OPENROUTER_SDK_NATIVE_CONTRACT_FAILED');
+          console.log('ORIGINAL_OPENROUTER_SDK_STRUCTURED_OUTPUT_OFFLINE_PASS');
+          JS
+      - name: Check native OpenRouter SDK rejects corrupted JSON response (no fake model)
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-openrouter-invalid
+          BUFFALO_MOCK_SCENARIO: invalid_json
+        run: |
+          node scripts/arena_b_openrouter_mock.mjs
+          node - <<'JS'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/buffalo-openrouter-invalid/receipt.json'));
+          if(r.model_returned || r.intercepted_http_calls!==1 ||
+             !r.structured_request_seen || r.live_provider_calls!==0)
+            throw Error('INVALID_JSON_ACCIDENTALLY_ACCEPTED');
+          console.log('OPENROUTER_INVALID_JSON_REJECTED_WITHOUT_REPAIR');
+          JS
       - name: Check one-use authorizing marker in HEAD
         id: grant
         run: |
@@ -84,4 +117,6 @@ jobs:
           path: |
             artifacts/buffalo-native-offline/
             artifacts/buffalo-native-live/
+            artifacts/buffalo-openrouter-valid/
+            artifacts/buffalo-openrouter-invalid/
           retention-days: 30
