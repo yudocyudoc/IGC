@@ -1,0 +1,116 @@
+name: Arena M3 P — frozen candidate parameter-shift challenge in real OpenModelica
+on:
+  push:
+    branches: [feature/arena-m3-parameter-shift-20261026]
+  pull_request:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  param-shift:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original real M3 simulated fixed candidates without recomputing their parameters
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-m3-original-e1-blind-structural-selection-evidence
+          run-id: 40298421985
+          github-token: ${{ github.token }}
+          path: artifacts/m3p-original
+      - name: Predeclare six parameter-shifted worlds; original molecular compiler only
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_m3_param_shift.py
+          python -m scripts.arena_m3_param_shift emit --out artifacts/m3-paramshift
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('artifacts/m3-paramshift')
+          m=json.loads((p/'public-protocol.json').read_text())
+          assert m['worlds']==6 and m['original_E1_composer_untouched']
+          assert m['original_M3_selector_untouched']
+          assert m['fixed_candidate_parameters_untouched']
+          assert m['world_solver_intervals']==240
+          assert 'der(' not in (p/'M3ParamWorlds.mo').read_text()
+          assert (p/'simulate.mos').read_text().count('simulate(M3ParamWorlds.')==6
+          print('SIX_PARAM_SHIFT_WORLDS_AND_NO_INJECTED_DYNAMIC_EQUATIONS')
+          PY
+          python -m unittest discover -s tests -p 'test_arena_m3_structure.py' -v
+      - name: Install original Short E1 Modelica 4.0 and SystemDynamics 2.1.2
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/m3p-home" "$RUNNER_TEMP/m3p-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/m3p-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/m3p-libs/systemdynamics"
+          echo "M3P_MSL_SHA=$(git -C "$RUNNER_TEMP/m3p-libs/msl" rev-parse HEAD)"
+          echo "M3P_SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/m3p-libs/systemdynamics" rev-parse HEAD)"
+      - name: G2 six REAL solver simulations with changed world parameters only
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/m3p-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/m3p-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/m3-paramshift/simulate.mos 2>&1 | tee artifacts/m3-paramshift/omc.log
+          if grep -Eq 'Error:|Simulation execution failed|Failed to load|Class .* not found' artifacts/m3-paramshift/omc.log; then exit 1; fi
+          test "$(find artifacts/m3-paramshift/worlds -maxdepth 1 -name 'p*_res.csv' | wc -l)" -eq 6
+      - name: Emit construction observations from world CSV, freeze reserve and secret parameters
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m3_param_shift extract --out artifacts/m3-paramshift
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/m3-paramshift')
+          assert len(list((root/'blind').glob('P*.json')))==6
+          for p in sorted((root/'blind').glob('P*.json')):
+            o=json.loads(p.read_text())
+            assert set(o)=={'schema','case_id','construction_observations','source_snapshot_hash','synthetic_measurement','observability'}
+            assert [x['t'] for x in o['construction_observations']]==[0,1,2,3]
+          print('SIX_BLIND_CONSTRUCTION_CASES_WITHHELD_WORLD_PARAMETER_LABELS')
+          PY
+      - name: M3 original fixed-template selector — never reads altered parameter source labels
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m3_param_shift grade \
+            --out artifacts/m3-paramshift \
+            --source artifacts/m3p-original \
+            --catalog experiments/e0/catalog.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/m3-paramshift/post/comparison.json')
+          r=json.loads(p.read_text())
+          assert r['worlds']==6 and len(r['cases'])==6
+          assert r['no_world_labels_seen_by_selector']
+          assert r['no_m3_threshold_or_model_refitting']
+          assert r['same_molecular_backend_not_independent_mechanism']
+          assert r['not_external_causal_identification']
+          assert r['correct_topology_selected']+r['wrong_topology_selected']+r['abstained']==6
+          print('M3P_HONEST_SIX_WORLD_RESULTS',r['selected'],r['abstained'],
+             r['correct_topology_selected'],r['wrong_topology_selected'])
+          PY
+      - name: Restore solver-owned permissions
+        if: always()
+        run: |
+          if [ -d artifacts/m3-paramshift ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/m3-paramshift
+            chmod -R u+rX artifacts/m3-paramshift
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-m3-parameter-shift-worlds-and-honest-original-selector
+          path: artifacts/m3-paramshift/
+          retention-days: 45
+          if-no-files-found: warn
