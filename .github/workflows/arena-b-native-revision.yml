@@ -2,6 +2,8 @@ name: Arena B original Buffalo iterative G1 review
 on:
   push:
     branches: [feature/arena-b-native-g1-diagnostic]
+  pull_request:
+    branches: [feature/arena-b-native-node-engine-v01]
   workflow_dispatch:
 permissions:
   contents: read
