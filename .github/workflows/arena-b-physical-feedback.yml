@@ -1,0 +1,149 @@
+name: Arena B physical feedback from own OpenModelica to original Buffalo
+on:
+  push:
+    branches: [feature/arena-b-physical-feedback-v01]
+  pull_request:
+    branches: [fix/arena-b-g0-native-fidelity-review-20261026]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-b-own-physical-feedback
+  cancel-in-progress: false
+jobs:
+  own-physical-buffalo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore only real B-native and B-OpenModelica outputs from prior authenticated runs
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: buffalo-real-revision-modelica-g2-evidence
+          run-id: 40283017108
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-solver
+      - name: Lock native/CSV/report bytes and derive actual physical-feedback document
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_b_physical_feedback.py' -v
+          python -m scripts.arena_b_physical_feedback \
+            --native artifacts/b-physical-source/revision-live/native-output.json \
+            --csv artifacts/b-physical-solver/BuffaloNative_3aa200a87a3f_res.csv \
+            --report artifacts/b-physical-solver/g3-construction-only.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b-feedback.json
+          node --check scripts/arena_b_openrouter_cloudflare.mjs
+      - name: Fetch unmodified native Buffalo quantitative engine
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+      - name: Install original SDK from unmodified Buffalo lockfile
+        working-directory: upstream/sd-ai
+        run: npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Offline original Buffalo currentModel + real own physical residual contract
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-source/revision-live/native-output.json
+          BUFFALO_PHYSICAL_FEEDBACK: ${{ github.workspace }}/artifacts/b-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/b-physical-offline/receipt.json'));
+          const fb=JSON.parse(fs.readFileSync('artifacts/b-physical-offline/physical-feedback-sent.json'));
+          if(r.status!=='OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS'||
+            !r.current_model_seen||!r.physical_feedback_seen||r.live_provider_calls!==0||
+            r.intercepted_http_calls!==1 || !r.structured_request_seen||
+            !r.extension_after_original_budget||!r.construction_only ||
+            fb.observations_and_physical_state.length!==4)
+            throw Error('ORIGINAL_BUFFALO_OWN_PHYSICAL_DELIVERY_FAILED');
+          console.log('ORIGINAL_BUFFALO_CURRENTMODEL_PLUS_REAL_G3_CONSTRUCTION_FEEDBACK_DELIVERED_OFFLINE');
+          JS
+      - name: Gate exactly one separately authorized real Workers AI revision
+        id: grant
+        env:
+          BRANCH: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = push ] && [ "$ATTEMPT" = 1 ] &&
+             [ "$BRANCH" = refs/heads/feature/arena-b-physical-feedback-v01 ] &&
+             git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+             grep -Fxq data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_ONE_CALL.json; then
+             node - <<'JS'
+          const a=require('./data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_ONE_CALL.json');
+          if(a.schema!=='igc-b-own-physical-one-call-extension/0.1' ||
+             a.calls!==1 || a.retries!==0 || a.extension_iteration!==2 ||
+             a.not_part_of_original_round_budget!==true ||
+             a.parent_bytes_sha256!=='d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9' ||
+             a.source_solver_run!==40283017108 ||
+             a.original_parent_run!==40259178852 ||
+             a.cross_arm_data_allowed!==false)
+             throw Error('INVALID_ONE_USE_B_PHYSICAL_AUTHORIZATION');
+          JS
+             echo 'allowed=true' >> "$GITHUB_OUTPUT"
+          else
+             echo 'allowed=false' >> "$GITHUB_OUTPUT"
+             echo 'NO_NEW_AUTHORIZATION_MARKER_NO_REMOTE_CALL'
+          fi
+      - name: Real Cloudflare original Buffalo revision using its own OpenModelica residuals
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-source/revision-live/native-output.json
+          BUFFALO_PHYSICAL_FEEDBACK: ${{ github.workspace }}/artifacts/b-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_PHYSICAL_FEEDBACK
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b-physical-live/receipt.json').read_text())
+          assert r['status']=='REAL_CLOUDFLARE_BUFFALO_PHYSICAL_REVISION_RETURNED'
+          assert r['intercepted_http_calls']==r['live_provider_calls']==1
+          assert r['current_model_seen'] and r['physical_feedback_seen']
+          assert r['inference_source']=='REAL_CLOUDFLARE_WORKERS_AI'
+          print('BUFFALO_ORIGINAL_RECEIVED_PHYSICAL_CONSTRUCTION_FEEDBACK_REAL_CLOUD',r['variable_count'])
+          PY
+      - name: Archive complete diagnostic and all transport receipts including failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-own-physical-feedback-original-native-proof
+          path: |
+            artifacts/b-feedback.json
+            artifacts/b-physical-offline/
+            artifacts/b-physical-live/
+          retention-days: 30
