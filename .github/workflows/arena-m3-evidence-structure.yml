@@ -1,0 +1,191 @@
+name: Arena M3 — evidence-driven structural selection on original Short E1
+on:
+  push:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+  pull_request:
+    branches: [fix/arena-m-g3-construction-metrics-20261026]
+permissions:
+  contents: read
+concurrency:
+  group: arena-m3-structure-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-e1-m3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run M3 negative and E1-provenance tests before OMC
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_m3_prepare.py scripts/arena_m3_select.py scripts/arena_m3_adjudicate.py
+          python -m unittest discover -s tests -p 'test_arena_m3_structure.py' -v
+          python -m unittest discover -s experiments/e1 -p 'test_composition.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_visible_verify.py' -v
+      - name: Freeze all three original E1 material paths and two separately simulated source worlds
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m3_prepare --out artifacts/arena-m3
+          test "$(grep -c 'simulate(ArenaM3Generated\.' artifacts/arena-m3/simulate.mos)" -eq 5
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/arena-m3')
+          public=json.loads((root/'candidate-manifest.json').read_text())
+          private=json.loads((root/'grading/sealed-source-key.json').read_text())
+          assert public['candidate_simulations']==3 and public['world_simulations']==2
+          assert public['universe_count']==6 and public['observable_equivalence_classes']==3
+          assert [x['transit_instances'] for x in public['candidates']]==[0,1,2]
+          assert len(private['cases'])==2
+          assert 'expected_candidate_id' not in (root/'candidate-manifest.json').read_text()
+          print('M3_PREREGISTERED_3_PATHS_AND_SEALED_2_WORLD_CASES')
+          PY
+      - name: Install precisely original Short E1 OpenModelica dependencies
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/m3-home" "$RUNNER_TEMP/m3-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/m3-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/m3-libs/systemdynamics"
+          echo "M3_MSL_SHA=$(git -C "$RUNNER_TEMP/m3-libs/msl" rev-parse HEAD)"
+          echo "M3_SHORT_MOLECULES_SHA=$(git -C "$RUNNER_TEMP/m3-libs/systemdynamics" rev-parse HEAD)"
+      - name: Real G2 — simulate 3 candidates and 2 separate generator worlds
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/m3-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/m3-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/arena-m3/simulate.mos 2>&1 | tee artifacts/arena-m3/omc.log
+          if grep -Eq 'Error:|Simulation execution failed|Failed to load|Class .* not found' artifacts/arena-m3/omc.log; then
+            echo 'OMC_M3_FAILURE'
+            exit 1
+          fi
+          test "$(find artifacts/arena-m3/candidates -maxdepth 1 -name 'c*_res.csv' | wc -l)" -eq 3
+          test "$(find artifacts/arena-m3/worlds -maxdepth 1 -name 'w*_res.csv' | wc -l)" -eq 2
+      - name: Emit BLIND construction observations; keep later points and source key separate
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m3_adjudicate extract --dir artifacts/arena-m3
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-m3/cases')
+          for path in sorted(p.glob('case-*.json')):
+            data=json.loads(path.read_text())
+            assert set(data)=={'schema','case_id','construction_observations',
+                               'source_snapshot_hash','synthetic_measurement','observability'}
+            assert [x['t'] for x in data['construction_observations']]==[0,1,2,3]
+            assert 'expected_candidate_id' not in path.read_text()
+          print('M3_BLIND_OBSERVATIONS_NO_SOURCE_LABELS_NO_RESERVED_TIMES')
+          PY
+      - name: M3 SELECT — evidence-only scoring from original E1 candidate OpenModelica traces
+        run: |
+          set -euo pipefail
+          for id in case-alpha case-beta; do
+            python -m scripts.arena_m3_select \
+              --manifest artifacts/arena-m3/candidate-manifest.json \
+              --case "artifacts/arena-m3/cases/${id}.json" \
+              --csv-root artifacts/arena-m3 \
+              --catalog experiments/e0/catalog.json \
+              --out "artifacts/arena-m3/cases/${id}-selection.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-m3/cases')
+          a=json.loads((p/'case-alpha-selection.json').read_text())
+          b=json.loads((p/'case-beta-selection.json').read_text())
+          for x in [a,b]:
+            assert x['arm_id']=='M'
+            assert x['used_truth_labels'] is False
+            assert x['used_reserved_observations'] is False
+            assert x['used_cross_arm_information'] is False
+            assert x['score_denominator']==4
+            assert len(x['scored_candidates'])==3
+            assert all(c['max_material_balance']<0.015 for c in x['scored_candidates'])
+          print('M3_SELECTIONS_RECORDED_BEFORE_UNSEALING',a['chosen_id'],b['chosen_id'])
+          PY
+      - name: Adversarial evidence control — swap observations and require abstention outside fixed family
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import copy,json
+          from pathlib import Path
+          from scripts.arena_v0_contract import digest
+          root=Path('artifacts/arena-m3/cases')
+          alpha=json.loads((root/'case-alpha.json').read_text())
+          beta=json.loads((root/'case-beta.json').read_text())
+          # Keep the SAME public case ID; change only evidence. Correct
+          # selector must now choose a different structure, not a fixed name.
+          switched=copy.deepcopy(alpha)
+          switched['construction_observations']=beta['construction_observations']
+          switched['source_snapshot_hash']=digest(beta['construction_observations'])
+          (root/'challenge-swapped.json').write_text(json.dumps(switched))
+          # A physically impossible under these frozen models vector must be
+          # refused, not forcibly fit to the simplest structure.
+          unknown=copy.deepcopy(alpha)
+          unknown['construction_observations']=[
+              {'t':t,'delivered':0.0} for t in (0,1,2,3)]
+          unknown['source_snapshot_hash']=digest(unknown['construction_observations'])
+          (root/'challenge-outside.json').write_text(json.dumps(unknown))
+          PY
+          for challenge in swapped outside; do
+            python -m scripts.arena_m3_select \
+              --manifest artifacts/arena-m3/candidate-manifest.json \
+              --case "artifacts/arena-m3/cases/challenge-${challenge}.json" \
+              --csv-root artifacts/arena-m3 \
+              --catalog experiments/e0/catalog.json \
+              --out "artifacts/arena-m3/cases/challenge-${challenge}-selection.json"
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/arena-m3/cases')
+          original=json.loads((root/'case-alpha-selection.json').read_text())
+          swapped=json.loads((root/'challenge-swapped-selection.json').read_text())
+          outside=json.loads((root/'challenge-outside-selection.json').read_text())
+          assert original['chosen_id']=='C00'
+          assert swapped['chosen_id']=='C01' and swapped['case_id']==original['case_id']
+          assert outside['status']=='ABSTAIN' and outside['chosen_id'] is None
+          assert outside['reason']=='ALL_FIXED_E1_STRUCTURES_MISS_CONSTRUCTION_TOLERANCE'
+          print('M3_EMPIRICAL_EVIDENCE_SWAP_CHANGED_STRUCTURE_WITH_SAME_CASE_ID')
+          print('M3_OUT_OF_FAMILY_CONSTRUCTION_ABSTENTION',outside['reason'])
+          PY
+      - name: Unseal ONLY AFTER selecting; compare material source paths and later-time trajectories
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_m3_adjudicate grade --dir artifacts/arena-m3
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/arena-m3/grading/final-adjudication.json').read_text())
+          assert r['fixed_candidates']==3 and r['separately_simulated_worlds']==2
+          assert r['recovery_under_this_closed_synthetic_family'] is True, 'M3_DID_NOT_RECOVER_SOURCE_STRUCTURE'
+          assert r['selection_switches_when_construction_observations_switch'] is True
+          assert [x['selected_candidate_id'] for x in r['cases']]==['C00','C01']
+          assert all(x['reserve']['rmse_items']<0.02 for x in r['cases'])
+          assert r['not_external_validation'] is True
+          assert r['not_identification_of_unnamed_real_causal_world'] is True
+          print('M3_REAL_EVIDENCE_SENSITIVE_STRUCTURE_RECOVERY_VERIFIED')
+          PY
+      - name: Normalize Docker evidence permissions for complete artifact retention
+        if: always()
+        run: |
+          if [ -d artifacts/arena-m3 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-m3
+            chmod -R u+rX artifacts/arena-m3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-m3-original-e1-blind-structural-selection-evidence
+          path: artifacts/arena-m3/
+          retention-days: 45
+          if-no-files-found: warn
