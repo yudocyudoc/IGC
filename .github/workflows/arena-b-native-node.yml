@@ -59,12 +59,7 @@ jobs:
              [ "$GITHUB_HEAD_REF" = "feature/arena-b-native-node-engine-v01" ] &&
              git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
              grep -Fxq data/diagnostics/BUFFALO_NATIVE_SINGLE_CALL.json; then
-            node - <<'JS'
-            const a=require("./data/diagnostics/BUFFALO_NATIVE_SINGLE_CALL.json");
-            if(a.schema!=="igc-b-native-call/0.1"||a.max_calls!==1||a.retries!==0||
-               a.model!=="@cf/zai-org/glm-5.3-flash"||a.no_other_arms!==true)
-              throw Error("INVALID_AUTHORIZATION");
-            JS
+            node -e 'const a=require("./data/diagnostics/BUFFALO_NATIVE_SINGLE_CALL.json"); if(a.schema!=="igc-b-native-call/0.1"||a.max_calls!==1||a.retries!==0||a.model!=="@cf/zai-org/glm-5.3-flash"||a.no_other_arms!==true)throw Error("INVALID_AUTHORIZATION")'
             echo "allowed=true" >> "$GITHUB_OUTPUT"
           else
             echo "allowed=false" >> "$GITHUB_OUTPUT"
