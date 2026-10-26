@@ -17,7 +17,7 @@ from scripts.arena_v0_contract import (
 )
 from scripts.arena_atms import project, ATMSError
 from scripts.ledger import Ledger
-from scripts.arena_d_v01 import generate, verify_csv
+from scripts.arena_d_v01 import generate, modelica, verify_csv
 from scripts.arena_d_v1_screen import assess, compare_omc_csv
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,6 +116,14 @@ def validated_bundle(data, protocol, d0, d1):
         csv = d1 / (source_name + "_res.csv")
         model = d1 / (source_name + ".mo")
         check(csv.is_file() and model.is_file(), "MISSING_G2_ARTIFACT")
+        native = dict(by_id[r["candidate_id"]])
+        native["nominal_parameters"] = dict(r["best_grid"]["parameters"])
+        raw_class = "DStockFlow_" + r["structure_hash"][7:19]
+        expected_model = modelica(native, data["construction"]["input_profile"]).replace(
+            "model " + raw_class, "model " + source_name).replace(
+            "end " + raw_class + ";", "end " + source_name + ";")
+        check(model.read_text(encoding="utf-8") == expected_model,
+              "G2_MODELICA_SOURCE_TAMPERED")
         expected_times = [x["t"] for x in data["construction"]["observations"]]
         predicted = r["best_grid"]["predicted"]
         parity = compare_omc_csv(csv, list(zip(expected_times, predicted)), atol=.012)
@@ -138,9 +146,11 @@ def _logical_record(*, kind, id, case_id, source_id, **extras):
             "epistemic_status": "CONDITIONAL_NOT_CAUSAL_TRUTH", **extras}
 
 
-def ingest(*, db, data, protocol, d0, d1, recorded_at=TIMESTAMP):
+def ingest(*, db, data, protocol, d0, d1, recorded_at=None):
     original, candidates, sub, screen, chain, g2 = validated_bundle(
         data, protocol, Path(d0), Path(d1))
+    if recorded_at is None:
+        recorded_at = datetime.now(timezone.utc).isoformat()
     check(isinstance(recorded_at, str) and datetime.fromisoformat(
           recorded_at.replace("Z", "+00:00")).tzinfo is not None,
           "MISSING_TIMEZONE")
@@ -279,7 +289,7 @@ def main():
     ap.add_argument("--case")
     ap.add_argument("--round")
     ap.add_argument("--as-known-at", default=TIMESTAMP)
-    ap.add_argument("--recorded-at", default=TIMESTAMP)
+    ap.add_argument("--recorded-at", default=None)
     args = ap.parse_args()
     if args.command == "ingest":
         check(all(x is not None for x in (args.input,args.protocol,args.d0,args.d1)),
