@@ -1,0 +1,35 @@
+name: Audit B3 archive replay trigger and authorization (no provider calls)
+on:
+  push:
+    branches: [feature/arena-b3-archive-replay-20261026]
+  pull_request:
+    branches: [feature/arena-b-physical-feedback-v01]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-only-trigger-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Show replay workflow push status using Actions API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          url='https://api.github.com/repos/yudocyudoc/IGC/actions/workflows/arena-b3-archive-replay.yml/runs?per_page=30'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=30) as f:
+              data=json.load(f)
+          rows=[{'id':x['id'],'event':x['event'],'status':x['status'],
+                 'conclusion':x['conclusion'],'sha':x['head_sha'],
+                 'html_url':x['html_url']}
+                for x in data.get('workflow_runs',[])
+                if x['head_branch']=='feature/arena-b3-archive-replay-20261026']
+          print('B3_ARCHIVE_REPLAY_RUNS='+json.dumps(rows[:8]))
+          if not rows:raise SystemExit('B3_REPLAY_WORKFLOW_NOT_REGISTERED')
+          PY

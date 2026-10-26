@@ -1,0 +1,15 @@
+{
+  "schema": "igc-b3-archive-replay-one-real-call/0.1",
+  "max_provider_calls": 1,
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "output_budget_tokens": 7000,
+  "parent_native_sha256": "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9",
+  "previous_real_inference_run_id": 40288518137,
+  "prior_real_inference_completed": true,
+  "prior_g2_execution_completed": true,
+  "prior_archive_failed": true,
+  "this_is_a_new_user_authorization": true,
+  "separate_from_original_arena_budget": true,
+  "no_competitor_or_reserved_evidence": true,
+  "no_automatic_retry": true
+}
