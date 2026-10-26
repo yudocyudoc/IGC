@@ -185,6 +185,16 @@ jobs:
           assert cloudflare['result']['choices'][0].get('finish_reason')!='length'
           print('BUFFALO_ORIGINAL_RECEIVED_PHYSICAL_CONSTRUCTION_FEEDBACK_REAL_CLOUD',r['variable_count'])
           PY
+      - name: Archive REAL provider response BEFORE running the Docker simulator
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-physical-raw-provider-response-before-simulation
+          path: |
+            artifacts/b-feedback.json
+            artifacts/b-physical-live/
+          retention-days: 45
+          if-no-files-found: warn
       - name: Adjudicate REAL Buffalo revision through strict G0 and real OpenModelica G2
         if: ${{ steps.grant.outputs.allowed == 'true' }}
         run: |
@@ -205,6 +215,14 @@ jobs:
           assert result['original_budget']=='EXTENDED_SEPARATE_EXPERIMENT_NOT_ORIGINAL_B_ROUND'
           print('BUFFALO_OWN_PHYSICAL_MODEL_ADJUDICATED',result['g0_status'],result['g2_status'],result.get('construction_change'))
           PY
+      - name: Normalize OpenModelica root-owned generated files before artifact packaging
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/b-physical-evaluation ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b-physical-evaluation
+            chmod -R u+rX artifacts/b-physical-evaluation
+          fi
       - name: Archive complete diagnostic and all transport receipts including failure
         if: always()
         uses: actions/upload-artifact@v4
