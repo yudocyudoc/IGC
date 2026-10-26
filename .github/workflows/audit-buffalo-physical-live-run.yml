@@ -2,6 +2,8 @@ name: Audit Buffalo physical live-marker push (read only)
 on:
   push:
     branches: [audit/buffalo-physical-feedback-run]
+  pull_request:
+    branches: [feature/arena-b-physical-feedback-v01]
 permissions:
   contents: read
   actions: read
