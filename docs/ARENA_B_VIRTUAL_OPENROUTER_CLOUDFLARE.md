@@ -40,7 +40,9 @@ Se eligió el alias deliberadamente ficticio `cloudflare/glm-5.3-flash` porque B
 
 **Ejecución offline:** [CI #40255907686](https://github.com/yudocyudoc/IGC/actions/runs/40255907686) — verificación del adaptador y de ruta Buffalo→OpenRouter virtual→Cloudflare sintético: **PASS**.
 
-**Ejecución real:** [CI #40255975864](https://github.com/yudocyudoc/IGC/actions/runs/40255975864) — autorizada para una única petición al proveedor. El veredicto se determinará por los archivos originales de `receipt.json`, `cloudflare-raw.json` si los hay, y `native-output.json`; **no se presupone éxito G1/G2**.
+**Ejecución real:** [CI #40255975864](https://github.com/yudocyudoc/IGC/actions/runs/40255975864) — **SUCCESS** con llamada real a Cloudflare: exactamente una petición, HTTP 200, `success=true`, respuesta cruda preservada, `REAL_CLOUDFLARE_NATIVE_BUFFALO_MODEL_RETURNED`, salida del motor Buffalo de **15 variables (2 stocks, 2 flujos y 11 auxiliares), 18 relaciones**. Uso reportado por Cloudflare: **1 392 tokens entrada, 2 412 salida, 3 804 total**. El motor usó el alias virtual `cloudflare/glm-5.3-flash`, pero quien generó fue `@cf/zai-org/glm-5.3-flash`, **sin tráfico a OpenRouter**. Duración visible entre arranque y resultado ≈ 75 segundos. [Evidencia real completa, ZIP](https://github.com/yudocyudoc/IGC/actions/runs/40255975864/artifacts/12622810831).
+
+**Primer análisis de admitibilidad semántica:** el SFD llegó al procesador Buffalo y declaró entradas/salidas correctas a nivel de nombres, pero contiene fórmulas no ejecutables tal como están, como `PULSE profile over time` y `pending_work // processing_signal`. La relación dimensional entre `processing_signal` (declarada en `items`) y `completions` (`items/hour`) también requiere comprobación. **G0/transporte: PASS. Motor NodeJS y salida estructurada: PASS. G1 semántico y dimensional: NO ACREDITADO. G2 OpenModelica: NO EJECUTADO. G3 identificación: NO DEMOSTRADA.** No corregir la hipótesis mediante técnicas de D o M ni presentar el recibo del proveedor como validación causal.
 
 ## Límites científicos y de implementación
 
