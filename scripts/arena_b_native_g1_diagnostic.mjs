@@ -8,7 +8,9 @@ import {fileURLToPath} from "node:url";
 import {createHash} from "node:crypto";
 const sha=x=>"sha256:"+createHash("sha256").update(JSON.stringify(x)).digest("hex");
 const id=s=>typeof s==="string"&&/^[A-Za-z][A-Za-z0-9_ ]*$/.test(s);
-const unit=s=>typeof s==="string"?s.trim().toLowerCase().replace(/\s+/g,""):"";
+const unit=s=>typeof s==="string"?s.trim().toLowerCase().replace(/\s+/g,"").replace(/per/g,"/").replace(/hours/g,"hour"):"";
+// Deliberately bounded dimensional check: items and hours only; never infer unknown units.
+const dim=s=>{const u=unit(s);return ({items:[1,0],item:[1,0],hour:[0,1],"items/hour":[1,-1],"item/hour":[1,-1],dimensionless:[0,0],"1":[0,0]})[u]??null};
 const symbols=s=>(s.match(/[A-Za-z_][A-Za-z0-9_]*/g)||[]);
 const fns=new Set(["MIN","MAX","ABS","EXP","LN","LOG","SQRT","SIN","COS","TAN","IF","THEN","ELSE","TIME","PI","PULSE","STEP","DELAY","SMOOTH","AND","OR","NOT"]);
 export function diagnose(document){
@@ -31,9 +33,17 @@ export function diagnose(document){
  for(let i=0;i<variables.length;i++){
   const v=variables[i],p=`model.variables[${i}]`; if(!v||typeof v.equation!=="string")continue;
   const e=v.equation.trim();
-  if(/\/\/|\/\*|\*\//.test(e))add("AMBIGUOUS_COMMENT_OR_OPERATOR",p+".equation",e);
+  if(e.includes("//"))add("ZERO_SAFE_DIVISION_REQUIRES_ADAPTER",p+".equation",e,"ADAPTER");
+  if(/\/\*|\*\//.test(e))add("UNSUPPORTED_COMMENT_SYNTAX",p+".equation",e);
   if(/\b(profile over time|TBD|unknown|placeholder)\b/i.test(e))add("PROSE_OR_PLACEHOLDER",p+".equation",e);
   if(v.type!=="stock"){
+   // Buffalo explicitly defines // as zero-safe division: it is NOT an upstream syntax error.
+   const mul=e.match(/^([A-Za-z][A-Za-z0-9_]*)\s*\*\s*([A-Za-z][A-Za-z0-9_]*)$/);
+   if(mul){const left=names.get(normalized.get(mul[1])),right=names.get(normalized.get(mul[2]));
+    const l=dim(left?.units),r=dim(right?.units),expected=dim(v.units);
+    if(l&&r&&expected&&(l[0]+r[0]!==expected[0]||l[1]+r[1]!==expected[1]))
+      add("DIMENSIONAL_PRODUCT_MISMATCH",p+".equation",`${mul[1]} [${left.units}] * ${mul[2]} [${right.units}] is inconsistent with ${v.units}`);
+   }
    if(!/^[A-Za-z0-9_ .,+*\/%^()<>!=?:-]+$/.test(e))add("UNSUPPORTED_EXPRESSION_CHARACTERS",p+".equation",e);
    for(const s of symbols(e)){if(normalized.has(s)||fns.has(s.toUpperCase()))continue;
     add("UNRESOLVED_SYMBOL",p+".equation",s);
@@ -60,9 +70,10 @@ export function diagnose(document){
   variable_count:variables.length,relationship_count:relationships.length,
   stock_count:variables.filter(v=>v?.type==="stock").length,
   flow_count:variables.filter(v=>v?.type==="flow").length,
-  status:issues.length?"G1_ISSUES_FOUND":"PREFLIGHT_NO_OBVIOUS_ISSUES_NOT_G1_PASS",
+  status:issues.some(i=>i.category==="G1")?"G1_ISSUES_FOUND":(issues.length?"ADAPTER_LIMITATIONS_ONLY":"PREFLIGHT_NO_OBVIOUS_ISSUES_NOT_G1_PASS"),
   g1_certified:false,g2_executed:false,g3_supported:false,
-  limitations:["Expression checks are lexical, not full Buffalo parser or dimensional algebra.",
+  limitations:["Expression checks are lexical; dimensional product check only handles known items/hour units.",
+   "Buffalo // is defined as zero-safe division; a Modelica adapter must preserve that semantics.",
    "A clean preflight does not imply translator compatibility, physical consistency or valid causal mechanism.",
    "Native document is never modified."],issues};
 }
