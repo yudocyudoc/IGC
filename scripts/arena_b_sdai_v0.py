@@ -253,7 +253,7 @@ def accept(visible, response, output):
     """Response must be an actual arm-supplied SD-JSON envelope or fixture marked."""
     view=arm_view(visible,"B")
     check(type(response) is dict and set(response) == {"origin", "model", "source"}
-          and response["origin"] in ("UPSTREAM_PROVIDER_OUTPUT", "HANDWRITTEN_SYNTHETIC_FIXTURE"),
+          and response["origin"] in ("UPSTREAM_PROVIDER_OUTPUT", "BUFFALO_PROCESS_PORT_LIVE", "HANDWRITTEN_SYNTHETIC_FIXTURE"),
           "INVALID_RESPONSE_PROVENANCE")
     check(type(response["source"]) is str and len(response["source"]) <= 160,
           "MISSING_RESPONSE_SOURCE")
