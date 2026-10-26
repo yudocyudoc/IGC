@@ -40,7 +40,7 @@ jobs:
           for f,sha in p["sources"].items():
               raw=Path(f).read_bytes()
               # Git blob content SHA1, independent of local newline normalization.
-              blob=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\\0"+raw).hexdigest()
+              blob=hashlib.sha1(b"blob "+str(len(raw)).encode()+bytes([0])+raw).hexdigest()
               assert blob==sha,(f,blob,sha)
           print("SHORT_EXACT_BLOBS_VERIFIED",len(p["sources"]))
           PY
