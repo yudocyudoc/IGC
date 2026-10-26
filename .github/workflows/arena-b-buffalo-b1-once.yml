@@ -1,0 +1,104 @@
+name: Arena B1 original Buffalo process one real provider call
+
+on:
+  pull_request:
+    types: [synchronize]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: igc-buffalo-b1-one-call-marker
+  cancel-in-progress: false
+
+jobs:
+  one-shot-provider:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout PR head, no persisted credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Gated single-call run (no replays; no automatic mock substitution)
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IGC_BUFFALO_B1_AUTHORIZATION: RUN_BUFFALO_B1_SINGLE_PROVIDER_CALL
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || [ "$GITHUB_HEAD_REF" != feature/arena-b-buffalo-independent-v0 ] || \
+             [ "$GITHUB_REPOSITORY" != yudocyudoc/IGC ] || \
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | \
+             grep -Fxq data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE.json; then
+            echo "NO_UNIQUE_B1_MARKER_NO_PROVIDER_CALL"
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          authorization=json.loads(Path('data/diagnostics/ARENA_B_BUFFALO_B1_AUTHORIZE_ONCE.json').read_text())
+          assert authorization == {
+              'schema':'igc-buffalo-b1-authorization/0.1',
+              'authorization':'RUN_BUFFALO_B1_SINGLE_PROVIDER_CALL',
+              'upstream_commit':'5199f7b45f3a7ae4a773cb0dd8542940aabe9edc',
+              'model':'@cf/zai-org/glm-5.3-flash',
+              'max_provider_calls':1,'retries':0,
+              'holdout_access':False,'no_d_or_m_candidates':True,
+          }, 'INVALID_B1_MARKER'
+          PY
+          python3 -m unittest discover -s tests -p 'test_arena_b_provider_once.py' -v
+          python3 -m unittest discover -s tests -p 'test_arena_b_sdai_v0.py' -v
+          python3 -m scripts.arena_b_provider_once \
+            --input data/synthetic/arena_b_v0_visible.json \
+            --out artifacts/arena-b-b1-live
+      - name: Conditional genuine OpenModelica execution (if B produced supported SFD)
+        env:
+          OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+        run: |
+          set -euo pipefail
+          if [ ! -d artifacts/arena-b-b1-live/accepted-model ]; then
+            echo 'NO_SUPPORTED_B_MODEL_NO_SIMULATION_NO_FALLBACK'
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/arena-b-b1-live')
+          names=list((root/'accepted-model').glob('BuffaloSFD_*.mo'))
+          assert len(names)==1
+          name=names[0].stem
+          model=json.loads((root/'sd-ai-native-provider-output.json').read_text())['model']
+          horizon=model.get('specs',{}).get('stopTime',8)
+          script=[
+            f'loadFile("/work/artifacts/arena-b-b1-live/accepted-model/{name}.mo");',
+            'print(getErrorString());',
+            f'checkModel({name});',
+            'print(getErrorString());',
+            f'simulate({name},stopTime={horizon},numberOfIntervals=160,outputFormat="csv");',
+            'print(getErrorString());']
+          (root/'accepted-model'/'run.mos').write_text('\n'.join(script)+'\n')
+          PY
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-b-b1-live/accepted-model \
+            "$OMC_IMAGE" omc run.mos 2>&1 | tee artifacts/arena-b-b1-live/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-b-b1-live/omc.log; then
+            exit 1
+          fi
+          test "$(find artifacts/arena-b-b1-live/accepted-model -maxdepth 1 -name '*_res.csv' | wc -l)" -eq 1
+          echo 'B1_MODEL_COMPILED_AND_SIMULATED'
+      - name: Normalize container-owned artifacts
+        if: always()
+        run: |
+          if test -d artifacts/arena-b-b1-live; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-b-b1-live
+          fi
+      - name: Preserve raw provider result and partial errors even if failing
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-b-buffalo-b1-one-real-call
+          path: artifacts/arena-b-b1-live/
+          retention-days: 30
+          if-no-files-found: warn
