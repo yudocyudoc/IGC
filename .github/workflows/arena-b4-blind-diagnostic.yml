@@ -1,0 +1,242 @@
+name: Arena B4 blind physical diagnosis by original Buffalo
+on:
+  push:
+    branches: [feature/arena-b4-blind-diagnostic-20261026]
+  pull_request:
+    branches: [feature/arena-b3-archive-replay-20261026]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-b4-blind-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-buffalo-blind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore byte-pinned original B2 Buffalo output
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/b4-parent
+      - name: Restore byte-pinned REAL original B2 OpenModelica and report
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-real-revision-modelica-g2-evidence
+          run-id: 40283017108
+          github-token: ${{ github.token }}
+          path: artifacts/b4-solver
+      - name: Verify authentic B2 evidence; build cue-free feedback and negative controls
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_b4_blind_feedback.py
+          python -m unittest discover -s tests -p 'test_arena_b4_blind_feedback.py' -v
+          python -m unittest discover -s tests -p 'test_arena_b_physical_feedback.py' -v
+          python -m scripts.arena_b4_blind_feedback \
+            --native artifacts/b4-parent/revision-live/native-output.json \
+            --csv artifacts/b4-solver/BuffaloNative_3aa200a87a3f_res.csv \
+            --report artifacts/b4-solver/g3-construction-only.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b4-neutral-feedback.json
+          node --check scripts/arena_b_openrouter_cloudflare.mjs
+          node --test tests/test_arena_b_physical_token_budget.mjs
+          python -m py_compile scripts/arena_b_physical_outcome.py
+      - name: Acquire pinned original UB-IAD SD-AI engine unchanged
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Offline ORIGINAL Buffalo currentModel receives only blind B2 construction feedback
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b4-parent/revision-live/native-output.json
+          BUFFALO_BLIND_FEEDBACK: ${{ github.workspace }}/artifacts/b4-neutral-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b4-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/b4-offline/receipt.json'));
+          const raw=JSON.parse(fs.readFileSync('artifacts/b4-offline/blind-user-prompt-exact.json'));
+          const fb=JSON.parse(fs.readFileSync('artifacts/b4-offline/blind-feedback-sent.json'));
+          if(r.status!=='OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS' ||
+             !r.current_model_seen || !r.blind_feedback_seen ||
+             r.live_provider_calls!==0 || r.intercepted_http_calls!==1 ||
+             !r.structured_request_seen || r.mechanistic_hint_in_feedback!==false ||
+             !r.extension_after_original_budget ||
+             !r.construction_only || fb.points.length!==4 ||
+             /utilization\\^2|double counting|candidate_mechanism|nominal_capacity|capacity_utilization|completion_capacity/i.test(raw.text))
+             throw Error('B4_ORIGINAL_BUFFALO_BLIND_CURRENTMODEL_CONTRACT_FAILED');
+          console.log('B4_ORIGINAL_BUFFALO_REACHED_NO_CUE_CURRENTMODEL_OFFLINE');
+          JS
+      - name: Authorize at most one NEW blinded real inference on precisely added marker
+        id: grant
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != push ] || [ "$ATTEMPT" != 1 ] ||
+             [ "$REF" != refs/heads/feature/arena-b4-blind-diagnostic-20261026 ] ||
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+               grep -Fxq data/diagnostics/BUFFALO_B4_SINGLE_BLIND_CALL_20261026.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'NO_ONE_USE_BLIND_MARKER_NO_REMOTE_PROVIDER'
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('data/diagnostics/BUFFALO_B4_SINGLE_BLIND_CALL_20261026.json').read_text())
+          assert x=={
+            'schema':'igc-b4-blind-one-new-call/0.1',
+            'max_provider_calls':1,
+            'max_output_tokens':7000,
+            'previous_mechanistic_cue_experiment_run_id':40290192821,
+            'new_separate_experiment':True,
+            'original_b2_model_bytes_sha256':'d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9',
+            'historical_b2_simulation_run_id':40283017108,
+            'blind_feedback_schema':'igc-b-blind-construction-residuals/0.1',
+            'researcher_authorized':True,
+            'no_cross_arm_information':True,
+            'no_mechanistic_cue':True,
+            'no_holdout_information':True,
+            'no_automatic_retries':True,
+          },'INVALID_ONE_USE_B4_BLIND_RESEARCH_AUTHORIZATION'
+          print('ONE_B4_BLIND_CLOUDFLARE_CALL_AUTHORIZED_AS_NEW_EXPERIMENT')
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Execute ONE real original Buffalo blind B4 model revision
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b4-parent/revision-live/native-output.json
+          BUFFALO_BLIND_FEEDBACK: ${{ github.workspace }}/artifacts/b4-neutral-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b4-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_BLIND_B4
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/b4-live')
+          r=json.loads((root/'receipt.json').read_text())
+          assert r['status']=='REAL_CLOUDFLARE_BUFFALO_BLIND_B4_RETURNED'
+          assert r['live_provider_calls']==r['intercepted_http_calls']==1
+          assert r['current_model_seen'] and r['blind_feedback_seen']
+          assert r['mechanistic_hint_in_feedback'] is False
+          assert r['inference_source']=='REAL_CLOUDFLARE_WORKERS_AI'
+          assert json.loads((root/'cf-request-metadata.json').read_text())['parameter_overrides']['max_completion_tokens']==7000
+          raw=json.loads((root/'cloudflare-raw.json').read_text())
+          assert raw['result']['choices'][0]['finish_reason']!='length'
+          print('REAL_ORIGINAL_BUFFALO_B4_BLIND_MODEL_ACCEPTED',r['variable_count'],r['relationship_count'])
+          PY
+      - name: Retain EXACT real provider response and complete prompt BEFORE any solver
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b4-blind-real-raw-before-modelica
+          path: |
+            artifacts/b4-neutral-feedback.json
+            artifacts/b4-live/
+          retention-days: 45
+          if-no-files-found: warn
+      - name: Fail closed if provider artefact was not successfully preserved
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          test -s artifacts/b4-live/native-output.json
+          test -s artifacts/b4-live/cloudflare-raw.json
+          test -s artifacts/b4-live/blind-user-prompt-exact.json
+          test -s artifacts/b4-live/receipt.json
+      - name: Adjudicate B4 on its own new equation via real OpenModelica, no automatic repair
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_b_physical_outcome \
+            --native artifacts/b4-live/native-output.json \
+            --prior-native artifacts/b4-parent/revision-live/native-output.json \
+            --feedback artifacts/b4-neutral-feedback.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b4-evaluation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b4-evaluation/adjudication.json').read_text())
+          assert r['arm_id']=='B' and r['heldout_evaluation']=='NOT_RUN'
+          assert r['origin']=='REAL_CLOUDFLARE_ORIGINAL_BUFFALO_CURRENTMODEL'
+          print('B4_BLIND_CAUSAL_DIAGNOSTIC_OUTCOME',
+                r['g0_status'],r['g2_status'],
+                r.get('construction_change','NO_G2_RESULT'),
+                r.get('blocked_reason',''))
+          PY
+      - name: Normalize Docker file ownership before packaging
+        if: always()
+        run: |
+          if [ -d artifacts/b4-evaluation ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b4-evaluation
+            chmod -R u+rX artifacts/b4-evaluation
+          fi
+      - name: Build accurate JSON SHA manifest for independent Astra replay
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json
+          paths=[Path('artifacts/b4-neutral-feedback.json')]
+          for folder in ('b4-live','b4-evaluation'):
+            base=Path('artifacts')/folder
+            if base.exists(): paths += list(base.rglob('*'))
+          files=[{'path':str(p.relative_to('artifacts')),'bytes':p.stat().st_size,
+                  'sha256':sha256(p.read_bytes()).hexdigest()}
+                 for p in sorted(paths) if p.is_file() and p.stat().st_size<10000000]
+          result={'schema':'igc-b4-blind-astra-files-sha/0.1',
+                  'method':'BUFFALO_B2_OWN_BLIND_CONSTRUCTION_ONLY',
+                  'git_sha':'${{ github.sha }}','files':files,
+                  'holdout':'NOT_RUN'}
+          Path('artifacts/b4-astra-manifest.json').write_text(
+              json.dumps(result,indent=2)+'\n')
+          print('B4_ASSET_SHA_MANIFEST',len(files))
+          PY
+      - name: Upload all offline/real/Modelica evidence, including failed hypotheses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b4-blind-complete-audit
+          path: |
+            artifacts/b4-neutral-feedback.json
+            artifacts/b4-astra-manifest.json
+            artifacts/b4-offline/
+            artifacts/b4-live/
+            artifacts/b4-evaluation/
+          retention-days: 45
+          if-no-files-found: warn
