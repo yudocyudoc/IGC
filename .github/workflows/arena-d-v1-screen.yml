@@ -6,6 +6,10 @@ on:
     paths:
       - 'scripts/arena_d_v01.py'
       - 'scripts/arena_d_v1_screen.py'
+      - 'scripts/arena_d_v2_revision.py'
+      - 'tests/test_arena_d_v2_revision.py'
+      - 'scripts/arena_d_atms_bridge.py'
+      - 'docs/ARENA_D2_FEEDBACK_LOOP.md'
       - 'tests/test_arena_d_v1_screen.py'
       - 'data/synthetic/arena_d_v01_visible.json'
       - 'data/synthetic/arena_d_v1_screen_protocol.json'
@@ -33,10 +37,11 @@ jobs:
           python-version: '3.13.16'
       - name: Offline tests and no-provider negative controls
         run: |
-          python -m py_compile scripts/arena_d_v1_screen.py tests/test_arena_d_v1_screen.py
+          python -m py_compile scripts/arena_d_v1_screen.py scripts/arena_d_v2_revision.py tests/test_arena_d_v1_screen.py tests/test_arena_d_v2_revision.py
           python -m unittest discover -s tests -p 'test_arena_d_v1_screen.py' -v
           python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
           python -m unittest discover -s tests -p 'test_arena_d_atms_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_v2_revision.py' -v
       - name: Construct D0 lineage and only visible D1 observational screen
         run: |
           python -m scripts.arena_d_v01 prepare \
@@ -119,6 +124,109 @@ jobs:
           assert 'B-SECRET' not in p.read_text()
           print('D_ATMS_PERSISTENT_LOGICAL_SUPPORT_PASS')
           PY
+      - name: Freeze D1-selected measurement before new trial generation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/arena-d-v1/screen.json').read_text())
+          plan=r['next_measurement']
+          assert r['conclusion']=='NON_DISCRIMINATING_MULTIPLE_GRID_COMPATIBLE'
+          assert plan['kind']=='NEW_INDEPENDENT_RESET_TRIAL'
+          assert plan['suggested_measurement_time']==8
+          Path('artifacts/arena-d-v1/d2-locked-design.json').write_text(
+            json.dumps({'parent_screen_hash':r['input_hash'],
+                        'plan':plan},sort_keys=True)+'\n')
+          print('D2_MEASUREMENT_LOCKED_BEFORE_WORLD_SIMULATION',
+                plan['suggested_measurement_time'])
+          PY
+      - name: Create fixed SYNTHETIC evaluator world from independent equations
+        run: |
+          mkdir -p artifacts/arena-d-v2-evaluator
+          cat > artifacts/arena-d-v2-evaluator/D2IndependentWorld.mo <<'MO'
+          model D2IndependentWorld
+            // EVALUATOR-ONLY synthetic world; known to the test author,
+            // NOT provided to D2 hypothesis generation or revision inputs.
+            parameter Real pulseRate = 1.7;
+            parameter Real pulseDuration = 2;
+            parameter Real capacity = 2;
+            parameter Real responseTime = 1;
+            Real inputRate;
+            Real firstStock(start=0, fixed=true);
+            Real secondStock(start=0, fixed=true);
+            Real firstFlow;
+            Real secondFlow;
+            Real delivered(start=0, fixed=true);
+          equation
+            inputRate = if time < pulseDuration then pulseRate else 0;
+            firstFlow = min(capacity, max(0, firstStock/responseTime));
+            secondFlow = min(capacity, max(0, secondStock/responseTime));
+            der(firstStock) = inputRate - firstFlow;
+            der(secondStock) = firstFlow - secondFlow;
+            der(delivered) = secondFlow;
+          end D2IndependentWorld;
+          MO
+          cat > artifacts/arena-d-v2-evaluator/world.mos <<'MOS'
+          loadFile("/work/artifacts/arena-d-v2-evaluator/D2IndependentWorld.mo");
+          print(getErrorString());
+          checkModel(D2IndependentWorld);
+          print(getErrorString());
+          simulate(D2IndependentWorld, stopTime=8, numberOfIntervals=160, outputFormat="csv");
+          print(getErrorString());
+          MOS
+      - name: Simulate independent reset in pinned OpenModelica (evaluator only)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d-v2-evaluator \
+            "$OMC_IMAGE" omc world.mos 2>&1 | tee artifacts/arena-d-v2-evaluator/world-omc.log
+          test -f artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d-v2-evaluator/world-omc.log; then
+            exit 1
+          fi
+      - name: Release only D1-precommitted new measurement to D2, not world structure
+        run: |
+          python -m scripts.arena_d_v2_revision extract \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --world-csv artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv \
+            --trial-time 8 \
+            --output artifacts/arena-d-v1/d2-trial-visible.json
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          trial=json.loads(Path('artifacts/arena-d-v1/d2-trial-visible.json').read_text())
+          raw=Path('artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv').read_bytes()
+          assert trial['source_csv_hash']=='sha256:'+hashlib.sha256(raw).hexdigest()
+          assert trial['measurement']['t']==8
+          assert set(trial) == {
+            'schema','kind','input_hash','d1_screen_hash','pulse',
+            'measurement','source_csv_hash','epistemic_status'}
+          assert 'model' not in trial and 'firstStock' not in str(trial)
+          print('D2_WORLD_TRUTH_NOT_IN_D_VISIBLE_PACKAGE')
+          PY
+      - name: D2 revise own hypotheses and commit revised supports to F1a/ATMS
+        run: |
+          python -m scripts.arena_d_v2_revision revise \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite \
+            --trial artifacts/arena-d-v1/d2-trial-visible.json \
+            --output artifacts/arena-d-v1/d2-revision.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('artifacts/arena-d-v1/d2-revision.json')
+          result=json.loads(path.read_text())
+          assert result['status']=='D2_REVISED_AND_REMEMBERED'
+          assert len(result['prior_support'])==2
+          assert len(result['current_support'])==1
+          assert result['report']['conclusion']=='ONE_REMAINS_OTHER_MODELS_UNRESOLVED'
+          assert result['report']['no_structural_falsification']
+          assert result['d2_trace_event']['iteration']==1
+          assert result['atms_after']['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert len(result['atms_after']['conditionally_supported'])==2
+          print('D2_ATMS_HISTORY_PRESERVED_NEW_OBSERVATION_REVISED_ONE_SUPPORT')
+          PY
       - name: Repair root-owned container file permissions and curate auditable artifacts
         if: always()
         run: |
@@ -131,6 +239,20 @@ jobs:
               cp "$file" artifacts/arena-d-v1/evidence/
             done
           fi
+      - name: Normalize evaluator-only synthetic-world files for separate evidence
+        if: always()
+        run: |
+          if [ -d artifacts/arena-d-v2-evaluator ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v2-evaluator
+          fi
+      - name: Preserve evaluator world separately from D's visible trial
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-d-v2-evaluator-only-synthetic-world
+          path: artifacts/arena-d-v2-evaluator/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Archive actual D1 evidence regardless of earlier gate
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
