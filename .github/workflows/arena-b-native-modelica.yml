@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           echo 'd7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9  artifacts/revision-source/revision-live/native-output.json' | sha256sum --check
-          python -m unittest tests.test_arena_b_native_to_modelica -v
+          python -m unittest discover -s tests -p 'test_arena_b_native_to_modelica.py' -v
           python -m py_compile scripts/arena_b_native_to_modelica.py
       - name: Translate native Buffalo revision without D or molecule routes
         run: |
