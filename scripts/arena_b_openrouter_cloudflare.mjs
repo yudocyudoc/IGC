@@ -118,8 +118,10 @@ try {
       const priorMessage=JSON.stringify(parentModel,null,2);
       if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
         throw Error("BUFFALO_CURRENTMODEL_NOT_DELIVERED");
-      if(body.messages.at(-1)?.role!=="user"||body.messages.at(-1)?.content!==userPrompt)
+      if(body.messages.at(-1)?.role!=="user"||!body.messages.at(-1)?.content.endsWith(userPrompt))
         throw Error("G1_FEEDBACK_NOT_DELIVERED");
+      // Buffalo LLMWrapper collapses separate user turns (background + prompt)
+      // into a single message joined by blank lines. Only the suffix is exact.
       receipt.current_model_seen=true;
       receipt.g1_feedback_seen=true;
     }
