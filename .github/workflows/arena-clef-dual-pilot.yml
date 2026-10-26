@@ -96,6 +96,38 @@ jobs:
           print('CLEF_TWO_SEPARATE_PILOTS_AUTHORIZED_MAX17_REAL_REQUESTS')
           PY
           echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Read-only provider execution audit of one-use marker commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          head='6de39dc5290ca050e3f0936f593155da0558e38a'
+          base='https://api.github.com/repos/yudocyudoc/IGC'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          try:
+              url=base+'/actions/workflows/arena-clef-dual-pilot.yml/runs?event=push&per_page=75'
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25) as r:
+                  runs=[x for x in json.load(r)['workflow_runs'] if x['head_sha']==head]
+              print('CLEF_MARKER_EXACT_PUSH_RUNS='+json.dumps([
+                 {'run_id':x['id'],'status':x['status'],'conclusion':x['conclusion'],
+                  'url':x['html_url']} for x in runs]))
+              for run in runs:
+                  with urllib.request.urlopen(urllib.request.Request(
+                       base+'/actions/runs/'+str(run['id'])+'/jobs',headers=headers),
+                       timeout=25) as r:
+                      jobs=json.load(r)['jobs']
+                  print('CLEF_MARKER_PUSH_JOB_STATUS='+json.dumps([{
+                      'job_id':j['id'],'status':j['status'],'conclusion':j['conclusion'],
+                      'steps':[{'name':v['name'],'status':v['status'],
+                                'conclusion':v.get('conclusion')}
+                               for v in j.get('steps',[])]
+                       } for j in jobs]))
+          except Exception as e:
+              print('CLEF_READONLY_AUDIT_UNAVAILABLE',type(e).__name__)
+          PY
       - name: Make at most 17 REAL Clef calls from frozen public requests — capture every raw response immediately
         if: ${{ steps.grant.outputs.allowed == 'true' }}
         env:
