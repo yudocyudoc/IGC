@@ -1,9 +1,9 @@
 name: Arena M2 one own-feedback revision, verified M1 to OpenModelica
 on:
   push:
-    branches: [feature/arena-m2-own-feedback-revision-v01]
+    branches: [fix/arena-m-g3-construction-metrics-20261026]
   pull_request:
-    branches: [feature/arena-m-visible-pulse-v01]
+    branches: [feature/arena-m2-own-feedback-revision-v01]
 permissions:
   contents: read
   actions: read
@@ -85,6 +85,9 @@ jobs:
           r=json.loads(Path('artifacts/arena-m2/real-comparison.json').read_text())
           assert r['simulation_status']=='G2_PASS'
           assert r['holdout_status']=='NOT_RUN'
+          assert r['reserved_evaluation_status']=='NOT_RUN'
+          assert r['g3_construction_status']=='DESCRIPTIVE_IN_SAMPLE_FEEDBACK_NO_INSTRUMENT_BOUND'
+          assert r['rmse_denominators']=={'all_observations':4,'noninitial_observations':3}
           assert r['topology_unchanged'] and len(r['parameter_edits'])==2
           assert r['revision_mass_balance_max_items']<0.015
           print('M2_REVISED_G2_VALID',r['outcome'])
