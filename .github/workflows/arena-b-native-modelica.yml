@@ -1,0 +1,92 @@
+name: Arena B native revised SD-JSON to OpenModelica G2 probe
+on:
+  pull_request:
+    branches: [feature/arena-b-native-node-engine-v01]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  buffalo-modelica:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Get unchanged REAL Buffalo revision from single-call CI
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/revision-source
+      - name: Verify provider-generated parent child is immutable
+        run: |
+          set -euo pipefail
+          echo 'd7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9  artifacts/revision-source/revision-live/native-output.json' | sha256sum --check
+          python -m unittest tests.test_arena_b_native_to_modelica -v
+          python -m py_compile scripts/arena_b_native_to_modelica.py
+      - name: Translate native Buffalo revision without D or molecule routes
+        run: |
+          python scripts/arena_b_native_to_modelica.py artifacts/revision-source/revision-live/native-output.json artifacts/arena-b-g2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out=Path('artifacts/arena-b-g2')
+          r=json.loads((out/'translation-report.json').read_text())
+          assert r['variables']==15 and r['stocks']==2 and r['flows']==2
+          assert set(r['lookup_variables'])=={'pulse shape','capacity utilization from pressure'}
+          assert len(list(out.glob('BuffaloNative_*.mo')))==1
+          name=r['model']
+          (out/'check.mos').write_text(
+              f'loadFile("/work/artifacts/arena-b-g2/{name}.mo");\n'
+              'print(getErrorString());\n'
+              f'checkModel({name});\n'
+              'print(getErrorString());\n'
+              f'simulate({name},stopTime=8,numberOfIntervals=64,method="euler",outputFormat="csv");\n'
+              'print(getErrorString());\n')
+          print('TRANSLATED_CONDITIONALLY_NOT_G0_PROVEN',r['model'])
+          PY
+      - name: Execute independent Buffalo native model with real OpenModelica
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-b-g2 "$OMC_IMAGE" omc check.mos 2>&1 | tee artifacts/arena-b-g2/omc.log
+          if grep -Eq 'Error:|Failed to load|Simulation execution failed|Error occurred' artifacts/arena-b-g2/omc.log; then exit 1; fi
+      - name: Assess solver trace only, never call simulation empirical truth
+        run: |
+          python - <<'PY'
+          import csv,json,math
+          from pathlib import Path
+          root=Path('artifacts/arena-b-g2')
+          report=json.loads((root/'translation-report.json').read_text())
+          csvpath=root/(report['model']+'_res.csv')
+          assert csvpath.exists(), 'OPENMODELICA_CSV_NOT_FOUND'
+          rows=list(csv.DictReader(csvpath.open()))
+          assert len(rows)>30
+          for row in rows:
+              t=float(row['time'])
+              pending=float(row['pending_work'])
+              delivered=float(row['delivered_work'])
+              assert all(math.isfinite(n) for n in [t,pending,delivered])
+              assert pending>=-0.001 and delivered>=-0.001
+          summary={'status':'G2_SIMULATION_EXECUTED_WITH_G0_CONDITIONAL_LOOKUPS',
+                   'rows':len(rows),'last':{k:rows[-1][k] for k in ('time','pending_work','delivered_work')},
+                   'not_g3_validation':True}
+          (root/'simulation-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+          print(json.dumps(summary))
+          PY
+      - name: Retain G0 assumptions and G2 artifacts even on failure
+        if: always()
+        run: |
+          if [ -d artifacts/arena-b-g2 ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/arena-b-g2; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: buffalo-real-revision-modelica-g2-evidence
+          retention-days: 30
+          path: artifacts/arena-b-g2/
