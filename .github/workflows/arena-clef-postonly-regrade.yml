@@ -1,0 +1,98 @@
+name: Arena Clef two pilots — replay actual archived noul scores, NO PROVIDER
+on:
+  push:
+    branches: [feature/arena-clef-dual-pilot-20261026]
+  pull_request:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  postonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download EXACT completed real 17-call artifact, do NOT authorize or call Cloudflare
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-clef-dual-pilots-results-complete
+          run-id: 40411486685
+          github-token: ${{ github.token }}
+          path: artifacts/clef-post
+      - name: Independently verify all 23 original SHA-256 files and real noul fields before rescoring
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          p=Path('artifacts/clef-post')
+          manifest=json.loads((p/'sha256-manifest.json').read_text())
+          assert manifest['schema']=='igc-clef-dual-audit-files/0.1'
+          assert len(manifest['files'])==23
+          for x in manifest['files']:
+              b=(p/x['path']).read_bytes()
+              assert len(b)==x['bytes']
+              assert hashlib.sha256(b).hexdigest()==x['sha256'],x['path']
+          requests=json.loads((p/'public.json').read_text())['cases']
+          assert len(requests)==17
+          for case in requests:
+              raw=json.loads((p/'raw'/(case['case_id']+'.json')).read_text())
+              assert raw['http_status']==200
+              r=raw['provider_raw']
+              assert r['success'] is True
+              for name in ('C00','C01','C02'):
+                  pvalue=r['result']['answers']['path_'+name]['noul']
+                  assert isinstance(pvalue,(int,float)) and 0<=pvalue<=1
+          print('CLEF_17_ORIGINAL_RESPONSE_BYTES_AUTHENTICATED_REAL_NOUL_SCORE_SHAPE')
+          PY
+          python -m py_compile scripts/arena_clef_dual_pilot.py
+      - name: Correct only the offline decoder and regrade the SAME 17 original provider responses
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_clef_dual_pilot grade --out artifacts/clef-post
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/clef-post')
+          r=json.loads((root/'results.json').read_text())
+          assert r['real_calls_archived']==17
+          assert r['tracks']['numeric']['parseable']==8
+          assert r['tracks']['semantic']['parseable']==9
+          assert r['tracks']['numeric']['cases']==8
+          assert r['tracks']['semantic']['cases']==9
+          print('CLEF_TWO_REAL_PILOTS_REPLAY_RESULT',json.dumps(r['tracks'],sort_keys=True))
+          for case in r['by_case']:
+              print('CLEF_CASE',case['case_id'],'support',case['oracle_support'],
+                    'probabilities',case['probabilities_compatible'],
+                    'strong_yes',case['strongly_included'],'possible',case['possible_not_excluded'],
+                    'wrongly_excluded',case['false_exclusions'],
+                    'falsely_supported',case['false_strong_supports'])
+          PY
+      - name: Preserve postonly replay SHA over every revised result and immutable original raw output
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          p=Path('artifacts/clef-post')
+          files=sorted(x for x in p.rglob('*') if x.is_file())
+          entries=[{'path':str(x.relative_to(p)), 'sha256':hashlib.sha256(x.read_bytes()).hexdigest(),
+                    'bytes':x.stat().st_size} for x in files]
+          (p/'postonly-regraded-manifest.json').write_text(json.dumps({
+            'schema':'igc-clef-dual-no-new-provider-regraded-audit/0.1',
+            'source_original_run_id':40411486685,
+            'original_raw_untouched':True,
+            'postonly_corrected_noul_decode':True,
+            'files':entries},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-clef-dual-pilots-actual-real-regraded-postonly
+          path: artifacts/clef-post/
+          retention-days: 45
+          if-no-files-found: error

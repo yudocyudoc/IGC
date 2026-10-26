@@ -1,0 +1,194 @@
+name: Arena Clef dual real pilots — frozen M3 numeric versus semantic
+on:
+  push:
+    branches: [feature/arena-clef-dual-pilot-20261026]
+  pull_request:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-clef-dual-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+jobs:
+  two-frozen-pilots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore M3 real original Short E1 OpenModelica candidates and observed cases
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-m3-original-e1-blind-structural-selection-evidence
+          run-id: 40298421985
+          github-token: ${{ github.token }}
+          path: artifacts/clef-source-m3
+      - name: Preregister BOTH pilots and freeze provider requests before any real call
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_clef_dual_pilot.py
+          python -m scripts.arena_clef_dual_pilot prepare \
+            --source artifacts/clef-source-m3 --out artifacts/clef-dual
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('artifacts/clef-dual')
+          public=json.loads((p/'public.json').read_text())
+          secret=json.loads((p/'private-oracle.json').read_text())
+          freeze=json.loads((p/'freeze.json').read_text())
+          assert public['schema']=='igc-clef-two-small-pilots/0.1'
+          assert public['model']=='@cf/cloudflare/clef'
+          assert public['max_provider_calls']==17
+          assert len(public['cases'])==17
+          assert sum(c['track']=='numeric' for c in public['cases'])==8
+          assert sum(c['track']=='semantic' for c in public['cases'])==9
+          assert all(set(c['body']['questions'])=={'path_C00','path_C01','path_C02'} for c in public['cases'])
+          assert all(q['type']=='noul' for c in public['cases'] for q in c['body']['questions'].values())
+          assert len(secret['cases'])==17
+          assert freeze['no_numeric_holdout'] is True
+          assert 'oracle_support' not in (p/'public.json').read_text()
+          assert 'expected_candidate_id' not in (p/'public.json').read_text()
+          assert 'private-oracle' not in (p/'public.json').read_text()
+          assert public['cases'][0]['body']['state'] != public['cases'][1]['body']['state']
+          assert public['cases'][-1]['candidate_order']==['C02','C00','C01']
+          print('CLEF_8_NUMERIC_9_SEMANTIC_FROZEN_NO_ANSWERS_IN_PROVIDER_REQUEST')
+          PY
+      - name: Gate single explicitly authorized REAL Cloudflare Clef campaign
+        id: grant
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != push ] || [ "$ATTEMPT" != 1 ] ||
+             [ "$REF" != refs/heads/feature/arena-clef-dual-pilot-20261026 ] ||
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+               grep -Fxq data/diagnostics/CLEF_DUAL_ONE_REAL_CAMPAIGN_20261026.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'CLEF_NO_MARKER_NO_PROVIDER_CALLS'
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/diagnostics/CLEF_DUAL_ONE_REAL_CAMPAIGN_20261026.json')
+          d=json.loads(p.read_text())
+          assert d=={
+            'schema':'igc-clef-two-real-pilots-one-campaign/0.1',
+            'model':'@cf/cloudflare/clef',
+            'max_calls':17,
+            'numeric_cases':8,
+            'semantic_cases':9,
+            'source_m3_real_solver_run_id':40298421985,
+            'never_see_oracle':True,
+            'not_an_active_igc_arm':True,
+            'no_retry':True,
+            'no_merging_into_main':True,
+            'separate_user_authorization':True,
+          },'INVALID_CLEF_ONE_CAMPAIGN_MARKER'
+          print('CLEF_TWO_SEPARATE_PILOTS_AUTHORIZED_MAX17_REAL_REQUESTS')
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Read-only provider execution audit of one-use marker commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          head='6de39dc5290ca050e3f0936f593155da0558e38a'
+          base='https://api.github.com/repos/yudocyudoc/IGC'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          try:
+              url=base+'/actions/workflows/arena-clef-dual-pilot.yml/runs?event=push&per_page=75'
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25) as r:
+                  runs=[x for x in json.load(r)['workflow_runs'] if x['head_sha']==head]
+              print('CLEF_MARKER_EXACT_PUSH_RUNS='+json.dumps([
+                 {'run_id':x['id'],'status':x['status'],'conclusion':x['conclusion'],
+                  'url':x['html_url']} for x in runs]))
+              for run in runs:
+                  with urllib.request.urlopen(urllib.request.Request(
+                       base+'/actions/runs/'+str(run['id'])+'/jobs',headers=headers),
+                       timeout=25) as r:
+                      jobs=json.load(r)['jobs']
+                  print('CLEF_MARKER_PUSH_JOB_STATUS='+json.dumps([{
+                      'job_id':j['id'],'status':j['status'],'conclusion':j['conclusion'],
+                      'steps':[{'name':v['name'],'status':v['status'],
+                                'conclusion':v.get('conclusion')}
+                               for v in j.get('steps',[])]
+                       } for j in jobs]))
+          except Exception as e:
+              print('CLEF_READONLY_AUDIT_UNAVAILABLE',type(e).__name__)
+          PY
+      - name: Make at most 17 REAL Clef calls from frozen public requests — capture every raw response immediately
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_clef_dual_pilot run \
+            --out artifacts/clef-dual \
+            --auth RUN_ONCE_CLEF_TWO_PILOTS_20261026
+      - name: Retain raw Clef provider outputs separately before reading evaluator labels
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-clef-two-pilots-REAL-raw-before-grading
+          path: |
+            artifacts/clef-dual/raw/
+            artifacts/clef-dual/provider-progress.json
+            artifacts/clef-dual/public.json
+            artifacts/clef-dual/freeze.json
+          retention-days: 45
+          if-no-files-found: warn
+      - name: Evaluate only archived REAL provider responses, no inferred replacements
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_clef_dual_pilot grade --out artifacts/clef-dual
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/clef-dual/results.json').read_text())
+          assert r['real_calls_archived']==17
+          assert r['tracks']['numeric']['cases']==8
+          assert r['tracks']['semantic']['cases']==9
+          assert len(r['by_case'])==17
+          print('CLEF_TWO_REAL_PILOTS_SCIENTIFIC_ADJUDICATION',r['tracks'])
+          PY
+      - name: Independent file SHA-256 archive manifest, includes real outcomes and failures
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          p=Path('artifacts/clef-dual')
+          if p.exists():
+              files=sorted(x for x in p.rglob('*') if x.is_file())
+              manifest={'schema':'igc-clef-dual-audit-files/0.1',
+                        'model':'@cf/cloudflare/clef',
+                        'run_sha':'${{ github.sha }}',
+                        'files':[{'path':str(f.relative_to(p)),
+                                  'bytes':f.stat().st_size,
+                                  'sha256':hashlib.sha256(f.read_bytes()).hexdigest()}
+                                 for f in files]}
+              (p/'sha256-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+              print('CLEF_ARCHIVE_HASH_MANIFEST',len(files))
+          PY
+      - name: Archive both pilot results, sealed labels and exact provider bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-clef-dual-pilots-results-complete
+          path: artifacts/clef-dual/
+          retention-days: 45
+          if-no-files-found: warn
