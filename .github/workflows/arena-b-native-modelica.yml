@@ -32,6 +32,7 @@ jobs:
           set -euo pipefail
           echo 'd7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9  artifacts/revision-source/revision-live/native-output.json' | sha256sum --check
           python -m unittest discover -s tests -p 'test_arena_b_native_to_modelica.py' -v
+          python -m unittest discover -s tests -p 'test_arena_b_construction_check.py' -v
           python -m py_compile scripts/arena_b_native_to_modelica.py
       - name: Translate native Buffalo revision without D or molecule routes
         run: |
@@ -85,6 +86,28 @@ jobs:
                    'reserved_evaluation':'NOT_RUN'}
           (root/'simulation-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
           print(json.dumps(summary))
+          PY
+      - name: Assess Buffalo G3 construction descriptively and Euler material balance
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_b_construction_check import assess
+          import csv
+          root=Path('artifacts/arena-b-g2')
+          report=json.loads((root/'translation-report.json').read_text())
+          visible=json.loads(Path('data/synthetic/arena_b_native_visible.json').read_text())
+          csvpath=root/(report['model']+'_res.csv')
+          with csvpath.open(newline='') as f:
+              rows=list(csv.DictReader(f))
+          result=assess(rows,visible)
+          assert result['rmse_denominators']=={'all_observations':4,'noninitial_observations':3}
+          assert result['balance_residual_max_items']<1e-4
+          assert result['heldout_evaluation_status']=='NOT_RUN'
+          assert result['g3_construction_status']=='DESCRIPTIVE_ONLY_NO_INSTRUMENT_BOUND'
+          (root/'g3-construction-only.json').write_text(json.dumps(result,indent=2)+'\\n')
+          print('BUFFALO_G3_CONSTRUCTION_DESCRIPTIVE_ONLY',result['rmse_all_observations_items'],result['rmse_noninitial_observations_items'])
           PY
       - name: Retain G0 assumptions and G2 artifacts even on failure
         if: always()
