@@ -13,7 +13,22 @@ import math
 import re
 from pathlib import Path
 
-VERSION = "igc-b-native-modelica-conditional/0.1"
+VERSION = "igc-b-native-modelica-conditional/0.2"
+# Exact fields observed in the original native Buffalo scalar-output contract.
+# New fields are NOT assumed to be cosmetic: subType=conveyor, delay state,
+# or arrays may change dynamics even when type='stock'.
+SUPPORTED_NATIVE_FIELDS = frozenset({
+    "name", "type", "equation", "units", "inflows", "outflows",
+    "uniflow", "graphicalFunction", "documentation",
+})
+SUPPORTED_SPEC_FIELDS = frozenset({
+    "startTime", "stopTime", "dt", "timeUnits", "integrationMethod",
+})
+SUPPORTED_NATIVE_KEYS = frozenset({
+    "variables", "relationships", "modules", "specs",
+})
+SUPPORTED_ENVELOPE_KEYS = frozenset({"model", "supportingInfo"})
+
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9 ]{0,59}$")
 FUNCS = {"MIN": "min", "MAX": "max", "ABS": "abs"}
 
@@ -97,7 +112,21 @@ def generate(document):
     require(isinstance(document, dict) and isinstance(document.get("model"), dict),
             "NOT_NATIVE_BUFFALO_ENVELOPE")
     native = document["model"]
-    require(not native.get("modules"), "MODULES_UNSUPPORTED")
+    require(not (set(document) - SUPPORTED_ENVELOPE_KEYS), "UNSUPPORTED_NATIVE_ENVELOPE_FIELD")
+    require(not (set(native) - SUPPORTED_NATIVE_KEYS), "UNSUPPORTED_NATIVE_MODEL_FIELD")
+    require(isinstance(native.get("modules", []), list) and not native.get("modules"), "MODULES_UNSUPPORTED")
+    specs = native.get("specs")
+    require(isinstance(specs, dict), "MISSING_NATIVE_SIMULATION_SPECS")
+    require(not (set(specs) - SUPPORTED_SPEC_FIELDS), "UNSUPPORTED_NATIVE_SIMULATION_SPEC")
+    require(set(specs) == SUPPORTED_SPEC_FIELDS, "INCOMPLETE_NATIVE_SIMULATION_SPECS")
+    # Until solver parity is proved, the pinned G2 replay cannot silently
+    # simulate a different step, integration method, time unit or horizon.
+    require(
+        specs["startTime"] == 0 and specs["stopTime"] == 8
+        and specs["dt"] == 0.125 and specs["timeUnits"] == "hour"
+        and specs["integrationMethod"] == "Euler",
+        "NATIVE_SPECS_OUTSIDE_PINNED_G2_SCOPE"
+    )
     vs, rs = native.get("variables"), native.get("relationships")
     require(isinstance(vs, list) and 1 <= len(vs) <= 64, "BAD_VARIABLES")
     require(isinstance(rs, list), "BAD_RELATIONSHIPS")
@@ -105,9 +134,21 @@ def generate(document):
     stocks, flows = [], []
     for v in vs:
         require(isinstance(v, dict), "BAD_VARIABLE")
+        # Fail closed on Buffalo subtypes and extra state semantics. In
+        # particular conveyor is NOT equivalent to an ordinary integrator.
+        require(not (set(v) - SUPPORTED_NATIVE_FIELDS), "UNSUPPORTED_NATIVE_VARIABLE_FIELD")
+        gf = v.get("graphicalFunction", {"points": []})
+        require(isinstance(gf, dict) and set(gf) == {"points"}
+                and isinstance(gf["points"], list), "UNSUPPORTED_GRAPHICAL_FUNCTION_FORMAT")
         raw = v.get("name"); key = ident(raw)
         require(key not in by_id and key != "time", "DUPLICATE_OR_RESERVED_IDENTIFIER")
         require(v.get("type") in ("stock", "flow", "variable"), "BAD_VARIABLE_TYPE")
+        if v["type"] == "stock":
+            require(not gf["points"], "GRAPHICAL_FUNCTION_ON_STOCK_UNSUPPORTED")
+        if v["type"] != "stock":
+            require(not v.get("inflows") and not v.get("outflows"),
+                    "MATERIAL_PORTS_ON_NONSTOCK")
+        require(type(v.get("uniflow", False)) is bool, "BAD_UNIFLOW_FLAG")
         by_name[raw], by_id[key], units[raw] = v, v, v.get("units", "")
         if v["type"] == "stock":
             stocks.append(v)
@@ -173,11 +214,15 @@ def generate(document):
               "native_sha256":"sha256:"+hashlib.sha256(json.dumps(document,sort_keys=True).encode()).hexdigest(),
               "model":modelname,"variables":len(vs),"stocks":len(stocks),
               "flows":len(flows),"lookup_variables":gf_vars,
+              "native_simulation_specs":specs,
+              "solver_scope":"PINNED_EULER_0_TO_8_HOURS_DT_0_125",
               "assumptions":["LINEAR_INTERPOLATION_BETWEEN_GRAPHICAL_POINTS",
                              "HOLD_ENDPOINT_VALUES_OUTSIDE_GRAPHICAL_RANGE",
                              "EXACT_ZERO_SAFE_DIVISION_FOR_BUFFALO_DOUBLE_SLASH"],
               "limits":["NOT_UPSTREAM_LOOKUP_EQUIVALENCE_PROOF","NOT_G1_GENERAL_UNIT_PROOF",
-                        "NOT_G3_CAUSAL_VALIDATION"]}
+                        "G3_CONSTRUCTION_ADEQUACY_NOT_ESTABLISHED",
+                        "HELDOUT_EVALUATION_SEPARATE_NOT_RUN",
+                        "UNSUPPORTED_NATIVE_SUBTYPES_REJECTED"]}
     return modelname, code, report
 
 
