@@ -1,0 +1,38 @@
+name: Read-only status: Clef dual authorized original run
+on:
+  pull_request:
+    branches: [feature/arena-m3-evidence-structural-selection-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Locate exact authorized push run and report provider status without any new calls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          head='6de39dc5290ca050e3f0936f593155da0558e38a'
+          base='https://api.github.com/repos/yudocyudoc/IGC'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25) as r:return json.load(r)
+          url=base+'/actions/workflows/arena-clef-dual-pilot.yml/runs?event=push&per_page=75'
+          runs=[x for x in get(url)['workflow_runs'] if x['head_sha']==head]
+          print('CLEF_ONE_SHOT_AUTHORIZED_PUSH='+json.dumps([
+                {'id':x['id'],'status':x['status'],'conclusion':x['conclusion'],
+                 'url':x['html_url']} for x in runs]))
+          for run in runs:
+              for job in get(base+'/actions/runs/'+str(run['id'])+'/jobs').get('jobs',[]):
+                  print('CLEF_ONE_SHOT_JOBS='+json.dumps({'run_id':run['id'],
+                      'job_id':job['id'],'status':job['status'],
+                      'conclusion':job['conclusion'],
+                      'steps':[{'name':s['name'],'status':s['status'],
+                                'conclusion':s.get('conclusion')}
+                               for s in job.get('steps',[])]}))
+          assert runs,'PUSH_RUN_NOT_IN_FIRST_75'
+          PY
