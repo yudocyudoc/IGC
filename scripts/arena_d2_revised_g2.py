@@ -179,6 +179,14 @@ def assess_real_csv(root,manifest,data,protocol):
         residuals=[z-x["delivered"] for z,x in zip(values[:-1],observations)]
         max_abs=max(abs(z) for z in residuals+[values[-1]-data["_d2_trial_delivered"]])
         rmse_construction=math.sqrt(sum(z*z for z in residuals)/len(residuals))
+        # The source revision's compatible grid witness is a *conditional*
+        # judgement under the synthetic instrument bound, not ground truth.
+        # If OMC disagrees after RK4 parity tolerance, this is a G2/G3
+        # boundary failure that must not be silently ignored.
+        bound=protocol["noise_absolute_bound"]
+        predicted_compatible=(max_abs<=bound+.012)
+        require(predicted_compatible==item["conditionally_supported"],
+                "D2_REAL_OMC_SUPPORT_INCONSISTENT_WITH_OWN_ATMS")
         report[item["candidate_id"]]={
             "source_modelica_class":item["modelica_class"],
             "d2_parameters":item["d2_parameters"],
@@ -189,6 +197,9 @@ def assess_real_csv(root,manifest,data,protocol):
                 sum(z*z for z in residuals[1:])/(len(residuals)-1)),
             "joint_max_abs_error_including_visible_reset":max_abs,
             "noise_absolute_bound":protocol["noise_absolute_bound"],
+            "omc_conditional_compatibility_consistent_with_d2_ledger":True,
+            "construction_denominators":{"all_times":len(residuals),
+                                         "noninitial":len(residuals)-1},
             "g3_status":"CONSTRUCTION_AND_VISIBLE_RESET_DESCRIPTIVE_ONLY",
         }
     return {"schema":"igc-arena-d2-real-own-modelica-check/0.1",
