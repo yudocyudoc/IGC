@@ -122,7 +122,7 @@ def validated_bundle(data, protocol, d0, d1):
         conservation = verify_csv(csv, r["stocks"],
                                   data["construction"]["input_profile"])
         g2.append({"candidate_id": r["candidate_id"],
-                   "model_hash": digest(model.read_text()),
+                   "model_hash": _file_sha(model),
                    "csv_sha256": _file_sha(csv), "parity": parity,
                    "conservation": conservation})
     return original, candidates, sub, screen, [d0event, d1event], g2
@@ -214,7 +214,7 @@ def snapshot(*, db, case_id, round_id, as_known_at):
     # F1a case scope + D lane access; never project B or M.
     allowed = [r for r in revisions
                if r.access_policy == POLICY and
-               r.entity_id.startswith(event_id(case_id, round_id, ""))]
+               r.entity_id.startswith(f"arena:{case_id}:{round_id}:D:")]
     events = events_from_ledger(allowed)
     engine, manifest = project(events, as_known_at=as_known_at,
                                lane="D", investigation_id=case_id)
