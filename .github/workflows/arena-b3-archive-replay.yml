@@ -1,0 +1,264 @@
+name: Arena B3 archive replay – one real call with raw artifact first
+on:
+  push:
+    branches: [feature/arena-b3-archive-replay-20261026]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-b3-archive-replay-single-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  own-physical-buffalo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Restore only real B-native and B-OpenModelica outputs from prior authenticated runs
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: buffalo-real-revision-modelica-g2-evidence
+          run-id: 40283017108
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-solver
+      - uses: actions/download-artifact@v4
+        with:
+          name: buffalo-b3-audit-complete-with-modelica
+          run-id: 40286989747
+          github-token: ${{ github.token }}
+          path: artifacts/b3-previous-truncated
+      - name: Lock native/CSV/report bytes and derive actual physical-feedback document
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_b_physical_feedback.py' -v
+          python -m scripts.arena_b_physical_feedback \
+            --native artifacts/b-physical-source/revision-live/native-output.json \
+            --csv artifacts/b-physical-solver/BuffaloNative_3aa200a87a3f_res.csv \
+            --report artifacts/b-physical-solver/g3-construction-only.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b-feedback.json
+          node --check scripts/arena_b_openrouter_cloudflare.mjs
+          node --test tests/test_arena_b_physical_token_budget.mjs
+          python -m py_compile scripts/arena_b_physical_outcome.py scripts/arena_b_native_to_modelica.py
+      - name: Fetch unmodified native Buffalo quantitative engine
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+      - name: Install original SDK from unmodified Buffalo lockfile
+        working-directory: upstream/sd-ai
+        run: npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Offline original Buffalo currentModel + real own physical residual contract
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-source/revision-live/native-output.json
+          BUFFALO_PHYSICAL_FEEDBACK: ${{ github.workspace }}/artifacts/b-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('artifacts/b-physical-offline/receipt.json'));
+          const fb=JSON.parse(fs.readFileSync('artifacts/b-physical-offline/physical-feedback-sent.json'));
+          if(r.status!=='OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS'||
+            !r.current_model_seen||!r.physical_feedback_seen||r.live_provider_calls!==0||
+            r.intercepted_http_calls!==1 || !r.structured_request_seen||
+            !r.extension_after_original_budget||!r.construction_only ||
+            fb.observations_and_physical_state.length!==4)
+            throw Error('ORIGINAL_BUFFALO_OWN_PHYSICAL_DELIVERY_FAILED');
+          console.log('ORIGINAL_BUFFALO_CURRENTMODEL_PLUS_REAL_G3_CONSTRUCTION_FEEDBACK_DELIVERED_OFFLINE');
+          JS
+      - name: Gate one fresh real LLM inference strictly from new research authorization
+        id: grant
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != push ] || [ "$ATTEMPT" != 1 ] ||
+             [ "$BRANCH" != refs/heads/feature/arena-b3-archive-replay-20261026 ] ||
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+               grep -Fxq data/diagnostics/BUFFALO_B3_ARCHIVE_REPLAY_ONE_CALL_20261026.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'NO_NEW_AUTHORIZATION_MARKER_NO_CLOUDFLARE_CALL'
+            exit 0
+          fi
+          python - <<'PY'
+          import json,os,urllib.request
+          from pathlib import Path
+          marker=json.loads(Path('data/diagnostics/BUFFALO_B3_ARCHIVE_REPLAY_ONE_CALL_20261026.json').read_text())
+          required={
+            'schema':'igc-b3-archive-replay-one-real-call/0.1',
+            'max_provider_calls':1,
+            'model':'@cf/zai-org/glm-5.3-flash',
+            'output_budget_tokens':7000,
+            'parent_native_sha256':'d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9',
+            'previous_real_inference_run_id':40288518137,
+            'prior_real_inference_completed':True,
+            'prior_g2_execution_completed':True,
+            'prior_archive_failed':True,
+            'this_is_a_new_user_authorization':True,
+            'separate_from_original_arena_budget':True,
+            'no_competitor_or_reserved_evidence':True,
+            'no_automatic_retry':True,
+          }
+          if marker!=required: raise SystemExit('INVALID_B3_ARCHIVE_REPLAY_AUTHORIZATION')
+          headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          base='https://api.github.com/repos/yudocyudoc/IGC/actions'
+          def get(url):
+            with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25) as f:
+              return json.load(f)
+          run=get(f"{base}/runs/40288518137")
+          jobs=get(f"{base}/runs/40288518137/jobs")
+          if run.get('conclusion')!='failure':raise SystemExit('OLD_INCIDENT_RUN_NOT_FAILED')
+          evidence=[]
+          for job in jobs.get('jobs',[]):
+            for step in job.get('steps',[]):
+              evidence.append((step.get('name'),step.get('conclusion')))
+          need=(
+            ('Real Cloudflare original Buffalo revision using its own OpenModelica residuals','success'),
+            ('Adjudicate REAL Buffalo revision through strict G0 and real OpenModelica G2','success'),
+            ('Archive complete diagnostic and all transport receipts including failure','failure')
+          )
+          if not all(x in evidence for x in need):raise SystemExit('OLDER_LLM_G2_ARCHIVE_EVIDENCE_NOT_CONFIRMED')
+          prior_artifacts=get(f"{base}/runs/40288518137/artifacts").get('artifacts',[])
+          if any(x.get('expired') is False for x in prior_artifacts):
+            raise SystemExit('PRIOR_REAL_ARTIFACT_EXISTS_DO_NOT_REPLAY')
+          print('OLD_REAL_RESPONSE_AND_G2_PROVEN_BUT_LOST_ARCHIVE_ONE_REPLAY_ALLOWED')
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Real Cloudflare original Buffalo revision using its own OpenModelica residuals
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-source/revision-live/native-output.json
+          BUFFALO_PHYSICAL_FEEDBACK: ${{ github.workspace }}/artifacts/b-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-physical-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_PHYSICAL_FEEDBACK
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b-physical-live/receipt.json').read_text())
+          assert r['status']=='REAL_CLOUDFLARE_BUFFALO_PHYSICAL_REVISION_RETURNED'
+          assert r['intercepted_http_calls']==r['live_provider_calls']==1
+          assert r['current_model_seen'] and r['physical_feedback_seen']
+          assert r['inference_source']=='REAL_CLOUDFLARE_WORKERS_AI'
+          metadata=json.loads(Path('artifacts/b-physical-live/cf-request-metadata.json').read_text())
+          assert metadata['parameter_overrides']['max_completion_tokens']==7000
+          cloudflare=json.loads(Path('artifacts/b-physical-live/cloudflare-raw.json').read_text())
+          assert cloudflare['result']['choices'][0].get('finish_reason')!='length'
+          print('BUFFALO_ORIGINAL_RECEIVED_PHYSICAL_CONSTRUCTION_FEEDBACK_REAL_CLOUD',r['variable_count'])
+          PY
+      - name: Archive REAL provider response BEFORE running the Docker simulator
+        if: ${{ always() && steps.grant.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-b3-audit-raw-original-before-solver
+          path: |
+            artifacts/b-feedback.json
+            artifacts/b-physical-live/
+          retention-days: 45
+          if-no-files-found: warn
+      - name: Stop evaluation if the raw LLM artifact could not be preserved
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          test -s artifacts/b-physical-live/native-output.json
+          test -s artifacts/b-physical-live/cloudflare-raw.json
+          test -s artifacts/b-physical-live/receipt.json
+          echo 'RAW_LLM_OUTPUT_PRESERVED_BY_PRECEDING_SUCCESSFUL_UPLOAD'
+      - name: Adjudicate REAL Buffalo revision through strict G0 and real OpenModelica G2
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_b_physical_outcome \
+            --native artifacts/b-physical-live/native-output.json \
+            --prior-native artifacts/b-physical-source/revision-live/native-output.json \
+            --feedback artifacts/b-feedback.json \
+            --visible data/synthetic/arena_b_native_visible.json \
+            --out artifacts/b-physical-evaluation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('artifacts/b-physical-evaluation/adjudication.json').read_text())
+          assert result['arm_id']=='B'
+          assert result['parent_native_sha256']=='sha256:d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9'
+          assert result['heldout_evaluation']=='NOT_RUN'
+          assert result['original_budget']=='EXTENDED_SEPARATE_EXPERIMENT_NOT_ORIGINAL_B_ROUND'
+          print('BUFFALO_OWN_PHYSICAL_MODEL_ADJUDICATED',result['g0_status'],result['g2_status'],result.get('construction_change'))
+          PY
+      - name: Preserve native-source SHA and solver hashes for Astra
+        if: ${{ steps.grant.outputs.allowed == 'true' && success() }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json
+          root=Path('artifacts')
+          files=[root/'b-feedback.json']
+          for folder in ['b-physical-live','b-physical-evaluation']:
+            files += sorted(x for x in (root/folder).rglob('*') if x.is_file())
+          manifest={'schema':'igc-b3-astra-evidence-manifest/0.1',
+                    'original_buffalo_sha':'5199f7b45f3a7ae4a773cb0dd8542940aabe9edc',
+                    'run_sha':'${{ github.sha }}',
+                    'inputs':'BUFFALO_B2_NATIVE_AND_OWN_CONSTRUCTION_RESIDUALS_ONLY',
+                    'heldout':'NOT_RUN',
+                    'files':[{'path':str(f.relative_to(root)),
+                              'bytes':f.stat().st_size,
+                              'sha256':sha256(f.read_bytes()).hexdigest()} for f in files if
+                              f.is_file() and f.stat().st_size<5_000_000]}
+          (root/'b3-astra-evidence-manifest.json').write_text(json.dumps(manifest,indent=2)+'\\n')
+          print('ASTRA_AUDIT_SHA_MANIFEST',len(manifest['files']))
+          PY
+      - name: Normalize OpenModelica root-owned generated files before artifact packaging
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/b-physical-evaluation ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b-physical-evaluation
+            chmod -R u+rX artifacts/b-physical-evaluation
+          fi
+      - name: Archive complete diagnostic and all transport receipts including failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-own-physical-feedback-original-native-proof
+          path: |
+            artifacts/b-feedback.json
+            artifacts/b3-astra-evidence-manifest.json
+            artifacts/b-physical-offline/
+            artifacts/b-physical-live/
+            artifacts/b-physical-evaluation/
+          retention-days: 45
