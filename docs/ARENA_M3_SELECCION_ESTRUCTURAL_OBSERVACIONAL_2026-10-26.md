@@ -50,7 +50,12 @@ Las tres trayectorias candidatas verificaron conservación material dentro de \(
 
 Una primera ejecución M3 chocó con la duplicación de filas en t=2 (evento de cierre del pulso) y t=6 (fin del CSV). La corrección solo admite duplicados de tiempos cuando \(\text{deliveredTotal}\) coincide numéricamente (tolerancia 1e-5), preservando los eventos reales sin interpolar ni editar el modelo. Se añadió un control negativo que rechaza duplicados físicamente contradictorios.
 
-Una prueba adversativa complementaria toma **el mismo identificador de caso alpha** y sustituye únicamente sus observaciones por las beta: debe pasar de C00 a C01. Otra usa entregas nulas ante el pulso inicial: el selector debe declararlas fuera de su familia con `ABSTAIN`, nunca presentar el modelo «menos malo» como identificado. Ambos controles usan los **CSV reales** de los candidatos y no nuevas simulaciones. Su resultado está sujeto al nuevo workflow de regresión.
+Una prueba adversativa complementaria toma **el mismo identificador de caso alpha** y sustituye únicamente sus observaciones por las beta: debe pasar de C00 a C01. Otra usa entregas nulas ante el pulso inicial: el selector debe declararlas fuera de su familia con `ABSTAIN`, nunca presentar el modelo «menos malo» como identificado. Ambos controles usan los **CSV reales** de los candidatos y no nuevas simulaciones. La regresión ampliada terminó **SUCCESS** en [Actions #40298421985](https://github.com/yudocyudoc/IGC/actions/runs/40298421985) y dejó el artefacto completo [#12638758997](https://github.com/yudocyudoc/IGC/actions/runs/40298421985/artifacts/12638758997). El log confirmó ambos resultados con CSV reales:
+
+- `M3_EMPIRICAL_EVIDENCE_SWAP_CHANGED_STRUCTURE_WITH_SAME_CASE_ID`: con la **misma etiqueta alpha** y las observaciones de beta, M3 cambió de `C00` a `C01`.
+- `M3_OUT_OF_FAMILY_CONSTRUCTION_ABSTENTION ALL_FIXED_E1_STRUCTURES_MISS_CONSTRUCTION_TOLERANCE`: con un vector de entregas nulas, se abstuvo en lugar de seleccionar por defecto `C02` u otra ruta.
+
+El artefacto contiene el modelo generado E1, tres CSV candidatos y dos CSV generadores independientes de compilación, observaciones publicadas, puntajes, contrafactuales, clave sellada, evaluación temporal reservada y log de OMC; todos los pasos de CI concluyeron SUCCESS. La revisión externa deberá distinguir esta **sensibilidad de la política adaptadora M3** de capacidades pertenecientes al compositor E1 original.
 
 ## Lectura correcta de un resultado
 
