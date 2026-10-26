@@ -37,6 +37,21 @@ La política de decisión (predeclarada):
 
 El evaluador, no el selector, comprueba después si `case-alpha` seleccionó `C00` y `case-beta` seleccionó `C01`; si cambiaron de estructura al cambiar las observaciones y qué RMSE obtienen con los tres tiempos reservados. **La adjudicación reserva tiempos posteriores del mismo mundo sintético, no representa una población, mecanismo o cafetería independiente.**
 
+## Resultados reales (primera corrida completa, anterior al negativo ampliado)
+
+[GitHub Actions #40298010634](https://github.com/yudocyudoc/IGC/actions/runs/40298010634) **SUCCESS**, OpenModelica real, artefacto [#12639246621](https://github.com/yudocyudoc/IGC/actions/runs/40298010634/artifacts/12639246621), con cinco CSV (tres candidatos y dos mundos sintéticos separados), observaciones cegadas, puntuaciones y tabla de origen revelada **solo en la adjudicación**.
+
+| Caso ciego | Origen sellado, revelado después | Elección desde construcción | RMSE C00 | RMSE C01 | RMSE C02 | Margen al siguiente | RMSE de t=4–6 |
+|---|---|---|---:|---:|---:|---:|---:|
+| alpha | C00 (2 colas) | **C00** | **0.002693** | 0.977483 | 1.466708 | 0.974791 | 0.003109 |
+| beta | C01 (3 colas) | **C01** | 0.975931 | **0.002693** | 0.503199 | 0.500506 | 0.003109 |
+
+Las tres trayectorias candidatas verificaron conservación material dentro de \(7\times10^{-12}\) elementos. La prueba contiene ruido sintético determinista fijado previamente y **no calibró** parámetros. Cada caso eligió la estructura generadora, y la elección cambió al cambiar los datos. No afirmar precisión causal externa: **el generador pertenece exactamente a la familia seleccionable**. Los datos de t=4–6 vienen de la **misma** simulación fuente y solo estaban temporalmente reservados; no equivalen a un holdout independiente de cafeterías.
+
+Una primera ejecución M3 chocó con la duplicación de filas en t=2 (evento de cierre del pulso) y t=6 (fin del CSV). La corrección solo admite duplicados de tiempos cuando \(\text{deliveredTotal}\) coincide numéricamente (tolerancia 1e-5), preservando los eventos reales sin interpolar ni editar el modelo. Se añadió un control negativo que rechaza duplicados físicamente contradictorios.
+
+Una prueba adversativa complementaria toma **el mismo identificador de caso alpha** y sustituye únicamente sus observaciones por las beta: debe pasar de C00 a C01. Otra usa entregas nulas ante el pulso inicial: el selector debe declararlas fuera de su familia con `ABSTAIN`, nunca presentar el modelo «menos malo» como identificado. Ambos controles usan los **CSV reales** de los candidatos y no nuevas simulaciones. Su resultado está sujeto al nuevo workflow de regresión.
+
 ## Lectura correcta de un resultado
 
 Un PASS demostraría únicamente que **la combinación E1 + nueva política M3** puede consultar datos de construcción, **seleccionar diferentes topologías materiales de un repertorio fijo** y expresar abstención frente a ambigüedad o fuera-de-familia. Las opciones de filtro informativo seguirían sin identificación con `deliveredTotal`.
