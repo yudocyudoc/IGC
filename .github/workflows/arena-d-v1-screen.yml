@@ -36,6 +36,7 @@ jobs:
           python -m py_compile scripts/arena_d_v1_screen.py tests/test_arena_d_v1_screen.py
           python -m unittest discover -s tests -p 'test_arena_d_v1_screen.py' -v
           python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_atms_bridge.py' -v
       - name: Construct D0 lineage and only visible D1 observational screen
         run: |
           python -m scripts.arena_d_v01 prepare \
@@ -98,6 +99,27 @@ jobs:
           (root/'omc-parity.json').write_text(json.dumps(checks,indent=2)+'\n')
           print('D1_SIX_FITTED_MODELS_MATCH_PINNED_OPENMODELICA')
           PY
+      - name: Ingest ACTUAL D0/D1 and Modelica proof to F1a ledger; project isolated ATMS
+        run: |
+          python -m scripts.arena_d_atms_bridge ingest \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --d0 artifacts/arena-d-v1-d0 \
+            --d1 artifacts/arena-d-v1 \
+            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite \
+            --recorded-at '2026-10-25T18:00:00-06:00' | tee artifacts/arena-d-v1/atms-ingest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-d-v1/atms-ingest.json')
+          result=json.loads(p.read_text())
+          assert result['status']=='D0_D1_LEDGER_ATMS_INGESTED'
+          assert len(result['source_events'])==2
+          assert result['projection']['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert len(result['projection']['conditionally_supported'])==2
+          assert 'B-SECRET' not in p.read_text()
+          print('D_ATMS_PERSISTENT_LOGICAL_SUPPORT_PASS')
+          PY
       - name: Repair root-owned container file permissions and curate auditable artifacts
         if: always()
         run: |
@@ -106,7 +128,7 @@ jobs:
             sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v1
             mkdir -p artifacts/arena-d-v1/evidence
             shopt -s nullglob
-            for file in artifacts/arena-d-v1/*.json artifacts/arena-d-v1/*.mo artifacts/arena-d-v1/*_res.csv artifacts/arena-d-v1/*.mos artifacts/arena-d-v1/omc.log; do
+            for file in artifacts/arena-d-v1/*.json artifacts/arena-d-v1/*.sqlite artifacts/arena-d-v1/*.mo artifacts/arena-d-v1/*_res.csv artifacts/arena-d-v1/*.mos artifacts/arena-d-v1/omc.log; do
               cp "$file" artifacts/arena-d-v1/evidence/
             done
           fi
