@@ -13,6 +13,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
+import { diagnose } from "./arena_b_native_g1_diagnostic.mjs";
 import {CF_MODEL,OR_SLUG,CF_MODE,requestToCloudflare,responseToOpenRouter} from "./arena_b_cf_protocol_adapter.mjs";
 
 const UPSTREAM_SHA="5199f7b45f3a7ae4a773cb0dd8542940aabe9edc";
