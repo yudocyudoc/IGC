@@ -1,0 +1,89 @@
+name: Arena B2/B3 frozen low-utilization discriminating probe
+on:
+  push:
+    branches: [feature/arena-b-frozen-low-util-probe-20261026]
+  pull_request:
+    branches: [feature/arena-b3-archive-replay-20261026]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  b-frozen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Fetch exact previously recorded ORIGINAL B2 real Buffalo output
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/frozen-b2
+      - name: Fetch exact previously recorded B3 real Buffalo output
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-b3-audit-complete-with-modelica
+          run-id: 40290192821
+          github-token: ${{ github.token }}
+          path: artifacts/frozen-b3
+      - name: Verify originals by byte hash and emit only changed exogenous input rate 0.4
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/arena_b_frozen_lowutil.py
+          python -m scripts.arena_b_frozen_lowutil emit \
+            --b2 artifacts/frozen-b2/revision-live/native-output.json \
+            --b3 artifacts/frozen-b3/b-physical-live/native-output.json \
+            --out artifacts/b-lowutil
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b-lowutil/manifest.json').read_text())
+          assert r['mode']=='FROZEN_EXOGENOUS_LOWER_RATE'
+          assert r['stimulus']=={'rate_items_per_hour':0.4,'pulse_duration_hours':2.0}
+          assert r['parameters_reestimated'] is False and r['equations_changed'] is False
+          assert len(r['two_models'])==2
+          assert all(v['only_exogenous_arrival_rate_changed'] for v in r['two_models'])
+          print('B2_B3_FROZEN_DIFFERENCE_ONLY_IN_EXOGENOUS_RATE_AND_EXISTING_ORIGINAL_EQUATION')
+          PY
+      - name: Simulate both originally frozen mechanisms in same pinned real OpenModelica 1.27.1
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824 \
+            omc artifacts/b-lowutil/simulate.mos 2>&1 | tee artifacts/b-lowutil/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/b-lowutil/omc.log; then exit 1; fi
+          test -s artifacts/b-lowutil/b2_res.csv
+          test -s artifacts/b-lowutil/b3_res.csv
+      - name: Compare real B2 vs B3 partially utilized trajectories with independent conservation
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_b_frozen_lowutil verify --out artifacts/b-lowutil
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/b-lowutil/comparison.json').read_text())
+          assert r['g2']=='PASS_REAL_OMC_BOTH_FROZEN_MODELS'
+          assert r['not_a_model_ranking'] and r['heldout']=='NOT_RUN'
+          print('BUFFALO_FROZEN_PARTIAL_UTIL_DIFFERENCE',r['early_predictions_separate'],
+                r['max_early_absolute_gap_items'])
+          PY
+      - name: Normalize files from Docker for archive
+        if: always()
+        run: |
+          if [ -d artifacts/b-lowutil ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/b-lowutil
+            chmod -R u+rX artifacts/b-lowutil
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-b2-b3-frozen-lowutilization-openmodelica
+          path: artifacts/b-lowutil/
+          retention-days: 45
+          if-no-files-found: warn
