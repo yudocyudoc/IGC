@@ -8,7 +8,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: arena-b-own-physical-feedback
+  group: arena-b-own-physical-feedback-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   own-physical-buffalo:
@@ -92,23 +92,44 @@ jobs:
           BRANCH: ${{ github.ref }}
           EVENT: ${{ github.event_name }}
           ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [ "$EVENT" = push ] && [ "$ATTEMPT" = 1 ] &&
              [ "$BRANCH" = refs/heads/feature/arena-b-physical-feedback-v01 ] &&
              git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
-             grep -Fxq data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_ONE_CALL.json; then
+             grep -Fxq data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_RESUME_AFTER_CANCEL.json; then
              node - <<'JS'
-          const a=require('./data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_ONE_CALL.json');
+          const a=require('./data/diagnostics/BUFFALO_B_PHYSICAL_FEEDBACK_RESUME_AFTER_CANCEL.json');
           if(a.schema!=='igc-b-own-physical-one-call-extension/0.1' ||
              a.calls!==1 || a.retries!==0 || a.extension_iteration!==2 ||
              a.not_part_of_original_round_budget!==true ||
              a.parent_bytes_sha256!=='d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9' ||
              a.source_solver_run!==40283017108 ||
              a.original_parent_run!==40259178852 ||
-             a.cross_arm_data_allowed!==false)
-             throw Error('INVALID_ONE_USE_B_PHYSICAL_AUTHORIZATION');
+             a.cross_arm_data_allowed!==false ||
+             a.canceled_marker_commit!=='fe77a97c3063b82c355e3a12f40f1fcec2237a5b' ||
+             a.cancelled_run_id!==40286504081 ||
+             a.reason!=='PREVIOUS_PUSH_CANCELLED_BEFORE_ANY_JOBS')
+             throw Error('INVALID_ONE_USE_B_PHYSICAL_RESUME_AUTHORIZATION');
           JS
+             # Authoritative Actions API confirms cancelled before ANY job,
+             # so this is a first inference, NOT an external-provider retry.
+             python - <<'PY'
+          import json,os,urllib.request
+          run_id=40286504081
+          host='https://api.github.com/repos/yudocyudoc/IGC/actions'
+          headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=25) as f:
+                  return json.load(f)
+          run=get(f'{host}/runs/{run_id}')
+          jobs=get(f'{host}/runs/{run_id}/jobs')
+          if run.get('conclusion')!='cancelled' or len(jobs.get('jobs',[]))!=0:
+              raise SystemExit('PREVIOUS_PUSH_MAY_HAVE_CALLED_PROVIDER_STOP')
+          print('PREVIOUS_PUSH_CANCELLED_NO_JOBS_NO_PROVIDER')
+          PY
              echo 'allowed=true' >> "$GITHUB_OUTPUT"
           else
              echo 'allowed=false' >> "$GITHUB_OUTPUT"
