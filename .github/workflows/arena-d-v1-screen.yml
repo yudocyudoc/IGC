@@ -106,8 +106,7 @@ jobs:
             --protocol data/synthetic/arena_d_v1_screen_protocol.json \
             --d0 artifacts/arena-d-v1-d0 \
             --d1 artifacts/arena-d-v1 \
-            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite \
-            --recorded-at '2026-10-25T18:00:00-06:00' | tee artifacts/arena-d-v1/atms-ingest.json
+            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite | tee artifacts/arena-d-v1/atms-ingest.json
           python - <<'PY'
           import json
           from pathlib import Path
