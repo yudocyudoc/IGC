@@ -31,6 +31,15 @@ class TestMVisibleNumericalVerifier(unittest.TestCase):
         self.assertLess(r["max_material_balance_residual"],1e-10)
         self.assertEqual(len(r["observations"]),4)
         self.assertEqual(r["g3_heldout"],"NOT_RUN")
+        self.assertEqual(r["reserved_evaluation_status"],"NOT_RUN")
+        self.assertEqual(r["g3_construction_status"],"DESCRIPTIVE_ONLY_NO_INSTRUMENT_BOUND")
+        self.assertEqual(r["rmse_denominators"],{
+            "all_observations":4,"noninitial_observations":3})
+        import math
+        self.assertAlmostEqual(
+            r["rmse_all_observations_items"],
+            r["rmse_noninitial_observations_items"]*math.sqrt(3/4),
+            places=12)
         self.assertEqual(r["excluded_non_global_stock_telemetry"],"inTransit")
         self.assertTrue(r["construction_only"])
 
