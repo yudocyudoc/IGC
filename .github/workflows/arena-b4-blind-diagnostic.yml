@@ -43,6 +43,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m py_compile scripts/arena_b4_blind_feedback.py
+          ln -s b4-parent artifacts/b-physical-source
+          ln -s b4-solver artifacts/b-physical-solver
           python -m unittest discover -s tests -p 'test_arena_b4_blind_feedback.py' -v
           python -m unittest discover -s tests -p 'test_arena_b_physical_feedback.py' -v
           python -m scripts.arena_b4_blind_feedback \
