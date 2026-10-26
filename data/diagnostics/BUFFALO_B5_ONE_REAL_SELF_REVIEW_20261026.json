@@ -1,0 +1,15 @@
+{
+  "schema": "igc-b5-one-real-self-critique/0.1",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "max_real_calls": 1,
+  "parent_b4_sha256": "c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb",
+  "parent_b4_G2_sha256": "2e97c1f7d87d75c3c91649c340d97c6ff0557bfcc30a1456f1d4bda6cd9e3533",
+  "prior_b4_real_run_id": 40393509770,
+  "without_ramp_equation_hint": true,
+  "from_own_explanation_and_own_G2_only": true,
+  "no_other_arm_data": true,
+  "no_holdout": true,
+  "no_automatic_retries": true,
+  "new_experiment": true,
+  "researcher_authorized": true
+}

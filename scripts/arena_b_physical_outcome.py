@@ -29,15 +29,25 @@ def main():
     p.add_argument("--out",type=Path,required=True)
     a=p.parse_args()
     if a.out.exists():raise ValueError("OUTPUT_ALREADY_EXISTS")
+    feedback=json.loads(a.feedback.read_text())
+    is_b5=feedback.get("schema")=="igc-b5-own-explanation-vs-physical-simulation/0.1"
+    parent_hash=("c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb"
+                 if is_b5 else PARENT_HASH)
+    baseline_n3=0.4200698982977454 if is_b5 else BASELINE_RMSE_N3
+    baseline_n4=0.363791203290993 if is_b5 else BASELINE_RMSE_N4
     prior_bytes=a.prior_native.read_bytes()
-    if hashlib.sha256(prior_bytes).hexdigest()!=PARENT_HASH:
+    if hashlib.sha256(prior_bytes).hexdigest()!=parent_hash:
         raise ValueError("NOT_BYTE_VERIFIED_OWN_PARENT")
     parent=json.loads(prior_bytes)["model"]
-    feedback=json.loads(a.feedback.read_text())
-    if feedback["parent_native_bytes_sha256"]!="sha256:"+PARENT_HASH:
+    if feedback["parent_native_bytes_sha256"]!="sha256:"+parent_hash:
         raise ValueError("WRONG_OWN_CONSTRUCTION_FEEDBACK")
     blind=feedback.get("schema")=="igc-b-blind-construction-residuals/0.1"
-    if blind:
+    if is_b5:
+        if feedback.get("parent_g2_bytes_sha256")!="sha256:2e97c1f7d87d75c3c91649c340d97c6ff0557bfcc30a1456f1d4bda6cd9e3533" or (
+                feedback.get("other_arms_included") is not False) or (
+                feedback.get("holdout")!="NOT_RUN"):
+            raise ValueError("B5_FEEDBACK_HAS_FOREIGN_OR_RESERVED_SOURCE")
+    elif blind:
         from scripts.arena_b4_blind_feedback import validate_blind
         validate_blind(feedback)
         if feedback["scope"]["competing_arm_data_included"] is not False or (
@@ -65,9 +75,9 @@ def main():
                                            if revised[n]!=baseline[n])
     }
     outcome={
-        "schema":("igc-b4-blind-physical-adjudication/0.1" if blind else "igc-b3-own-physical-feedback-adjudication/0.1"),"arm_id":"B",
-        "experiment_variant":"B4_UNCUED_ORIGINAL_B2" if blind else "B3_WITH_MECHANISTIC_CUE",
-        "parent_native_sha256":"sha256:"+PARENT_HASH,
+        "schema":("igc-b5-self-review-physical-adjudication/0.1" if is_b5 else "igc-b4-blind-physical-adjudication/0.1" if blind else "igc-b3-own-physical-feedback-adjudication/0.1"),"arm_id":"B",
+        "experiment_variant":"B5_OWN_B4_SELF_CONTRADICTION_REVIEW" if is_b5 else "B4_UNCUED_ORIGINAL_B2" if blind else "B3_WITH_MECHANISTIC_CUE",
+        "parent_native_sha256":"sha256:"+parent_hash,
         "revised_native_sha256":"sha256:"+hashlib.sha256(native_bytes).hexdigest(),
         "origin":"REAL_CLOUDFLARE_ORIGINAL_BUFFALO_CURRENTMODEL",
         "revision_changed_native":model!=parent,
@@ -77,7 +87,7 @@ def main():
         "g0_status":"NOT_CHECKED","g2_status":"NOT_RUN",
         "g3_construction_status":"NOT_EVALUATED",
         "heldout_evaluation":"NOT_RUN",
-        "baseline_rmse_n3":BASELINE_RMSE_N3,"baseline_rmse_n4":BASELINE_RMSE_N4,
+        "baseline_rmse_n3":baseline_n3,"baseline_rmse_n4":baseline_n4,
         "causal_truth":"NOT_DEMONSTRATED",
     }
     a.out.mkdir(parents=True)
@@ -116,8 +126,8 @@ def main():
             outcome["construction_check"]=measured
             outcome["rmse_n3"]=measured["rmse_noninitial_observations_items"]
             outcome["rmse_n4"]=measured["rmse_all_observations_items"]
-            outcome["construction_delta_n3"]=outcome["rmse_n3"]-BASELINE_RMSE_N3
-            outcome["construction_delta_n4"]=outcome["rmse_n4"]-BASELINE_RMSE_N4
+            outcome["construction_delta_n3"]=outcome["rmse_n3"]-baseline_n3
+            outcome["construction_delta_n4"]=outcome["rmse_n4"]-baseline_n4
             outcome["construction_change"]=(
                 "IMPROVED_IN_SAMPLE" if outcome["construction_delta_n3"]<-1e-10
                 else "WORSENED_IN_SAMPLE" if outcome["construction_delta_n3"]>1e-10
