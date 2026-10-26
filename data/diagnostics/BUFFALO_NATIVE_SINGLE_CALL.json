@@ -1,0 +1,7 @@
+{
+  "schema": "igc-b-native-call/0.1",
+  "max_calls": 1,
+  "retries": 0,
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "no_other_arms": true
+}
