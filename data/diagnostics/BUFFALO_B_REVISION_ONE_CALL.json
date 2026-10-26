@@ -1,0 +1,11 @@
+{
+  "schema": "igc-b-buffalo-revision-call/0.1",
+  "calls": 1,
+  "retries": 0,
+  "iteration": 1,
+  "parent_sha256": "76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864",
+  "purpose": "one real original Buffalo currentModel revision against its own G1 diagnostics",
+  "no_other_arms": true,
+  "provider": "Cloudflare Workers AI",
+  "model": "@cf/zai-org/glm-5.3-flash"
+}
