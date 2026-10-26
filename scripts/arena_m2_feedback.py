@@ -113,6 +113,10 @@ def own_policy(verified_report, parent_graph, classes):
 
 def revise(visible, parent_native, parent_sub, parent_event, parent_report, rows, catalog):
     view, rate, duration = public_pulse(visible)
+    if (visible.get("iteration_limit") != 2 or
+        visible.get("resources", {}).get("max_model_proposals") != 1 or
+        visible.get("resources", {}).get("max_simulations") != 2):
+        raise ValueError("M2_REQUIRES_EXACT_ORIGINAL_TWO_ITERATION_ONE_PROPOSAL_TWO_SIMULATION_BUDGET")
     view, checked=preflight_parent(visible,parent_native,parent_sub,parent_event,
                                   parent_report,rows,catalog)
     cfg,classes,_ = composer.load_registry(REGISTRY)
