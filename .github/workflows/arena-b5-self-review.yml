@@ -125,6 +125,35 @@ jobs:
           print('B5_ONE_REAL_PROVIDER_CALL_SEPARATELY_AUTHORIZED')
           PY
           echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Audit exactly the authorized B5 marker push, no second provider call
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request
+          sha='cba22552753c99beae9260dc0c66e89f0054fdb9'
+          url='https://api.github.com/repos/yudocyudoc/IGC'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          try:
+              with urllib.request.urlopen(urllib.request.Request(
+                    url+'/actions/workflows/arena-b5-self-review.yml/runs?event=push&per_page=80',
+                    headers=headers),timeout=25) as h: data=json.load(h)
+              runs=[v for v in data['workflow_runs'] if v['head_sha']==sha]
+              print('B5_ONE_SHOT_REAL_MARKER_RUN='+json.dumps([{
+                  'id':v['id'],'status':v['status'],'conclusion':v['conclusion'],
+                  'url':v['html_url']} for v in runs]))
+              for v in runs:
+                  with urllib.request.urlopen(urllib.request.Request(
+                      url+'/actions/runs/'+str(v['id'])+'/jobs',headers=headers),timeout=25) as h:
+                      jobs=json.load(h)['jobs']
+                  print('B5_REAL_MARKER_JOBS='+json.dumps([{
+                     'id':j['id'],'status':j['status'],'conclusion':j['conclusion'],
+                     'steps':[{'name':t['name'],'conclusion':t.get('conclusion')}
+                              for t in j.get('steps',[])]} for j in jobs]))
+          except Exception as e:print('B5_READ_ONLY_GITHUB_AUDIT_FAILED',type(e).__name__)
+          PY
       - name: One real B5 Buffalo hypothesis revision, never auto retry
         if: ${{ steps.grant.outputs.allowed == 'true' }}
         env:
