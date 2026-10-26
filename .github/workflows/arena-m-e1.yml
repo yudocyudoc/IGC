@@ -1,0 +1,97 @@
+name: Arena M0 independent Short E1 molecular source parity
+
+on:
+  push:
+    branches: [feature/arena-m-short-e1-independent-v0]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'experiments/e1/**'
+      - 'experiments/e0/catalog.json'
+      - 'src/modelica/**'
+      - '.github/workflows/arena-m-e1.yml'
+      - 'scripts/arena_m_short_e1.py'
+      - 'tests/test_arena_m_short_e1.py'
+
+concurrency:
+  group: arena-m-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  register-and-compose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact Short source blob provenance for E1 and wrappers
+        run: |
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          p=json.loads(Path("docs/ARENA_M_SHORT_E1_PROVENANCE.json").read_text())
+          for f,sha in p["sources"].items():
+              raw=Path(f).read_bytes()
+              # Git blob content SHA1, independent of local newline normalization.
+              blob=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\\0"+raw).hexdigest()
+              assert blob==sha,(f,blob,sha)
+          print("SHORT_EXACT_BLOBS_VERIFIED",len(p["sources"]))
+          PY
+      - name: Validate registries and new graphs, including negative controls
+        run: |
+          python -m unittest discover -s experiments/e1 -p 'test_*.py' -v
+          python experiments/e1/composer.py --registry experiments/e1/registry.base.json --out experiments/e1/generated/base_ast.json
+          python experiments/e1/composer.py --registry experiments/e1/registry.extended.json --out experiments/e1/generated/extended_ast.json
+      - name: Arena-M no-cross-arm adapter tests
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_m_short_e1.py' -v
+          python -m scripts.arena_m_short_e1 --input data/synthetic/arena_m_v0_visible.json --registry experiments/e1/registry.base.json --out experiments/e1/generated/m-arena-submission.json
+          python -m scripts.arena_m_short_e1 --input data/synthetic/arena_m_v0_visible.json --registry experiments/e1/registry.extended.json --out experiments/e1/generated/m-arena-extended.json
+      - name: Generate Modelica using the same backend without scenario-specific templates
+        run: |
+          python experiments/e1/backend.py --registry experiments/e1/registry.base.json --out experiments/e1/generated/base
+          python experiments/e1/backend.py --registry experiments/e1/registry.extended.json --out experiments/e1/generated/extended
+      - name: Install verified Modelica packages
+        run: |
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          docker image inspect openmodelica/openmodelica:v1.26.5-minimal --format '{{json .RepoDigests}}'
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD)"
+      - name: Compile and run independently generated candidates in OpenModelica
+        working-directory: experiments/e1
+        run: |
+          for variant in base extended; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo/experiments/e1 \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal omc generated/"$variant"/run.mos | tee generated/"$variant"/omc.log
+          done
+          python verify_native.py --root generated --out generated/real_results.json
+      - name: Preserve original Modelica and numeric audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-m-short-e1-independent-evidence
+          path: |
+            experiments/e1/generated/real_results.json
+            experiments/e1/generated/m-arena-submission.json
+            experiments/e1/generated/m-arena-extended.json
+            experiments/e1/generated/base/models.json
+            experiments/e1/generated/extended/models.json
+            experiments/e1/generated/base/IGCE1Generated.mo
+            experiments/e1/generated/extended/IGCE1Generated.mo
+            experiments/e1/generated/base/omc.log
+            experiments/e1/generated/extended/omc.log
+          retention-days: 90
+          if-no-files-found: warn
