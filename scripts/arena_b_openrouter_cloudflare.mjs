@@ -189,7 +189,7 @@ try {
       prompt_hashes:body.messages.map(m=>({role:m.role,sha256:hash(m.content)})),
       upstream_source_modified:false
     });
-    const cfBody=requestToCloudflare(body);
+    const cfBody=requestToCloudflare(body,{physicalRevision:Boolean(PHYSICAL)});
     receipt.cloudflare_schema_sha256=hash(cfBody.response_format.json_schema);
     receipt.translated_body_sha256=hash(cfBody);
     await save("cf-request-metadata.json",{
@@ -218,7 +218,7 @@ try {
         date:new Date().toISOString()});
       const response=await originals.fetch(endpoint,{
         method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-        body:JSON.stringify(cfBody),signal:AbortSignal.timeout(160000)
+        body:JSON.stringify(cfBody),signal:AbortSignal.timeout(PHYSICAL?240000:160000)
       });
       receipt.cf_http_status=response.status;
       const raw=await response.text();
