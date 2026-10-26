@@ -1,0 +1,263 @@
+name: Arena D1 observation screen and Modelica parity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_d_v01.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'scripts/arena_d_v2_revision.py'
+      - 'tests/test_arena_d_v2_revision.py'
+      - 'scripts/arena_d_atms_bridge.py'
+      - 'docs/ARENA_D2_FEEDBACK_LOOP.md'
+      - 'tests/test_arena_d_v1_screen.py'
+      - 'data/synthetic/arena_d_v01_visible.json'
+      - 'data/synthetic/arena_d_v1_screen_protocol.json'
+      - '.github/workflows/arena-d-v1-screen.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d1-evidence:
+    name: D1 instrument-bounded screen + OpenModelica parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Checkout exact proposed code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Offline tests and no-provider negative controls
+        run: |
+          python -m py_compile scripts/arena_d_v1_screen.py scripts/arena_d_v2_revision.py tests/test_arena_d_v1_screen.py tests/test_arena_d_v2_revision.py
+          python -m unittest discover -s tests -p 'test_arena_d_v1_screen.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_atms_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_v2_revision.py' -v
+      - name: Construct D0 lineage and only visible D1 observational screen
+        run: |
+          python -m scripts.arena_d_v01 prepare \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --out artifacts/arena-d-v1-d0
+          python -m scripts.arena_d_v1_screen evaluate \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --parent-event artifacts/arena-d-v1-d0/memory-event.json \
+            --output artifacts/arena-d-v1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          directory=Path('artifacts/arena-d-v1')
+          r=json.loads((directory/'screen.json').read_text())
+          assert r['grid_evaluations']==108
+          assert len(r['results'])==6
+          assert r['no_structural_falsification'] is True
+          cmds=[]
+          for c in r['results']:
+            name='Dfit_'+c['structure_hash'][7:19]
+            cmds.extend([
+              f'loadFile("/work/artifacts/arena-d-v1/{name}.mo");',
+              'print(getErrorString());',
+              f'checkModel({name});',
+              'print(getErrorString());',
+              f'simulate({name}, stopTime=8, numberOfIntervals=160, outputFormat="csv");',
+              'print(getErrorString());'
+            ])
+          (directory/'d1.mos').write_text('\n'.join(cmds)+'\n')
+          PY
+      - name: Independently simulate best-grid models in pinned OpenModelica
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d-v1 \
+            "$OMC_IMAGE" omc d1.mos 2>&1 | tee artifacts/arena-d-v1/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d-v1/omc.log; then
+            echo 'Modelica reported errors' >&2
+            exit 1
+          fi
+      - name: Numerical parity checks against actual CSV trajectories
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_d_v1_screen import compare_omc_csv
+          root=Path("artifacts/arena-d-v1")
+          case=json.loads(Path('data/synthetic/arena_d_v01_visible.json').read_text())
+          results=json.loads((root/'screen.json').read_text())
+          checks=[]
+          for entry in results['results']:
+            name='Dfit_'+entry['structure_hash'][7:19]
+            csv=root/(name+'_res.csv')
+            assert csv.is_file(), 'MISSING_OMC_CSV:'+name
+            t=[x['t'] for x in case['construction']['observations']]
+            p=entry['best_grid']['predicted']
+            checks.append({'candidate_id':entry['candidate_id'],
+                          **compare_omc_csv(csv,list(zip(t,p)),atol=.012)})
+          assert len(checks)==6
+          (root/'omc-parity.json').write_text(json.dumps(checks,indent=2)+'\n')
+          print('D1_SIX_FITTED_MODELS_MATCH_PINNED_OPENMODELICA')
+          PY
+      - name: Ingest ACTUAL D0/D1 and Modelica proof to F1a ledger; project isolated ATMS
+        run: |
+          python -m scripts.arena_d_atms_bridge ingest \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --d0 artifacts/arena-d-v1-d0 \
+            --d1 artifacts/arena-d-v1 \
+            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite | tee artifacts/arena-d-v1/atms-ingest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/arena-d-v1/atms-ingest.json')
+          result=json.loads(p.read_text())
+          assert result['status']=='D0_D1_LEDGER_ATMS_INGESTED'
+          assert len(result['source_events'])==2
+          assert result['projection']['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert len(result['projection']['conditionally_supported'])==2
+          assert 'B-SECRET' not in p.read_text()
+          print('D_ATMS_PERSISTENT_LOGICAL_SUPPORT_PASS')
+          PY
+      - name: Freeze D1-selected measurement before new trial generation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/arena-d-v1/screen.json').read_text())
+          plan=r['next_measurement']
+          assert r['conclusion']=='NON_DISCRIMINATING_MULTIPLE_GRID_COMPATIBLE'
+          assert plan['kind']=='NEW_INDEPENDENT_RESET_TRIAL'
+          assert plan['suggested_measurement_time']==8
+          Path('artifacts/arena-d-v1/d2-locked-design.json').write_text(
+            json.dumps({'parent_screen_hash':r['input_hash'],
+                        'plan':plan},sort_keys=True)+'\n')
+          print('D2_MEASUREMENT_LOCKED_BEFORE_WORLD_SIMULATION',
+                plan['suggested_measurement_time'])
+          PY
+      - name: Create fixed SYNTHETIC evaluator world from independent equations
+        run: |
+          mkdir -p artifacts/arena-d-v2-evaluator
+          cat > artifacts/arena-d-v2-evaluator/D2IndependentWorld.mo <<'MO'
+          model D2IndependentWorld
+            // EVALUATOR-ONLY synthetic world; known to the test author,
+            // NOT provided to D2 hypothesis generation or revision inputs.
+            parameter Real pulseRate = 1.7;
+            parameter Real pulseDuration = 2;
+            parameter Real capacity = 2;
+            parameter Real responseTime = 1;
+            Real inputRate;
+            Real firstStock(start=0, fixed=true);
+            Real secondStock(start=0, fixed=true);
+            Real firstFlow;
+            Real secondFlow;
+            Real delivered(start=0, fixed=true);
+          equation
+            inputRate = if time < pulseDuration then pulseRate else 0;
+            firstFlow = min(capacity, max(0, firstStock/responseTime));
+            secondFlow = min(capacity, max(0, secondStock/responseTime));
+            der(firstStock) = inputRate - firstFlow;
+            der(secondStock) = firstFlow - secondFlow;
+            der(delivered) = secondFlow;
+          end D2IndependentWorld;
+          MO
+          cat > artifacts/arena-d-v2-evaluator/world.mos <<'MOS'
+          loadFile("/work/artifacts/arena-d-v2-evaluator/D2IndependentWorld.mo");
+          print(getErrorString());
+          checkModel(D2IndependentWorld);
+          print(getErrorString());
+          simulate(D2IndependentWorld, stopTime=8, numberOfIntervals=160, outputFormat="csv");
+          print(getErrorString());
+          MOS
+      - name: Simulate independent reset in pinned OpenModelica (evaluator only)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d-v2-evaluator \
+            "$OMC_IMAGE" omc world.mos 2>&1 | tee artifacts/arena-d-v2-evaluator/world-omc.log
+          test -f artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d-v2-evaluator/world-omc.log; then
+            exit 1
+          fi
+      - name: Release only D1-precommitted new measurement to D2, not world structure
+        run: |
+          python -m scripts.arena_d_v2_revision extract \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --world-csv artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv \
+            --trial-time 8 \
+            --output artifacts/arena-d-v1/d2-trial-visible.json
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          trial=json.loads(Path('artifacts/arena-d-v1/d2-trial-visible.json').read_text())
+          raw=Path('artifacts/arena-d-v2-evaluator/D2IndependentWorld_res.csv').read_bytes()
+          assert trial['source_csv_hash']=='sha256:'+hashlib.sha256(raw).hexdigest()
+          assert trial['measurement']['t']==8
+          assert set(trial) == {
+            'schema','kind','input_hash','d1_screen_hash','pulse',
+            'measurement','source_csv_hash','epistemic_status'}
+          assert 'model' not in trial and 'firstStock' not in str(trial)
+          print('D2_WORLD_TRUTH_NOT_IN_D_VISIBLE_PACKAGE')
+          PY
+      - name: D2 revise own hypotheses and commit revised supports to F1a/ATMS
+        run: |
+          python -m scripts.arena_d_v2_revision revise \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --db artifacts/arena-d-v1/arena-d-atms-ledger.sqlite \
+            --trial artifacts/arena-d-v1/d2-trial-visible.json \
+            --output artifacts/arena-d-v1/d2-revision.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('artifacts/arena-d-v1/d2-revision.json')
+          result=json.loads(path.read_text())
+          assert result['status']=='D2_REVISED_AND_REMEMBERED'
+          assert len(result['prior_support'])==2
+          assert len(result['current_support'])==1
+          assert result['report']['conclusion']=='ONE_REMAINS_OTHER_MODELS_UNRESOLVED'
+          assert result['report']['no_structural_falsification']
+          assert result['d2_trace_event']['iteration']==1
+          assert result['atms_after']['truth_status']=='NOT_DETERMINED_BY_ATMS'
+          assert len(result['atms_after']['conditionally_supported'])==2
+          print('D2_ATMS_HISTORY_PRESERVED_NEW_OBSERVATION_REVISED_ONE_SUPPORT')
+          PY
+      - name: Repair root-owned container file permissions and curate auditable artifacts
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d artifacts/arena-d-v1 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v1
+            mkdir -p artifacts/arena-d-v1/evidence
+            shopt -s nullglob
+            for file in artifacts/arena-d-v1/*.json artifacts/arena-d-v1/*.sqlite artifacts/arena-d-v1/*.mo artifacts/arena-d-v1/*_res.csv artifacts/arena-d-v1/*.mos artifacts/arena-d-v1/omc.log; do
+              cp "$file" artifacts/arena-d-v1/evidence/
+            done
+          fi
+      - name: Normalize evaluator-only synthetic-world files for separate evidence
+        if: always()
+        run: |
+          if [ -d artifacts/arena-d-v2-evaluator ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d-v2-evaluator
+          fi
+      - name: Preserve evaluator world separately from D's visible trial
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-d-v2-evaluator-only-synthetic-world
+          path: artifacts/arena-d-v2-evaluator/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Archive actual D1 evidence regardless of earlier gate
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-d-v1-screen-modelica-evidence
+          path: artifacts/arena-d-v1/evidence/
+          retention-days: 30
+          if-no-files-found: warn
