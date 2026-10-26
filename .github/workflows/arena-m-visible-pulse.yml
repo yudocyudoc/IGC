@@ -68,7 +68,7 @@ jobs:
       - name: Independently check real OpenModelica material conservation and construction residual
         run: |
           set -euo pipefail
-          python -m scripts.arena_m_visible_verify --csv artifacts/arena-m-visible/m-visible_res.csv --visible data/synthetic/arena_m_v0_visible.json --out artifacts/arena-m-visible/g2-construction-report.json
+          python -m scripts.arena_m_visible_verify --csv artifacts/arena-m-visible/m-visible_res.csv --visible data/synthetic/arena_m_v0_visible.json --native artifacts/arena-m-visible/native-graph.json --catalog experiments/e0/catalog.json --out artifacts/arena-m-visible/g2-construction-report.json
           python - <<'PY'
           import json
           from pathlib import Path
