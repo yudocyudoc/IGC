@@ -1,0 +1,124 @@
+name: Arena B original Buffalo iterative G1 review
+on:
+  push:
+    branches: [feature/arena-b-native-g1-diagnostic]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-b-revision-g1
+  cancel-in-progress: false
+jobs:
+  buffalo-native-revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch immutable Buffalo upstream
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+      - name: Install Buffalo original lockfile
+        working-directory: upstream/sd-ai
+        run: npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Restore original REAL Cloudflare Buffalo output from archived run
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-node-engine-proof
+          run-id: 40255975864
+          github-token: ${{ github.token }}
+          path: artifacts/archived-real
+      - name: Verify original source bytes and run targeted G1 preflight
+        run: |
+          set -euo pipefail
+          SRC=artifacts/archived-real/buffalo-cf-virtual-live/native-output.json
+          echo '76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864  '${SRC} | sha256sum --check
+          mkdir -p artifacts/revision-g1
+          node scripts/arena_b_native_g1_diagnostic.mjs "$SRC" artifacts/revision-g1/parent-diagnostic.json
+          node --test tests/test_arena_b_native_g1_diagnostic.mjs
+          node - <<'JS'
+          const f=require('fs'), r=JSON.parse(f.readFileSync('artifacts/revision-g1/parent-diagnostic.json'));
+          const codes=r.issues.map(i=>i.code);
+          if(r.variable_count!==15||r.stock_count!==2||r.flow_count!==2||
+             !codes.includes('PROSE_OR_PLACEHOLDER')||
+             !codes.includes('ZERO_SAFE_DIVISION_REQUIRES_ADAPTER')||
+             !codes.includes('DIMENSIONAL_PRODUCT_MISMATCH'))throw Error('REAL_G1_DIAGNOSTIC_MISMATCH');
+          console.log('REAL_MODEL_G1_DIAGNOSED_NO_REPAIRS');
+          JS
+      - name: Original Buffalo currentModel revision through virtual OpenRouter, synthetic provider response
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/archived-real/buffalo-cf-virtual-live/native-output.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/revision-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const r=require('./artifacts/revision-offline/receipt.json');
+          if(r.status!=='OFFLINE_BUFFALO_REVISION_CONTRACT_PASS'||
+             !r.current_model_seen||!r.g1_feedback_seen||
+             r.intercepted_http_calls!==1||r.live_provider_calls!==0)
+             throw Error('ORIGINAL_BUFFALO_CURRENTMODEL_CONTRACT_FAILED');
+          console.log('ORIGINAL_BUFFALO_CURRENTMODEL_OFFLINE_PASS');
+          JS
+      - name: Gate for a single separately approved real revision request
+        id: grant
+        env:
+          HEAD_REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "push" ] && [ "$RUN_ATTEMPT" = "1" ] &&
+             [ "$HEAD_REF" = "refs/heads/feature/arena-b-native-g1-diagnostic" ] &&
+             git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+             grep -Fxq data/diagnostics/BUFFALO_B_REVISION_ONE_CALL.json; then
+             node - <<'JS'
+          const a=require('./data/diagnostics/BUFFALO_B_REVISION_ONE_CALL.json');
+          if(a.schema!=='igc-b-buffalo-revision-call/0.1'||a.calls!==1||
+             a.retries!==0||a.iteration!==1||
+             a.parent_sha256!=='76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864')
+             throw Error('INVALID_B_REVISION_GRANT');
+          JS
+             echo 'allowed=true' >> "$GITHUB_OUTPUT"
+          else
+             echo 'allowed=false' >> "$GITHUB_OUTPUT"
+             echo 'NO_NEW_ONE_USE_MARKER_NO_LIVE_CALL'
+          fi
+      - name: Live Buffalo currentModel revision with one Workers AI request
+        if: ${{ steps.grant.outputs.allowed == 'true' }}
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/archived-real/buffalo-cf-virtual-live/native-output.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/revision-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/arena_b_openrouter_cloudflare.mjs
+      - name: Preserve diagnostics and original-engine receipts (including failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          retention-days: 30
+          path: |
+            artifacts/revision-g1/
+            artifacts/revision-offline/
+            artifacts/revision-live/
