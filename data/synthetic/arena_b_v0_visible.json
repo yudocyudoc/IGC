@@ -2,7 +2,7 @@
   "schema": "igc-arena-visible-input/0.1",
   "investigation_id": "ARENA-B-SYNTHETIC",
   "round_id": "R0",
-  "question": "A service team accumulates unfinished work when incoming requests exceed its completion capacity. Which stock-flow mechanisms may explain observed completed requests, and what is still uncertain?",
+  "question": "Why does pending work accumulate when arrivals exceed completion capacity, and how does that change completed orders over time?",
   "construction": {
     "input_profile": {
       "kind": "pulse",
