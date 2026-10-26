@@ -23,13 +23,19 @@ const ROOT=resolve(process.env.SDAI_ROOT??"upstream/sd-ai");
 const INPUT=resolve(process.env.BUFFALO_VISIBLE_INPUT??"data/synthetic/arena_b_native_visible.json");
 const SCENARIO=process.env.BUFFALO_CF_MODE??"offline";
 const PRIOR=process.env.BUFFALO_PRIOR_OUTPUT??null;
-const PRIOR_SHA256="76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864";
+const PHYSICAL=process.env.BUFFALO_PHYSICAL_FEEDBACK??null;
+const PRIOR_SHA256=PHYSICAL?
+  "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9":
+  "76391313d0fa96ec4704d44c2e5e3973e4c0ea21f6491bfd428c7171ec8c1864";
+const PHYSICAL_SCHEMA="igc-b-own-physical-construction-feedback/0.1";
+const CF_REAL_FEEDBACK_AUTH="RUN_SINGLE_CF_AI_PHYSICAL_FEEDBACK";
 const hash=v=>"sha256:"+createHash("sha256").update(typeof v==="string"?v:JSON.stringify(v)).digest("hex");
 const receipt={schema:"igc-b-openrouter-cloudflare/0.1",model:MODEL,
   upstream_sha:UPSTREAM_SHA,scenario:SCENARIO,
   transport:CF_MODE,real_model:CF_MODEL,live_provider_calls:0,
   intercepted_http_calls:0,original_upstream_modified:false,model_returned:false,
-  structured_request_seen:false,status:"INITIALIZED",iteration:PRIOR?1:0};
+  structured_request_seen:false,status:"INITIALIZED",iteration:PHYSICAL?2:PRIOR?1:0,
+  feedback_type:PHYSICAL?"OWN_B2_PHYSICAL_CONSTRUCTION":"G1_OR_INITIAL"};
 
 const syntheticModel={
   specs:{startTime:0,stopTime:8,dt:0.1,timeUnits:"Hour",integrationMethod:"Euler"},
@@ -56,7 +62,9 @@ await mkdir(OUT,{recursive:false});
 const originals={fetch:globalThis.fetch};
 try {
   if(!["offline","live"].includes(SCENARIO))throw Error("INVALID_SCENARIO");
-  if(SCENARIO==="live" && (process.env.BUFFALO_CF_AUTH!=="RUN_SINGLE_CF_AI_MODEL" ||
+  if(PHYSICAL && !PRIOR)throw Error("PHYSICAL_REQUIRES_PRIOR_NATIVE_MODEL");
+  if(SCENARIO==="live" && (
+     process.env.BUFFALO_CF_AUTH!==(PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
      process.env.GITHUB_RUN_ATTEMPT!=="1"))throw Error("CLOUDFLARE_LIVE_NOT_AUTHORIZED");
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
   if(visible.schema!=="igc-arena-visible-input/0.1")throw Error("BAD_VISIBLE_SCHEMA");
@@ -72,6 +80,53 @@ try {
       throw Error("INVALID_NATIVE_PARENT");
     parentModel=priorOutput.model; // Buffalo owns the exact previous native model.
     const diagnostic=diagnose(priorOutput);
+    if(PHYSICAL){
+      const fb=JSON.parse(await readFile(PHYSICAL,"utf8"));
+      const allowed=new Set([
+        "schema","arm_id","scope","revision_type","parent_iteration","proposed_iteration",
+        "parent_native_bytes_sha256","parent_solver_csv_bytes_sha256",
+        "parent_diagnostic_bytes_sha256","physical_solver",
+        "observations_type","observations_and_physical_state","physical_invariants",
+        "construction_adequacy","candidate_mechanism_observation",
+        "no_cross_arm_information","no_holdout_information","guidance"
+      ]);
+      if(Object.keys(fb).some(k=>!allowed.has(k)) || Object.keys(fb).length!==allowed.size ||
+         fb.schema!==PHYSICAL_SCHEMA || fb.arm_id!=="B" ||
+         fb.parent_native_bytes_sha256!=="sha256:"+actual ||
+         fb.parent_solver_csv_bytes_sha256!=="sha256:9de161b6d55bd24f4e4d839d3665abede8dbb39b7174b8a35b0a75bfd7eded05" ||
+         fb.parent_diagnostic_bytes_sha256!=="sha256:ba3c66d2a7b662e8a008262b459a7e920aa4c92b9630907a6e231c101b2d34a6" ||
+         fb.revision_type!=="SEPARATELY_AUTHORIZED_EXTENSION_AFTER_ORIGINAL_ROUND_BUDGET" ||
+         fb.parent_iteration!==1 || fb.proposed_iteration!==2 ||
+         fb.no_cross_arm_information!==true || fb.no_holdout_information!==true ||
+         fb.observations_type!=="SYNTHETIC_CONSTRUCTION_ALREADY_VISIBLE_NOT_HOLDOUT" ||
+         fb.physical_solver?.native_simulator_equivalence!=="NOT_ESTABLISHED" ||
+         fb.construction_adequacy?.g3_status!=="DESCRIPTIVE_ONLY_NOT_CERTIFIED" ||
+         !Array.isArray(fb.observations_and_physical_state) ||
+         fb.observations_and_physical_state.length!==4 ||
+         fb.observations_and_physical_state.some((x,i)=>
+           x.t_hour!==[0,1,2,4][i] ||
+           !Number.isFinite(x.residual_simulated_minus_observed_items)
+         ))throw Error("INVALID_OWN_PHYSICAL_FEEDBACK_CONTRACT");
+      const fbText=JSON.stringify(fb);
+      if(/other_arm_result|gold_model|holdout_values|D2fit_|MolecularArena|DIndependentWorld/.test(fbText))
+        throw Error("RIVAL_OR_RESERVED_CONTENT_IN_B_FEEDBACK");
+      receipt.physical_feedback_seen=false;
+      receipt.feedback_sha256=hash(fb);
+      receipt.parent_bytes_sha256=fb.parent_native_bytes_sha256;
+      receipt.feedback_source_csv_sha256=fb.parent_solver_csv_bytes_sha256;
+      receipt.parent_variables=parentModel.variables.length;
+      receipt.extension_after_original_budget=true;
+      receipt.construction_only=true;
+      await save("physical-feedback-sent.json",fb);
+      userPrompt=visible.question+"\\n\\nIndependent diagnostic extension to YOUR previous model via currentModel; "+ 
+        "this is a newly authorized experiment beyond the ORIGINAL max_llm_calls=1 and iteration_limit=2. "+ 
+        "Do not treat this extension as a pass of the original budget. "+ 
+        "Own OpenModelica physical simulation feedback (not a hidden world or a rival): "+
+        fbText+"\\nGive your revised native Buffalo SD-AI stock-flow model and explain "+
+        "the meaning of any changed delays, capacities, stocks or lookup policies; "+
+        "avoid changing the model merely to minimize construction RMSE when "+
+        "the mechanism is not identifiable. Maintain Buffalo native schema.";
+    } else {
     const findings=diagnostic.issues.filter(x=>x.category==="G1").map(x=>({code:x.code,path:x.path}));
     if(!findings.length)throw Error("NO_G1_FINDINGS_FOR_REVISION");
     const feedback={schema:"igc-b-native-g1-feedback/0.1",iteration:1,
@@ -88,6 +143,7 @@ try {
       "Keep Buffalo quantitative SD-AI methodology and documented zero-safe // division semantics. "+
       "Please revise equations and declared units if needed, without inventing observations or parameters. "+
       "If data are insufficient, explain limitations. No other arm outputs are available.";
+    }
   }
   // Instrument the transport BEFORE dynamic-importing the original SDK.
   // All other fetch calls are blocked to prevent accidental real network access.
@@ -119,11 +175,12 @@ try {
       if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
         throw Error("BUFFALO_CURRENTMODEL_NOT_DELIVERED");
       if(body.messages.at(-1)?.role!=="user"||!body.messages.at(-1)?.content.endsWith(userPrompt))
-        throw Error("G1_FEEDBACK_NOT_DELIVERED");
+        throw Error(PHYSICAL?"PHYSICAL_FEEDBACK_NOT_DELIVERED":"G1_FEEDBACK_NOT_DELIVERED");
       // Buffalo LLMWrapper collapses separate user turns (background + prompt)
       // into a single message joined by blank lines. Only the suffix is exact.
       receipt.current_model_seen=true;
-      receipt.g1_feedback_seen=true;
+      if(PHYSICAL)receipt.physical_feedback_seen=true;
+      else receipt.g1_feedback_seen=true;
     }
     await save("intercepted-request-metadata.json",{
       http_method:method,url_origin:url.origin,url_path:url.pathname,
@@ -198,6 +255,7 @@ try {
     const after=diagnose(result);
     await save("revised-g1-diagnostic.json",after);
     receipt.revised_g1_status=after.status;
+    if(PHYSICAL)receipt.physical_revision_produced=true;
     receipt.revised_g1_issue_count=after.issues.filter(x=>x.category==="G1").length;
     receipt.revision_changed_model=JSON.stringify(result.model)!==JSON.stringify(parentModel);
   }
@@ -209,7 +267,8 @@ try {
   receipt.buffalo_inferred_arrivals_as_inflow=
     result?.model?.variables?.find(v=>v.name==="Backlog")?.inflows?.includes("Arrivals")??false;
   receipt.status=receipt.model_returned?
-    (PRIOR?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_REVISION_RETURNED":"OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"):
+    (PHYSICAL?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_PHYSICAL_REVISION_RETURNED":"OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS"):
+    PRIOR?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_REVISION_RETURNED":"OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"):
     (SCENARIO==="live"?"REAL_CLOUDFLARE_NATIVE_BUFFALO_MODEL_RETURNED":"OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS")):
     "BUFFALO_RETURNED_NO_NATIVE_MODEL";
 } catch(e) {
@@ -221,10 +280,11 @@ try {
   await save("receipt.json",receipt);
   console.log(JSON.stringify(receipt));
   if(SCENARIO==="offline") {
-    if(!["OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS","OFFLINE_BUFFALO_REVISION_CONTRACT_PASS"].includes(receipt.status) ||
+    if(!["OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS","OFFLINE_BUFFALO_REVISION_CONTRACT_PASS",
+         "OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS"].includes(receipt.status) ||
        !receipt.buffalo_inferred_arrivals_as_inflow ||
        !receipt.structured_request_seen || receipt.intercepted_http_calls!==1 ||
-       receipt.live_provider_calls!==0 || (PRIOR && (!receipt.current_model_seen||!receipt.g1_feedback_seen)))process.exitCode=1;
+       receipt.live_provider_calls!==0 || (PRIOR && (!receipt.current_model_seen||(PHYSICAL?!receipt.physical_feedback_seen:!receipt.g1_feedback_seen))))process.exitCode=1;
   } else if(!receipt.model_returned || receipt.live_provider_calls!==1) {
     process.exitCode=1;
   }
