@@ -1,0 +1,48 @@
+{
+  "schema": "igc-arena-visible-input/0.1",
+  "investigation_id": "ARENA-B-SYNTHETIC",
+  "round_id": "R0",
+  "question": "A service team accumulates unfinished work when incoming requests exceed its completion capacity. Which stock-flow mechanisms may explain observed completed requests, and what is still uncertain?",
+  "construction": {
+    "input_profile": {
+      "kind": "pulse",
+      "rate": 1.7,
+      "duration": 2
+    },
+    "observations": [
+      {
+        "t": 0,
+        "delivered": 0
+      },
+      {
+        "t": 1,
+        "delivered": 0.35
+      },
+      {
+        "t": 2,
+        "delivered": 1.1
+      },
+      {
+        "t": 4,
+        "delivered": 2.5
+      }
+    ],
+    "known_conditions": [
+      "Initial unfinished work assumed zero in this synthetic pilot",
+      "Work inflow stops after 2 hours",
+      "Not every delay or loss mechanism is observed directly"
+    ]
+  },
+  "observability": {
+    "stock_unit": "items",
+    "time_unit": "hour",
+    "observable": "cumulative_delivered"
+  },
+  "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "iteration_limit": 2,
+  "resources": {
+    "max_model_proposals": 1,
+    "max_llm_calls": 1,
+    "max_simulations": 2
+  }
+}
