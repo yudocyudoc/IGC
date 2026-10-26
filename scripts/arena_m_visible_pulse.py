@@ -160,6 +160,9 @@ def main():
     p.add_argument("--input",required=True,type=Path)
     p.add_argument("--out",required=True,type=Path)
     a=p.parse_args()
+    a.out = a.out.resolve()
+    if not a.out.is_relative_to(ROOT):
+        raise ValueError("OUTPUT_OUTSIDE_REPOSITORY")
     if a.out.exists():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
     name,modelica,native,submission,event,receipt=build(json.loads(a.input.read_text()))
