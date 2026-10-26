@@ -81,7 +81,7 @@ def table_function(name, points):
         require(not pairs or x > pairs[-1][0], "NON_MONOTONIC_GRAPHICAL_X")
         pairs.append((x, y))
     fn = "lookup_" + name
-    lines = [f"  function {fn}", "    input Real x;", "    output Real y;", "  algorithm:"]
+    lines = [f"  function {fn}", "    input Real x;", "    output Real y;", "  algorithm"]
     lines.append(f"    if x <= {num(pairs[0][0])} then")
     lines.append(f"      y := {num(pairs[0][1])};")
     for (xa, ya), (xb, yb) in zip(pairs[:-1], pairs[1:]):
