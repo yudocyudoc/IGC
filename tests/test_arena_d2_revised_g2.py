@@ -16,7 +16,11 @@ class RevisedD2ModelicaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if not (PARENT/"d2-revision.json").exists():
-            raise RuntimeError("D2_TEST_REQUIRES_VERIFIED_ORIGINAL_D_ONLY_ARCHIVE")
+            # F0's full test discovery deliberately has no downloaded external
+            # archive. The dedicated D2 CI step validates the real source
+            # before these tests and requires the archived artifact to exist.
+            # This skip must never be interpreted as G2 PASS.
+            raise unittest.SkipTest("D2_ARCHIVE_NOT_MOUNTED_RUN_DEDICATED_D2_CI")
         cls.original=read_parent(PARENT)
 
     def test_emits_six_real_revisions_and_preserves_own_support(self):
