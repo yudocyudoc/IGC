@@ -1,0 +1,41 @@
+name: R2 Buffalo input preflight
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Fetch unchanged Buffalo engine
+        run: |
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Offline preflight, no inference
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-parent-native.json
+          BUFFALO_R2_FEEDBACK: ${{ github.workspace }}/artifacts/r2-pt01/b-own-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r2-b-preflight
+          BUFFALO_CF_MODE: offline
+        run: |
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node -e "const r=require('./artifacts/r2-b-preflight/receipt.json');console.log('R2_INPUT_BYTES',r.r2_input_utf8_bytes);if(r.live_provider_calls!==0||!r.current_model_seen||!r.r2_feedback_seen)process.exit(1)"
