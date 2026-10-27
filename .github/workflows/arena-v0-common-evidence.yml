@@ -1,0 +1,23 @@
+name: Arena V0 common construction evidence gate
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_v0_common_evidence.py'
+      - 'tests/test_arena_v0_common_evidence.py'
+      - 'data/synthetic/arena_v0_*'
+      - '.github/workflows/arena-v0-common-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate common source and arm-specific boundaries
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
+          python -m scripts.arena_v0_common_evidence --source data/synthetic/arena_v0_primary_construction.json --assumptions data/synthetic/arena_v0_declared_d_assumptions.json --out /tmp/arena-v0-evidence.json
