@@ -25,7 +25,7 @@ Caso sintético representable por **C00**, dentro del repertorio E1 original, co
 
 El estímulo será el pulso rectangular E1 ya conocido. `deliveredTotal` en t=`0,1,2,3`; ruido sintético determinista declarado `[0,+0.002,-0.003,+0.004]` items, como en M3, sin fingir error instrumental medido. El archivo de blueprint de investigación se guarda separado de los datos que recibiría el selector. Como el generador es sintético y su código será accesible, **no se declarará un holdout independiente ni ceguera técnica absoluta**.
 
-**Todavía no se ha generado ni simulado el mundo R3-T1**, y no existe una conclusión empírica STR-02.
+**Se generó offline el código Modelica del mundo R3-T1** a partir del compositor E1 original, pero **no se ha ejecutado ninguna simulación de ese mundo**, ni se han obtenido sus observaciones. No existe una conclusión empírica STR-02.
 
 ## 4. Casos siguientes previstos, no fabricados
 
@@ -39,7 +39,7 @@ No se ha predeclarado aún el estímulo/ruido del caso ambiguo ni del incompatib
 
 | Operación | Presupuesto de diseño | ¿Ejecutada en este PR? |
 |---|---:|---|
-| Generar fórmulas desde E1, sin OpenModelica | 27 formulaciones | Sí (offline) |
+| Generar fórmulas desde E1, sin OpenModelica | 27 candidatas + 1 fuente sintética | Sí (offline) |
 | Simular las 27 configuraciones candidatas | Máximo 27 llamadas OpenModelica para **un** caso | **No** |
 | Simular un mundo R3-T1 separado | 1 simulación adicional, si se autoriza | **No** |
 | Leer y evaluar los 27 CSV G2 | 27 análisis sin solver | **No; faltan CSV** |
