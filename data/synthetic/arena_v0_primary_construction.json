@@ -1,0 +1,36 @@
+{
+  "schema": "igc-arena-primary-construction/0.1",
+  "investigation_id": "ARENA-SHARED-SYNTHETIC",
+  "round_id": "R0",
+  "question": "Which mechanisms explain delayed cumulative completions after a finite pulse?",
+  "input_profile": {
+    "kind": "pulse",
+    "rate": 1.7,
+    "duration": 2
+  },
+  "observations": [
+    {
+      "t": 0,
+      "delivered": 0
+    },
+    {
+      "t": 1,
+      "delivered": 0.35
+    },
+    {
+      "t": 2,
+      "delivered": 1.1
+    },
+    {
+      "t": 4,
+      "delivered": 2.5
+    }
+  ],
+  "observability": {
+    "stock_unit": "items",
+    "time_unit": "hour",
+    "observable": "cumulative_delivered"
+  },
+  "iteration_limit": 2,
+  "source_id": "synthetic-construction-shared-r0"
+}
