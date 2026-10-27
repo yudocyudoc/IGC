@@ -75,7 +75,7 @@ class R2ActualArtifacts(unittest.TestCase):
     def test_reject_false_m_selected_parent(self):
         bad=copy.deepcopy(self.report)
         bad["M"]["decision"]["status"]="SELECTED"
-        with self.assertRaisesRegex(ValueError,"R2_NOT_R1_M3_ABSTENTION"):
+        with self.assertRaisesRegex(ValueError,"R2_HISTORIC_D_M_STATE_TAMPERED"):
             prepare(SOURCE,Path(ARCHIVE),bad)
 
 if __name__=="__main__":
