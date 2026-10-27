@@ -47,7 +47,8 @@ def inspect(dossier, old_zip, new_zip):
         q16=load(new,"r2-b-real/cloudflare-raw.json")["result"]
         native_bytes=new.read("r2-b-real/native-output.json")
         native=json.loads(native_bytes)
-        original=load(new,"r2-b-16k-outcome.json")
+        original_raw=new.read("r2-b-16k-outcome.json")
+        original=json.loads(original_raw)
         modelica=new.read("r2-b-physical/BuffaloNative_d3c8b77bb184.mo")
         csv_bytes=new.read("r2-b-physical/BuffaloNative_d3c8b77bb184_res.csv")
         omc_bytes=new.read("r2-b-physical/omc.log")
@@ -122,7 +123,7 @@ def inspect(dossier, old_zip, new_zip):
         "b16":{"request_sha256":B16_REQUEST,"original_native_bytes_sha256":B16_NATIVE,
                "original_auto_verdict":original["g2"],
                "original_auto_error":original["g2_reason"],
-               "original_auto_report_sha256":hashbytes(canonical(original)),
+               "original_auto_report_sha256":hashbytes(original_raw),
                "solver_csv_sha256":hashbytes(csv_bytes),
                "solver_log_sha256":hashbytes(omc_bytes),
                "modelica_sha256":hashbytes(modelica),
