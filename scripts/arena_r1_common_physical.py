@@ -88,7 +88,7 @@ def prepare_d(source, assumptions, folder):
             'print(getErrorString());',
             f'simulate({name},startTime=0,stopTime=8,numberOfIntervals=160,'
             f'method="dassl",tolerance=1e-8,outputFormat="csv",'
-            f'fileNamePrefix="{path}/{name}");',
+            f'fileNamePrefix="{name}");',
             'print(getErrorString());'
         ])
     (folder / "simulate.mos").write_text("\n".join(commands) + "\n")
