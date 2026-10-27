@@ -45,8 +45,8 @@ jobs:
       - name: Real OpenModelica for all SIX native deterministic candidates
         run: |
           set -euo pipefail
-          docker run --rm -v "$PWD:/repo" -w /repo "$D_IMAGE" \
-            omc artifacts/r1-d/simulate.mos 2>&1 | tee artifacts/r1-d/omc.log
+          docker run --rm -v "$PWD:/repo" -w /repo/artifacts/r1-d "$D_IMAGE" \
+            omc simulate.mos 2>&1 | tee artifacts/r1-d/omc.log
           if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/r1-d/omc.log; then exit 1; fi
           test "$(find artifacts/r1-d -maxdepth 1 -name 'DStockFlow_*_res.csv' | wc -l)" -eq 6
           sudo chown -R "$(id -u):$(id -g)" artifacts/r1-d
@@ -114,6 +114,11 @@ jobs:
           print('M3_COMMON_SCORES',[(c['candidate_id'],c['g3']['rmse_all_items'])
                                    for c in r['arms']['M']['candidates']])
           PY
+      - name: Make Docker-generated artifacts readable even on failure
+        if: always()
+        run: |
+          if [ -d artifacts/r1-d ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r1-d; fi
+          if [ -d artifacts/r1-m ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r1-m; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
