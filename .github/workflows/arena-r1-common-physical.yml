@@ -1,0 +1,131 @@
+name: Arena R1 shared evidence D and M physical construction (B unauthorized)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r1_common_physical.py'
+      - 'tests/test_arena_r1_common_physical.py'
+      - '.github/workflows/arena-r1-common-physical.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-common:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      D_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+      M_IMAGE: openmodelica/openmodelica:v1.26.5-minimal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Source, negative and model provenance tests (no solver)
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_r1_common_physical.py' -v
+          python -m unittest discover -s tests -p 'test_arena_v0_first_round.py' -v
+          python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
+      - name: Prepare OWN D models and recovered M3 models from same source
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_r1_common_physical prepare-d \
+            --source data/synthetic/arena_v0_primary_construction.json \
+            --assumptions data/synthetic/arena_v0_declared_d_assumptions.json \
+            --d-root artifacts/r1-d
+          python -m scripts.arena_v0_first_round \
+            --source data/synthetic/arena_v0_primary_construction.json \
+            --assumptions data/synthetic/arena_v0_declared_d_assumptions.json \
+            --m-modelica-dir artifacts/r1-m \
+            --out artifacts/r1-prepared.json
+          test "$(find artifacts/r1-d -maxdepth 1 -name '*.mo' | wc -l)" -eq 6
+          test "$(find artifacts/r1-m -maxdepth 1 -name '*.mo' | wc -l)" -eq 3
+      - name: Real OpenModelica for all SIX native deterministic candidates
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo/artifacts/r1-d "$D_IMAGE" \
+            omc simulate.mos 2>&1 | tee artifacts/r1-d/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/r1-d/omc.log; then exit 1; fi
+          test "$(find artifacts/r1-d -maxdepth 1 -name 'DStockFlow_*_res.csv' | wc -l)" -eq 6
+          sudo chown -R "$(id -u):$(id -g)" artifacts/r1-d
+      - name: Install original molecular simulation libraries
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull "$M_IMAGE"
+      - name: Prepare M3 OMC commands from unchanged native candidate manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          folder=Path('artifacts/r1-m')
+          manifest=json.loads((folder/'manifest.json').read_text())
+          commands=['getVersion();','loadFile("/repo/src/modelica/IGCMolecules.mo");',
+                    'loadFile("/repo/src/modelica/IGCInformationMolecules.mo");']
+          for c in manifest['candidates']:
+              name=c['class']
+              commands.extend([
+                  f'loadFile("/repo/{folder}/{name}.mo");',
+                  f'checkModel({name});',
+                  'print(getErrorString());',
+                  f'simulate({name},startTime=0,stopTime=4,numberOfIntervals=80,'
+                  f'method="dassl",tolerance=1e-8,outputFormat="csv",'
+                  f'fileNamePrefix="{folder}/{c["id"].lower()}");',
+                  'print(getErrorString());'])
+          (folder/'simulate.mos').write_text('\n'.join(commands)+'\n')
+          PY
+      - name: Real OpenModelica for all THREE restored molecular candidates
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            "$M_IMAGE" omc artifacts/r1-m/simulate.mos 2>&1 | tee artifacts/r1-m/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/r1-m/omc.log; then exit 1; fi
+          test "$(find artifacts/r1-m -maxdepth 1 -name 'c0*_res.csv' | wc -l)" -eq 3
+          sudo chown -R "$(id -u):$(id -g)" artifacts/r1-m
+      - name: Score own CSVs; no provider, hidden world, winner, or fabricated G3
+        run: |
+          python -m scripts.arena_r1_common_physical assess \
+            --source data/synthetic/arena_v0_primary_construction.json \
+            --assumptions data/synthetic/arena_v0_declared_d_assumptions.json \
+            --d-root artifacts/r1-d --m-root artifacts/r1-m \
+            --out artifacts/r1-physical-construction.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r1-physical-construction.json').read_text())
+          assert len(r['arms']['D']['candidates'])==6
+          assert len(r['arms']['M']['candidates'])==3
+          assert r['arms']['B']['status']=='BLOCKED' and r['arms']['B']['provider_calls']==0
+          assert r['external_solver_provenance']['models_simulated']=={'D':6,'M':3,'B':0}
+          assert r['arms']['M']['decision']['status']=='ABSTAIN'
+          assert r['cross_arm_winner']=='NONE_DECLARED'
+          assert r['empirical_holdout']=='NOT_ACCESSED'
+          assert r['arm_feedback']=='NOT_DELIVERED'
+          assert all(v['g2']['status']=='G2_MASS_BALANCE_PASS_NOT_G3'
+                     for v in r['arms']['D']['candidates'])
+          print('R1_NINE_PHYSICAL_CANDIDATES_CONSTRUCTION_ONLY_B_BLOCKED')
+          print('M3_COMMON_SCORES',[(c['candidate_id'],c['g3']['rmse_all_items'])
+                                   for c in r['arms']['M']['candidates']])
+          PY
+      - name: Make Docker-generated artifacts readable even on failure
+        if: always()
+        run: |
+          if [ -d artifacts/r1-d ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r1-d; fi
+          if [ -d artifacts/r1-m ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r1-m; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r1-nine-physical-candidates-partial-b-blocked
+          path: |
+            artifacts/r1-physical-construction.json
+            artifacts/r1-prepared.json
+            artifacts/r1-d/
+            artifacts/r1-m/
+          retention-days: 60
