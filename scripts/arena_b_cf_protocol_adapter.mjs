@@ -14,13 +14,14 @@ export function requestToCloudflare(orBody, options={}) {
   // Only a separately authorized physical-feedback extension may increase
   // output budget. The first real B3 call hit the former 3500-token cap
   // (finish_reason=length); keep all earlier experiments at exactly 3500.
-  if(Object.keys(options).some(k=>k!=="physicalRevision" && k!=="r1Initial" && k!=="r2Revision") ||
+  if(Object.keys(options).some(k=>k!=="physicalRevision" && k!=="r1Initial" && k!=="r2Revision" && k!=="r2Extended") ||
      (options.physicalRevision!==undefined && typeof options.physicalRevision!=="boolean") ||
      (options.r1Initial!==undefined && typeof options.r1Initial!=="boolean") ||
      (options.r2Revision!==undefined && typeof options.r2Revision!=="boolean") ||
-     ([options.physicalRevision,options.r1Initial,options.r2Revision].filter(Boolean).length>1))
+     (options.r2Extended!==undefined && typeof options.r2Extended!=="boolean") ||
+     ([options.physicalRevision,options.r1Initial,options.r2Revision,options.r2Extended].filter(Boolean).length>1))
     throw Error("INVALID_TOKEN_BUDGET_OPTIONS");
-  const cap=options.physicalRevision===true || options.r1Initial===true || options.r2Revision===true?7000:3500;
+  const cap=options.r2Extended===true?16000:(options.physicalRevision===true || options.r1Initial===true || options.r2Revision===true?7000:3500);
   if(orBody?.model!==OR_SLUG)throw Error("OPENROUTER_MODEL_MISMATCH");
   if(orBody?.response_format?.type!=="json_schema")throw Error("BUFFALO_SCHEMA_NOT_REQUESTED");
   const schema=orBody.response_format.json_schema?.schema;
