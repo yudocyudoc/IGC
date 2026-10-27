@@ -1,0 +1,70 @@
+name: Arena R3 PT06 THREE-case consolidation and F1a ATMS
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_consolidate.py'
+      - 'tests/test_arena_r3_pt06_consolidate.py'
+      - '.github/workflows/arena-r3-pt06-consolidate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-evidence-consolidation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Recover original T1 candidate/world CSV without regenerating
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1-original
+      - name: Recover original T2/T3 world CSV and original decisions
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t23-original
+      - name: Reproduce three cases, persist in existing F1a/ATMS and test isolation
+        env:
+          ARENA_R3_T1_ORIGINAL_DIR: artifacts/r3-t1-original
+          ARENA_R3_T23_ORIGINAL_DIR: artifacts/r3-t23-original
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_consolidate.py' -v
+          python -m scripts.arena_r3_pt06_consolidate \
+            --original-t1 artifacts/r3-t1-original \
+            --original-t23 artifacts/r3-t23-original \
+            --catalog experiments/e0/catalog.json \
+            --db artifacts/r3-pt06-ledger.sqlite \
+            --out artifacts/r3-pt06-consolidated.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r3-pt06-consolidated.json').read_text())
+          assert len(r['cases'])==3
+          assert r['solver_calls_in_consolidation']==r['provider_calls_in_consolidation']==0
+          assert r['memory']['no_cross_arm_sharing']
+          assert all(x['D_B_unchanged'] for x in r['memory']['case_receipts'])
+          assert [x['R3_grid']['status'] for x in r['cases']]==[
+              'ABSTAIN_ADMISSIBLE_GRID_HAS_NO_COMPATIBLE_STRUCTURE',
+              'AMBIGUOUS_MULTIPLE_COMPATIBLE_STRUCTURES',
+              'ABSTAIN_ADMISSIBLE_GRID_HAS_NO_COMPATIBLE_STRUCTURE']
+          assert all(x['original_M3']['status']=='ABSTAIN' for x in r['cases'])
+          print('R3_PT06_THREE_CASES_CONSOLIDATED_EXISTING_ATMS_NO_NEW_SIMULATION')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-pt06-three-case-ledger-atms-final
+          path: |
+            artifacts/r3-pt06-consolidated.json
+            artifacts/r3-pt06-ledger.sqlite
+          retention-days: 60
