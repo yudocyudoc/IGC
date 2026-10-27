@@ -1,0 +1,85 @@
+name: Arena R3 T1 postonly audit original 28 results, no solver
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/arena-r3-pt06-t1-postonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  archive-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1
+      - name: Audit real recorded decision, source and candidate score minima
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          from scripts.arena_v0_contract import digest,canonical
+          from scripts.arena_r3_pt06_parametric import plan
+          from scripts.arena_r3_pt06_t1_grade import grade
+          root=Path('artifacts/r3-t1')
+          d=json.loads((root/'r3-decision.json').read_text())
+          g=json.loads((root/'post-selection-adjudication.json').read_text())
+          c=json.loads((root/'construction-case.json').read_text())
+          p=json.loads((root/'world-private/provenance.json').read_text())
+          budget=json.loads((root/'solver-budget.json').read_text())
+          m=json.loads((root/'manifest.json').read_text())
+          assert m==plan()[0]
+          assert digest(m)=='sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5'
+          assert budget['total_simulation_commands']==28
+          assert budget['authorized_candidate_simulations']==27
+          assert budget['authorized_world_simulations']==1
+          assert budget['provider_calls']==0
+          assert g==grade(c,d,p)
+          assert d['raw_real_solver_csv_checks']==27
+          assert g['frozen_original_m3_status']=='ABSTAIN'
+          assert d['status']=='ABSTAIN_ADMISSIBLE_GRID_HAS_NO_COMPATIBLE_STRUCTURE'
+          assert d['compatible_material_classes']==[]
+          assert g['world_class_declared_pre_run']=='C00'
+          assert p['world_simulated_time_window_hours']==[0,3]
+          assert all((root/'candidates'/(item['id'].lower()+'_res.csv')).exists()
+                     for item in m['candidates'])
+          for arm,v in d['per_structure_best'].items():
+            path=root/'candidates'/(v['candidate_id'].lower()+'_res.csv')
+            assert 'sha256:'+hashlib.sha256(path.read_bytes()).hexdigest()==v['csv_sha256']
+          print('PT06_R3_T1_POSTONLY_DECISION',d['status'])
+          print('PT06_R3_T1_FROZEN_M3',d['frozen_m3_original_policy'])
+          print('PT06_R3_T1_PER_STRUCTURE_BEST',json.dumps(d['per_structure_best'],sort_keys=True))
+          print('PT06_R3_T1_REAL_OBSERVATIONS',json.dumps(c['construction_observations']))
+          print('PT06_R3_T1_G2_WORLD_RESIDUAL',p['world_balance_residual_max_items'])
+          print('PT06_R3_T1_WORLD_TRUE_PARAMETERS_POSTONLY',json.dumps(p['world_responseTime_hours'],sort_keys=True))
+          print('PT06_R3_T1_NEGATIVE_RESULT_UNCHANGED_ZERO_SOLVERS_ZERO_AI')
+          summary={'schema':'igc-arena-r3-t1-historic-postonly-audit/0.1',
+                   'case_id':d['case_id'],'source_manifest_sha256':digest(m),
+                   'decision_sha256':digest(d),
+                   'fixed_m3':d['frozen_m3_original_policy'],
+                   'bounded_r3_status':d['status'],
+                   'per_structure_best':d['per_structure_best'],
+                   'observations':c['construction_observations'],
+                   'world_G2_balance':p['world_balance_residual_max_items'],
+                   'world_parameters_revealed_post_selection':p['world_responseTime_hours'],
+                   'world_class':g['world_class_declared_pre_run'],
+                   'simulations_in_postonly':0,'provider_calls_in_postonly':0,
+                   'holdout':'NOT_USED'}
+          Path('artifacts/r3-t1-postonly-audit.json').write_bytes(canonical(summary)+b'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-t1-postonly-negative-result-audit
+          path: artifacts/r3-t1-postonly-audit.json
+          retention-days: 60
