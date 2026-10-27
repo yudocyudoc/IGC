@@ -1,0 +1,106 @@
+name: Arena V0.1 — M0 verified original Short E1 molecular source (no AI)
+on:
+  push:
+    branches: [integration/arena-v0.1-m0-molecules]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'experiments/e1/**'
+      - 'experiments/e0/catalog.json'
+      - 'src/modelica/IGC*Molecules.mo'
+      - 'scripts/arena_m_short_e1.py'
+      - 'tests/test_arena_m_short_e1.py'
+      - 'docs/ARENA_M_SHORT_E1_PROVENANCE.json'
+      - '.github/workflows/arena-v0-m0-molecules.yml'
+permissions:
+  contents: read
+jobs:
+  molecular-e1:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.11'
+      - name: Verify exact original Short E1 source blobs (not a forked method)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          m=json.loads(Path('docs/ARENA_M_SHORT_E1_PROVENANCE.json').read_text())
+          assert m['semantics']=='COPY_EXACT_BLOBS_NO_METHOD_CHANGES'
+          assert len(m['sources'])==9
+          for path,expected in m['sources'].items():
+              b=Path(path).read_bytes()
+              digest=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+              assert digest==expected, (path,digest,expected)
+          print('SHORT_E1_NINE_ORIGINAL_CODE_BLOBS_VERIFIED')
+          PY
+      - name: Verify base and extended registries, typed topology constraints and abstention
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/e1 -p 'test_*.py' -v
+          python -m unittest discover -s tests -p 'test_arena_m_short_e1.py' -v
+          python -m unittest discover -s tests -p 'test_arena_v0_contract.py' -v
+          mkdir -p experiments/e1/generated
+          python experiments/e1/composer.py --registry experiments/e1/registry.base.json --out experiments/e1/generated/base_ast.json
+          python experiments/e1/composer.py --registry experiments/e1/registry.extended.json --out experiments/e1/generated/extended_ast.json
+          python -m scripts.arena_m_short_e1 --input data/synthetic/arena_m_v0_visible.json --registry experiments/e1/registry.base.json --out experiments/e1/generated/m-arena-submission.json
+          python -m scripts.arena_m_short_e1 --input data/synthetic/arena_m_v0_visible.json --registry experiments/e1/registry.extended.json --out experiments/e1/generated/m-arena-extended.json
+      - name: Generate actual Modelica using original Short E1 backend
+        run: |
+          set -euo pipefail
+          python experiments/e1/backend.py --registry experiments/e1/registry.base.json --out experiments/e1/generated/base
+          python experiments/e1/backend.py --registry experiments/e1/registry.extended.json --out experiments/e1/generated/extended
+      - name: Install original MSL 4.0.0 and SystemDynamics 2.1.2, BSD-3 licensed
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          docker image inspect openmodelica/openmodelica:v1.26.5-minimal --format '{{json .RepoDigests}}'
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+          grep -q 'BSD 3-Clause License' "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          grep -q 'BSD 3-Clause License' "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD)"
+      - name: Real OpenModelica compile/simulation base SIX and extended FIFTEEN
+        run: |
+          set -euo pipefail
+          for variant in base extended; do
+            docker run --rm -v "$PWD:/repo" -w /repo/experiments/e1 \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "generated/$variant/run.mos" 2>&1 | tee "experiments/e1/generated/$variant/omc.log"
+          done
+          python experiments/e1/verify_native.py --root experiments/e1/generated --out experiments/e1/generated/real_results.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('experiments/e1/generated/real_results.json').read_text())
+          print('ORIGINAL_E1_ACTUAL_G2_COMPARISON',json.dumps(report)[:1000])
+          assert Path('experiments/e1/generated/m-arena-submission.json').is_file()
+          s=json.loads(Path('experiments/e1/generated/m-arena-submission.json').read_text())
+          assert s['submission']['status']=='PARTIAL'
+          assert not s['submission']['hypothesis_ids']
+          print('M0_ENGINEERING_MODELICA_REAL_NOT_G3_OR_SELECTION')
+          PY
+      - name: Make solver output readable
+        if: always()
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" experiments/e1/generated || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-v0-m0-short-e1-original-molecule-simulation
+          path: experiments/e1/generated/
+          retention-days: 60
+          if-no-files-found: warn

@@ -1,0 +1,23 @@
+{
+  "schema": "igc-m-short-e1-blob-manifest/0.1",
+  "sources": {
+    "experiments/e1/composer.py": "27d9fe2e65db924f204423f9660a576e723bfd9b",
+    "experiments/e1/backend.py": "cc854a0f29399a8299146271fbe3c56c7c5347b3",
+    "experiments/e1/verify_native.py": "9e8f24b3e4ea285ccc5a269d61114459ea65328f",
+    "experiments/e1/test_composition.py": "48852a2521f34366b8c6fd57b2fb5ae5d0990f71",
+    "experiments/e1/registry.base.json": "956eb9636046165b827275a822f37f3643dc1e59",
+    "experiments/e1/registry.extended.json": "63a038ff3c6d88477f2ac3e2fb1a08efd29b15ac",
+    "experiments/e0/catalog.json": "8381e7aa7280d71aefffdfb26866e007c7678d32",
+    "src/modelica/IGCMolecules.mo": "2f83de72d38d0b8f5e866295b806d19067c5194d",
+    "src/modelica/IGCInformationMolecules.mo": "36d97a7e9de4d7ee80bf884beec6094a9bb1cf98"
+  },
+  "source_repo": "yudocyudoc/short",
+  "source_branch": "experiment/igc-v3-e1-registry-composer-v1",
+  "source_e1_run": "https://github.com/yudocyudoc/short/actions/runs/39104098853",
+  "source_e1_head_sha": "769585020903ff736ce941d63a6356df227d7147",
+  "wrappers_from": "short/main",
+  "semantics": "COPY_EXACT_BLOBS_NO_METHOD_CHANGES",
+  "not_original_hines_mdl": true,
+  "external_dependencies": "Modelica Standard Library 4.0.0 and SystemDynamics 2.1.2 loaded in CI",
+  "licensing_status": "REVIEW_REQUIRED_FOR_EXTERNAL_DEPENDENCIES"
+}
