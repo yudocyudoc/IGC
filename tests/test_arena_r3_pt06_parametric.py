@@ -8,7 +8,8 @@ import unittest
 
 from scripts.arena_m3_prepare import family
 from scripts.arena_r3_pt06_parametric import (
-    CANDIDATE_LIMIT, CASE_PLAN, PACKAGE, SCHEMA, classify, plan, write_plan)
+    CANDIDATE_LIMIT, CASE_PLAN, PACKAGE, SCHEMA, classify, plan, write_plan,
+    generate_first_case_world_modelica)
 from scripts.arena_m_visible_pulse import composer
 from scripts.arena_v0_contract import digest
 
@@ -109,6 +110,12 @@ class R3FirstCasePreflight(unittest.TestCase):
             m=write_plan(out)
             self.assertEqual(json.loads((out/"manifest.json").read_text()),m)
             self.assertEqual((out/(PACKAGE+".mo")).read_text(),self.modelica)
+            world=generate_first_case_world_modelica()
+            self.assertEqual((out/"ArenaR3WorldT1-NOT-SIMULATED.mo").read_text(),world)
+            self.assertIn("model R3WorldT1",world)
+            self.assertIn("responseTime=0.75",world)
+            self.assertIn("responseTime=0.3",world)
+            self.assertNotIn("der(",world)
             self.assertEqual(json.loads((out/"researcher-case-blueprint-NOT-SELECTOR-INPUT.json").read_text()),
                              CASE_PLAN)
             self.assertNotIn(CASE_PLAN["generating_role_responseTime_hours"].__repr__(),
