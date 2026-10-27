@@ -71,10 +71,11 @@ def archived_candidates(root, protocol, catalog):
     rootfiles={p.name for p in (root/"candidates").glob("*_res.csv")}
     expected={c["id"].lower()+"_res.csv" for c in manifest["candidates"]}
     guard(rootfiles==expected,"R3_T23_MISSING_EXTRA_OR_REPLACED_CSV")
-    # Unconditional physical verification against zero-output construction-only
-    # observations at t0 (not T2/T3 data) keeps provenance from choosing a result.
+    # Physical-only audit with a dummy t>0 observation (required by the
+    # unchanged native verifier to define its noninitial RMSE). Neither dummy
+    # value nor its descriptive RMSE participates in T2/T3 case scoring.
     verification={"construction":{"input_profile":{"kind":"pulse","rate":1.7,"duration":2.0},
-      "observations":[{"t":0,"delivered":0.0}]}}
+      "observations":[{"t":0,"delivered":0.0},{"t":1,"delivered":0.0}]}}
     all_rows={}
     index=[]
     for candidate in manifest["candidates"]:
