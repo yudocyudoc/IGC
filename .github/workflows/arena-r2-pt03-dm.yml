@@ -1,0 +1,63 @@
+name: Arena R2 PT03 D/M own second decisions + ATMS
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r2_dm_decisions.py'
+      - 'tests/test_arena_r2_dm_decisions.py'
+      - '.github/workflows/arena-r2-pt03-dm.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  dm-second-decision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Restore ORIGINAL authenticated PT01 R1 lineage
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Own-policy D/M decision, exact R1 fixed parameters and ledger evidence
+        env:
+          ARENA_R2_PT01_DIR: artifacts/r2-pt01
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r2_dm_decisions.py' -v
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_v0_contract import canonical
+          from scripts.arena_r2_dm_decisions import own_decisions,persist
+          from scripts.arena_r2_memory_first_cut import ingest
+          import json
+          dossier='artifacts/r2-pt01'
+          db='artifacts/arena-r2-dm.sqlite'
+          ingest(db,dossier,'2026-10-27T15:00:00Z','2026-10-27T15:01:00Z')
+          decisions=own_decisions(dossier)
+          result=persist(db,dossier,decisions,
+                         prior_cut='2026-10-27T15:01:00Z',
+                         recorded_at='2026-10-27T15:02:00Z')
+          Path('artifacts/r2-dm-decisions.json').write_bytes(canonical(decisions)+b'\n')
+          Path('artifacts/r2-dm-ledger.json').write_bytes(canonical(result)+b'\n')
+          assert decisions['m']['chosen_parent'] is None
+          assert decisions['new_provider_calls']==decisions['new_solver_runs']==0
+          assert result['decisions']['B']=='PENDING'
+          print('PT03_D_RATIFY_SIX_ALTERNATIVES_M_RATIFY_ABSTAIN_WITH_ATMS')
+          print('M3_OWN_MIN_RMSE',decisions['m']['best_rmse_items'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r2-pt03-d-m-own-second-decisions-atms
+          path: |
+            artifacts/r2-dm-decisions.json
+            artifacts/r2-dm-ledger.json
+            artifacts/arena-r2-dm.sqlite
+          retention-days: 60
