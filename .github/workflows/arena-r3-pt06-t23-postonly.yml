@@ -1,0 +1,62 @@
+name: Arena R3 T2 T3 real physical evidence independent POSTONLY
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_t23_postonly.py'
+      - '.github/workflows/arena-r3-pt06-t23-postonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t23
+      - name: Independently reproduce frozen decisions from original real CSVs
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_r3_pt06_t23_postonly \
+            --root artifacts/r3-t23 \
+            --original-t1 artifacts/r3-t1 \
+            --catalog experiments/e0/catalog.json \
+            --out artifacts/r3-t23-postonly-audit.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('artifacts/r3-t23-postonly-audit.json').read_text())
+          assert r['candidate_CSVs_G2_validated']==27
+          assert r['worlds_G2_validated']==2
+          assert r['world_simulate_calls_in_original_program']==2
+          assert r['new_solver_calls']==r['new_provider_calls']==0
+          assert r['R4_holdout_accessed'] is False
+          a,b=r['cases']
+          assert a['R3_grid_decision']=='AMBIGUOUS_MULTIPLE_COMPATIBLE_STRUCTURES'
+          assert a['R3_compatible_structures']==['C00','C01','C02']
+          assert b['R3_grid_decision']=='ABSTAIN_ADMISSIBLE_GRID_HAS_NO_COMPATIBLE_STRUCTURE'
+          assert b['R3_compatible_structures']==[]
+          assert a['original_M3_status']==b['original_M3_status']=='ABSTAIN'
+          print('T23_POSTONLY_REAL_RESULTS_REPRODUCED_NO_SOLVER')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-postonly-audit-no-solvers
+          path: artifacts/r3-t23-postonly-audit.json
+          retention-days: 60

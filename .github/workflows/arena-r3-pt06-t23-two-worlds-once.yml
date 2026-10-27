@@ -1,0 +1,142 @@
+name: Arena R3 PT06 STR03 two authorized OpenModelica worlds
+on:
+  push:
+    branches: [experiment/arena-r3-pt06-t23-two-authorized-worlds-20261027]
+    paths: ['data/diagnostics/ARENA_R3_T23_TWO_WORLDS_AUTH_20261027.json']
+permissions: {contents: read, actions: read}
+concurrency:
+  group: arena-r3-t23-one-physical-pair-20261027
+  cancel-in-progress: false
+jobs:
+  physical-worlds:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Exclusive authorization marker, only first attempt on its original addition
+        id: gate
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq data/diagnostics/ARENA_R3_T23_TWO_WORLDS_AUTH_20261027.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r3_pt06_t23_preregister import freeze
+          from scripts.arena_v0_contract import digest
+          p=Path('data/diagnostics/ARENA_R3_T23_TWO_WORLDS_AUTH_20261027.json')
+          x=json.loads(p.read_text())
+          assert x=={
+            'schema':'igc-arena-r3-t23-single-physical-pair-authorization/0.1',
+            'predeclared_protocol_sha256':'sha256:50cd8313a1a41cfca43391e105948c929122599b04ae70a375e255cd026b6064',
+            'frozen_grid_manifest_sha256':'sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5',
+            'candidate_source_run':40578550337,
+            'world_simulations_max':2,'new_candidate_simulations_max':0,
+            'provider_calls_max':0,'automatic_retries':0,
+            'world_windows_hours':[[0,0.15],[0,3]],
+            'R4_holdout_forbidden':True,'researcher_approved':True}
+          assert digest(freeze()[0])==x['predeclared_protocol_sha256']
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1-original
+      - name: Verify original 27 candidate CSV physically before new solver
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r3_pt06_t23_preregister import freeze
+          from scripts.arena_r3_pt06_t23_evaluate import archived_candidates
+          root=Path('artifacts/r3-t1-original')
+          catalog=json.loads(Path('experiments/e0/catalog.json').read_text())
+          m,rows,index=archived_candidates(root,freeze()[0],catalog)
+          assert len(m['candidates'])==len(rows)==len(index)==27
+          print('T23_27_ORIGINAL_CANDIDATES_G2_VERIFIED_NO_REEXECUTION')
+          PY
+      - name: Reproduce exact two preregistered world models and check call budget
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_r3_pt06_t23_worlds --out artifacts/r3-t23
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.arena_r3_pt06_t23_preregister import freeze
+          from scripts.arena_v0_contract import digest
+          root=Path('artifacts/r3-t23')
+          budget=json.loads((root/'world-solver-budget.json').read_text())
+          assert budget['world_simulations_max']==2 and budget['candidate_simulations_max']==0
+          assert budget['predeclared_protocol_hash']==digest(freeze()[0])
+          assert (root/'two-worlds-NOT-RUN.mos').read_text().count('simulate(')==2
+          print('T23_EXACT_TWO_WORLD_SOLVER_CALLS_PREPARED')
+          PY
+      - name: Pin original E1 OpenModelica libraries
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+      - name: ONE actual OpenModelica process with two and only two world simulations
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/r3-t23/two-worlds-NOT-RUN.mos 2>&1 | tee artifacts/r3-t23/omc.log
+      - name: Restore generated artifacts ownership
+        if: always()
+        run: |
+          if [ -d artifacts/r3-t23 ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r3-t23; fi
+      - name: Confirm both real world CSVs, no candidate simulation
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          test "$(find artifacts/r3-t23/researcher-private -maxdepth 1 -name '*_res.csv' | wc -l)" -eq 2
+          test -s artifacts/r3-t23/researcher-private/t2_res.csv
+          test -s artifacts/r3-t23/researcher-private/t3_res.csv
+          test "$(grep -c 'simulate(' artifacts/r3-t23/two-worlds-NOT-RUN.mos)" -eq 2
+          if grep -Eq 'Failed to load|Simulation execution failed|Error occurred' artifacts/r3-t23/omc.log; then exit 1; fi
+          echo 'T23_TWO_REAL_WORLDS_ONLY'
+      - name: Extract public construction-only observations and preserve sealed worlds
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: python -m scripts.arena_r3_pt06_t23_extract --root artifacts/r3-t23 --catalog experiments/e0/catalog.json
+      - name: Score both cases with 27 original validated CSVs, no truth or holdout
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          for n in 2 3; do
+            python -m scripts.arena_r3_pt06_t23_evaluate \
+              --protocol artifacts/r3-t23/protocol.json \
+              --case artifacts/r3-t23/t$n-construction-only.json \
+              --original-t1-root artifacts/r3-t1-original \
+              --catalog experiments/e0/catalog.json \
+              --out artifacts/r3-t23/t$n-decision.json
+          done
+      - name: Reveal synthetic origins only after both original decisions
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: python -m scripts.arena_r3_pt06_t23_grade --root artifacts/r3-t23
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          path: artifacts/r3-t23/
+          retention-days: 60
+          if-no-files-found: warn

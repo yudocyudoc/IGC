@@ -1,0 +1,22 @@
+{
+  "schema": "igc-arena-r3-t23-single-physical-pair-authorization/0.1",
+  "predeclared_protocol_sha256": "sha256:50cd8313a1a41cfca43391e105948c929122599b04ae70a375e255cd026b6064",
+  "frozen_grid_manifest_sha256": "sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5",
+  "candidate_source_run": 40578550337,
+  "world_simulations_max": 2,
+  "new_candidate_simulations_max": 0,
+  "provider_calls_max": 0,
+  "automatic_retries": 0,
+  "world_windows_hours": [
+    [
+      0,
+      0.15
+    ],
+    [
+      0,
+      3
+    ]
+  ],
+  "R4_holdout_forbidden": true,
+  "researcher_approved": true
+}
