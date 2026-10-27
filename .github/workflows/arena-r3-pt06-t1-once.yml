@@ -1,0 +1,128 @@
+name: Arena R3 PT06 T1 exactly 28 authorized OpenModelica simulations
+on:
+  push:
+    branches: [experiment/arena-r3-pt06-t1-28-physical-20261027]
+    paths:
+      - 'data/diagnostics/ARENA_R3_T1_28_SOLVER_AUTH_20261027.json'
+permissions:
+  contents: read
+concurrency:
+  group: r3-t1-authorized-28-unique-20261027
+  cancel-in-progress: false
+jobs:
+  one-physical-case:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: One-time authorization only on marker's original addition
+        id: permit
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq data/diagnostics/ARENA_R3_T1_28_SOLVER_AUTH_20261027.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/diagnostics/ARENA_R3_T1_28_SOLVER_AUTH_20261027.json')
+          marker=json.loads(p.read_text())
+          assert marker=={
+            'schema':'igc-arena-r3-pt06-t1-one-authorized-physical-run/0.1',
+            'case_id':'R3-T1-SHIFTED-REPRESENTABLE',
+            'original_grid_manifest_sha256':'sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5',
+            'model_source':'ORIGINAL_E1_COMPOSER_BACKEND_UNMODIFIED',
+            'max_candidate_simulations':27,'max_world_simulations':1,
+            'max_total_simulations':28,'world_time_window_hours':[0,3],
+            'frozen_M3_policy':True,'no_new_provider_calls':True,
+            'no_R4_holdout_or_reserved_world_points':True,
+            'automatic_retries':0,'authorized_by_user':True}
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Generate original-E1 28-call Modelica program
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_t1_safety.py' -v
+          python -m scripts.arena_r3_pt06_t1_simulate --out artifacts/r3-t1
+          test "$(grep -c 'simulate(' artifacts/r3-t1/simulate.mos)" -eq 28
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r3_pt06_parametric import plan
+          from scripts.arena_v0_contract import digest
+          m=json.loads(Path('artifacts/r3-t1/manifest.json').read_text())
+          assert m==plan()[0]
+          assert digest(m)=='sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5'
+          assert m['method_status']=='PREFLIGHT_ONLY_NOT_SIMULATED'
+          print('R3_T1_AUTHORIZED_EXACT_27_PLUS_1')
+          PY
+      - name: Original E1 MSL and SystemDynamics simulator dependencies
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+      - name: Run real OpenModelica ONCE with 28 pinned simulate statements
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/r3-t1/simulate.mos 2>&1 | tee artifacts/r3-t1/omc.log
+      - name: Restore artifact ownership
+        if: always()
+        run: |
+          if [ -d artifacts/r3-t1 ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r3-t1; fi
+      - name: Require 27 candidate CSVs and separate world CSV, no extra worlds
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          set -euo pipefail
+          test "$(find artifacts/r3-t1/candidates -maxdepth 1 -name '*_res.csv' | wc -l)" -eq 27
+          test "$(find artifacts/r3-t1/world-private -maxdepth 1 -name '*_res.csv' | wc -l)" -eq 1
+          test -s artifacts/r3-t1/world-private/t1_res.csv
+          if grep -Eq 'Failed to load|Simulation execution failed|Error occurred' artifacts/r3-t1/omc.log; then exit 1; fi
+          echo 'R3_T1_REAL_SOLVER_27_CANDIDATES_PLUS_ONE_WORLD_VERIFIED'
+      - name: World extracts only four construction observations, not its truth
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          python -m scripts.arena_r3_pt06_t1_extract --root artifacts/r3-t1 --catalog experiments/e0/catalog.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/r3-t1/construction-case.json').read_text())
+          assert set(x)=={'schema','case_id','observability','public_stimulus','construction_observations','measurement_bound_status','source_snapshot_hash','synthetic_case'}
+          assert [a['t'] for a in x['construction_observations']]==[0,1,2,3]
+          assert 'generating_role_responseTime_hours' not in json.dumps(x)
+          print('R3_T1_WORLD_OBSERVATIONS_FOUR_ONLY')
+          PY
+      - name: Score 27 actual CSVs against construction, M3 original frozen
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          python -m scripts.arena_r3_pt06_evaluate \
+            --manifest artifacts/r3-t1/manifest.json \
+            --case artifacts/r3-t1/construction-case.json \
+            --csv-root artifacts/r3-t1 \
+            --catalog experiments/e0/catalog.json \
+            --out artifacts/r3-t1/r3-decision.json
+      - name: Reveal synthetic source only AFTER selection
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: python -m scripts.arena_r3_pt06_t1_grade --root artifacts/r3-t1
+      - name: Archive ALL physical evidence even on an adverse result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          path: artifacts/r3-t1/
+          retention-days: 60
+          if-no-files-found: warn

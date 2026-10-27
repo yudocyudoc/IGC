@@ -1,0 +1,18 @@
+{
+  "schema": "igc-arena-r3-pt06-t1-one-authorized-physical-run/0.1",
+  "case_id": "R3-T1-SHIFTED-REPRESENTABLE",
+  "original_grid_manifest_sha256": "sha256:d33cc4ca8c253226ff50efa6c47e40b9b8c32d0436f370907db2579c9dc0fde5",
+  "model_source": "ORIGINAL_E1_COMPOSER_BACKEND_UNMODIFIED",
+  "max_candidate_simulations": 27,
+  "max_world_simulations": 1,
+  "max_total_simulations": 28,
+  "world_time_window_hours": [
+    0,
+    3
+  ],
+  "frozen_M3_policy": true,
+  "no_new_provider_calls": true,
+  "no_R4_holdout_or_reserved_world_points": true,
+  "automatic_retries": 0,
+  "authorized_by_user": true
+}

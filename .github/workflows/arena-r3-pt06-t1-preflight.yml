@@ -1,0 +1,46 @@
+name: Arena R3 PT06 T1 28-call preflight (no solver)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_t1_*.py'
+      - 'tests/test_arena_r3_pt06_t1_safety.py'
+      - '.github/workflows/arena-r3-pt06-t1-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Verify exact budget, world separation and absent CSV fail-closed
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_t1_safety.py' -v
+          python -m scripts.arena_r3_pt06_t1_simulate --out artifacts/r3-t1
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/r3-t1')
+          commands=(root/'simulate.mos').read_text()
+          budget=json.loads((root/'solver-budget.json').read_text())
+          assert commands.count('simulate(')==28
+          assert budget['authorized_candidate_simulations']==27
+          assert budget['authorized_world_simulations']==1
+          assert not list(root.rglob('*_res.csv'))
+          assert not any(root.glob('world-private/*_res.csv'))
+          print('R3_T1_OFFLINE_28_COMMANDS_ZERO_EXECUTED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-original-28-solver-preflight
+          path: |
+            artifacts/r3-t1/manifest.json
+            artifacts/r3-t1/simulate.mos
+            artifacts/r3-t1/solver-budget.json
+            artifacts/r3-t1/ArenaR3Parametric.mo
+            artifacts/r3-t1/ArenaR3WorldT1-NOT-SIMULATED.mo
+          retention-days: 60
