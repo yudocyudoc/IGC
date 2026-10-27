@@ -1,0 +1,13 @@
+{
+  "schema": "igc-arena-r1-buffalo-one-new-call/0.1",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "source_snapshot_hash": "sha256:562204e3c4509718f8e9ce55d407477edc97bb4cbbcfc266ed50ca3777bd3c92",
+  "max_provider_calls": 1,
+  "max_completion_tokens": 7000,
+  "max_automatic_retries": 0,
+  "new_independent_initial_native_model": true,
+  "no_cross_arm_models_or_diagnostics": true,
+  "holdout_not_supplied": true,
+  "no_prior_buffalo_model": true,
+  "researcher_authorized_for_r1": true
+}
