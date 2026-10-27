@@ -1,0 +1,75 @@
+name: Arena R2 PT01 authentic dossier (zero provider calls)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r2_dossier.py'
+      - 'tests/test_arena_r2_dossier.py'
+      - '.github/workflows/arena-r2-pt01-dossier.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-r1-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download one-shot R1 bytes (no new inference)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r1-three-arm-initial-complete-archive
+          run-id: 40452596916
+          github-token: ${{ github.token }}
+          path: artifacts/r2-r1-raw
+      - name: Download postonly original R1 structural adjudication
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r1-scientific-structural-negative-no-new-provider
+          run-id: 40453262004
+          github-token: ${{ github.token }}
+          path: artifacts/r2-r1-adjudication
+      - name: Create a ZIP of downloaded original files for digest-verified ingestion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          base=Path('artifacts/r2-r1-raw')
+          with zipfile.ZipFile('artifacts/r2-r1-raw.zip','w') as out:
+            for f in sorted(base.rglob('*')):
+              if f.is_file(): out.write(f,f.relative_to(base).as_posix())
+          PY
+      - name: Verify original bytes, negative controls and per-arm isolation
+        env:
+          ARENA_R1_ARCHIVE_ZIP: artifacts/r2-r1-raw.zip
+          ARENA_R1_ADJUDICATION_JSON: artifacts/r2-r1-adjudication/r1-three-arm-structural-adjudication.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r2_dossier.py' -v
+          python -m scripts.arena_r2_dossier \
+            --source data/synthetic/arena_v0_primary_construction.json \
+            --archive "$ARENA_R1_ARCHIVE_ZIP" \
+            --adjudication "$ARENA_R1_ADJUDICATION_JSON" \
+            --out artifacts/r2-pt01-ready
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('artifacts/r2-pt01-ready')
+          manifest=json.loads((r/'manifest.json').read_text())
+          assert manifest['r1_method_attempts']=={'D':6,'M':3,'B':1}
+          assert manifest['producer_calls']==manifest['solver_calls']==0
+          assert manifest['r2_revision']=='NOT_INFERRED'
+          assert not any(k.startswith('b-postonly') for k in (p.name for p in r.iterdir()))
+          print('R2_PT01_AUTHENTIC_R1_ARM_SEPARATION_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          path: artifacts/r2-pt01-ready/
+          retention-days: 60
