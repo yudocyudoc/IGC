@@ -1,0 +1,161 @@
+name: Arena R2 PT02 native Buffalo offline currentModel no-provider
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_b_openrouter_cloudflare.mjs'
+      - 'scripts/arena_b_cf_protocol_adapter.mjs'
+      - 'tests/test_arena_r2_b_offline_budget.mjs'
+      - '.github/workflows/arena-r2-pt02-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-buffalo-r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Regenerate exact privately-scoped PT01 files from archived verified R1
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Authenticate original R1 parent bytes, feedback and source (offline)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('artifacts/r2-pt01')
+          b=(root/'b-parent-native.json').read_bytes()
+          v=json.loads((root/'b-visible.json').read_text())
+          fb=json.loads((root/'b-own-feedback.json').read_text())
+          assert hashlib.sha256(b).hexdigest()=='8097496d8033bfe8b5a93eeb7d391f7c98f6bb315bdfb9e63f62b6910b437eac'
+          assert v['source_snapshot_hash']==fb['source_snapshot_hash']
+          assert fb['g3']=='NOT_COMPUTABLE'
+          assert 'congestion_multiplier' not in json.dumps(fb)
+          print('PT02_R1_NATIVE_PARENT_AND_OWN_NEUTRAL_LOG_ONLY')
+          PY
+          node --test tests/test_arena_r2_b_offline_budget.mjs
+          node --test tests/test_arena_b_cf_protocol_adapter.mjs
+      - name: Original University at Buffalo engine from pinned, unmodified commit
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Original Buffalo SDK receives R1 native currentModel and own G2 build log, no provider
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-parent-native.json
+          BUFFALO_R2_FEEDBACK: ${{ github.workspace }}/artifacts/r2-pt01/b-own-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r2-b-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/r2-b-offline')
+          r=json.loads((p/'receipt.json').read_text())
+          m=json.loads((p/'cf-request-metadata.json').read_text())
+          prompt=json.loads((p/'r2-user-prompt-exact.json').read_text())
+          assert r['status']=='OFFLINE_BUFFALO_R2_PARENT_AND_FEEDBACK_PASS'
+          assert r['parent_variables']==17 and r['current_model_seen'] and r['r2_feedback_seen']
+          assert r['live_provider_calls']==0 and r['intercepted_http_calls']==1
+          assert r['no_suspect_equation_hint'] and prompt['parent_as_current_model']
+          assert r['structured_request_seen']
+          assert m['parameter_overrides']['max_completion_tokens']==7000
+          text=prompt['text']
+          assert 'Failed to build model' in text
+          for forbidden in ('product_of_capacity_effects','congestion_multiplier',
+                           'capacity_constrained_throughput','0.150205','0.316560',
+                           'MolecularArena','DStockFlow'):
+            assert forbidden not in text
+          print('PT02_NATIVE_R2_ORIGINAL_CURRENTMODEL_NEUTRAL_OFFLINE_PASS')
+          PY
+      - name: Reject changed native parent before any provider call
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_R2_FEEDBACK: ${{ github.workspace }}/artifacts/r2-pt01/b-own-feedback.json
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          cp artifacts/r2-pt01/b-parent-native.json artifacts/r2-wrong-parent.json
+          printf ' ' >> artifacts/r2-wrong-parent.json
+          BUFFALO_PRIOR_OUTPUT="$PWD/artifacts/r2-wrong-parent.json" \
+          BUFFALO_OUTPUT="$PWD/artifacts/r2-wrong-parent-run" \
+            node scripts/arena_b_openrouter_cloudflare.mjs && exit 1 || :
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r2-wrong-parent-run/receipt.json').read_text())
+          assert r['status']=='OPENROUTER_CF_BRIDGE_FAILURE'
+          assert r['error_message']=='PARENT_ARTIFACT_HASH_MISMATCH'
+          assert r['live_provider_calls']==0
+          PY
+      - name: Reject altered own solver log and any new real R2 call
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-parent-native.json
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path('artifacts/r2-pt01/b-own-feedback.json').read_text())
+          v['own_openmodelica_log']+=' fabricated clue'
+          Path('artifacts/r2-mutated-feedback.json').write_text(json.dumps(v))
+          PY
+          BUFFALO_R2_FEEDBACK="$PWD/artifacts/r2-mutated-feedback.json" \
+          BUFFALO_OUTPUT="$PWD/artifacts/r2-mutated-run" \
+            node scripts/arena_b_openrouter_cloudflare.mjs && exit 1 || :
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r2-mutated-run/receipt.json').read_text())
+          assert r['status']=='OPENROUTER_CF_BRIDGE_FAILURE'
+          assert 'R2_OWN_FEEDBACK' in r['error_message']
+          assert r['live_provider_calls']==0
+          PY
+          BUFFALO_R2_FEEDBACK="$PWD/artifacts/r2-pt01/b-own-feedback.json" \
+          BUFFALO_CF_MODE=live BUFFALO_CF_AUTH=RUN_SINGLE_CF_AI_MODEL \
+          GITHUB_RUN_ATTEMPT=1 BUFFALO_OUTPUT="$PWD/artifacts/r2-denied-live" \
+            node scripts/arena_b_openrouter_cloudflare.mjs && exit 1 || :
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r2-denied-live/receipt.json').read_text())
+          assert r['error_message']=='R2_LIVE_NOT_AUTHORIZED_BY_OFFLINE_PREPARATION'
+          assert r['live_provider_calls']==0
+          print('PT02_FOREIGN_PARENT_TAMPERED_FEEDBACK_LIVE_UNAUTHORIZED_REJECTED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r2-pt02-original-buffalo-currentmodel-offline-evidence
+          path: |
+            artifacts/r2-b-offline/
+            artifacts/r2-wrong-parent-run/receipt.json
+            artifacts/r2-mutated-run/receipt.json
+            artifacts/r2-denied-live/receipt.json
+          retention-days: 60
