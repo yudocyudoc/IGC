@@ -1,0 +1,176 @@
+name: Arena R1 Buffalo original one-shot native + G0/G2
+on:
+  push:
+    branches: [integration/arena-r1-buffalo-one-shot-20261026]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-r1-b-one-shot-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  buffalo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Offline tests and shared primary B-only visible input
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r1_buffalo_initial.py' -v
+          python -m unittest discover -s tests -p 'test_arena_r1_buffalo_finish.py' -v
+          node --test tests/test_arena_r1_b_token_budget.mjs
+          node --test tests/test_arena_b_cf_protocol_adapter.mjs
+          python -m scripts.arena_r1_buffalo_initial --source data/synthetic/arena_v0_primary_construction.json --out artifacts/r1-b-visible.json
+      - name: Fetch unchanged original University at Buffalo SD-AI quantitative engine
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Original Buffalo offline smoke with exactly 7000 output cap and zero provider calls
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r1-b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r1-b-offline
+          BUFFALO_CF_MODE: offline
+          BUFFALO_R1_COMMON: AUTHORIZED_ONE_SHOT
+        run: |
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r1-b-offline/receipt.json').read_text())
+          m=json.loads(Path('artifacts/r1-b-offline/cf-request-metadata.json').read_text())
+          assert r['r1_common_initial'] and r['intercepted_http_calls']==1 and r['live_provider_calls']==0
+          assert m['parameter_overrides']['max_completion_tokens']==7000
+          print('R1_B_OFFLINE_ORIGINAL_ENGINE_ONE_SHOT_PASS')
+          PY
+      - name: Require added permission marker on first push attempt (never reruns)
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != push ] || [ "$ATTEMPT" != 1 ] || \
+             [ "$REF" != refs/heads/integration/arena-r1-buffalo-one-shot-20261026 ] || \
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | \
+             grep -Fxq data/diagnostics/BUFFALO_R1_SINGLE_INITIAL_CALL_20261026.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            echo 'NO_ADDED_R1_MARKER_NO_LIVE_REQUEST'
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r1_buffalo_initial import build
+          src=json.loads(Path('data/synthetic/arena_v0_primary_construction.json').read_text())
+          m=json.loads(Path('data/diagnostics/BUFFALO_R1_SINGLE_INITIAL_CALL_20261026.json').read_text())
+          assert m=={
+            'schema':'igc-arena-r1-buffalo-one-new-call/0.1',
+            'model':'@cf/zai-org/glm-5.3-flash',
+            'source_snapshot_hash':build(src)['source_snapshot_hash'],
+            'max_provider_calls':1,'max_completion_tokens':7000,
+            'max_automatic_retries':0,'new_independent_initial_native_model':True,
+            'no_cross_arm_models_or_diagnostics':True,'holdout_not_supplied':True,
+            'no_prior_buffalo_model':True,'researcher_authorized_for_r1':True
+          },'R1_B_MARKER_AUTHENTICATION_FAILED'
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Call Cloudflare GLM-5.3 Flash through ORIGINAL Buffalo once
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        continue-on-error: true
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r1-b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r1-b-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_R1_COMMON: AUTHORIZED_ONE_SHOT
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_R1_COMMON
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/arena_b_openrouter_cloudflare.mjs
+      - name: Preserve exact provider bytes BEFORE G0 adapter can block
+        if: ${{ always() && steps.gate.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-r1-b-original-one-call-native-raw
+          path: |
+            artifacts/r1-b-visible.json
+            artifacts/r1-b-live/
+          retention-days: 60
+      - name: G0 strict translator or native blocked outcome
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        id: g0
+        run: |
+          python -m scripts.arena_r1_buffalo_finish pre \
+            --visible artifacts/r1-b-visible.json --live artifacts/r1-b-live \
+            --physical artifacts/r1-b-physical --out artifacts/not-written.json
+          if [ -s artifacts/r1-b-physical/check.mos ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Real OpenModelica Euler G2 on own original Buffalo equations
+        if: ${{ steps.g0.outputs.ready == 'true' }}
+        continue-on-error: true
+        env:
+          IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/r1-b-physical "$IMAGE" \
+            omc check.mos 2>&1 | tee artifacts/r1-b-physical/omc.log
+          if grep -Eq 'Error:|Failed to load|Simulation execution failed|Error occurred' artifacts/r1-b-physical/omc.log; then exit 1; fi
+          test "$(find artifacts/r1-b-physical -name 'BuffaloNative_*_res.csv' | wc -l)" -eq 1
+      - name: Download D/M physical models and scores only AFTER native inference
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r1-nine-physical-candidates-partial-b-blocked
+          run-id: 40450646600
+          github-token: ${{ github.token }}
+          path: artifacts/r1-pr53-reference
+      - name: Normalize Docker output permissions
+        if: always()
+        run: |
+          if [ -d artifacts/r1-b-physical ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r1-b-physical; fi
+      - name: Produce authentic initial D/B/M report (also on Buffalo failure)
+        if: ${{ steps.gate.outputs.allowed == 'true' }}
+        run: |
+          python -m scripts.arena_r1_buffalo_finish final \
+            --visible artifacts/r1-b-visible.json --live artifacts/r1-b-live \
+            --physical artifacts/r1-b-physical \
+            --shared artifacts/r1-pr53-reference/r1-physical-construction.json \
+            --out artifacts/r1-three-arm-initial-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/r1-three-arm-initial-report.json').read_text())
+          assert len(x['D']['candidates'])==6 and len(x['M']['candidates'])==3
+          assert x['B']['provider']['provider_calls_started']<=1
+          assert x['winner']=='NOT_DECLARED' and x['holdout']=='NOT_ACCESSED'
+          print('R1_COMPLETE_INITIAL_OUTCOME',x['status'],x['B']['status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r1-three-arm-initial-complete-archive
+          path: |
+            artifacts/r1-b-visible.json
+            artifacts/r1-b-offline/
+            artifacts/r1-b-live/
+            artifacts/r1-b-physical/
+            artifacts/r1-three-arm-initial-report.json
+          retention-days: 60

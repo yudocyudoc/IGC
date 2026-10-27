@@ -26,6 +26,7 @@ const PRIOR=process.env.BUFFALO_PRIOR_OUTPUT??null;
 const PHYSICAL=process.env.BUFFALO_PHYSICAL_FEEDBACK??null;
 const BLIND=process.env.BUFFALO_BLIND_FEEDBACK??null;
 const SELF=process.env.BUFFALO_SELF_DISCREPANCY??null;
+const R1=process.env.BUFFALO_R1_COMMON==="AUTHORIZED_ONE_SHOT";
 const OWN_FEEDBACK=PHYSICAL||BLIND||SELF;
 const PRIOR_SHA256=SELF?"c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb":OWN_FEEDBACK?
   "d7630830b4812c8880dc88c5f93f821707a75d22e0ecdf2cc1e9b5d8ec0889b9":
@@ -41,6 +42,7 @@ const receipt={schema:"igc-b-openrouter-cloudflare/0.1",model:MODEL,
   transport:CF_MODE,real_model:CF_MODEL,live_provider_calls:0,
   intercepted_http_calls:0,original_upstream_modified:false,model_returned:false,
   structured_request_seen:false,status:"INITIALIZED",iteration:SELF?3:OWN_FEEDBACK?2:PRIOR?1:0,
+  r1_common_initial:R1,
   feedback_type:SELF?"B5_OWN_B4_EXPLANATION_VS_G2":BLIND?"BLIND_B2_CONSTRUCTION_ONLY":PHYSICAL?"OWN_B2_PHYSICAL_CONSTRUCTION":"G1_OR_INITIAL"};
 
 const syntheticModel={
@@ -68,12 +70,22 @@ await mkdir(OUT,{recursive:false});
 const originals={fetch:globalThis.fetch};
 try {
   if(!["offline","live"].includes(SCENARIO))throw Error("INVALID_SCENARIO");
+  if(R1&&(PRIOR||OWN_FEEDBACK))throw Error("R1_INITIAL_MUST_NOT_HAVE_PRIOR_OR_FEEDBACK");
   if([PHYSICAL,BLIND,SELF].filter(Boolean).length>1)throw Error("MUTUALLY_EXCLUSIVE_PHYSICAL_FEEDBACK_VARIANTS");
   if(OWN_FEEDBACK && !PRIOR)throw Error("PHYSICAL_REQUIRES_PRIOR_NATIVE_MODEL");
   if(SCENARIO==="live" && (
-     process.env.BUFFALO_CF_AUTH!==(SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
+     process.env.BUFFALO_CF_AUTH!==(R1?"RUN_SINGLE_CF_AI_R1_COMMON":SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
      process.env.GITHUB_RUN_ATTEMPT!=="1"))throw Error("CLOUDFLARE_LIVE_NOT_AUTHORIZED");
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
+  if(R1){
+    if(visible.investigation_id!=="ARENA-SHARED-SYNTHETIC" ||
+       visible.resources?.max_llm_calls!==1 ||
+       visible.resources?.max_model_proposals!==1 ||
+       visible.construction?.observations?.length!==4 ||
+       visible.source_snapshot_hash?.startsWith("sha256:")!==true)
+       throw Error("R1_COMMON_SOURCE_OR_BUDGET_NOT_AUTHENTICATED");
+    receipt.common_input_sha256=hash(visible);
+  }
   if(visible.schema!=="igc-arena-visible-input/0.1")throw Error("BAD_VISIBLE_SCHEMA");
   if(Object.keys(visible.construction||{}).some(k=>/gold|holdout|other.arm/i.test(k)))throw Error("FORBIDDEN_INPUT");
   let parentModel={variables:[],relationships:[]};
@@ -307,7 +319,7 @@ try {
       prompt_hashes:body.messages.map(m=>({role:m.role,sha256:hash(m.content)})),
       upstream_source_modified:false
     });
-    const cfBody=requestToCloudflare(body,{physicalRevision:Boolean(OWN_FEEDBACK)});
+    const cfBody=requestToCloudflare(body,{physicalRevision:Boolean(OWN_FEEDBACK),r1Initial:R1});
     receipt.cloudflare_schema_sha256=hash(cfBody.response_format.json_schema);
     receipt.translated_body_sha256=hash(cfBody);
     await save("cf-request-metadata.json",{
