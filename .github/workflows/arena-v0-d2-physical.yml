@@ -1,0 +1,113 @@
+name: Arena V0.1 — deterministic D2 real physical G2 (no AI calls)
+on:
+  push:
+    branches: [integration/arena-v0.1-d2-physical]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_atms.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'scripts/arena_d_atms_bridge.py'
+      - 'scripts/arena_d_v2_revision.py'
+      - 'scripts/arena_d2_revised_g2.py'
+      - 'data/synthetic/arena_d_v1_screen_protocol.json'
+      - 'tests/test_arena_d_*.py'
+      - 'tests/test_arena_d2_revised_g2.py'
+      - '.github/workflows/arena-v0-d2-physical.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verified-D2-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 23
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Restore only ORIGINAL D2 producer archive from historical CI
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-d-v1-screen-modelica-evidence
+          run-id: 40248817463
+          github-token: ${{ github.token }}
+          path: artifacts/d2-parent
+      - name: Byte-authenticate original D-only archive; no world/evaluator file
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_d2_revised_g2 import read_parent
+          p=Path('artifacts/d2-parent')
+          original=read_parent(p)
+          assert len(original[0]['report']['results'])==6
+          assert len(original[0]['current_support'])==1
+          assert not any('World' in x.name for x in p.iterdir())
+          print('ORIGINAL_D2_ARCHIVE_SHA_AUTHENTICATED_NO_EVALUATOR_WORLD')
+          PY
+      - name: Verify D0, D1, D2 and local ATMS-bridge adversarial unit tests
+        run: |
+          set -euo pipefail
+          for test in test_arena_v0_contract.py test_arena_d_v01.py test_arena_d_v1_screen.py test_arena_d_atms_bridge.py test_arena_d_v2_revision.py test_arena_d2_revised_g2.py; do
+            python -m unittest discover -s tests -p "$test" -v
+          done
+      - name: Emission of SIX own revised D2 native Modelica candidates, not world
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_d2_revised_g2 emit \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --parent-dir artifacts/d2-parent \
+            --out artifacts/arena-d2
+          test "$(find artifacts/arena-d2 -maxdepth 1 -name 'D2fit_*.mo' | wc -l)" -eq 6
+          if grep -il 'D2IndependentWorld' artifacts/arena-d2/*.mo; then
+            echo 'WORLD_LEAKED_IN_D_MODELS' >&2
+            exit 1
+          fi
+      - name: G2 OpenModelica PINNED run of 6 OWN revised equations
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-d2 \
+            "$OMC_IMAGE" omc d2.mos 2>&1 | tee artifacts/arena-d2/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-d2/omc.log; then exit 1; fi
+          test "$(find artifacts/arena-d2 -maxdepth 1 -name 'D2fit_*_res.csv' | wc -l)" -eq 6
+      - name: Independent mass conservation, RK4 parity and CONSTRUCTION-only G3 labels
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_d2_revised_g2 verify \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --protocol data/synthetic/arena_d_v1_screen_protocol.json \
+            --parent-dir artifacts/d2-parent \
+            --manifest artifacts/arena-d2/manifest.json \
+            --out artifacts/arena-d2/real-g2-verification.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          report=json.loads(Path('artifacts/arena-d2/real-g2-verification.json').read_text())
+          assert report['models_verified']==6
+          assert report['g2_status']=='ALL_REVISED_CANDIDATES_SIMULATED_AND_MASS_BALANCED'
+          assert report['g3_construction_status']=='DESCRIPTIVE_AND_INSTRUMENT_BOUND_CONDITIONAL'
+          assert report['heldout_status']=='NOT_RUN'
+          assert report['not_world_evaluator'] and report['not_new_holdout']
+          assert len(report['current_support'])==1
+          for v in report['by_candidate'].values():
+              assert v['g2_mass']['status']=='G2_MASS_BALANCE_PASS_NOT_G3'
+              assert v['d2_rk4_parity']['status']=='PYTHON_OMC_NUMERICAL_PARITY'
+          print('V0_D2_REAL_OPENMODELICA_SIX_OWN_MODELS_G2_AND_CONDITIONAL_G3')
+          PY
+      - name: Ensure solver outputs readable by artifact uploader
+        if: always()
+        run: |
+          if [ -d artifacts/arena-d2 ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/arena-d2; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-v0-integrated-D2-six-revised-own-openmodelica
+          path: artifacts/arena-d2/
+          retention-days: 60
+          if-no-files-found: warn
