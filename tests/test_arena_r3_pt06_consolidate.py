@@ -67,7 +67,7 @@ class RealR3Consolidation(unittest.TestCase):
                 self.assertEqual(b["visible_entities"],[])
                 self.assertNotIn("source-truth-after-grading",
                                  " ".join(m["visible_entities"]))
-                self.assertEqual(len(m["logical"]["labels"]),9)
+                self.assertEqual(len(m["logical"]["labels"]),8)  # 4 premises, 2 decision/physics facts, 2 derived claims
                 all_revisions=ledger.snapshot(case_id=case,as_known_at=ADMIN_CUTS[4])
                 secret=[v for v in all_revisions if
                         v.entity_id.endswith("source-truth-after-grading")]
