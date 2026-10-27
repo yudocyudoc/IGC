@@ -1,0 +1,158 @@
+{
+  "schema": "igc-arena-v0.1-source-inventory/0.1",
+  "inventoried_at": "2026-10-26",
+  "repository": "yudocyudoc/IGC",
+  "governing_plan": "docs/ARENA_IGC_ATMS_PLAN_IMPLEMENTACION_V1_3_2026-10-25.md",
+  "source_main": {
+    "sha_at_open": "d216a9dd49a200209f90bc740bc28e6df4ad7022",
+    "merged_p0_pr": 22,
+    "validation_run": 40240192807,
+    "scope": "P0_CONTRACTS_ONLY_NO_RUNTIME_ARMS"
+  },
+  "target_release": {
+    "planned_tag": "v0.1.0",
+    "status": "NOT_RELEASED",
+    "p0_retrospective_tag": {
+      "planned": "v0.0.1-p0",
+      "status": "NOT_CREATED"
+    },
+    "tag_requires_main_and_green_ci": true
+  },
+  "source_tracks": [
+    {
+      "arm": "D",
+      "scope": "DETERMINISTIC_NO_MOLECULES",
+      "candidate_prs": [
+        23,
+        32
+      ],
+      "candidate_heads": [
+        {
+          "pr": 23,
+          "branch": "feature/arena-d-pure-stockflow-v01",
+          "sha": "ddd80e0cdbf4cf5af7a9d5cbd752ded04a32322d"
+        },
+        {
+          "pr": 32,
+          "branch": "fix/arena-d2-revised-modelica-g2-20261026",
+          "sha": "cb0ad83534cdee74866c87b51318534a5b146024"
+        }
+      ],
+      "promotion": "SELECTIVE_PORT_REQUIRED",
+      "ci_status": "NOT_RETESTED_ON_INTEGRATION"
+    },
+    {
+      "arm": "B",
+      "scope": "BUFFALO_ORIGINAL_ENGINE_OWN_ADAPTER",
+      "candidate_prs": [
+        25,
+        26,
+        30,
+        33,
+        34,
+        36,
+        40
+      ],
+      "candidate_heads": [
+        {
+          "pr": 25,
+          "branch": "feature/arena-b-native-node-engine-v01",
+          "sha": "1588d210e7741755cd9152941fa9611dcaed3452"
+        },
+        {
+          "pr": 40,
+          "branch": "feature/arena-b5-self-contradiction-20261026",
+          "sha": "edd3db9b1623f70a52a076450d3f24fb7553d0c0"
+        }
+      ],
+      "promotion": "SELECTIVE_PORT_REQUIRED",
+      "ci_status": "NOT_RETESTED_ON_INTEGRATION"
+    },
+    {
+      "arm": "M",
+      "scope": "ORIGINAL_SHORT_E1_MOLECULAR_METHOD",
+      "candidate_prs": [
+        27,
+        28,
+        29,
+        31,
+        35,
+        41
+      ],
+      "candidate_heads": [
+        {
+          "pr": 27,
+          "branch": "feature/arena-m-short-e1-independent-v0",
+          "sha": "79a21dcfb5010a25213d063c868d6c5d719e0f42"
+        },
+        {
+          "pr": 41,
+          "branch": "feature/arena-m3-parameter-shift-20261026",
+          "sha": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8"
+        }
+      ],
+      "promotion": "SELECTIVE_PORT_REQUIRED",
+      "ci_status": "NOT_RETESTED_ON_INTEGRATION"
+    }
+  ],
+  "supporting_tracks": [
+    {
+      "name": "ATMS_ITERATION_MEMORY",
+      "source_prs": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "status": "SELECTIVE_PORT_REQUIRED",
+      "required_for": "V0.1",
+      "note": "do not import outdated S/P/C decision policy"
+    },
+    {
+      "name": "CLEF_EXPERIMENT",
+      "source_prs": [
+        39
+      ],
+      "status": "HISTORICAL_ONLY_NOT_V0"
+    },
+    {
+      "name": "B2_B3_LOW_INPUT_EXPERIMENT",
+      "source_prs": [
+        38
+      ],
+      "status": "HISTORICAL_ONLY_NOT_RUNTIME"
+    },
+    {
+      "name": "D_M_FROZEN_PULSE_EXPERIMENT",
+      "source_prs": [
+        37
+      ],
+      "status": "HISTORICAL_ONLY_NOT_RUNTIME"
+    }
+  ],
+  "release_gates": {
+    "INT-01": "NOT_RUN",
+    "INT-02": "NOT_RUN",
+    "INT-03": "NOT_RUN",
+    "INT-04": "NOT_RUN",
+    "INT-05": "NOT_RUN",
+    "INT-06": "NOT_RUN",
+    "INT-07": "NOT_RUN",
+    "INT-08": "NOT_RUN",
+    "INT-09": "NOT_RUN"
+  },
+  "notes": [
+    "The manifest is a source index, not proof of source import or test completion.",
+    "No provider is called and no simulated gold is opened by this versioning increment.",
+    "P0/main tests are separate from later V0.1 acceptance."
+  ]
+}
