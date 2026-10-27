@@ -34,23 +34,13 @@ def build(source):
                             "max_llm_calls":1,"max_simulations":1}
     # The experimental protocol fixes a numerical solver, not the endogenous
     # variables, stock count, capacities, delays, or equations Buffalo may propose.
-    visible["question"] = (
-        source["question"] + " Build one independent quantitative stock-flow "
-        "explanation using only the construction evidence supplied. Return a "
-        "complete original Buffalo SD-AI native model. Its native simulation "
-        "specifications must be startTime=0, stopTime=8, dt=0.125, "
-        "timeUnits='hour', integrationMethod='Euler' for the shared technical "
-        "replay. Treat initial cumulative delivered as zero; any other "
-        "initial-state assumptions must be declared in your explanation. "
-        "Infer all endogenous mechanisms yourself. Do not assume any "
-        "particular number of stocks, queue structure, processing capacity "
-        "or equation. If the observations do not distinguish mechanisms, "
-        "state the uncertainty instead of asserting a unique true structure."
-    )
+    visible["question"] = source["question"]
     visible["construction"]["known_conditions"] = [
         "Only construction observations and public pulse are supplied.",
         "No generator model, independent future observations, or other model proposals were supplied.",
-        "The declared numerical solver protocol is Euler, 0..8 hours, dt=0.125.",
+        "For native simulation specifications use startTime=0, stopTime=8, dt=0.125, timeUnits=hour, integrationMethod=Euler; technical replay only.",
+        "Independently propose a complete native Buffalo stock-flow model; do not assume a particular number of stocks, queues, flow laws, capacities, or delays.",
+        "State observational ambiguity and assumptions; do not claim a unique true generator.",
         "Initial cumulative delivered is observed to be zero; other initial states are not measured.",
     ]
     validate_visible_input(visible)
