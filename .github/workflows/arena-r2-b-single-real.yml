@@ -1,0 +1,168 @@
+name: Arena R2 Buffalo ONE authorized real review
+on:
+  push:
+    branches: [integration/arena-r2-b-one-authorized-20261027]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-r2-b-single-live-20261027
+  cancel-in-progress: false
+jobs:
+  one-shot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Pin original Buffalo SD-AI code unmodified
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Reproduce exact request and native parent without provider
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-parent-native.json
+          BUFFALO_R2_FEEDBACK: ${{ github.workspace }}/artifacts/r2-pt01/b-own-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r2-b-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r2-b-offline/receipt.json').read_text())
+          assert r['request_sha256']=='sha256:67015d6b469d1a89048aa6e729f1ab003192eba422492c04b1c85a2568d7b8f7'
+          assert r['status']=='OFFLINE_BUFFALO_R2_PARENT_AND_FEEDBACK_PASS'
+          assert r['live_provider_calls']==0 and r['intercepted_http_calls']==1
+          assert r['r2_input_utf8_bytes']==26145 and r['parent_variables']==17
+          assert r['no_suspect_equation_hint'] and r['current_model_seen']
+          assert r['r2_feedback_seen']
+          req=json.loads(Path('artifacts/r2-b-offline/cf-request-metadata.json').read_text())
+          assert req['parameter_overrides']['max_completion_tokens']==7000
+          PY
+      - name: Gate new authorization added only on this commit and first attempt
+        id: permit
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || \
+             ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | \
+             grep -Fxq data/diagnostics/BUFFALO_R2_SINGLE_REAL_REVIEW_20261027.json; then
+            echo 'allowed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('data/diagnostics/BUFFALO_R2_SINGLE_REAL_REVIEW_20261027.json').read_text())
+          expected={
+            'schema':'igc-arena-r2-buffalo-one-authorized-review/0.1',
+            'provider_model':'@cf/zai-org/glm-5.3-flash',
+            'source_snapshot_hash':'sha256:562204e3c4509718f8e9ce55d407477edc97bb4cbbcfc266ed50ca3777bd3c92',
+            'r1_parent_native_sha256':'sha256:8097496d8033bfe8b5a93eeb7d391f7c98f6bb315bdfb9e63f62b6910b437eac',
+            'request_sha256':'sha256:67015d6b469d1a89048aa6e729f1ab003192eba422492c04b1c85a2568d7b8f7',
+            'glm53_flash_preflight_tokens_plus_template_allowance':6286,
+            'max_input_tokens':8000,'max_completion_tokens':7000,
+            'max_calls':1,'retries':0,'no_cross_arm_feedback':True,
+            'no_mechanistic_repair_hint':True,'researcher_authorized':True}
+          assert d==expected, 'R2_AUTHORIZATION_MARKER_MISMATCH'
+          PY
+          echo 'allowed=true' >> "$GITHUB_OUTPUT"
+      - name: Exactly ONE live Cloudflare Workers AI Buffalo R2 review
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        continue-on-error: true
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-visible.json
+          BUFFALO_PRIOR_OUTPUT: ${{ github.workspace }}/artifacts/r2-pt01/b-parent-native.json
+          BUFFALO_R2_FEEDBACK: ${{ github.workspace }}/artifacts/r2-pt01/b-own-feedback.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/r2-b-real
+          BUFFALO_CF_MODE: live
+          BUFFALO_R2_AUTH: RUN_SINGLE_CF_AI_R2_REVIEW_20261027
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_R2_REVIEW_20261027
+          BUFFALO_R2_EXPECTED_REQUEST_SHA: sha256:67015d6b469d1a89048aa6e729f1ab003192eba422492c04b1c85a2568d7b8f7
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/arena_b_openrouter_cloudflare.mjs
+      - name: Archive original provider bytes before any translator
+        if: ${{ always() && steps.permit.outputs.allowed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-r2-b-one-raw-real-inference-before-evaluation
+          path: |
+            artifacts/r2-pt01/b-parent-native.json
+            artifacts/r2-pt01/b-own-feedback.json
+            artifacts/r2-b-real/
+          retention-days: 60
+          if-no-files-found: warn
+      - name: Attempt G0 strict no-repair native translation
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        id: g0
+        run: |
+          python -m scripts.arena_r2_b_live_finish pre \
+            --visible artifacts/r2-pt01/b-visible.json \
+            --live artifacts/r2-b-real --physical artifacts/r2-b-physical
+          if [ -s artifacts/r2-b-physical/check.mos ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: OpenModelica real physical Euler G2
+        if: ${{ steps.g0.outputs.ready == 'true' }}
+        continue-on-error: true
+        env:
+          IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/r2-b-physical "$IMAGE" \
+            omc check.mos 2>&1 | tee artifacts/r2-b-physical/omc.log
+          if grep -Eq 'Error:|Failed to load|Simulation execution failed|Error occurred' artifacts/r2-b-physical/omc.log; then exit 1; fi
+          test "$(find artifacts/r2-b-physical -name 'BuffaloNative_*_res.csv' | wc -l)" -eq 1
+      - name: Restore Docker file ownership
+        if: always()
+        run: |
+          if [ -d artifacts/r2-b-physical ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r2-b-physical; fi
+      - name: Evaluate outcomes without fabricating R1 Buffalo RMSE
+        if: ${{ steps.permit.outputs.allowed == 'true' }}
+        run: |
+          python -m scripts.arena_r2_b_live_finish final \
+            --visible artifacts/r2-pt01/b-visible.json \
+            --live artifacts/r2-b-real --physical artifacts/r2-b-physical \
+            --out artifacts/r2-b-actual-outcome.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r2-b-actual-outcome.json').read_text())
+          assert r['provider_calls']==1
+          assert r['previous_b_g3']=='NOT_COMPUTABLE'
+          assert r['comparison_to_r1_b_rmse']=='UNDEFINED_R1_NO_TRAJECTORY'
+          assert r['r2_outcome']!='FAKE'
+          print('BUFFALO_R2_ACTUAL_RESULT',r['r2_outcome'],r['g0'],r['g2'])
+          print('TOKENS_AND_COST',r.get('reported_input_tokens'),r.get('reported_output_tokens'),r.get('cost_usd_estimate'))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r2-b-single-review-all-results
+          path: |
+            artifacts/r2-b-real/
+            artifacts/r2-b-physical/
+            artifacts/r2-b-actual-outcome.json
+          retention-days: 60

@@ -145,7 +145,7 @@ jobs:
           import json
           from pathlib import Path
           r=json.loads(Path('artifacts/r2-denied-live/receipt.json').read_text())
-          assert r['error_message']=='R2_LIVE_NOT_AUTHORIZED_BY_OFFLINE_PREPARATION'
+          assert r['error_message']=='R2_LIVE_NEW_AUTHORIZATION_REQUIRED'
           assert r['live_provider_calls']==0
           print('PT02_FOREIGN_PARENT_TAMPERED_FEEDBACK_LIVE_UNAUTHORIZED_REJECTED')
           PY
