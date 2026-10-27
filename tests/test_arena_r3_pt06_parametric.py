@@ -116,6 +116,36 @@ class R3FirstCasePreflight(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"R3_OUTPUT_EXISTS"):
                 write_plan(out)
 
+    def test_future_evaluator_rejects_truth_and_unsimulated_candidates(self):
+        from scripts.arena_r3_pt06_evaluate import checked_case,evaluate_csv
+        manifest=self.manifest
+        case={
+            "schema":"igc-arena-r3-m-construction-only/0.1",
+            "case_id":"R3-T1-SHIFTED-REPRESENTABLE",
+            "observability":"deliveredTotal",
+            "public_stimulus":{"kind":"pulse","rate":1.7,"duration":2.0},
+            "construction_observations":[
+                {"t":0,"delivered":0},{"t":1,"delivered":0.2},
+                {"t":2,"delivered":0.9},{"t":3,"delivered":1.5}],
+            "measurement_bound_status":"NO_INSTRUMENT_BOUND",
+            "source_snapshot_hash":"sha256:"+"1"*64,
+            "synthetic_case":True
+        }
+        self.assertEqual(len(checked_case(case,manifest)),4)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            (root/(PACKAGE+".mo")).write_text(self.modelica)
+            with self.assertRaisesRegex(ValueError,"R3_CANDIDATE_CSV_MISSING"):
+                evaluate_csv(manifest,case,root,{"classes":[]})
+        evil=copy.deepcopy(case)
+        evil["true_topology"]="C00"
+        with self.assertRaisesRegex(ValueError,"R3_CASE_CONTAINS_TRUTH_OR_HOLDOUT"):
+            checked_case(evil,manifest)
+        evil=copy.deepcopy(case)
+        evil["construction_observations"].append({"t":4,"delivered":2})
+        with self.assertRaisesRegex(ValueError,"R3_CONSTRUCTION_TIMES_OR_VALUES_CHANGED"):
+            checked_case(evil,manifest)
+
 
 if __name__=="__main__":
     unittest.main()
