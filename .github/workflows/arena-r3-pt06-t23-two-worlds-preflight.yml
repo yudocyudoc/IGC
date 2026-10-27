@@ -1,0 +1,36 @@
+name: Arena R3 PT06 T2/T3 authorized worlds PRE-FLIGHT no solver
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_t23_grade.py'
+      - 'tests/test_arena_r3_pt06_t23_authorized_safety.py'
+      - '.github/workflows/arena-r3-pt06-t23-two-worlds-*.yml'
+permissions: {contents: read}
+jobs:
+  ready:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: No solver or provider, verify one-time gate shape and original grid
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_t23_authorized_safety.py' -v
+          python -m scripts.arena_r3_pt06_t23_worlds --out artifacts/r3-t23
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.arena_r3_pt06_t23_preregister import freeze
+          from scripts.arena_v0_contract import digest
+          r=Path('artifacts/r3-t23')
+          p=json.loads((r/'protocol.json').read_text())
+          assert digest(p)=='sha256:50cd8313a1a41cfca43391e105948c929122599b04ae70a375e255cd026b6064'
+          assert p==freeze()[0]
+          assert (r/'two-worlds-NOT-RUN.mos').read_text().count('simulate(')==2
+          assert not list(r.rglob('*_res.csv'))
+          print('R3_T23_PHYSICAL_PREFLIGHT_PASSED_NO_SIMULATIONS')
+          PY
