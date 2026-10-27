@@ -28,7 +28,7 @@ class R1NativeBuffaloInput(unittest.TestCase):
                           "0.150205","0.316560","utilization squared",
                           "generator is", "holdout.csv"):
             self.assertNotIn(forbidden,txt)
-        self.assertIn("dt=0.125",v["question"])
+        self.assertIn("dt=0.125",json.dumps(v["construction"]["known_conditions"]))
     def test_hidden_fields_are_blocked(self):
         s=deepcopy(SOURCE)
         s["holdout"]={"future":8}
