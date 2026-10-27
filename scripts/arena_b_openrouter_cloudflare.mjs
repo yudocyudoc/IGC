@@ -354,8 +354,11 @@ try {
     receipt.message_role_sequence=body.messages?.map(m=>m.role);
     const r2InputBytes=Buffer.byteLength(JSON.stringify({messages:body.messages,response_format:responseFormat}),"utf8");
     receipt.r2_input_utf8_bytes=R2?r2InputBytes:null;
-    if(R2&&SCENARIO==="live"&&r2InputBytes>8000)
-      throw Error("R2_INPUT_BYTES_EXCEED_CONSERVATIVE_8000_TOKEN_UPPER_BOUND");
+    if(R2&&SCENARIO==="offline")
+      await save("r2-upstream-tokenizer-input.json",{messages:body.messages,response_format:responseFormat});
+    if(R2&&SCENARIO==="live"&&
+       process.env.BUFFALO_R2_EXPECTED_REQUEST_SHA!==receipt.request_sha256)
+      throw Error("R2_NOT_EXACT_PREFLIGHT_REQUEST");
     if(PRIOR){
       const priorMessage=JSON.stringify(parentModel,null,2);
       if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
