@@ -1,0 +1,58 @@
+name: Arena R2 PT04 authentic ledger and ATMS memory
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r2_memory_first_cut.py'
+      - 'tests/test_arena_r2_memory_first_cut.py'
+      - '.github/workflows/arena-r2-pt04-first-cut.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  memory-first-cut:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Restore authenticated R1→R2 dossier from PT01 CI
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Verify B/M/D temporal memory and alternative ATMS supports
+        env:
+          ARENA_R2_PT01_DIR: artifacts/r2-pt01
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r2_memory_first_cut.py' -v
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r2_memory_first_cut import ingest,snapshot
+          from scripts.arena_v0_contract import canonical
+          db=Path('artifacts/pt04.sqlite')
+          result=ingest(db,'artifacts/r2-pt01','2026-10-27T15:00:00Z',
+                        '2026-10-27T15:01:00Z')
+          assert result['second_decisions']==0 and not result['feedback_delivered']
+          assert result['provider_calls']==0
+          for arm in ('D','B','M'):
+              view=snapshot(db,result['case_id'],'2026-10-27T15:01:00Z',arm)
+              assert all(':'+other+':' not in ' '.join(view['visible_entities'])
+                         for other in ({'D','B','M'}-{arm}))
+          Path('artifacts/pt04-ledger-report.json').write_bytes(canonical(result)+b'\n')
+          print('R2_PT04_REAL_F1A_LEDGER_ATMS_PREPARED_NOT_DELIVERED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r2-pt04-first-ledger-cut-real-evidence
+          path: |
+            artifacts/pt04.sqlite
+            artifacts/pt04-ledger-report.json
+          retention-days: 60
