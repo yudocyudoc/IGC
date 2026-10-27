@@ -74,12 +74,16 @@ try {
   if(R1&&(PRIOR||OWN_FEEDBACK))throw Error("R1_INITIAL_MUST_NOT_HAVE_PRIOR_OR_FEEDBACK");
   if(R2&&(PHYSICAL||BLIND||SELF))throw Error("R2_AND_HISTORICAL_FEEDBACK_MUTUALLY_EXCLUSIVE");
   if(R2&&!PRIOR)throw Error("R2_MISSING_R1_PARENT");
-  // PT02 is preparation-only. Live R2 awaits a new dedicated authorization.
-  if(R2&&SCENARIO==="live")throw Error("R2_LIVE_NOT_AUTHORIZED_BY_OFFLINE_PREPARATION");
+  // Separately approved R2 one-shot: exact branch, first workflow attempt only.
+  if(R2&&SCENARIO==="live" && (
+     process.env.BUFFALO_R2_AUTH!=="RUN_SINGLE_CF_AI_R2_REVIEW_20261027" ||
+     process.env.GITHUB_REF!=="refs/heads/integration/arena-r2-b-one-authorized-20261027" ||
+     process.env.GITHUB_RUN_ATTEMPT!=="1"))
+     throw Error("R2_LIVE_NEW_AUTHORIZATION_REQUIRED");
   if([PHYSICAL,BLIND,SELF].filter(Boolean).length>1)throw Error("MUTUALLY_EXCLUSIVE_PHYSICAL_FEEDBACK_VARIANTS");
   if(OWN_FEEDBACK && !PRIOR)throw Error("PHYSICAL_REQUIRES_PRIOR_NATIVE_MODEL");
   if(SCENARIO==="live" && (
-     process.env.BUFFALO_CF_AUTH!==(R1?"RUN_SINGLE_CF_AI_R1_COMMON":SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
+     process.env.BUFFALO_CF_AUTH!==(R2?"RUN_SINGLE_CF_AI_R2_REVIEW_20261027":R1?"RUN_SINGLE_CF_AI_R1_COMMON":SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
      process.env.GITHUB_RUN_ATTEMPT!=="1"))throw Error("CLOUDFLARE_LIVE_NOT_AUTHORIZED");
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
   if(R2){
@@ -348,6 +352,10 @@ try {
     receipt.request_sha256=hash(body);
     receipt.schema_sha256=hash(schema);
     receipt.message_role_sequence=body.messages?.map(m=>m.role);
+    const r2InputBytes=Buffer.byteLength(JSON.stringify({messages:body.messages,response_format:responseFormat}),"utf8");
+    receipt.r2_input_utf8_bytes=R2?r2InputBytes:null;
+    if(R2&&SCENARIO==="live"&&r2InputBytes>8000)
+      throw Error("R2_INPUT_BYTES_EXCEED_CONSERVATIVE_8000_TOKEN_UPPER_BOUND");
     if(PRIOR){
       const priorMessage=JSON.stringify(parentModel,null,2);
       if(!body.messages.some(m=>m.role==="assistant"&&m.content===priorMessage))
@@ -357,7 +365,8 @@ try {
       // Buffalo LLMWrapper collapses separate user turns (background + prompt)
       // into a single message joined by blank lines. Only the suffix is exact.
       receipt.current_model_seen=true;
-      if(SELF)receipt.b5_feedback_seen=true;
+      if(R2)receipt.r2_feedback_seen=true;
+      else if(SELF)receipt.b5_feedback_seen=true;
       else if(BLIND)receipt.blind_feedback_seen=true;
       else if(PHYSICAL)receipt.physical_feedback_seen=true;
       else receipt.g1_feedback_seen=true;
@@ -447,7 +456,7 @@ try {
   receipt.buffalo_inferred_arrivals_as_inflow=
     result?.model?.variables?.find(v=>v.name==="Backlog")?.inflows?.includes("Arrivals")??false;
   receipt.status=receipt.model_returned?
-    (R2?(SCENARIO==="live"?"R2_LIVE_NOT_IMPLEMENTED":"OFFLINE_BUFFALO_R2_PARENT_AND_FEEDBACK_PASS"):
+    (R2?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_R2_OWN_REVIEW_RETURNED":"OFFLINE_BUFFALO_R2_PARENT_AND_FEEDBACK_PASS"):
      SELF?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_B5_SELF_REVIEW_RETURNED":"OFFLINE_BUFFALO_B5_SELF_REVIEW_CONTRACT_PASS"):
     BLIND?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_BLIND_B4_RETURNED":"OFFLINE_BUFFALO_BLIND_B4_CONTRACT_PASS"):
     PHYSICAL?(SCENARIO==="live"?"REAL_CLOUDFLARE_BUFFALO_PHYSICAL_REVISION_RETURNED":"OFFLINE_BUFFALO_PHYSICAL_FEEDBACK_CONTRACT_PASS"):
