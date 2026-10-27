@@ -206,6 +206,35 @@ def classify(scores, manifest):
             "no_causal_structure_identification":True}
 
 
+
+def generate_first_case_world_modelica():
+    """Researcher-side synthetic case source ONLY; not an observation or test run."""
+    cfg,classes,paths=family()
+    key,graph=paths[0]
+    graph=copy.deepcopy(graph)
+    for item in graph["instances"]:
+        role=item["role"]
+        if role in ("preparation","dispatch"):
+            item["parameters"]["responseTime"]=CASE_PLAN[
+                "generating_role_responseTime_hours"][role]
+    composer.check_graph(graph,cfg,classes)
+    guard(composer.canonical(graph)==key,"R3_T1_WORLD_TOPOLOGY_DRIFT")
+    guard(not any(
+        x["parameters"]["responseTime"] in GRID
+        for x in graph["instances"] if x["role"] in ("preparation","dispatch")),
+        "R3_T1_WORLD_NOT_OFF_GRID")
+    model=stimulus_only_replace(
+        backend.render_model("R3WorldT1",graph,cfg,classes),
+        CASE_PLAN["public_stimulus"]["rate"],
+        CASE_PLAN["public_stimulus"]["duration_hours"])
+    guard("der(" not in model and "when " not in model and
+          "connect(" in model,"R3_WORLD_EQUATIONS_NOT_ORIGINAL_E1")
+    content="\n".join(["within;","package ArenaR3World",
+             model,'annotation(uses(Modelica(version="4.0.0"),SystemDynamics(version="2.1.2")));',
+             "end ArenaR3World;",""])
+    return content
+
+
 def write_plan(folder):
     folder=Path(folder)
     guard(not folder.exists(),"R3_OUTPUT_EXISTS")
@@ -213,6 +242,8 @@ def write_plan(folder):
     folder.mkdir(parents=True)
     (folder/"manifest.json").write_bytes(canonical(manifest)+b"\n")
     (folder/(PACKAGE+".mo")).write_bytes(modelica.encode())
+    (folder/"ArenaR3WorldT1-NOT-SIMULATED.mo").write_bytes(
+        generate_first_case_world_modelica().encode())
     # This file is deliberately *not* in any selector input: source truth may
     # never be used for choosing the 27 candidate scores.
     (folder/"researcher-case-blueprint-NOT-SELECTOR-INPUT.json").write_bytes(
