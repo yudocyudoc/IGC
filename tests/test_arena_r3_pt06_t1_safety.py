@@ -13,6 +13,7 @@ from scripts.arena_r3_pt06_evaluate import evaluate_csv,checked_case
 class R3T1BudgetSafety(unittest.TestCase):
     def test_single_case_28_and_no_world_reserved_observations(self):
         # Cannot emit outside artifacts/ because Modelica reads with /repo root.
+        Path("artifacts").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir="artifacts") as temp:
             name=Path(temp).name
             folder=Path("artifacts")/name/"r3-t1"
