@@ -1,0 +1,55 @@
+name: Arena R1 Buffalo postonly G1 negative no-provider
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r1_buffalo_postonly.py'
+      - 'tests/test_arena_r1_buffalo_postonly.py'
+      - '.github/workflows/arena-r1-b-postonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  one-native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Negative structural diagnostics and immutability unit tests
+        run: python -m unittest discover -s tests -p 'test_arena_r1_buffalo_postonly.py' -v
+      - name: Download actual R1 one-shot archive, no inference
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r1-three-arm-initial-complete-archive
+          run-id: 40452596916
+          github-token: ${{ github.token }}
+          path: artifacts/real-b-initial
+      - name: Verify original provider bytes and issue scientific structural verdict
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_r1_buffalo_postonly \
+            --native artifacts/real-b-initial/r1-b-live/native-output.json \
+            --old-report artifacts/real-b-initial/r1-three-arm-initial-report.json \
+            --out artifacts/r1-three-arm-structural-adjudication.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/r1-three-arm-structural-adjudication.json').read_text())
+          assert r['status']=='R1_INITIAL_THREE_ARMS_ATTEMPTED_B_G1_NEGATIVE'
+          assert r['B']['g1']['g1_status']=='FAIL_UNANCHORED_ALGEBRAIC_IDENTITY'
+          assert len(r['D']['candidates'])==6 and len(r['M']['candidates'])==3
+          assert r['B']['provider']['provider_calls_started']==1
+          assert r['B']['g2']=='FAILED_TO_BUILD_NO_PHYSICAL_SERIES'
+          assert r['B']['g3']=='NOT_COMPUTABLE'
+          assert r['winner']=='NOT_DECLARED'
+          assert r['holdout']=='NOT_ACCESSED'
+          print('R1_CLOSED_AS_INITIAL_THREE_ARM_ATTEMPT_WITH_NATIVE_G1_NEGATIVE')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r1-scientific-structural-negative-no-new-provider
+          path: artifacts/r1-three-arm-structural-adjudication.json
+          retention-days: 60
