@@ -1,0 +1,47 @@
+name: Arena R3 PT06 M3 bounded parameter search preflight (no simulations)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_parametric.py'
+      - 'tests/test_arena_r3_pt06_parametric.py'
+      - '.github/workflows/arena-r3-pt06-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bounded-design:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Exact E1 structures, 3x9 grid and frozen M3 classification
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_parametric.py' -v
+          python -m scripts.arena_r3_pt06_parametric --out artifacts/r3-pt06-plan
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/r3-pt06-plan')
+          m=json.loads((p/'manifest.json').read_text())
+          assert len(m['candidates'])==27
+          assert m['candidate_solver_calls']==m['world_solver_calls']==0
+          assert m['method_status']=='PREFLIGHT_ONLY_NOT_SIMULATED'
+          assert not any(p.glob('*res.csv'))
+          assert not any(p.glob('worlds/*'))
+          assert m['search']['max_candidate_evaluations']==27
+          assert m['search']['transit_responseTime_fixed_hours']==1.6
+          assert m['test_plan']['historical_M3_P_SIX_CASES']=='DEVELOPMENT_NOT_INDEPENDENT_VALIDATION'
+          print('R3_PT06_PREREGISTERED_27_ONLY_ZERO_SIMULATIONS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-pt06-27-parametric-grid-preflight-only
+          path: artifacts/r3-pt06-plan/
+          retention-days: 60
