@@ -28,6 +28,11 @@ jobs:
           git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
           git checkout --detach FETCH_HEAD
           npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install model tokenizer only, never model weights
+        run: python -m pip install 'tokenizers==0.22.1'
       - name: Offline preflight, no inference
         env:
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
@@ -39,3 +44,25 @@ jobs:
         run: |
           node scripts/arena_b_openrouter_cloudflare.mjs
           node -e "const r=require('./artifacts/r2-b-preflight/receipt.json');console.log('R2_INPUT_BYTES',r.r2_input_utf8_bytes);if(r.live_provider_calls!==0||!r.current_model_seen||!r.r2_feedback_seen)process.exit(1)"
+      - name: Count exact GLM-5.3-Flash tokenizer units with conservative template allowance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.request import urlopen
+          from tokenizers import Tokenizer
+          url='https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/main/tokenizer.json'
+          model=Tokenizer.from_str(urlopen(url,timeout=75).read().decode())
+          data=json.loads(Path('artifacts/r2-b-preflight/r2-upstream-tokenizer-input.json').read_text())
+          msg=sum(len(model.encode(m['content'],add_special_tokens=False).ids)
+                  for m in data['messages'])
+          schema=len(model.encode(json.dumps(data['response_format'],separators=(',',':')),
+                                  add_special_tokens=False).ids)
+          allowance=256
+          total=msg+schema+allowance
+          print('GLM53_FLASH_MESSAGE_TOKENS',msg)
+          print('GLM53_FLASH_SCHEMA_TOKENS',schema)
+          print('GLM53_FLASH_ALLOWANCE',allowance)
+          print('GLM53_FLASH_CONSERVATIVE_INPUT_TOKENS',total)
+          assert total<=8000, 'R2_INPUT_EXCEEDS_AUTHORIZED_8000_TOKEN_BUDGET'
+          PY
