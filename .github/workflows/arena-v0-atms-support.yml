@@ -1,0 +1,22 @@
+name: Arena ATMS alternative support gate
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_v0_atms_support_probe.py'
+      - 'tests/test_arena_v0_atms_support_probe.py'
+      - '.github/workflows/arena-v0-atms-support.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atms-support:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify support separation, selective failure, and retained history
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_v0_atms_support_probe.py' -v
+          python -m scripts.arena_v0_atms_support_probe
