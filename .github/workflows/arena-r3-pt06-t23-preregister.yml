@@ -1,0 +1,63 @@
+name: Arena R3 PT06 T2 T3 preregister without solver
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r3_pt06_t23_*.py'
+      - 'tests/test_arena_r3_pt06_t23_preregister.py'
+      - 'docs/ARENA_R3_PT06_T2_T3_PREDECLARACION_2026-10-27.md'
+      - '.github/workflows/arena-r3-pt06-t23-preregister.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Recover exact 27 original physical CSVs from R3-T1; never re-simulate
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1-original
+      - name: Predeclare two independent cases and audit original 27 G2 CSVs
+        env:
+          ARENA_R3_T1_ORIGINAL_DIR: artifacts/r3-t1-original
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r3_pt06_t23_preregister.py' -v
+          python -m scripts.arena_r3_pt06_t23_worlds --out artifacts/r3-t23-frozen
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r3_pt06_t23_preregister import freeze
+          from scripts.arena_v0_contract import digest
+          root=Path('artifacts/r3-t23-frozen')
+          protocol=json.loads((root/'protocol.json').read_text())
+          assert protocol==freeze()[0]
+          assert protocol['archived_candidate_run_id']==40578550337
+          assert protocol['archived_candidate_artifact_id']==12769310740
+          assert protocol['total_new_simulations_executed']==0
+          b=json.loads((root/'world-solver-budget.json').read_text())
+          assert b['world_simulations_max']==2
+          assert b['candidate_simulations_max']==0
+          assert b['new_solver_calls_now']==0
+          assert b['authorization']=='NOT_YET_REQUESTED_FOR_TWO_WORLDS'
+          assert (root/'two-worlds-NOT-RUN.mos').read_text().count('simulate(')==2
+          assert not list(root.rglob('*_res.csv'))
+          print('R3_T23_FROZEN_E1_2_WORLDS_NOT_RUN_27_G2_ORIGINAL_CSVS_VERIFIED')
+          print('R3_T23_PROTOCOL_SHA',digest(protocol))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-original-grid-two-cases-offline
+          path: |
+            artifacts/r3-t23-frozen/
+          retention-days: 60
