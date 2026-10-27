@@ -1,0 +1,25 @@
+name: Arena B1 Buffalo native translation gate
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_b_native_to_modelica.py'
+      - 'scripts/arena_b_construction_check.py'
+      - 'tests/test_arena_b_native_to_modelica.py'
+      - 'tests/test_arena_b_construction_check.py'
+      - '.github/workflows/arena-v0-b1-translation.yml'
+  workflow_dispatch:
+jobs:
+  buffalo-b1-offline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check native translator and construction diagnostics
+        run: python -m unittest discover -s tests -p 'test_arena_b_*.py' -v
+      - name: Verify no runtime or upstream dependency required for offline checks
+        run: |
+          python -m py_compile scripts/arena_b_native_to_modelica.py scripts/arena_b_construction_check.py
