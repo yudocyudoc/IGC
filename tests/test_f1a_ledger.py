@@ -5,6 +5,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 import hashlib
 import json
+from contextlib import closing
 import sqlite3
 import tempfile
 import unittest
@@ -24,7 +25,7 @@ T3 = "2026-01-04T00:00:00Z"
 class LedgerTests(unittest.TestCase):
     def test_cli_append_and_as_known_at_query_round_trip(self):
         payload_file = Path(self.tmp.name) / "payload.json"
-        payload_file.write_text(json.dumps({"text": "Podría ocurrir."}), encoding="utf-8")
+        payload_file.write_text(json.dumps({"text": "PodrÃ­a ocurrir."}), encoding="utf-8")
         common = [
             "--database", str(self.db),
             "--entity-id", "urn:igc:claim:cli",
@@ -46,10 +47,10 @@ class LedgerTests(unittest.TestCase):
                 "--as-known-at", T2,
             ])
         self.assertEqual(result, 0)
-        self.assertEqual(json.loads(shown.getvalue())[0]["payload"]["text"], "Podría ocurrir.")
+        self.assertEqual(json.loads(shown.getvalue())[0]["payload"]["text"], "PodrÃ­a ocurrir.")
 
     def test_migration_version_and_checksum_are_recorded(self):
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             version, digest = connection.execute(
                 "SELECT version, sha256 FROM schema_migrations"
             ).fetchone()
@@ -80,7 +81,7 @@ class LedgerTests(unittest.TestCase):
             "case_id": "urn:igc:case:c1",
             "actor_id": "urn:igc:actor:researcher",
             "idempotency_key": "cmd-1",
-            "payload": {"text": "El sistema podría estar lento.", "modality": "possible"},
+            "payload": {"text": "El sistema podrÃ­a estar lento.", "modality": "possible"},
             "recorded_at": T1,
             "created_at": T1,
             "valid_from": T0,
@@ -152,7 +153,7 @@ class LedgerTests(unittest.TestCase):
     def test_revision_digest_detects_payload_tampering(self):
         revision = self.record()
         self.assertTrue(self.ledger.verify_integrity(entity_id=revision.entity_id, revision=revision.revision))
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             connection.execute("DROP TRIGGER entity_revisions_no_update")
             connection.execute(
                 "UPDATE entity_revisions SET payload_json = ? WHERE entity_id = ? AND revision = ?",
@@ -162,7 +163,7 @@ class LedgerTests(unittest.TestCase):
 
     def test_canonical_tables_are_append_only(self):
         self.record()
-        with sqlite3.connect(self.db) as connection:
+        with closing(sqlite3.connect(self.db)) as connection, connection:
             with self.assertRaises(sqlite3.IntegrityError):
                 connection.execute(
                     "UPDATE ledger_events SET event_type = 'rewritten'"

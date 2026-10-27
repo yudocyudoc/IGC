@@ -77,11 +77,14 @@ def adapt(common_input, arm, *, assumptions=None, budgets=None):
     derived["construction"]={**common_fields,"known_conditions":[
         "Shared synthetic construction data; no disclosed generator structure",
         "Parameter values not estimated by this adapter"]}
-    derived["resources"]=deepcopy(budgets or {"max_model_proposals":1,"max_llm_calls":0,"max_simulations":2})
+    default_budget = ({"max_model_proposals":3,"max_llm_calls":0,"max_simulations":3}
+                      if arm=="M" else
+                      {"max_model_proposals":1,"max_llm_calls":0,"max_simulations":2})
+    derived["resources"]=deepcopy(default_budget if budgets is None else budgets)
     return {"arm_id":arm,"status":"VISIBLE_INPUT_READY_NOT_GENERATOR_RUN",
             "common_input_hash":v["input_hash"],"source_snapshot_hash":common_input["source_snapshot_hash"],
             "derived_input":derived,
-            "limits":["B_REQUIRES_AUTHORIZED_INFERENCE" if arm=="B" else "M_OBSERVATION_TO_ROLE_MAPPING_NOT_IMPLEMENTED"]}
+            "limits":["B_REQUIRES_AUTHORIZED_INFERENCE" if arm=="B" else "M_ROLE_PROJECTION_ASSUMED_FIXED_E1_PARAMETERS"]}
 
 def prepare(source,assumptions=None):
     shared,views=common(source)

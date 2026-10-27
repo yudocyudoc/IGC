@@ -1,0 +1,145 @@
+name: Arena recovered capabilities - no provider calls
+on:
+  pull_request:
+    branches: [main]
+    paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', '.github/workflows/arena-recovered-capabilities.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', '.github/workflows/arena-recovered-capabilities.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: python -m pip install --require-hashes -r requirements-f0.lock.txt
+      - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s experiments/e1 -p 'test_*.py' -v
+      - run: node --test tests/test_*.mjs
+      - name: Byte-identical original Short E1 sources
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          for path,expected in json.loads(Path('docs/ARENA_M_SHORT_E1_PROVENANCE.json').read_text())['sources'].items():
+              b=Path(path).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==expected,path
+          PY
+  archived-feedback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-m-real-common-pulse-evidence
+          run-id: 40271768284
+          github-token: ${{ github.token }}
+          path: artifacts/m1-parent
+      - uses: actions/download-artifact@v4
+        with:
+          name: buffalo-native-revision-g1-proof
+          run-id: 40259178852
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: buffalo-real-revision-modelica-g2-evidence
+          run-id: 40283017108
+          github-token: ${{ github.token }}
+          path: artifacts/b-physical-solver
+      - name: Replay real archived M2 and B3/B4 feedback (not new inference)
+        run: |
+          cp -r artifacts/b-physical-source artifacts/b4-parent
+          cp -r artifacts/b-physical-solver artifacts/b4-solver
+          python -m unittest discover -s tests/replay -p 'test_*.py' -v
+  physical-m3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Recover original three M3 candidates, two worlds, and six parameter-shift worlds
+        run: |
+          python -m scripts.arena_m3_prepare --out artifacts/recovered-m3
+          python -m scripts.arena_m3_param_shift emit --out artifacts/recovered-m3p
+          python -m scripts.arena_v0_first_round --source data/synthetic/arena_v0_primary_construction.json --assumptions data/synthetic/arena_v0_declared_d_assumptions.json --out artifacts/common-prepared.json --m-modelica-dir artifacts/common-m3
+      - name: Install original solver libraries
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+      - name: Generate common-evidence simulation commands (candidate models only)
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          folder=Path('artifacts/common-m3')
+          manifest=json.loads((folder/'manifest.json').read_text())
+          commands=['getVersion();','loadFile("/repo/src/modelica/IGCMolecules.mo");','loadFile("/repo/src/modelica/IGCInformationMolecules.mo");']
+          for c in manifest['candidates']:
+              name=c['class']
+              commands.extend([f'loadFile("/repo/{folder}/{name}.mo");',f'checkModel({name});','print(getErrorString());',f'simulate({name},startTime=0,stopTime=4,numberOfIntervals=80,method="dassl",tolerance=1e-8,outputFormat="csv",fileNamePrefix="{folder}/{c["id"].lower()}");','print(getErrorString());'])
+          (folder/'simulate.mos').write_text('\n'.join(commands)+'\n')
+          PY
+      - name: Real OpenModelica on restored and common-evidence routes
+        run: |
+          set -euo pipefail
+          for run in recovered-m3 recovered-m3p common-m3; do
+            docker run --rm -v "$PWD:/repo" -w /repo -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics openmodelica/openmodelica:v1.26.5-minimal omc "artifacts/$run/simulate.mos" 2>&1 | tee "artifacts/$run/omc.log"
+          done
+          sudo chown -R "$(id -u):$(id -g)" artifacts
+      - name: Score original M3, preserve M3-P abstentions, evaluate common input
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_m3_adjudicate import extract,grade
+          from scripts.arena_m3_select import select_case
+          from scripts.arena_v0_contract import canonical
+          p=Path('artifacts/recovered-m3');extract(p)
+          manifest=json.loads((p/'candidate-manifest.json').read_text())
+          catalog=json.loads(Path('experiments/e0/catalog.json').read_text())
+          for ident in ('case-alpha','case-beta'):
+              case=json.loads((p/'cases'/(ident+'.json')).read_text())
+              result=select_case(manifest,case,p,catalog)
+              (p/'cases'/(ident+'-selection.json')).write_bytes(canonical(result)+b'\n')
+          result=grade(p)
+          assert result['recovery_under_this_closed_synthetic_family']
+          PY
+          python -m scripts.arena_m3_param_shift extract --out artifacts/recovered-m3p
+          python -m scripts.arena_m3_param_shift grade --out artifacts/recovered-m3p --source artifacts/recovered-m3 --catalog experiments/e0/catalog.json
+          python -m scripts.arena_v0_first_round --source data/synthetic/arena_v0_primary_construction.json --assumptions data/synthetic/arena_v0_declared_d_assumptions.json --m-csv-root artifacts/common-m3 --out artifacts/common-evaluated.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          varied=json.loads(Path('artifacts/recovered-m3p/post/comparison.json').read_text())
+          assert varied['abstained']==6 and varied['wrong_topology_selected']==0
+          common=json.loads(Path('artifacts/common-evaluated.json').read_text())
+          assert common['provider_calls']==0 and common['arms']['B']['status']=='BLOCKED'
+          assert common['arms']['M']['evaluation']['reserved_evaluation']=='NOT_RUN'
+          print('M3P_NEGATIVE_RESULTS_PRESERVED',varied['abstained'])
+          print('COMMON_M3_RESULT',common['arms']['M']['evaluation'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-recovered-physical-evidence
+          path: artifacts/
+          retention-days: 60

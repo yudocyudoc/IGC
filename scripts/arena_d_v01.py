@@ -158,7 +158,7 @@ def prepare(data, out):
     for c in results["candidates"]:
         text = modelica(c, data["construction"]["input_profile"])
         name = "DStockFlow_" + c["structure_hash"][7:19]
-        (out / (name + ".mo")).write_text(text, encoding="utf-8")
+        (out / (name + ".mo")).write_text(text, encoding="utf-8", newline="\n")
         c["modelica_file"] = name + ".mo"
         c["modelica_sha256"] = "sha256:" + hashlib.sha256(text.encode()).hexdigest()
     (out / "candidates.json").write_bytes(canonical(results) + b"\n")

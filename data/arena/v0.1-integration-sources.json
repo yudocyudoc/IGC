@@ -154,5 +154,12 @@
     "The manifest is a source index, not proof of source import or test completion.",
     "No provider is called and no simulated gold is opened by this versioning increment.",
     "P0/main tests are separate from later V0.1 acceptance."
-  ]
+  ],
+  "recovery_snapshot": {
+    "base_main": "def9166f73084f315b0f155ef32625dc6fb4f61d",
+    "source_index": "data/arena/recovered-sources-20261026.json",
+    "architecture_status": "CAPABILITIES_RECOVERED_COMMON_M3_CONNECTED",
+    "release_status": "NOT_RELEASED",
+    "note": "source_tracks and release_gates above preserve the initial integration inventory; see recovery index for current files"
+  }
 }

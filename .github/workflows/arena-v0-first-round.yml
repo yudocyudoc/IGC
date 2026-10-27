@@ -1,0 +1,39 @@
+name: Arena V0 first offline multi-arm round
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_v0_first_round.py'
+      - 'tests/test_arena_v0_first_round.py'
+      - '.github/workflows/arena-v0-first-round.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  first-round:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test native independent methods and explicit blockers
+        run: python -m unittest discover -s tests -p 'test_arena_v0_first_round.py' -v
+      - name: Execute offline round and retain immutable record
+        run: |
+          mkdir -p artifacts/arena-v0-first-round
+          python -m scripts.arena_v0_first_round --source data/synthetic/arena_v0_primary_construction.json --assumptions data/synthetic/arena_v0_declared_d_assumptions.json --out artifacts/arena-v0-first-round/round.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/arena-v0-first-round/round.json').read_text())
+          assert x['arms']['D']['status']=='NATIVE_CANDIDATES_GENERATED_NOT_SIMULATED'
+          assert x['arms']['B']['status']=='BLOCKED'
+          assert x['arms']['M']['status']=='M3_CANDIDATES_PREPARED_NOT_SIMULATED'
+          assert len(x['arms']['M']['submission']['hypothesis_ids'])==3
+          assert x['provider_calls']==x['solver_calls']==0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-v0-offline-first-round
+          path: artifacts/arena-v0-first-round/round.json
+          retention-days: 30
