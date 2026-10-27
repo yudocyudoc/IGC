@@ -1,0 +1,87 @@
+name: Arena R2 PT05 joint closure from authentic artifacts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_b_native_series.py'
+      - 'scripts/arena_r2_pt05_close.py'
+      - 'tests/test_arena_r2_pt05_close.py'
+      - '.github/workflows/arena-r2-pt05-close.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  joint-closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Restore R1 authenticated source and own D/M traces
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-pt01-three-private-packages-authenticated
+          run-id: 40479578291
+          github-token: ${{ github.token }}
+          path: artifacts/r2-pt01
+      - name: Restore original Buffalo 7k truncated provider and evaluator
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r2-b-single-review-all-results
+          run-id: 40486060023
+          github-token: ${{ github.token }}
+          path: artifacts/r2-7k
+      - name: Restore original Buffalo 16k physical simulation and evaluator
+        uses: actions/download-artifact@v4
+        with:
+          name: buffalo-r2-16k-all-results
+          run-id: 40490534985
+          github-token: ${{ github.token }}
+          path: artifacts/r2-16k
+      - name: Repackage untouched received bytes
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          for name in ('7k','16k'):
+              src=Path('artifacts/r2-'+name)
+              with zipfile.ZipFile('artifacts/original-r2-'+name+'.zip','w') as out:
+                  for file in sorted(src.rglob('*')):
+                      if file.is_file():
+                          out.write(file,file.relative_to(src).as_posix())
+          PY
+      - name: Test real physical material-flow resolution and before-after ATMS
+        env:
+          ARENA_R2_PT01_DIR: artifacts/r2-pt01
+          ARENA_R2_7K_ZIP: artifacts/original-r2-7k.zip
+          ARENA_R2_16K_ZIP: artifacts/original-r2-16k.zip
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r2_pt05_close.py' -v
+          python -m scripts.arena_r2_pt05_close \
+            --dossier "$ARENA_R2_PT01_DIR" \
+            --r2-7k "$ARENA_R2_7K_ZIP" \
+            --r2-16k "$ARENA_R2_16K_ZIP" \
+            --db artifacts/pt05-r2-ledger.sqlite \
+            --out artifacts/pt05-joint-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/pt05-joint-report.json').read_text())
+          assert r['b16']['original_auto_verdict']=='G2_OR_G3_REJECTED'
+          assert r['b16']['g2']=='REAL_OPENMODELICA_TRAJECTORY_ON_ALTERED_INPUT'
+          assert r['b16']['g3']=='NOT_ESTABLISHED'
+          assert not r['b16']['pulse_fidelity']['same_stimulus_as_D_M']
+          assert r['calls']['additional_calls_in_PT05']==0
+          print('PT05_JOINT_CLOSURE_REAL_R1_R2_ARTIFACTS_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r2-pt05-joint-report-native-conditional-atms
+          path: |
+            artifacts/pt05-joint-report.json
+            artifacts/pt05-r2-ledger.sqlite
+          retention-days: 60
