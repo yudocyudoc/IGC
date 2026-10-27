@@ -1,0 +1,55 @@
+name: Arena V0.1 — independently ported deterministic D (no Cloudflare)
+on:
+  push:
+    branches: [integration/arena-v0.1-d-independent]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_d_v01.py'
+      - 'tests/test_arena_d_v01.py'
+      - 'data/synthetic/arena_d_v01_visible.json'
+      - 'docs/ARENA_V0_1_D_PROMOCION_SELECTIVA_2026-10-26.md'
+      - '.github/workflows/arena-v0-d-port.yml'
+permissions:
+  contents: read
+jobs:
+  D-native-generator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Contract and independent D native structural generation
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_v0_contract.py' -v
+          python -m unittest discover -s tests -p 'test_arena_d_v01.py' -v
+          python -m scripts.arena_d_v01 prepare \
+            --input data/synthetic/arena_d_v01_visible.json \
+            --out artifacts/d-v0.1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/d-v0.1')
+          a=json.loads((p/'candidates.json').read_text())
+          s=json.loads((p/'submission.json').read_text())
+          e=json.loads((p/'memory-event.json').read_text())
+          assert a['arm_id']==s['arm_id']==e['arm_id']=='D'
+          assert len(a['candidates'])==len(list(p.glob('*.mo')))==6
+          assert s['status']=='PROPOSED'
+          assert e['event_type']=='HYPOTHESIS_PROPOSED'
+          for mo in p.glob('*.mo'):
+              code=mo.read_text()
+              assert 'der(' in code and 'IGCMolecules' not in code
+          print('V0_D_NATIVE_GENERATOR_PORT_PASS_G0_G1_ONLY_NO_G2_NO_ATMS_RUNTIME')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-v0-d-native-only-six-stockflow-candidates
+          path: artifacts/d-v0.1/
+          retention-days: 30
+          if-no-files-found: error

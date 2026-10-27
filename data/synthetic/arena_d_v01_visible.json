@@ -1,0 +1,49 @@
+{
+  "schema": "igc-arena-visible-input/0.1",
+  "investigation_id": "D0-DEMO-SYNTHETIC",
+  "round_id": "R0",
+  "question": "Which stock-flow mechanisms are plausible for cumulative deliveries after a finite input pulse?",
+  "construction": {
+    "input_profile": {
+      "kind": "pulse",
+      "rate": 1.7,
+      "duration": 2
+    },
+    "nominal_parameters": {
+      "capacity": 2,
+      "response_time": 1,
+      "loss_time": 3
+    },
+    "observations": [
+      {
+        "t": 0,
+        "delivered": 0
+      },
+      {
+        "t": 1,
+        "delivered": 0.35
+      },
+      {
+        "t": 2,
+        "delivered": 1.1
+      },
+      {
+        "t": 4,
+        "delivered": 2.5
+      }
+    ]
+  },
+  "observability": {
+    "stock_unit": "items",
+    "time_unit": "hour",
+    "observable": "cumulative_delivered"
+  },
+  "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "iteration_limit": 2,
+  "resources": {
+    "max_stocks": 3,
+    "allow_loss": true,
+    "max_candidates": 6,
+    "max_simulations": 6
+  }
+}
