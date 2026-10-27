@@ -15,6 +15,8 @@ from typing import Any, Iterable
 
 
 ENGINE_VERSION = "igc-arena-atms/0.1"
+# Preserve historical S/P/B0 replays while admitting the current D/B/M arms.
+MEMORY_LANES = frozenset({"D", "B", "M", "S", "P", "B0"})
 KINDS = frozenset({"assumption", "fact", "justification", "nogood"})
 MAX_ENVIRONMENTS = 2000
 MAX_COMBINATIONS = 20000
@@ -230,7 +232,7 @@ def project(events: Iterable[dict[str, Any]], *, as_known_at: str, lane: str,
             max_combinations: int = MAX_COMBINATIONS,
             max_steps: int = MAX_STEPS) -> tuple[ATMS, dict[str, Any]]:
     """Rebuild from versioned events, filtering visibility BEFORE ATMS propagation."""
-    if lane not in ("D", "S", "P", "B0"):
+    if lane not in MEMORY_LANES:
         raise ATMSError("unknown lane")
     cut = _utc(as_known_at)
     latest: dict[tuple[str, str], tuple[datetime, int, dict]] = {}

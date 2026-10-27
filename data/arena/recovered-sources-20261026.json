@@ -1,0 +1,518 @@
+{
+  "schema": "igc-arena-recovery-sources/0.1",
+  "base_main": "def9166f73084f315b0f155ef32625dc6fb4f61d",
+  "source_index_only": true,
+  "active_arms": [
+    "D",
+    "B",
+    "M"
+  ],
+  "clef": "EXPERIMENT_ONLY",
+  "new_provider_calls": 0,
+  "sources": [
+    {
+      "path": "docs/ARENA_M0_SHORT_E1_INDEPENDENT.md",
+      "source_path": "docs/ARENA_M0_SHORT_E1_INDEPENDENT.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "1af65ae96424c5165cb568f60b52e293d717e288",
+      "working_blob": "8c7a83af9d0efcf4fa6872e13f9f58c0ee9f029a",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "docs/ARENA_M1_REAL_COMMON_PULSE_RESULTS.md",
+      "source_path": "docs/ARENA_M1_REAL_COMMON_PULSE_RESULTS.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "2b95cd3e78a22bdbf38e0ccb5b13a017faf7b864",
+      "working_blob": "2b95cd3e78a22bdbf38e0ccb5b13a017faf7b864",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_M2_OWN_FEEDBACK_EXPERIMENT.md",
+      "source_path": "docs/ARENA_M2_OWN_FEEDBACK_EXPERIMENT.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "4e031441a4dd1b67fc72e58a2ad0dd5b31e333fa",
+      "working_blob": "4e031441a4dd1b67fc72e58a2ad0dd5b31e333fa",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_M2_REAL_RESULTS.md",
+      "source_path": "docs/ARENA_M2_REAL_RESULTS.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "69af5389dd7d639127365a39ce626f52cec1a717",
+      "working_blob": "69af5389dd7d639127365a39ce626f52cec1a717",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_M3_P_VARIACION_PARAMETRICA_RESULTADOS_2026-10-26.md",
+      "source_path": "docs/ARENA_M3_P_VARIACION_PARAMETRICA_RESULTADOS_2026-10-26.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "b07e865726b1318712b4e48f46783ed48eb76007",
+      "working_blob": "b07e865726b1318712b4e48f46783ed48eb76007",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_M3_SELECCION_ESTRUCTURAL_OBSERVACIONAL_2026-10-26.md",
+      "source_path": "docs/ARENA_M3_SELECCION_ESTRUCTURAL_OBSERVACIONAL_2026-10-26.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "84896ac516e7b5b1c470c63f79bf34e6576f1b50",
+      "working_blob": "84896ac516e7b5b1c470c63f79bf34e6576f1b50",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_M_G3_CONSTRUCTION_ERRATUM_2026-10-26.md",
+      "source_path": "docs/ARENA_M_G3_CONSTRUCTION_ERRATUM_2026-10-26.md",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "b6e3f54f567b4c61fa0ca48949dc9612731e3e15",
+      "working_blob": "b6e3f54f567b4c61fa0ca48949dc9612731e3e15",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m2_compare.py",
+      "source_path": "scripts/arena_m2_compare.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "b0d798388738b302bd38df94f7fefe465191aea6",
+      "working_blob": "b0d798388738b302bd38df94f7fefe465191aea6",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m2_feedback.py",
+      "source_path": "scripts/arena_m2_feedback.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "916616e9472bf43478fff47ef40d5ae0a493a4ef",
+      "working_blob": "916616e9472bf43478fff47ef40d5ae0a493a4ef",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m3_adjudicate.py",
+      "source_path": "scripts/arena_m3_adjudicate.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "d2a9a6e90f2b4b8f6f0e7d50812d7c8843f9451a",
+      "working_blob": "d2a9a6e90f2b4b8f6f0e7d50812d7c8843f9451a",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m3_param_shift.py",
+      "source_path": "scripts/arena_m3_param_shift.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "5269e861d0bc4d2d82996042a340b2d626d729c1",
+      "working_blob": "5269e861d0bc4d2d82996042a340b2d626d729c1",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m3_prepare.py",
+      "source_path": "scripts/arena_m3_prepare.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "32afe54149607622b9069e13bc34ec0a4a8b6e2f",
+      "working_blob": "32afe54149607622b9069e13bc34ec0a4a8b6e2f",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m3_select.py",
+      "source_path": "scripts/arena_m3_select.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "f728ef74d5b9380eccfe21744f15a3147f4be667",
+      "working_blob": "f728ef74d5b9380eccfe21744f15a3147f4be667",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m_visible_pulse.py",
+      "source_path": "scripts/arena_m_visible_pulse.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "23f838407d2e33f8f05890645321bf09ed965de4",
+      "working_blob": "23f838407d2e33f8f05890645321bf09ed965de4",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_m_visible_verify.py",
+      "source_path": "scripts/arena_m_visible_verify.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "b2e5c92a94730500c93464db9ef0e683d8a1ecd6",
+      "working_blob": "b2e5c92a94730500c93464db9ef0e683d8a1ecd6",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/replay/test_arena_m2_feedback.py",
+      "source_path": "tests/test_arena_m2_feedback.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "b0b97d1acd7aa14ab67eda215c3db06ad5052bda",
+      "working_blob": "b0b97d1acd7aa14ab67eda215c3db06ad5052bda",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/test_arena_m3_structure.py",
+      "source_path": "tests/test_arena_m3_structure.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "3badbbf8ae79dace4e1b45d4ac201f8b8ded0340",
+      "working_blob": "3badbbf8ae79dace4e1b45d4ac201f8b8ded0340",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/test_arena_m_visible_pulse.py",
+      "source_path": "tests/test_arena_m_visible_pulse.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "9a4df08afafb7c3ef07c2d892e7e16429d681229",
+      "working_blob": "9a4df08afafb7c3ef07c2d892e7e16429d681229",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/test_arena_m_visible_verify.py",
+      "source_path": "tests/test_arena_m_visible_verify.py",
+      "pr": 41,
+      "source_commit": "2a40af418af4bbbb3dd95764a7b4ea7550fafae8",
+      "source_blob": "34f71e25968ecfef56fb5ef58b3548b346fe4645",
+      "working_blob": "34f71e25968ecfef56fb5ef58b3548b346fe4645",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B3_OWN_PHYSICAL_FEEDBACK_EXPERIMENT.md",
+      "source_path": "docs/ARENA_B3_OWN_PHYSICAL_FEEDBACK_EXPERIMENT.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "c50b67c490350a6ec3e949b386e6ffcd2b00244c",
+      "working_blob": "c50b67c490350a6ec3e949b386e6ffcd2b00244c",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B3_REAL_LLM_OUTPUT_AND_ARCHIVE_INCIDENT_2026-10-26.md",
+      "source_path": "docs/ARENA_B3_REAL_LLM_OUTPUT_AND_ARCHIVE_INCIDENT_2026-10-26.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "baec19217314d1446446dc10f2e766013ae10073",
+      "working_blob": "baec19217314d1446446dc10f2e766013ae10073",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B3_REPETICION_REAL_ASTRA_AUDITORIA_2026-10-26.md",
+      "source_path": "docs/ARENA_B3_REPETICION_REAL_ASTRA_AUDITORIA_2026-10-26.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "2bb1b332e9bba9e74074222c52207fc66b24aee0",
+      "working_blob": "2bb1b332e9bba9e74074222c52207fc66b24aee0",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B4_DIAGNOSTICO_CIEGO_REAL_RESULTADOS_2026-10-26.md",
+      "source_path": "docs/ARENA_B4_DIAGNOSTICO_CIEGO_REAL_RESULTADOS_2026-10-26.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "1842b02ab5e391010eb8333025fca43e2f1265c7",
+      "working_blob": "1842b02ab5e391010eb8333025fca43e2f1265c7",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B5_AUTOCORRECCION_B4_REAL_2026-10-26.md",
+      "source_path": "docs/ARENA_B5_AUTOCORRECCION_B4_REAL_2026-10-26.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "5dde2679b0de82b4ff7d9a491572182d811f0f3e",
+      "working_blob": "5dde2679b0de82b4ff7d9a491572182d811f0f3e",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_ASTRA_G0_G3_ERRATUM_2026-10-26.md",
+      "source_path": "docs/ARENA_B_ASTRA_G0_G3_ERRATUM_2026-10-26.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "e3ab30be1f16d14f5758bf87090e06b91247edbc",
+      "working_blob": "e3ab30be1f16d14f5758bf87090e06b91247edbc",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_NATIVE_ENGINE_EXPERIMENT.md",
+      "source_path": "docs/ARENA_B_NATIVE_ENGINE_EXPERIMENT.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "bc647f2739088d95f3363b857f99ce9426cce848",
+      "working_blob": "bc647f2739088d95f3363b857f99ce9426cce848",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_NATIVE_QUANTITATIVE_RUN_RESULTS.md",
+      "source_path": "docs/ARENA_B_NATIVE_QUANTITATIVE_RUN_RESULTS.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "a7eb4544eb29ad9149fb8d5d22a01fd3939d5461",
+      "working_blob": "a7eb4544eb29ad9149fb8d5d22a01fd3939d5461",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_NATIVE_REAL_OUTPUT_G1_AUDIT.md",
+      "source_path": "docs/ARENA_B_NATIVE_REAL_OUTPUT_G1_AUDIT.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "f2fdbf1ca504f5a620b8066f2f0b41dd1a32506b",
+      "working_blob": "f2fdbf1ca504f5a620b8066f2f0b41dd1a32506b",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_NATIVE_REVISION_G2_RESULTS.md",
+      "source_path": "docs/ARENA_B_NATIVE_REVISION_G2_RESULTS.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "fe5e16e4eff9912ebb216856bc770e8f2e48b12c",
+      "working_blob": "fe5e16e4eff9912ebb216856bc770e8f2e48b12c",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B_OPENROUTER_SDK_MOCK_RESULTS.md",
+      "source_path": "docs/ARENA_B_OPENROUTER_SDK_MOCK_RESULTS.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "06d33273aa4ac8be77ec75be84dd37e6ca9d7232",
+      "working_blob": "41c05c6990d93f9d7a6248b546beac330e73ac62",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "docs/ARENA_B_VIRTUAL_OPENROUTER_CLOUDFLARE.md",
+      "source_path": "docs/ARENA_B_VIRTUAL_OPENROUTER_CLOUDFLARE.md",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "b0597a023027d9691f6acb0832085e0023408265",
+      "working_blob": "b0597a023027d9691f6acb0832085e0023408265",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b4_blind_feedback.py",
+      "source_path": "scripts/arena_b4_blind_feedback.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "d3242886b0e688c58d236be6062f859e86da6ce0",
+      "working_blob": "d3242886b0e688c58d236be6062f859e86da6ce0",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b5_own_discrepancy.py",
+      "source_path": "scripts/arena_b5_own_discrepancy.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "e88a7417e79cc12991bda19ba543e83a0286af7e",
+      "working_blob": "e88a7417e79cc12991bda19ba543e83a0286af7e",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b_cf_protocol_adapter.mjs",
+      "source_path": "scripts/arena_b_cf_protocol_adapter.mjs",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "33e10b1dd9d36d3043c57e7f97e3d4513dd98de4",
+      "working_blob": "33e10b1dd9d36d3043c57e7f97e3d4513dd98de4",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b_native_g1_diagnostic.mjs",
+      "source_path": "scripts/arena_b_native_g1_diagnostic.mjs",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "ce354d7fa0fa2819a7ed9c4125e0615b0a7db116",
+      "working_blob": "ce354d7fa0fa2819a7ed9c4125e0615b0a7db116",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b_openrouter_cloudflare.mjs",
+      "source_path": "scripts/arena_b_openrouter_cloudflare.mjs",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "94cc328c033af7fd14b374a17b94afc1dfaae9a9",
+      "working_blob": "3cb99b49ab6be82e186274b980d8fd16db713dd4",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "scripts/arena_b_physical_feedback.py",
+      "source_path": "scripts/arena_b_physical_feedback.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "aacef6280c18f4caf69e6445722641afe9d062cb",
+      "working_blob": "aacef6280c18f4caf69e6445722641afe9d062cb",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b_physical_outcome.py",
+      "source_path": "scripts/arena_b_physical_outcome.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "e7ea589d1dd08e50e254c3a8f7ee94e7031dff73",
+      "working_blob": "e7ea589d1dd08e50e254c3a8f7ee94e7031dff73",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/replay/test_arena_b4_blind_feedback.py",
+      "source_path": "tests/test_arena_b4_blind_feedback.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "8202fe1442c4c91ea087c47aa46adea8619dbc3c",
+      "working_blob": "8202fe1442c4c91ea087c47aa46adea8619dbc3c",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/test_arena_b_native_g1_diagnostic.mjs",
+      "source_path": "tests/test_arena_b_native_g1_diagnostic.mjs",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "e822b9536101e475b286612a6d6a77ca70a7391a",
+      "working_blob": "e822b9536101e475b286612a6d6a77ca70a7391a",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/replay/test_arena_b_physical_feedback.py",
+      "source_path": "tests/test_arena_b_physical_feedback.py",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "54e45d04ccc58bf3f7c8f62e0bcedcffe80868e4",
+      "working_blob": "54e45d04ccc58bf3f7c8f62e0bcedcffe80868e4",
+      "port": "EXACT"
+    },
+    {
+      "path": "tests/test_arena_b_physical_token_budget.mjs",
+      "source_path": "tests/test_arena_b_physical_token_budget.mjs",
+      "pr": 40,
+      "source_commit": "edd3db9b1623f70a52a076450d3f24fb7553d0c0",
+      "source_blob": "d06af869e0c383db86642b94bc8b4bb4fb59b99e",
+      "working_blob": "d06af869e0c383db86642b94bc8b4bb4fb59b99e",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_DM_PULSO_DISCRIMINANTE_CONGELADO_2026-10-26.md",
+      "source_path": "docs/ARENA_DM_PULSO_DISCRIMINANTE_CONGELADO_2026-10-26.md",
+      "pr": 37,
+      "source_commit": "1a9b055b0e8e52dba6affc8f60250628479abae4",
+      "source_blob": "174d3963070dd7e2a423e2904eb940c9be3f0809",
+      "working_blob": "174d3963070dd7e2a423e2904eb940c9be3f0809",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_dm_frozen_pulse.py",
+      "source_path": "scripts/arena_dm_frozen_pulse.py",
+      "pr": 37,
+      "source_commit": "1a9b055b0e8e52dba6affc8f60250628479abae4",
+      "source_blob": "ea81a2740693e9fdabb689fd293045ad5b3246a8",
+      "working_blob": "ea81a2740693e9fdabb689fd293045ad5b3246a8",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_B2_B3_PULSO_BAJA_UTILIZACION_RESULTADO_2026-10-26.md",
+      "source_path": "docs/ARENA_B2_B3_PULSO_BAJA_UTILIZACION_RESULTADO_2026-10-26.md",
+      "pr": 38,
+      "source_commit": "d6b0d73c993df197485f24ccdc52cbbcca262a04",
+      "source_blob": "277c2a7dd55bde52c09be46049ac453e8d7bfaa6",
+      "working_blob": "277c2a7dd55bde52c09be46049ac453e8d7bfaa6",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_b_frozen_lowutil.py",
+      "source_path": "scripts/arena_b_frozen_lowutil.py",
+      "pr": 38,
+      "source_commit": "d6b0d73c993df197485f24ccdc52cbbcca262a04",
+      "source_blob": "493b93a03711bfef12adf6598870fa0fe7c4899c",
+      "working_blob": "493b93a03711bfef12adf6598870fa0fe7c4899c",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_CLEF_DOS_PILOTOS_REALES_RESULTADOS_2026-10-26.md",
+      "source_path": "docs/ARENA_CLEF_DOS_PILOTOS_REALES_RESULTADOS_2026-10-26.md",
+      "pr": 39,
+      "source_commit": "0a59b8de9afdd53a2273d6f42274d7cc269ef5ba",
+      "source_blob": "48c6c7dfc216eb98cf8b311bc26d829b1e0d933d",
+      "working_blob": "48c6c7dfc216eb98cf8b311bc26d829b1e0d933d",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_clef_dual_pilot.py",
+      "source_path": "scripts/arena_clef_dual_pilot.py",
+      "pr": 39,
+      "source_commit": "0a59b8de9afdd53a2273d6f42274d7cc269ef5ba",
+      "source_blob": "2aad1af443295a929bb2ed66c0084acad8e322ac",
+      "working_blob": "2aad1af443295a929bb2ed66c0084acad8e322ac",
+      "port": "EXACT"
+    },
+    {
+      "path": ".github/workflows/arena-v0-first-round.yml",
+      "source_path": ".github/workflows/arena-v0-first-round.yml",
+      "pr": 51,
+      "source_commit": "1beb3f7756b4e2a3b933db3e3f5089a707168fa1",
+      "source_blob": "0cec1a4185706941219e8f76df081a09a114834e",
+      "working_blob": "76c116c4c8b5a8ebbae363a555b00353aa40576b",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "docs/ARENA_V0_FIRST_OFFLINE_ROUND_2026-10-26.md",
+      "source_path": "docs/ARENA_V0_FIRST_OFFLINE_ROUND_2026-10-26.md",
+      "pr": 51,
+      "source_commit": "1beb3f7756b4e2a3b933db3e3f5089a707168fa1",
+      "source_blob": "c63ec135a9bdfb30e7e9b4a2f01b502bade58eb0",
+      "working_blob": "c63ec135a9bdfb30e7e9b4a2f01b502bade58eb0",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_v0_first_round.py",
+      "source_path": "scripts/arena_v0_first_round.py",
+      "pr": 51,
+      "source_commit": "1beb3f7756b4e2a3b933db3e3f5089a707168fa1",
+      "source_blob": "efb3bcf18c32dd99c9046ff26668ab2e09188976",
+      "working_blob": "e6ecffe22333c6ec3d7ea28c60fe7960b6e818bc",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "tests/test_arena_v0_first_round.py",
+      "source_path": "tests/test_arena_v0_first_round.py",
+      "pr": 51,
+      "source_commit": "1beb3f7756b4e2a3b933db3e3f5089a707168fa1",
+      "source_blob": "4897cd03478b0259542c7a54ffdda0b0fc104cd0",
+      "working_blob": "e4defdfde2afc8f9bcc7089cfd3cbed1578f1e11",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "data/synthetic/arena_memory_m0.json",
+      "source_path": "data/synthetic/arena_memory_m0.json",
+      "pr": 16,
+      "source_commit": "f71025f409c490e344918b0d610edcef921de60c",
+      "source_blob": "636702083a88fa5f4a60999d29d621200bb32ec9",
+      "working_blob": "636702083a88fa5f4a60999d29d621200bb32ec9",
+      "port": "EXACT"
+    },
+    {
+      "path": "docs/ARENA_ATMS_M0_IMPLEMENTACION.md",
+      "source_path": "docs/ARENA_ATMS_M0_IMPLEMENTACION.md",
+      "pr": 16,
+      "source_commit": "f71025f409c490e344918b0d610edcef921de60c",
+      "source_blob": "b67d92533441715aefa5d4b374267528e9dd8f04",
+      "working_blob": "b67d92533441715aefa5d4b374267528e9dd8f04",
+      "port": "EXACT"
+    },
+    {
+      "path": "scripts/arena_memory.py",
+      "source_path": "scripts/arena_memory.py",
+      "pr": 16,
+      "source_commit": "f71025f409c490e344918b0d610edcef921de60c",
+      "source_blob": "d090767fb30e776c9ec9afa579248b72c379392f",
+      "working_blob": "cd83254f1e06c7705227423d9669cf0deb8cadc2",
+      "port": "ADAPTED"
+    },
+    {
+      "path": "tests/test_arena_atms_memory.py",
+      "source_path": "tests/test_arena_atms_memory.py",
+      "pr": 16,
+      "source_commit": "f71025f409c490e344918b0d610edcef921de60c",
+      "source_blob": "ac7ed6266fcfc29ac4dca31f95463e7ea5293a97",
+      "working_blob": "ac7ed6266fcfc29ac4dca31f95463e7ea5293a97",
+      "port": "EXACT"
+    }
+  ]
+}
