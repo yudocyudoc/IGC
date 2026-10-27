@@ -1,0 +1,109 @@
+name: Arena V0.1 — original Buffalo quantitative engine offline G0 preflight
+on:
+  push:
+    branches: [integration/arena-v0.1-b-native-offline]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_b_native_runner.mjs'
+      - 'scripts/arena_b_openrouter_mock.mjs'
+      - 'scripts/arena_b_cf_protocol_adapter.mjs'
+      - 'scripts/arena_b_openrouter_cloudflare.mjs'
+      - 'data/synthetic/arena_b_native_visible.json'
+      - 'tests/test_arena_b_cf_protocol_adapter.mjs'
+      - '.github/workflows/arena-v0-b-native.yml'
+permissions:
+  contents: read
+jobs:
+  original-upstream-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch UNMODIFIED original University at Buffalo SD-AI at pinned SHA
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          grep -q 'MIT License' LICENSE
+          echo 'BUFFALO_ORIGINAL_SHA_AND_MIT_LICENSE_AUTHENTICATED'
+      - name: Install original upstream dependencies without postinstall hooks
+        working-directory: upstream/sd-ai
+        run: npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Original Engine.generate stock-flow native schema via local mock ONLY
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-native-offline
+          BUFFALO_MODE: mock
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          node scripts/arena_b_native_runner.mjs
+          node - <<'JS'
+          const r=require('./artifacts/buffalo-native-offline/receipt.json');
+          if (r.status!=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS' ||
+              r.provider_calls!==0 || r.proxy_requests!==1 ||
+              !r.quant_schema_seen || !r.inferred_inflow_by_buffalo.includes('Arrivals'))
+             throw Error('ORIGINAL_BUFFALO_NATIVE_OFFLINE_PATH_FAILED');
+          console.log('BUFFALO_ORIGINAL_ENGINE_G0_NATIVE_STRUCTURE_NO_PROVIDER_PASS');
+          JS
+      - name: Original OpenRouter SDK route with valid and invalid local response
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+        run: |
+          set -euo pipefail
+          BUFFALO_OUTPUT="$GITHUB_WORKSPACE/artifacts/buffalo-sdk-valid" BUFFALO_MOCK_SCENARIO=valid node scripts/arena_b_openrouter_mock.mjs
+          BUFFALO_OUTPUT="$GITHUB_WORKSPACE/artifacts/buffalo-sdk-invalid" BUFFALO_MOCK_SCENARIO=invalid_json node scripts/arena_b_openrouter_mock.mjs
+          node - <<'JS'
+          const a=require('./artifacts/buffalo-sdk-valid/receipt.json');
+          const b=require('./artifacts/buffalo-sdk-invalid/receipt.json');
+          if(a.status!=='OFFLINE_OPENROUTER_NATIVE_ENGINE_PASS' ||
+             a.intercepted_http_calls!==1 || a.live_provider_calls!==0 ||
+             !a.model_returned || !a.structured_request_seen)
+             throw Error('BUFFALO_SDK_VALID_PATH_FAILED');
+          if(b.model_returned || b.intercepted_http_calls!==1 ||
+             b.live_provider_calls!==0 || !b.structured_request_seen)
+             throw Error('BUFFALO_SDK_INVALID_JSON_WAS_NOT_REJECTED');
+          console.log('BUFFALO_REAL_ORIGINAL_SDK_OFFLINE_CONTRACT_VALID_INVALID_PASS');
+          JS
+      - name: Verify Cloudflare transport mapping without sending API requests
+        run: |
+          set -euo pipefail
+          node --test tests/test_arena_b_cf_protocol_adapter.mjs
+      - name: Real original SDK through OFFLINE virtual Cloudflare transport, zero calls
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/data/synthetic/arena_b_native_visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/buffalo-virtual-cf-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          node - <<'JS'
+          const r=require('./artifacts/buffalo-virtual-cf-offline/receipt.json');
+          if(r.status!=='OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS'||
+             r.live_provider_calls!==0 || r.intercepted_http_calls!==1 ||
+             !r.structured_request_seen || !r.buffalo_inferred_arrivals_as_inflow)
+             throw Error('BUFFALO_CLOUDFLARE_OFFLINE_PATH_FAILED');
+          console.log('BUFFALO_REAL_SDAI_ENGINE_OFFLINE_CLOUDFLARE_COMPAT_PASS');
+          JS
+      - name: Archive exact offline native result and proof, never publish as real inference
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-v0-b-original-buffalo-fully-offline-engine-proof
+          path: artifacts/
+          retention-days: 60
+          if-no-files-found: warn

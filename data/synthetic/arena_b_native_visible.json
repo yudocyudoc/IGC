@@ -1,0 +1,48 @@
+{
+  "schema": "igc-arena-visible-input/0.1",
+  "investigation_id": "B-NATIVE-SYNTHETIC",
+  "round_id": "R0",
+  "question": "Why does pending work accumulate when arrivals exceed completion capacity, and how do completion delays arise?",
+  "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "iteration_limit": 2,
+  "construction": {
+    "input_profile": {
+      "kind": "pulse",
+      "rate": 1.7,
+      "duration": 2
+    },
+    "observations": [
+      {
+        "t": 0,
+        "delivered": 0
+      },
+      {
+        "t": 1,
+        "delivered": 0.35
+      },
+      {
+        "t": 2,
+        "delivered": 1.1
+      },
+      {
+        "t": 4,
+        "delivered": 2.5
+      }
+    ],
+    "known_conditions": [
+      "Synthetic construction, no disclosed generator mechanism",
+      "Initial unfinished work assumed zero",
+      "Input pulse ends after two hours"
+    ]
+  },
+  "observability": {
+    "stock_unit": "items",
+    "time_unit": "hour",
+    "observable": "cumulative_delivered"
+  },
+  "resources": {
+    "max_model_proposals": 1,
+    "max_llm_calls": 1,
+    "max_simulations": 2
+  }
+}
