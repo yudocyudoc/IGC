@@ -1,0 +1,20 @@
+test_original_v02_preserved_unchanged (__main__.Checks.test_original_v02_preserved_unchanged) ... ok
+test_positive_contract (__main__.Checks.test_positive_contract) ... ok
+test_pulse_discrete_total (__main__.Checks.test_pulse_discrete_total) ... ok
+test_ref_capacity_empirical_not_hidden_true_cap (__main__.Checks.test_ref_capacity_empirical_not_hidden_true_cap) ... ok
+test_ref_capacity_insufficient_data_abstains (__main__.Checks.test_ref_capacity_insufficient_data_abstains) ... ok
+test_reject_approval_without_gates (__main__.Checks.test_reject_approval_without_gates) ... ok
+test_reject_extra_des_run_for_CAF_N (__main__.Checks.test_reject_extra_des_run_for_CAF_N) ... ok
+test_reject_loss_graph_reenabled (__main__.Checks.test_reject_loss_graph_reenabled) ... ok
+test_reject_manipulated_assumptions (__main__.Checks.test_reject_manipulated_assumptions) ... ok
+test_reject_missing_mask_budget (__main__.Checks.test_reject_missing_mask_budget) ... ok
+test_reject_old_OM_count (__main__.Checks.test_reject_old_OM_count) ... ok
+test_reject_privileged_ref_arrivals (__main__.Checks.test_reject_privileged_ref_arrivals) ... ok
+test_reject_provider_one_call (__main__.Checks.test_reject_provider_one_call) ... ok
+test_scale_ratio_without_future_measurement (__main__.Checks.test_scale_ratio_without_future_measurement) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.006s
+
+OK
+{"Buffalo_inferences_budget": 2, "DES_total": 2, "D_RK4_CAFN": 18, "D_RK4_main": 18, "D_RK4_total": 36, "D_topologies": 3, "OpenModelica_total": 26, "actual_executions": 0, "status": "PC01_V03_OFFLINE_DESIGN_CHECKS_ONLY_NOT_NATIVE_SIMULATION", "still_blocked": ["B_LOCAL_PARITY", "M_NATIVE_LINT", "DES_SEAL", "PARAMETER_APPROVAL", "PREDICTION_SELECTION_LOCK", "BUDGET_AUTHORIZATION"]}
