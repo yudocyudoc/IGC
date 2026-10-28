@@ -7,7 +7,9 @@ features. No DES, RK4, Modelica, Buffalo, holdout or external custody calls.
 """
 from __future__ import annotations
 
+import argparse
 import copy
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -300,3 +302,93 @@ def prepare_preholdout_package(contract, evidence, selection, g3_lock):
     }
     bundle["preholdout_package_sha256"] = digest(bundle)
     return bundle
+
+
+def score_six_delivered_values(predicted, observed):
+    """Pure arithmetic for AFTER independently authorized holdout release.
+
+    This callable does not authenticate a custody receipt. Never use its
+    existence as authorization to supply actual withheld evaluation values.
+    Tests intentionally pass invented values only.
+    """
+    require(type(predicted) is list and type(observed) is list
+            and len(predicted) == len(observed) == len(TIMES),
+            "G4_SCORE_SIX_TIMES_REQUIRED")
+    require(all(number(y) and y >= -EPS
+                and y <= arrivals_design(EVALUATION_RATE, t)+1+EPS
+                for t,y in zip(TIMES,predicted))
+            and all(type(y) is int and
+                    0 <= y <= arrivals_design(EVALUATION_RATE,t)+1+EPS
+                    for t,y in zip(TIMES,observed)),
+            "G4_SCORE_PHYSICAL_VALUES_REQUIRED")
+    require(all(b+EPS >= a for a,b in zip(predicted,predicted[1:]))
+            and all(b >= a for a,b in zip(observed,observed[1:]))
+            and observed[-1] <= 30,
+            "G4_SCORE_NONMONOTONE_OR_EXCESS_DELIVERIES")
+    errors=[float(p)-float(y) for p,y in zip(predicted,observed)]
+    return {
+        "status":"DESCRIPTIVE_SIX_TIMES_NO_GENERALIZATION",
+        "MAE_delivered_orders":sum(abs(d) for d in errors)/6,
+        "RMSE_delivered_orders":math.sqrt(sum(d*d for d in errors)/6),
+        "observation_count":6,
+        "pending_independent_evidence":False,
+    }
+
+
+def canonical_json_bytes(data):
+    return json.dumps(data,sort_keys=True,ensure_ascii=False,
+                      separators=(",",":"),allow_nan=False).encode("utf-8")+b"\\n"
+
+
+def emit_custody_candidate(bundle, output_dir):
+    """Create a byte-identical, non-overwriting package for EXTERNAL custody.
+
+    File SHA applies to *all file bytes* (including embedded internal hash and
+    newline). The internal SHA is of content before adding its self-hash, so
+    these two SHA values are expected to differ. Neither is a timestamp.
+    """
+    require(type(bundle) is dict and bundle.get("schema") == SCHEMA
+            and bundle.get("status") ==
+            "PREHOLDOUT_PACKAGE_READY_AWAITING_EXTERNAL_CUSTODY",
+            "G4_WRONG_PACKAGE_TYPE")
+    content={k:v for k,v in bundle.items()
+             if k!="preholdout_package_sha256"}
+    require(bundle.get("preholdout_package_sha256")==digest(content)
+            and bundle["custody"]["state"]==
+            "NOT_CUSTODIED_EXTERNAL_WITNESS_REQUIRED"
+            and bundle["custody"]["release_authorized"] is False
+            and bundle["actual_evaluation_values_included"] is False,
+            "G4_PACKAGE_TAMPERED_OR_ALREADY_RELEASED")
+    directory=Path(output_dir)
+    require(not directory.exists(), "G4_CUSTODY_OUTPUT_ALREADY_EXISTS")
+    directory.mkdir(parents=True,exist_ok=False)
+    data=canonical_json_bytes(bundle)
+    name="preholdout-package.json"
+    (directory/name).write_bytes(data)
+    byte_hash=hashlib.sha256(data).hexdigest()
+    (directory/"preholdout-package.sha256").write_text(
+        byte_hash+"  "+name+"\\n",encoding="utf-8")
+    return {"status":"BYTES_EMITTED_NOT_EXTERNAL_CUSTODY",
+            "internal_content_sha256":bundle["preholdout_package_sha256"],
+            "complete_file_sha256":"sha256:"+byte_hash,
+            "files":[name,"preholdout-package.sha256"],
+            "external_witness_receipt":None,"evaluation_release_authorized":False}
+
+
+def main():
+    p=argparse.ArgumentParser(description="G4: pre-holdout package ONLY; does not custody or evaluate")
+    p.add_argument("--evidence",required=True,type=Path)
+    p.add_argument("--selection",required=True,type=Path)
+    p.add_argument("--g3-lock",required=True,type=Path)
+    p.add_argument("--out",required=True,type=Path)
+    a=p.parse_args()
+    contract=json.loads(CONTRACT.read_text(encoding="utf-8"))
+    evidence=json.loads(a.evidence.read_text(encoding="utf-8"))
+    selection=json.loads(a.selection.read_text(encoding="utf-8"))
+    g3=json.loads(a.g3_lock.read_text(encoding="utf-8"))
+    bundle=prepare_preholdout_package(contract,evidence,selection,g3)
+    print(json.dumps(emit_custody_candidate(bundle,a.out),sort_keys=True))
+
+
+if __name__=="__main__":
+    main()
