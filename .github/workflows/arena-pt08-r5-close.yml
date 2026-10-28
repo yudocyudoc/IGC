@@ -1,0 +1,75 @@
+name: Arena R5 PT08 closure audit – reconstructed evidence, ZERO provider
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_pt08_r5_verify_closure.py'
+      - 'data/diagnostics/ARENA_PT08_R5_CLEF_OBSERVACIONES_RECONSTRUIDAS_2026-10-28.json'
+      - 'docs/ARENA_PT08_CLEF_SEIS_PARES_REALES_RESULTADO_2026-10-28.md'
+      - '.github/workflows/arena-pt08-r5-close.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-request-and-reconstructed-response-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-pt08-clef-paired-six-requests-not-sent
+          run-id: 40620696061
+          github-token: ${{ github.token }}
+          path: artifacts/pt08-original-public-and-oracle
+      - name: Recompute PT08 first-cut result from PREDECLARED requests and reconstructed connector outputs
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_pt08_r5_verify_closure \
+            --original artifacts/pt08-original-public-and-oracle \
+            --out artifacts/pt08-r5-first-cut-conclusion.json
+          python - <<'PY'
+          import json,tempfile,copy
+          from pathlib import Path
+          from scripts.arena_pt08_r5_verify_closure import reconstruct,SOURCE
+          root=Path('artifacts/pt08-original-public-and-oracle')
+          result=reconstruct(root)
+          assert result['metrics']=={
+             'numeric_only_exact':0,
+             'with_note_exact':1,
+             'numeric_only_false_exclusions':3,
+             'with_note_false_exclusions':3,
+             'input_tokens_reported':16881}
+          assert result['closure']=='PT08_R5_FIRST_CUT_NEGATIVE_NO_CLEF_PROMOTION'
+          assert result['additional_provider_calls']==result['additional_solver_calls']==0
+          assert 'NOT_INDEPENDENT_PROVIDER_ARCHIVE' in result['provenance']
+          original=json.loads(Path(SOURCE).read_text())
+          for scenario in ('request-sha','score','capture-claim'):
+            candidate=copy.deepcopy(original)
+            if scenario=='request-sha':
+              candidate['observed_responses'][0]['original_request_sha256']='sha256:'+'0'*64
+            elif scenario=='score':
+              candidate['observed_responses'][0]['provider_result_reconstructed']['answers']['path_C02']['noul']=0.95
+            else:
+              candidate['original_provider_raw_archive_available']=True
+            with tempfile.TemporaryDirectory() as td:
+              path=Path(td)/'tampered.json'
+              path.write_text(json.dumps(candidate))
+              try:
+                reconstruct(root,path)
+                raise AssertionError('TAMPER_NOT_REJECTED:'+scenario)
+              except ValueError:
+                pass
+          print('R5_RECONSTRUCTED_SIX_REAL_RESPONSES_VALIDATED_WITH_CUSTODY_LIMIT_NO_MODEL_CALL')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r5-pt08-offline-closure-no-new-inference
+          path: artifacts/pt08-r5-first-cut-conclusion.json
+          retention-days: 60
