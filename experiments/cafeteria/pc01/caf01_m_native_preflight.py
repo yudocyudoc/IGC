@@ -107,8 +107,12 @@ def render_bundle(contract):
     package = header + "\n\n".join(models) + (
         '\n  annotation(uses(Modelica(version="4.0.0"),SystemDynamics(version="2.1.2")));\n'
         'end CAF01MPreflight;\n')
-    cmds = ['getVersion();', 'loadModel(Modelica, {"4.0.0"});',
-            'loadModel(SystemDynamics, {"2.1.2"});',
+    # E1's Modelica packages declare their dependencies via uses annotations.
+    # Explicit loadModel(version) can return false on source-tree library clones
+    # even when native package loading and checkModel succeed. The CI pins
+    # OPENMODELICALIBRARY and audits the resolved classes without duplicating
+    # those requests here.
+    cmds = ['getVersion();',
             'loadFile("src/modelica/IGCMolecules.mo");',
             'loadFile("src/modelica/IGCInformationMolecules.mo");',
             'loadFile("CAF01MPreflight.mo");']
