@@ -22,7 +22,7 @@ class TestMCapacityCertificate(unittest.TestCase):
     def test_no_cross_structure_merge(self):
         result = certificate(self.contract)
         self.assertEqual({x["structure"] for x in result["classes"]}, {"C00", "C01", "C02"})
-        self.assertTrue(all(len(x["capacidades"]) <= 2 for x in result["classes"]))
+        self.assertTrue(all(len(x["capacities"]) <= 2 for x in result["classes"]))
 
     def test_nonempty_initial_is_not_certifiable(self):
         c = copy.deepcopy(self.contract)
@@ -47,6 +47,22 @@ class TestMCapacityCertificate(unittest.TestCase):
         c["methods"]["M"]["frozen_response_time_hours"]["dispatch"] = 0.25
         with self.assertRaisesRegex(ValueError, "NO_CERTIFICATE"):
             certificate(c)
+
+    def test_decimal_grid_is_rejected_without_truncation(self):
+        for grid in ([20.5, 72.5, 100], [20.1, 20.9, 100]):
+            with self.subTest(grid=grid):
+                c = copy.deepcopy(self.contract)
+                c["methods"]["M"]["proposed_bounded_capacity_grid_items_per_hour"] = grid
+                with self.assertRaisesRegex(ValueError, "NO_CERTIFICATE: capacities must be positive finite integers"):
+                    certificate(c)
+
+    def test_zero_and_negative_capacities_are_rejected(self):
+        for grid in ([0, 72, 100], [-1, 72, 100]):
+            with self.subTest(grid=grid):
+                c = copy.deepcopy(self.contract)
+                c["methods"]["M"]["proposed_bounded_capacity_grid_items_per_hour"] = grid
+                with self.assertRaisesRegex(ValueError, "NO_CERTIFICATE"):
+                    certificate(c)
 
     def test_grid_changed_recomputes_when_shape_preserved(self):
         c = copy.deepcopy(self.contract)
