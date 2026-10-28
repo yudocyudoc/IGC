@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import re
+from fractions import Fraction
 from pathlib import Path
 
 from caf01_m_equivalence import certificate
@@ -42,6 +43,19 @@ def digest(value):
 
 def number(x):
     return type(x) in (int, float) and math.isfinite(x)
+
+
+def evaluation_accepted_count_at(t_min):
+    """Exact number of public half-open-pulse midpoint arrivals by time t.
+
+    With 1.5 orders/min, arrivals at (j+1/2)/(3/2), j=0..29, t<20.
+    Reading at t includes events stamped exactly t. With this fixed rate
+    and integer observation minutes, ceil(1.5*min(t,20)) is that count.
+    No ad-hoc extra order is allowed once all 30 have arrived.
+    """
+    require(type(t_min) is int and t_min in (5, 10, 15, 20, 30, 40),
+            "G3_UNKNOWN_EVALUATION_TIME")
+    return math.ceil(Fraction(3, 2) * min(t_min, 20))
 
 
 def exact_keys(value, keys, code):
@@ -417,7 +431,7 @@ def lock_forecasts(contract, selection, submission):
         for ident, curve in effective_forecasts.items():
             require(type(curve) is list and len(curve) == 6,
                     "G3_FUTURE_PREDICTION_SHAPE")
-            require(all(number(v) and -EPS <= v <= 1.5*min(t, 20)+1+EPS
+            require(all(number(v) and -EPS <= v <= evaluation_accepted_count_at(t)+EPS
                         for v, t in zip(curve, times)),
                     "G3_FUTURE_PREDICTION_OUTSIDE_PHYSICAL_BOUND")
             require(all(b+EPS >= a for a,b in zip(curve, curve[1:])),
