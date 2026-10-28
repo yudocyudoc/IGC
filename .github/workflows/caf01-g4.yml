@@ -37,7 +37,9 @@ jobs:
           for forbidden in ('simulate(', 'subprocess.', 'requests.', 'urllib.',
                             'run_toy_engine(', 'os.system(', 'BuffaloAI', 'openrouter'):
               assert forbidden not in source, forbidden
-          assert 'if __name__' not in source
+          assert 'def main():' in source
+          assert 'emit_custody_candidate(' in source
+          assert 'evaluate_released_world(' not in source
           assert 'NOT_CUSTODIED_EXTERNAL_WITNESS_REQUIRED' in source
           assert '"release_authorized": False' in source
           print('G4_CONSTRUCTION_ONLY_NOT_CUSTODIED_NO_EXPERIMENTAL_RUNS')
