@@ -16,7 +16,7 @@ from pathlib import Path
 from statistics import median
 
 from caf01_g3 import (SCHEMA as G3_SCHEMA, digest, number, validate_evidence,
-                      G3Blocked, EPS)
+                      evaluation_accepted_count_at, G3Blocked, EPS)
 
 HERE = Path(__file__).resolve().parent
 CONTRACT = HERE / "ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json"
@@ -314,11 +314,14 @@ def score_six_delivered_values(predicted, observed):
     require(type(predicted) is list and type(observed) is list
             and len(predicted) == len(observed) == len(TIMES),
             "G4_SCORE_SIX_TIMES_REQUIRED")
+    # Both numerical forecasts and observed integer deliveries are bounded
+    # by the EXACT public midpoint-event count, not a +1 order allowance.
+    # In particular, after the pulse ends there are 30 arrivals, never 31.
     require(all(number(y) and y >= -EPS
-                and y <= arrivals_design(EVALUATION_RATE, t)+1+EPS
+                and y <= evaluation_accepted_count_at(t)+EPS
                 for t,y in zip(TIMES,predicted))
             and all(type(y) is int and
-                    0 <= y <= arrivals_design(EVALUATION_RATE,t)+1+EPS
+                    0 <= y <= evaluation_accepted_count_at(t)
                     for t,y in zip(TIMES,observed)),
             "G4_SCORE_PHYSICAL_VALUES_REQUIRED")
     require(all(b+EPS >= a for a,b in zip(predicted,predicted[1:]))
