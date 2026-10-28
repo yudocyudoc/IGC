@@ -52,10 +52,10 @@ Un SHA autoproducido en el mismo ordenador o un commit modificable **no demuestr
 El código emite un archivo de contenido canonicalizado de forma reproducible, usando el CLI **solo para datos públicos de construcción ya autorizados**:
 
 ```bash
-python experiments/cafeteria/pc01/caf01_g4.py \\
-  --evidence /ruta/visible-construccion.json \\
-  --selection /ruta/g3-seleccion.json \\
-  --g3-lock /ruta/g3-bloqueo.json \\
+python experiments/cafeteria/pc01/caf01_g4.py \
+  --evidence /ruta/visible-construccion.json \
+  --selection /ruta/g3-seleccion.json \
+  --g3-lock /ruta/g3-bloqueo.json \
   --out /ruta/paquete-g4-nuevo
 ```
 
