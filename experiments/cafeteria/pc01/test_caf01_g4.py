@@ -237,7 +237,7 @@ class TestG4ConstructionOnly(unittest.TestCase):
             record=emit_custody_candidate(bundle,folder)
             file=folder/"preholdout-package.json"
             content=file.read_bytes()
-            self.assertTrue(content.endswith(b"\\n"))
+            self.assertTrue(content.endswith(b"\n"))
             self.assertEqual(json.loads(content),bundle)
             self.assertEqual("sha256:"+hashlib.sha256(content).hexdigest(),
                              record["complete_file_sha256"])
@@ -245,7 +245,7 @@ class TestG4ConstructionOnly(unittest.TestCase):
                              bundle["preholdout_package_sha256"])
             self.assertEqual((folder/"preholdout-package.sha256").read_text(),
                              hashlib.sha256(content).hexdigest()+
-                             "  preholdout-package.json\\n")
+                             "  preholdout-package.json\n")
             self.assertIsNone(record["external_witness_receipt"])
             self.assertFalse(record["evaluation_release_authorized"])
             with self.assertRaisesRegex(G4Blocked,"OUTPUT_ALREADY_EXISTS"):
