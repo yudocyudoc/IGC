@@ -2,8 +2,9 @@
 import copy
 import json
 import unittest
+import tempfile
 from pathlib import Path
-from caf01_m_native_preflight import CONTRACT, checked_models, render_bundle
+from caf01_m_native_preflight import CONTRACT, ROOT, checked_models, render_bundle, resolve_check_only_paths
 
 
 class TestCAF01MNativePreflight(unittest.TestCase):
@@ -32,6 +33,35 @@ class TestCAF01MNativePreflight(unittest.TestCase):
         _, _, manifest = render_bundle(self.contract)
         self.assertNotIn("truth", json.dumps(manifest).lower())
         self.assertEqual(manifest["status"], "GENERATED_NOT_COMPILED_NOT_SIMULATED")
+
+
+    def test_absolute_load_files_exist_from_any_cwd(self):
+        _, mos, _ = render_bundle(self.contract)
+        with tempfile.TemporaryDirectory() as tmp:
+            generated = Path(tmp) / "caf01-native"
+            generated.mkdir()
+            (generated / "CAF01MPreflight.mo").write_text("package CAF01MPreflight end CAF01MPreflight;")
+            resolved = resolve_check_only_paths(mos, generated)
+            self.assertEqual(resolved.count("loadFile("), 3)
+            self.assertNotIn('loadFile("CAF01MPreflight.mo")', resolved)
+            targets = []
+            for line in resolved.splitlines():
+                if line.startswith('loadFile("'):
+                    target = Path(line[len('loadFile("'):-3])
+                    self.assertTrue(target.is_absolute())
+                    self.assertTrue(target.is_file())
+                    targets.append(target)
+            self.assertEqual(targets, [
+                (ROOT / "src/modelica/IGCMolecules.mo").resolve(),
+                (ROOT / "src/modelica/IGCInformationMolecules.mo").resolve(),
+                (generated / "CAF01MPreflight.mo").resolve(),
+            ])
+
+    def test_missing_generated_model_fails_closed(self):
+        _, mos, _ = render_bundle(self.contract)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "MODELICA_LOAD_FILE_MISSING"):
+                resolve_check_only_paths(mos, Path(tmp))
 
     def test_fail_closed_on_changed_grid(self):
         c = copy.deepcopy(self.contract)
