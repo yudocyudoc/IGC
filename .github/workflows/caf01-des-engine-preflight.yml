@@ -2,6 +2,7 @@ name: CAF-01 independent DES engine - toy preflight only
 on:
   pull_request:
     paths:
+      - 'experiments/cafeteria/pc01/.gitignore'
       - 'experiments/cafeteria/pc01/caf01_des_engine.py'
       - 'experiments/cafeteria/pc01/test_caf01_des_engine.py'
       - 'experiments/cafeteria/pc01/DES_PRIVATE_BOUNDARY_PREFLIGHT_2026-10-28.md'
@@ -25,6 +26,28 @@ jobs:
           set -euo pipefail
           python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_des_engine.py' -v
           python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Git ignore excludes future private configs, nonces and sealed outputs
+        run: |
+          set -euo pipefail
+          base=experiments/cafeteria/pc01
+          for path in \
+            "$base/private/config.json" \
+            "$base/world-private/truth.json" \
+            "$base/hidden.private.json" \
+            "$base/nested/precommit.nonce" \
+            "$base/hidden.private.yaml" \
+            "$base/hidden.private.yml" \
+            "$base/seal.salt"; do
+            git check-ignore --no-index -q "$path" || {
+              echo "PRIVATE_DES_PATH_NOT_IGNORED: $path" >&2
+              exit 1
+            }
+          done
+          if git check-ignore --no-index -q "$base/caf01_des_engine.py"; then
+            echo "PUBLIC_DES_SOURCE_UNEXPECTEDLY_IGNORED" >&2
+            exit 1
+          fi
+          echo "PRIVATE_DES_GITIGNORE_RULES_ACTIVE"
       - name: Verify no private DES source and no experimental runner
         run: |
           set -euo pipefail
