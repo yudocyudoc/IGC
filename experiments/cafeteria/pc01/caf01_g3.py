@@ -236,7 +236,8 @@ def select(contract, evidence, rows):
             decisions[arm] = {"status": "NO_VALID_CANDIDATE", "winners": [],
                               "representatives": [], "parameter_ambiguity": False,
                               "blocked": [v["id"] for v in all_arm],
-                              "representatives_pending_g2": []}
+                              "representatives_pending_g2": [],
+                              "winners_pending_g2": []}
             continue
         structures = sorted({v["structure"] for v in valid})
         representatives = []
