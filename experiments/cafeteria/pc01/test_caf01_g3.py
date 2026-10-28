@@ -145,14 +145,128 @@ class TestCAF01G3(unittest.TestCase):
         e = self.evidence("CAFN")
         s = select(self.contract,e,self.rows(e,{"D1_C48_T0.125":[0,6]}))
         self.assertEqual(s["case"],"CAFN")
-        lock = lock_forecasts(self.contract,s,self.future(
-            s,{"D1_C48_T0.125":[1,2,3,4,5,6]}))
+        lock = lock_forecasts(self.contract, s, self.future(s, {}))
         self.assertEqual(lock["arm_forecasts"]["D"]["status"],
                          "CAFN_INTERNAL_PATH_AND_PEAK_UNIDENTIFIABLE")
+        self.assertEqual(lock["forecast_by_candidate"], {})
+        self.assertEqual(lock["evaluation_times_minutes"], [])
+        self.assertIsNone(lock["arm_forecasts"]["D"]["prediction"])
         bad = copy.deepcopy(e)
         bad["observations"].insert(1,{"t_min":5,"delivered":1})
         with self.assertRaisesRegex(G3Blocked,"CONSTRUCTION_MASK"):
             select(self.contract,bad,self.rows(bad))
+
+
+    def test_CAFN_endpoint_abstention_without_any_future_values_for_all_arms(self):
+        e = self.evidence("CAFN")
+        ids = {"D1_C48_T0.125": [0, 6],
+               "M_C00_C72": [0, 6],
+               "B_NATIVE_1": [0, 6]}
+        selection = select(self.contract, e, self.rows(e, ids))
+        lock = lock_forecasts(self.contract, selection, self.future(selection, {}))
+        self.assertEqual(set(lock["arm_forecasts"]), {"D", "M", "B"})
+        self.assertEqual(lock["forecast_by_candidate"], {})
+        self.assertEqual(lock["native_g2_checks_for_preselected_D"], {})
+        for result in lock["arm_forecasts"].values():
+            self.assertEqual(result["status"], "CAFN_INTERNAL_PATH_AND_PEAK_UNIDENTIFIABLE")
+            self.assertEqual(result["prediction"], None)
+            self.assertEqual(result["envelope"], None)
+            self.assertIn("TIME_OF_PEAK_PENDING", result["non_identifiable"])
+        bad = self.future(selection, {"M_C00_C72": [1, 2, 3, 4, 5, 6]})
+        with self.assertRaisesRegex(G3Blocked, "CAFN_NO_FUTURE_CURVES"):
+            lock_forecasts(self.contract, selection, bad)
+        bad = self.future(selection, {})
+        bad["native_g2_checks"] = {"D1_C48_T0.125": {
+            "g2_receipt_sha256": "sha256:"+"c"*64,
+            "balance_max_abs": 0.001, "rk4_native_max_abs_delta": 0.002}}
+        with self.assertRaisesRegex(G3Blocked, "CAFN_NO_FUTURE_CURVES"):
+            lock_forecasts(self.contract, selection, bad)
+
+    def test_D_g2_failure_preserves_independent_B_and_M(self):
+        e = self.evidence()
+        ready = {"M_C00_C72": [0,1,2,3,4,5,6],
+                 "B_NATIVE_1": [0,1,2,3,4,5,6]}
+        rows = self.rows(e, ready)
+        d = next(r for r in rows if r["id"] == "D1_C48_T0.125")
+        d.update({
+            "gates": {"G0": "PASS", "G1": "PASS", "G2": "RK4_SCREEN"},
+            "construction_delivered": [0,1,2,3,4,5,6],
+            "native_sha256": "sha256:"+"b"*64,
+            "rk4_receipt_sha256": "sha256:"+"d"*64,
+            "g2_receipt_sha256": None,
+            "balance_max_abs": 0.001,
+            "rk4_native_max_abs_delta": None,
+            "block_reason": None,
+        })
+        selected = select(self.contract, e, rows)
+        self.assertEqual(selected["decision"]["D"]["winners"], ["D1_C48_T0.125"])
+        valid_forecasts = {"M_C00_C72": [1,2,3,4,5,6],
+                           "B_NATIVE_1": [1,2,3,4,5,6]}
+        for failure_checks, failure_status in [
+            ({}, "FAIL_MISSING_NATIVE_G2_RECEIPT"),
+            ({"D1_C48_T0.125": {
+                "g2_receipt_sha256": "sha256:"+"e"*64,
+                "balance_max_abs": 0.02,
+                "rk4_native_max_abs_delta": 0.002}}, "FAIL_MATERIAL_BALANCE"),
+            ({"D1_C48_T0.125": {
+                "g2_receipt_sha256": "sha256:"+"e"*64,
+                "balance_max_abs": 0.002,
+                "rk4_native_max_abs_delta": 0.02}}, "FAIL_D_RK4_NATIVE_PARITY"),
+        ]:
+            with self.subTest(failure_status=failure_status):
+                submission = self.future(selected, valid_forecasts.copy())
+                submission["native_g2_checks"] = failure_checks
+                lock = lock_forecasts(self.contract, selected, submission)
+                self.assertEqual(lock["arm_forecasts"]["D"]["status"],
+                                 "ABSTAIN_D_NATIVE_G2_FAILED")
+                self.assertEqual(
+                    lock["native_g2_outcomes_for_preselected_D"]["D1_C48_T0.125"],
+                    failure_status)
+                self.assertEqual(lock["arm_forecasts"]["M"]["prediction"],
+                                 [1,2,3,4,5,6])
+                self.assertEqual(lock["arm_forecasts"]["B"]["prediction"],
+                                 [1,2,3,4,5,6])
+                self.assertEqual(set(lock["forecast_by_candidate"]),
+                                 {"M_C00_C72", "B_NATIVE_1"})
+                self.assertTrue(lock["arm_forecasts"]["D"]["replacement_forbidden"])
+
+        # If a failed D curve happened to be supplied, do NOT publish it as
+        # validated native prediction and do not reject the valid B/M rows.
+        submission = self.future(selected, {
+            **valid_forecasts, "D1_C48_T0.125": [0,0,0,0,0,99999]})
+        submission["native_g2_checks"] = {"D1_C48_T0.125": {
+            "g2_receipt_sha256": "sha256:"+"e"*64,
+            "balance_max_abs": 0.02, "rk4_native_max_abs_delta": 0.002}}
+        lock = lock_forecasts(self.contract, selected, submission)
+        self.assertEqual(lock["discarded_D_forecast_identifiers_due_to_failed_G2"],
+                         ["D1_C48_T0.125"])
+        self.assertNotIn("D1_C48_T0.125", lock["forecast_by_candidate"])
+        self.assertIsNone(lock["arm_forecasts"]["D"]["prediction"])
+
+    def test_D_invalid_receipt_value_fails_only_D_without_breaking_hash(self):
+        e = self.evidence()
+        rows = self.rows(e, {"B_NATIVE_1":[0,1,2,3,4,5,6]})
+        d = next(r for r in rows if r["id"] == "D1_C48_T0.125")
+        d.update({
+            "gates":{"G0":"PASS","G1":"PASS","G2":"RK4_SCREEN"},
+            "construction_delivered":[0,1,2,3,4,5,6],
+            "native_sha256":"sha256:"+"b"*64,
+            "rk4_receipt_sha256":"sha256:"+"d"*64,
+            "balance_max_abs":0.001, "rk4_native_max_abs_delta":None,
+            "block_reason":None
+        })
+        selected = select(self.contract, e, rows)
+        submission = self.future(selected, {"B_NATIVE_1":[1,2,3,4,5,6]})
+        submission["native_g2_checks"] = {"D1_C48_T0.125": {
+            "g2_receipt_sha256": None,
+            "balance_max_abs": float("nan"),
+            "rk4_native_max_abs_delta": "no data"}}
+        lock = lock_forecasts(self.contract, selected, submission)
+        self.assertEqual(lock["arm_forecasts"]["D"]["status"],
+                         "ABSTAIN_D_NATIVE_G2_FAILED")
+        self.assertEqual(lock["arm_forecasts"]["B"]["prediction"], [1,2,3,4,5,6])
+        self.assertIsNone(
+            lock["native_g2_checks_for_preselected_D"]["D1_C48_T0.125"]["balance_max_abs"])
 
     def test_extra_future_field_is_rejected_before_selection(self):
         e = self.evidence()
@@ -307,8 +421,12 @@ class TestCAF01G3(unittest.TestCase):
             "g2_receipt_sha256":"sha256:"+"f"*64,
             "balance_max_abs":0.02,
             "rk4_native_max_abs_delta":0.004}}
-        with self.assertRaisesRegex(G3Blocked,"REPRESENTATIVE_UNVERIFIED"):
-            lock_forecasts(self.contract,s,f)
+        lock = lock_forecasts(self.contract,s,f)
+        self.assertEqual(lock["arm_forecasts"]["D"]["status"],
+                         "ABSTAIN_D_NATIVE_G2_FAILED")
+        self.assertEqual(lock["native_g2_outcomes_for_preselected_D"]["D1_C48_T0.125"],
+                         "FAIL_MATERIAL_BALANCE")
+        self.assertIsNone(lock["arm_forecasts"]["D"]["prediction"])
 
 
     def test_D_RK4_native_parity_threshold_cannot_be_bypassed(self):
