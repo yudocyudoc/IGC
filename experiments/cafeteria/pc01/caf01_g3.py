@@ -170,7 +170,10 @@ def select(contract, evidence, rows):
     for r in rows:
         exact_keys(r, ("id", "gates", "construction_delivered",
                        "native_sha256", "g2_receipt_sha256",
-                       "balance_max_abs", "block_reason"), "G3_CANDIDATE_FIELDS")
+                       "balance_max_abs", "block_reason",
+                       "candidate_evidence_sha256"), "G3_CANDIDATE_FIELDS")
+        require(r["candidate_evidence_sha256"] == digest(evidence),
+                "G3_CANDIDATE_EVIDENCE_HASH_MISMATCH")
         ident = r["id"]
         require(type(ident) is str and ident in expected
                 and ident not in byid, "G3_UNKNOWN_OR_DUPLICATE_CANDIDATE")
@@ -191,6 +194,9 @@ def select(contract, evidence, rows):
                            "mae": mae, "rmse": rmse, "eligible": True}
         else:
             require(r["construction_delivered"] is None
+                    and (r["native_sha256"] is None or
+                         (isinstance(r["native_sha256"], str) and
+                          SHA.fullmatch(r["native_sha256"])))
                     and r["g2_receipt_sha256"] is None
                     and r["balance_max_abs"] is None
                     and type(r["block_reason"]) is str and bool(r["block_reason"]),
@@ -267,6 +273,9 @@ def lock_forecasts(contract, selection, submission):
     exact_keys(submission, ("schema", "selection_sha256",
                             "source_snapshot_sha256", "evaluation_pulse",
                             "forecast_by_candidate"), "G3_LOCK_INPUT_FIELDS")
+    original_selection = {k:v for k,v in selection.items() if k != "selection_sha256"}
+    require(selection.get("selection_sha256") == digest(original_selection),
+            "G3_SELECTION_TAMPERED")
     require(submission["schema"] == SCHEMA
             and selection["schema"] == SCHEMA
             and selection["status"] == "CONSTRUCTION_SELECTION_ONLY_NOT_HOLDOUT"
