@@ -1,0 +1,64 @@
+name: CAF-01 independent DES engine - toy preflight only
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/.gitignore'
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc01/test_caf01_des_engine.py'
+      - 'experiments/cafeteria/pc01/DES_PRIVATE_BOUNDARY_PREFLIGHT_2026-10-28.md'
+      - '.github/workflows/caf01-des-engine-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  toy-engine-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static tests - toy fixtures only, no CAF-01 DES worlds
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_des_engine.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Git ignore excludes future private configs, nonces and sealed outputs
+        run: |
+          set -euo pipefail
+          base=experiments/cafeteria/pc01
+          for path in \
+            "$base/private/config.json" \
+            "$base/world-private/truth.json" \
+            "$base/hidden.private.json" \
+            "$base/nested/precommit.nonce" \
+            "$base/hidden.private.yaml" \
+            "$base/hidden.private.yml" \
+            "$base/seal.salt"; do
+            git check-ignore --no-index -q "$path" || {
+              echo "PRIVATE_DES_PATH_NOT_IGNORED: $path" >&2
+              exit 1
+            }
+          done
+          if git check-ignore --no-index -q "$base/caf01_des_engine.py"; then
+            echo "PUBLIC_DES_SOURCE_UNEXPECTEDLY_IGNORED" >&2
+            exit 1
+          fi
+          echo "PRIVATE_DES_GITIGNORE_RULES_ACTIVE"
+      - name: Verify no private DES source and no experimental runner
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          root=Path("experiments/cafeteria/pc01")
+          script=(root/"caf01_des_engine.py").read_text()
+          assert "if __name__" not in script
+          assert "PRIVATE_REAL_CONFIG" not in script
+          assert "run_toy_engine" in script
+          assert not (root/"private").exists()
+          assert not list(root.glob("*world-private*.json"))
+          print("DES_ENGINE_TOY_ONLY_NO_WORLD_RUN_NO_HIDDEN_CONFIG")
+          PY

@@ -1,0 +1,8 @@
+# Never commit private DES truth, nonce, sealed or actual world outputs.
+private/
+world-private/
+*.private.json
+*.private.yaml
+*.private.yml
+*.nonce
+*.salt
