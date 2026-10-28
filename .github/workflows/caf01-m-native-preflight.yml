@@ -1,20 +1,88 @@
-name: CAF-01 M native dry-run preflight
+name: CAF-01 M native checkModel preflight (no simulations)
 on:
   pull_request:
     paths:
       - 'experiments/cafeteria/pc01/caf01_m_native_preflight.py'
       - 'experiments/cafeteria/pc01/test_caf01_m_native_preflight.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - 'src/modelica/IGCMolecules.mo'
+      - 'src/modelica/IGCInformationMolecules.mo'
+      - 'experiments/e1/**'
       - '.github/workflows/caf01-m-native-preflight.yml'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  dry-run:
-    runs-on: ubuntu-latest
+  native-check-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Unit tests - E1 composition and no solver calls
-        run: python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_native_preflight.py' -v
-      - name: Generate only (no OpenModelica)
-        run: python experiments/cafeteria/pc01/caf01_m_native_preflight.py --out /tmp/caf01-native-preflight
+      - name: Python preflight and original CAF-01 contract tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_native_preflight.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Generate nine native models and check-only script
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_native_preflight.py --out artifacts/caf01-m-native
+          test "$(grep -c 'checkModel(' artifacts/caf01-m-native/check_only.mos)" -eq 9
+          if grep -Eq 'simulate\(|buildModel\(|simulation\(' artifacts/caf01-m-native/check_only.mos; then
+            echo "UNAUTHORIZED_SIMULATION_IN_CHECK_SCRIPT" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('artifacts/caf01-m-native/manifest.json').read_text())
+          assert m['simulation_budget_spent']==0
+          assert m['native_check_models']==9
+          assert m['status']=='GENERATED_NOT_COMPILED_NOT_SIMULATED'
+          print('NINE_CHECKMODELS_ZERO_SIMULATIONS')
+          PY
+      - name: Install unchanged original E1 Modelica dependencies
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          docker image inspect openmodelica/openmodelica:v1.26.5-minimal --format '{{json .RepoDigests}}'
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+          echo "MSL_SHA=$(git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD)"
+          echo "SYSTEMDYNAMICS_SHA=$(git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD)"
+      - name: Native OpenModelica checkModel, NO simulate
+        run: |
+          set -euo pipefail
+          # Preserve the same absolute host paths inside the container so the
+          # generated loadFile(...) commands are cwd-independent and resolvable.
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/caf01-m-native/check_only.mos 2>&1 | tee artifacts/caf01-m-native/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' artifacts/caf01-m-native/omc.log; then
+            echo "NATIVE_CHECKMODEL_ERROR" >&2
+            exit 1
+          fi
+          test "$(grep -Ec 'Check of CAF01MPreflight\.[^ ]+ completed successfully' artifacts/caf01-m-native/omc.log)" -eq 9
+          echo 'NINE_NATIVE_CHECKMODEL_SUCCESS_NO_SIMULATION'
+      - name: Restore artifact ownership
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-m-native ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-m-native; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: caf01-m-nine-native-check-only-evidence
+          path: artifacts/caf01-m-native/
+          retention-days: 60
+          if-no-files-found: warn
