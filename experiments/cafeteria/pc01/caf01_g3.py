@@ -317,12 +317,14 @@ def lock_forecasts(contract, selection, submission):
     require(submission["evaluation_pulse"] ==
             {"kind": "pulse", "rate_per_minute": 1.5, "duration_minutes": 20},
             "G3_EVALUATION_PULSE_CHANGED")
-    # Native G2 for D is performed AFTER 18 RK4 screens, for at most three
+    # Native G2 for CAF01 D is performed AFTER 18 RK4 screens, for at most three
     # preselected representatives, without revisiting candidate rankings.
+    # CAF-N has no new OpenModelica budget and is always abstention on internal path.
     checks = submission["native_g2_checks"]
     require(type(checks) is dict, "G3_NATIVE_G2_CHECKS_BAD")
     planned = set(selection["decision"]["D"]["representatives"])
-    needed = set(selection["decision"]["D"]["winners_pending_g2"])
+    needed = (set(selection["decision"]["D"]["winners_pending_g2"])
+              if selection["case"] == "CAF01" else set())
     require(set(checks) == needed and set(checks).issubset(planned),
             "G3_NATIVE_G2_ONLY_PRESELECTED_D_WINNERS")
     for ident, receipt in checks.items():
