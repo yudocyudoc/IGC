@@ -1,0 +1,41 @@
+{
+  "schema": "igc-arena-r4-a-t2-frozen-prediction-certificate/0.1",
+  "case_id": "R3-T2-EARLY-OBSERVABILITY",
+  "source_candidate_run": 40578550337,
+  "source_t2_construction_run": 40582633807,
+  "source_case_sha256": "sha256:4941b20881ba42d102df009e9121608f1ef7b2e2d611a5cb48a1c0d9abf8a842",
+  "frozen_forecast_file_sha256": "sha256:94b1231c33f605cbca4efb81aa6a6f31883e628e4303eae9cbdbd53eb78811d8",
+  "chosen_observation_time_hours": 1,
+  "compatible_configs_per_structure": {
+    "C00": 9,
+    "C01": 9,
+    "C02": 9
+  },
+  "forecast_envelopes_items": {
+    "C00": {
+      "lower": 0.1761851380987036,
+      "median": 0.4062653441010764,
+      "upper": 0.8967048769621946
+    },
+    "C01": {
+      "lower": 0.02663670138354879,
+      "median": 0.06711172531961446,
+      "upper": 0.1647082690169393
+    },
+    "C02": {
+      "lower": 0.003259207228005336,
+      "median": 0.008751324451401551,
+      "upper": 0.02310033434967262
+    }
+  },
+  "minimum_pairwise_forecast_envelope_gap_items": 0.003536367033876168,
+  "future_elimination_cutoff_items": 0.02,
+  "robust_pairwise_discrimination_with_declared_cutoff_guaranteed": false,
+  "equal_topology_weight_point_prediction_items": 0.06711172531961446,
+  "REF_last_observed_persistence_items": 0.00007814994299197591,
+  "experiment_phase": "FORECAST_SEALED_NOT_EVALUATED",
+  "world_future_simulations_done": 0,
+  "new_candidate_simulations_done": 0,
+  "new_ai_inferences_done": 0,
+  "independent_external_holdout": "NOT_ESTABLISHED"
+}

@@ -1,0 +1,90 @@
+name: Arena R4 PT07 T2 forecast and REF preflight — NO NEW RESPONSE
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r4_pt07_t2_*.py'
+      - 'tests/test_arena_r4_pt07_t2_preflight.py'
+      - 'docs/ARENA_R4_PT07_T2_PROSPECTIVE_PROTOCOL_2026-10-27.md'
+      - '.github/workflows/arena-r4-pt07-t2-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  forecast-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Recover original 27 real E1 construction candidate traces only
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t1-original
+      - name: Recover T2 R3 construction input and original decisions
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/r3-t23-original
+      - name: Authenticate real prior evidence, freeze all compatible forecasts and REF
+        env:
+          ARENA_R4_T1_ORIGINAL_DIR: artifacts/r3-t1-original
+          ARENA_R4_T23_ORIGINAL_DIR: artifacts/r3-t23-original
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r4_pt07_t2_preflight.py' -v
+          python -m scripts.arena_r4_pt07_t2_forecast \
+            --original-t1 artifacts/r3-t1-original \
+            --t23 artifacts/r3-t23-original \
+            --catalog experiments/e0/catalog.json \
+            --out artifacts/r4-t2-forecast-frozen
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          f=Path('artifacts/r4-t2-forecast-frozen/forecast-lock.json')
+          z=json.loads(f.read_text())
+          assert z['schema']=='igc-arena-r4-pt07-t2-forecast-seal/0.1'
+          assert len(z['construction_RMSE_all_27'])==27
+          assert len(z['original_csv_sha256_index'])==27
+          assert z['compatible_candidate_count']==len(z['frozen_compatible_config_predictions'])
+          assert z['chosen_observation_time_hours']>0.15
+          assert z['protocol']['independent_external_holdout']=='NOT_ESTABLISHED'
+          assert z['future_observation_value'] is None
+          assert z['physical_candidate_solver_runs_new']==z['provider_calls_new']==0
+          assert not z['R4_complete']
+          assert Path('artifacts/r4-t2-forecast-frozen/forecast-lock.sha256').read_text().strip()=='sha256:'+hashlib.sha256(f.read_bytes()).hexdigest()
+          print('PT07_R4_T2_FORECAST_ENVELOPES',json.dumps(z['frozen_structure_envelopes'],sort_keys=True))
+          print('PT07_R4_T2_SELECTED_SEPARATION',json.dumps(next(x['separation'] for x in z['candidate_times_scored_before_new_observation'] if x['time_hours']==z['chosen_observation_time_hours']),sort_keys=True))
+          print('PT07_R4_T2_AGGREGATE_FORECAST',z['equal_structure_weight_point_prediction_items'])
+          print('PT07_R4_T2_REF_FORECAST',z['REF_persistence_prediction_items'])
+          print('PT07_R4_T2_SOURCE_CASE_SHA',z['source_case_sha256'])
+          cert=json.loads(Path('data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json').read_text())
+          assert cert['frozen_forecast_file_sha256']=='sha256:'+hashlib.sha256(f.read_bytes()).hexdigest()
+          assert cert['source_case_sha256']==z['source_case_sha256']
+          assert cert['chosen_observation_time_hours']==z['chosen_observation_time_hours']
+          assert cert['compatible_configs_per_structure']=={k:len(v) for k,v in z['compatible_by_structure'].items()}
+          assert cert['equal_topology_weight_point_prediction_items']==z['equal_structure_weight_point_prediction_items']
+          assert cert['REF_last_observed_persistence_items']==z['REF_persistence_prediction_items']
+          for cls,env in z['frozen_structure_envelopes'].items():
+            declared=cert['forecast_envelopes_items'][cls]
+            assert declared=={'lower':env['lower_items'],'median':env['median_items'],'upper':env['upper_items']}
+          chosen=next(x for x in z['candidate_times_scored_before_new_observation'] if x['time_hours']==z['chosen_observation_time_hours'])
+          assert chosen['separation']['min_pairwise_envelope_gap_items']==cert['minimum_pairwise_forecast_envelope_gap_items']
+          assert cert['minimum_pairwise_forecast_envelope_gap_items']<cert['future_elimination_cutoff_items']
+          assert cert['robust_pairwise_discrimination_with_declared_cutoff_guaranteed'] is False
+          print('PT07_R4_DURABLE_FORECAST_CERTIFICATE_MATCHES_ORIGINAL_BYTES')
+          print('PT07_R4_T2_PREDICTIONS_AND_REF_LOCKED_NO_NEW_MEASUREMENTS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r4-pt07-t2-forecast-lock-before-new-world-observation
+          path: artifacts/r4-t2-forecast-frozen/
+          retention-days: 60
