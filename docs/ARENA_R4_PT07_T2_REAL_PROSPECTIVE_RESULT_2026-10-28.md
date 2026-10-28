@@ -16,7 +16,7 @@ Los bytes del paquete generador fueron verificados contra el original de [R3-T2,
 
 ## Resultado medido y pronóstico sellado
 
-<escape>Medición física sintética nueva, t=1 hora:</escape> **`deliveredTotal=0.07506397335646263 items`**.
+Medición física sintética nueva, t=1 hora: **`deliveredTotal=0.07506397335646263 items`**.
 
 | Indicador | Valor (items) |
 |---|---:|
