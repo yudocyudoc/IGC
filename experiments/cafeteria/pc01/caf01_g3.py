@@ -21,6 +21,7 @@ SCHEMA = "igc-caf01-g3-decision/0.1"
 EPS = 1e-6           # numeric identity only, NOT an instrument/noise bound
 BAND = 0.25          # operational competitive band, NOT measurement error
 MASS = 0.008         # G2 stock-balance ceiling (orders); conditional
+PARITY = 0.012      # original D Python/OMC parity check; conditional
 SHA = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
@@ -100,7 +101,8 @@ def plan(contract):
         "comparison_policy": {"primary": "MAE_DELIVERED_CONSTRUCTION_ONLY",
                               "competitive_band_orders": BAND,
                               "numeric_equality_orders": EPS,
-                              "material_balance_tolerance_orders": MASS},
+                              "material_balance_tolerance_orders": MASS,
+                              "D_RK4_OMC_parity_max_abs_orders": PARITY},
         "m_proven_capacity_aliases": {"C00": [72, 100],
                                      "C01": [72, 100], "C02": [72, 100]},
         "restrictions": [
@@ -170,8 +172,8 @@ def select(contract, evidence, rows):
     for r in rows:
         exact_keys(r, ("id", "gates", "construction_delivered",
                        "native_sha256", "g2_receipt_sha256",
-                       "rk4_receipt_sha256", "balance_max_abs", "block_reason",
-                       "candidate_evidence_sha256"), "G3_CANDIDATE_FIELDS")
+                       "rk4_receipt_sha256", "balance_max_abs", "rk4_native_max_abs_delta",
+                       "block_reason", "candidate_evidence_sha256"), "G3_CANDIDATE_FIELDS")
         require(r["candidate_evidence_sha256"] == digest(evidence),
                 "G3_CANDIDATE_EVIDENCE_HASH_MISMATCH")
         ident = r["id"]
@@ -201,6 +203,13 @@ def select(contract, evidence, rows):
             else:
                 require(r["rk4_receipt_sha256"] is None,
                         "G3_RK4_NOT_APPLICABLE_TO_B_M")
+            if native_pass and arm == "D":
+                require(number(r["rk4_native_max_abs_delta"])
+                        and 0 <= r["rk4_native_max_abs_delta"] <= PARITY,
+                        "G3_D_RK4_NATIVE_PARITY_UNVERIFIED")
+            else:
+                require(r["rk4_native_max_abs_delta"] is None,
+                        "G3_NATIVE_PARITY_UNSCOPED")
             if native_pass:
                 require(isinstance(r["g2_receipt_sha256"], str) and
                         SHA.fullmatch(r["g2_receipt_sha256"]) is not None,
@@ -222,6 +231,7 @@ def select(contract, evidence, rows):
                     and r["g2_receipt_sha256"] is None
                     and r["rk4_receipt_sha256"] is None
                     and r["balance_max_abs"] is None
+                    and r["rk4_native_max_abs_delta"] is None
                     and type(r["block_reason"]) is str and bool(r["block_reason"]),
                     "G3_BLOCKED_ROW_CANNOT_CLAIM_G2_OR_CURVE")
             byid[ident] = {"id": ident, "arm": arm,
@@ -285,7 +295,7 @@ def select(contract, evidence, rows):
             "Competitive band is a prospective decision rule, NOT sensor noise bound.",
             "Construction fit is not causal recovery or a statistical test.",
             "D's 18 RK4 rows are screened before native G2; only preselected representatives can receive native G2.",
-            "Native G2 failure blocks a representative; never reselect using future data.",
+            "Native G2 failure or D RK4/OMC parity failure blocks a representative; never reselect using future data.",
             "G2 receipt hashes and balances are not independently fetched by this module.",
             "M C72 represents the C72/C100 proven capacity alias within each structure.",
             "CAF-N intermediate backlog and peak timing are NOT IDENTIFIABLE.",
@@ -329,12 +339,15 @@ def lock_forecasts(contract, selection, submission):
     require(set(checks) == needed and set(checks).issubset(planned),
             "G3_NATIVE_G2_ONLY_PRESELECTED_D_WINNERS")
     for ident, receipt in checks.items():
-        exact_keys(receipt, ("g2_receipt_sha256", "balance_max_abs"),
+        exact_keys(receipt, ("g2_receipt_sha256", "balance_max_abs",
+                             "rk4_native_max_abs_delta"),
                    "G3_NATIVE_G2_CHECK_FIELDS")
         require(type(receipt["g2_receipt_sha256"]) is str and
                 SHA.fullmatch(receipt["g2_receipt_sha256"]) is not None
                 and number(receipt["balance_max_abs"])
-                and 0 <= receipt["balance_max_abs"] <= MASS,
+                and 0 <= receipt["balance_max_abs"] <= MASS
+                and number(receipt["rk4_native_max_abs_delta"])
+                and 0 <= receipt["rk4_native_max_abs_delta"] <= PARITY,
                 "G3_NATIVE_G2_REPRESENTATIVE_UNVERIFIED")
     required = {x for arm in selection["decision"].values() for x in arm["winners"]}
     supplied = submission["forecast_by_candidate"]
