@@ -46,7 +46,7 @@ def prepare(lock_root,output):
         "getVersion();",
         'loadFile("/repo/src/modelica/IGCMolecules.mo");',
         'loadFile("/repo/src/modelica/IGCInformationMolecules.mo");',
-        f'loadFile("/repo/{rel}/{WORLD_PACKAGE}-ORIGINAL.mο".replace("ο","o"));',
+        f'loadFile("/repo/{rel}/{WORLD_PACKAGE}-ORIGINAL.mo");',
         "print(getErrorString());",
         f"checkModel({WORLD_PACKAGE}.R3T2World);",
         "print(getErrorString());",
