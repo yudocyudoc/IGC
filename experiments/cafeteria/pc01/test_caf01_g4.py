@@ -3,11 +3,15 @@
 import copy
 import json
 import math
+import hashlib
+import tempfile
 import unittest
+from pathlib import Path
 
 from caf01_g3 import SCHEMA as G3_SCHEMA, digest, inventory, select, lock_forecasts
 from caf01_g4 import (CONTRACT, SCHEMA, G4Blocked, TIMES, forecast,
-                      audit_arrival_sidecar, prepare_preholdout_package)
+                      audit_arrival_sidecar, prepare_preholdout_package,
+                      score_six_delivered_values, emit_custody_candidate)
 
 
 class TestG4ConstructionOnly(unittest.TestCase):
@@ -202,6 +206,61 @@ class TestG4ConstructionOnly(unittest.TestCase):
                                            if k!="forecast_lock_sha256"})
         with self.assertRaisesRegex(G4Blocked,"G3_PROVENANCE_OR_REVEAL_GUARD"):
             prepare_preholdout_package(self.contract,e,s,bad)
+
+
+    def test_rubric_exactly_six_cumulative_deliveries_primary_and_secondary(self):
+        observed=[1,2,3,4,5,6]
+        pred=[1,2,2,4,4,6]
+        report=score_six_delivered_values(pred,observed)
+        self.assertAlmostEqual(report["MAE_delivered_orders"],2/6)
+        self.assertAlmostEqual(report["RMSE_delivered_orders"],math.sqrt(2/6))
+        self.assertEqual(report["observation_count"],6)
+        self.assertFalse(report["pending_independent_evidence"])
+
+    def test_rubric_bad_future_shape_or_physical_truth_rejected(self):
+        for p,y in [
+            ([0]*5,[0]*6),
+            ([0]*6,[0,0,0,0,0,31]),
+            ([0]*6,[0,2,1,3,4,5]),
+            ([float("nan")]*6,[0]*6),
+            ([0]*6,[0,0,0,0,0,True]),
+        ]:
+            with self.subTest(p=p,y=y),self.assertRaises(G4Blocked):
+                score_six_delivered_values(p,y)
+
+    def test_byte_identical_custody_package_not_auto_published(self):
+        e=self.evidence()
+        selection,g3=self.g3_lock(e, {"M_C00_C72":[0,0,1,3,6,8,10]})
+        bundle=prepare_preholdout_package(self.contract,e,selection,g3)
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"future-custody"
+            record=emit_custody_candidate(bundle,folder)
+            file=folder/"preholdout-package.json"
+            content=file.read_bytes()
+            self.assertTrue(content.endswith(b"\\n"))
+            self.assertEqual(json.loads(content),bundle)
+            self.assertEqual("sha256:"+hashlib.sha256(content).hexdigest(),
+                             record["complete_file_sha256"])
+            self.assertEqual(record["internal_content_sha256"],
+                             bundle["preholdout_package_sha256"])
+            self.assertEqual((folder/"preholdout-package.sha256").read_text(),
+                             hashlib.sha256(content).hexdigest()+
+                             "  preholdout-package.json\\n")
+            self.assertIsNone(record["external_witness_receipt"])
+            self.assertFalse(record["evaluation_release_authorized"])
+            with self.assertRaisesRegex(G4Blocked,"OUTPUT_ALREADY_EXISTS"):
+                emit_custody_candidate(bundle,folder)
+
+    def test_custody_emission_refuses_tampered_or_released_manifest(self):
+        e=self.evidence()
+        selection,g3=self.g3_lock(e)
+        bundle=prepare_preholdout_package(self.contract,e,selection,g3)
+        bad=copy.deepcopy(bundle)
+        bad["custody"]["release_authorized"]=True
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(G4Blocked,"PACKAGE_TAMPERED_OR_ALREADY_RELEASED"):
+                emit_custody_candidate(bad,Path(tmp)/"should-not-exist")
+            self.assertFalse((Path(tmp)/"should-not-exist").exists())
 
     def test_contract_drift_blocks_reference_generation(self):
         e=self.evidence()
