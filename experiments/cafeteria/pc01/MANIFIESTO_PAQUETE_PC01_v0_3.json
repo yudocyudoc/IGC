@@ -1,0 +1,18 @@
+{
+  "schema": "pc01-offline-technical-review-package/0.3",
+  "cut": "IGC@6f0ba57d175c10d31f762237287cb1e79cdaea41",
+  "approval": "NOT_FROZEN_NOT_APPROVED",
+  "tests": "14/14 static",
+  "provider_calls": 0,
+  "OM_calls": 0,
+  "DES_runs": 0,
+  "D_RK4_candidate_integrations": 0,
+  "repo_changes": 0,
+  "files": {
+    "ARENA_PC01_CAF01_PROTOCOLO_REVISION_v0_3_2026-10-28.md": "sha256:505531813c571ab0ce3529516d472faa77fc6f3fbd3468ffec3b249afccca1d4",
+    "ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json": "sha256:5a58aab54cbf88bc544cd3910bde78e5b0f480a555134bda4455e8d4513b60f1",
+    "validar_pc01_v0_3_offline.py": "sha256:d9ab84e176f4176783f35827f5db5416a89045e6b52d3709f22b4263617e3362",
+    "DICTAMEN_TECNICO_PC01_v0_3_2026-10-28.md": "sha256:178c865b2a7dee216d6ba00be8e3894add35e7130262635e2dc8ca809e153572",
+    "PC01_V03_TESTS_OFFLINE_2026-10-28.log": "sha256:8c5a3a35434abef455c0b69972e64dbbfc6a51f82efa85e18ac5e9e315920508"
+  }
+}

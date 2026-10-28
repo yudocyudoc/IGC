@@ -1,0 +1,50 @@
+name: ARENA CAF PC01 v0.3 - offline document and contract verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'experiments/cafeteria/pc01/**'
+      - 'docs/ARENA_PLAN_CAMPANA_CAFETERIA_V3_0_2026-10-27.md'
+      - '.github/workflows/arena-cafeteria-pc01-static.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pc01-static-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Authenticate original PC01 v0.3 source bytes
+        working-directory: experiments/cafeteria/pc01
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/pc01-source-hashes <<'EOF'
+          505531813c571ab0ce3529516d472faa77fc6f3fbd3468ffec3b249afccca1d4  ARENA_PC01_CAF01_PROTOCOLO_REVISION_v0_3_2026-10-28.md
+          5a58aab54cbf88bc544cd3910bde78e5b0f480a555134bda4455e8d4513b60f1  ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json
+          d9ab84e176f4176783f35827f5db5416a89045e6b52d3709f22b4263617e3362  validar_pc01_v0_3_offline.py
+          178c865b2a7dee216d6ba00be8e3894add35e7130262635e2dc8ca809e153572  DICTAMEN_TECNICO_PC01_v0_3_2026-10-28.md
+          8c5a3a35434abef455c0b69972e64dbbfc6a51f82efa85e18ac5e9e315920508  PC01_V03_TESTS_OFFLINE_2026-10-28.log
+          EOF
+          sha256sum -c /tmp/pc01-source-hashes
+      - name: Verify PC01 v0.3 offline, 14 tests; do not run CAF01 or Cloudflare
+        run: |
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Confirm no experimental budget consumed in protocol
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json')
+          c=json.loads(p.read_text())
+          for k in ('actual_DES_runs','actual_OpenModelica_runs','actual_RK4_integrations','actual_provider_calls'):
+              assert c['budget'][k]==0,k
+          assert 'NOT_FROZEN' in c['status'] and 'NOT_APPROVED' in c['status']
+          print('CAF_PC01_ONLY_OFFLINE_NOT_FROZEN_ZERO_EXPERIMENT_EXECUTION')
+          PY

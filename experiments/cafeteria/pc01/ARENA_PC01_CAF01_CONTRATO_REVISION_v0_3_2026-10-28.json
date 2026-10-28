@@ -1,0 +1,383 @@
+{
+  "schema": "igc-arena-v3-caf01-pc01-protocol-draft/0.3",
+  "status": "PC01_REVIEW_V03_OFFLINE_NOT_FROZEN_NOT_APPROVED_FOR_EXECUTION",
+  "source_plan": "ARENA_PLAN_CAMPANA_CAFETERIA_V3_0_2026-10-27.md",
+  "repository": "yudocyudoc/IGC",
+  "source_commit": "6f0ba57d175c10d31f762237287cb1e79cdaea41",
+  "question": "Can D/B/M predict deliveries and backlog after a higher arrival pulse relative to a fluid conventional baseline?",
+  "units": {
+    "time": "minute",
+    "stock": "accepted_order_equivalents",
+    "rate": "orders_per_minute",
+    "adapter_time": "hour",
+    "adapter_rate": "items_per_hour",
+    "semantic_binding": "one_accepted_order_equivalent_is_one_item_assumption"
+  },
+  "boundary": {
+    "start": "order_accepted",
+    "end": "delivered",
+    "types": 1,
+    "initial_accepted": 0,
+    "initial_delivered": 0,
+    "initial_pending": 0,
+    "cancellations_allowed": false,
+    "losses_allowed": false
+  },
+  "source_proposal": {
+    "kind": "independent_discrete_event_calendar",
+    "simulation_runs_max": 2,
+    "stochastic": false,
+    "conceptual_independence_not_claimed": true,
+    "parameters_or_topology": "TO_BE_SEALED_PRIVATE_BEFORE_CONSTRUCTION",
+    "implementation_status": "NOT_BUILT",
+    "arrival_event_schedule": "event_time_minutes=(index+0.5)/rate_orders_per_minute; integer index>=0; event_time<20; simultaneous_event_tie_break_TBD",
+    "expected_event_counts_given_half_open_pulse": {
+      "construction": 24,
+      "evaluation": 30
+    },
+    "service_process": "UNSPECIFIED_PRIVATE_DES_REQUIRES_SEAL_PRIOR_TO_CONSTRUCTION",
+    "tie_order_at_equal_timestamps": "REQUIRED_BEFORE_WORLD_GENERATION_NOT_YET_SEALED",
+    "source_event_versus_rate_quantization": "DO_NOT_CALL_INSTRUMENT_ERROR"
+  },
+  "worlds": [
+    {
+      "id": "CAF01_CONSTRUCTION",
+      "arrival": {
+        "kind": "pulse",
+        "rate": 1.2,
+        "duration_minutes": 20
+      },
+      "stop_minutes": 40,
+      "start_state": "EMPTY_RESET",
+      "public_outcomes": "construction_only"
+    },
+    {
+      "id": "CAF01_EVALUATION",
+      "arrival": {
+        "kind": "pulse",
+        "rate": 1.5,
+        "duration_minutes": 20
+      },
+      "stop_minutes": 40,
+      "start_state": "EMPTY_RESET",
+      "public_outcomes": "SEALED_UNTIL_FORECAST_LOCK"
+    }
+  ],
+  "measurement_times_minutes": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    30,
+    40
+  ],
+  "new_evaluation_scored_times_minutes": [
+    5,
+    10,
+    15,
+    20,
+    30,
+    40
+  ],
+  "observables": {
+    "arrivals_cumulative": "DES_event_count_and_public_pulse_integral; entrance control only",
+    "delivered_cumulative": "PRIMARY_in_orders",
+    "pending": "DERIVED_A_MINUS_D_NOT_INDEPENDENT",
+    "material_balance_public": "A-D-P=0 (algebraic, not physical validation)",
+    "material_balance_native": "A = D + SUM(native_material_stocks) + L; independently audit model states",
+    "cancellations_world": "0_known_policy",
+    "source_measurement_event_count_mismatch": "record separately, do not score as structural error without resolution",
+    "instrument_resolution_orders": "discrete_events_not_automatically_a_sensor_error_bound"
+  },
+  "common_visible_legacy": {
+    "input_profile": {
+      "kind": "pulse",
+      "rate": "SOURCE_RATE_PER_MINUTE",
+      "duration": "20_MINUTES"
+    },
+    "observations": "{t,delivered} construction only",
+    "extra_series": "separate validated sidecar, not silently pushed into historical schemas",
+    "public_construction_sidecar": "A_actual event counts and P_actual for ALL arms as audit-only, not selectively for REF_CAF fitting; frozen before requests",
+    "comparison_information_policy": "primary predictive features common to arms and REF: prescribed arrival pulse and D(t) construction; A_actual sidecar only for exposure/audit, not fitting REF"
+  },
+  "REF_CAF": {
+    "method": "one_capacity_effective_queue_empirically_calibrated_from_construction_only",
+    "calibration": "median delta_D/5 over >=2 pre-20-min intervals with ideal A_design(t)-D(t)>1 order at BOTH endpoints, source D(t) only; actual DES event counts audit-only",
+    "interpretation": "empirical_effective_output_rate_not_physical_capacity; backlog proxy from ideal pulse not independent measurement",
+    "failure": "REF_CAPACITY_NOT_IDENTIFIABLE_OR_DISCRETE_INPUT_PROXY_INVALID",
+    "if_not_saturated": "throughput evidence and at most lower bound on physical capacity under explicit assumptions",
+    "model": "conservative fluid single queue, no loss, A_eval_public_known_pulse_only",
+    "refit_after_lock": false,
+    "actual_arrivals_sidecar_not_a_calibration_privilege": true
+  },
+  "methods": {
+    "D": {
+      "max_topologies": 3,
+      "topology_stock_counts": [
+        1,
+        2,
+        3
+      ],
+      "loss_variants": [
+        false
+      ],
+      "parameter_grid": {
+        "capacity_items_per_hour": [
+          48,
+          72,
+          96
+        ],
+        "response_time_hours": [
+          0.125,
+          0.25
+        ],
+        "loss_time_hours": [
+          1.0
+        ]
+      },
+      "construction_RK4_max": 18,
+      "construction_OpenModelica_max": 3,
+      "evaluation_OpenModelica_max": 3,
+      "RK4_integration_max_step_hours": 0.008333333333333333,
+      "nominal_example_unfitted": {
+        "capacity": 72,
+        "response_time": 0.25,
+        "loss_time": 1.0
+      },
+      "status": "THREE_LOSS_FREE_GRAPHS_ONLY_PENDING_RK4_NATIVE_PREFLIGHT",
+      "CAF_N_RK4_max": 18,
+      "excluded_legacy_topologies": "THREE_LOSS_TRUE_GRAPHS_UNREPRESENTABLE_UNDER_KNOWN_NO_LOSS_POLICY; NEGATIVE_CONTROL_NOT_ELIGIBLE"
+    },
+    "B": {
+      "candidate_models_max": 1,
+      "provider_calls_max": 2,
+      "historical_specs": {
+        "startTime": 0,
+        "stopTime": 8,
+        "dt": 0.125,
+        "timeUnits": "hour",
+        "integrationMethod": "Euler"
+      },
+      "CAF_local_specs_proposal": {
+        "startTime": 0,
+        "stopTime": 0.6666666666666666,
+        "dt": 0.008333333333333333,
+        "timeUnits": "hour",
+        "integrationMethod": "Euler"
+      },
+      "current_native_translator_status": "BLOCKED_NATIVE_SPECS_OUTSIDE_PINNED_G2_SCOPE",
+      "series_mapper_current_scope": "EXACTLY_2_STOCKS_2_FLOWS",
+      "if_complex_native_graph": "BLOCKED_B_SERIES_ADAPTER_SCOPE_UNLESS_TYPED_READONLY_EXTENSION_VERIFIED",
+      "local_adapter": "NOT_IMPLEMENTED_NO_NATIVE_EQUATIONS_CHANGED",
+      "candidate_OpenModelica_max": 2,
+      "automatic_retries": 0,
+      "status": "BLOCKED_PENDING_LOCAL_G0_G1_PARITY_AND_SCOPE",
+      "call_count_purpose": {
+        "CAF01_original_model_proposal": 1,
+        "CAFN_fresh_masked_diagnosis": 1
+      },
+      "negative_control_no_prior_history": true,
+      "negative_control_native_simulations_max": 0
+    },
+    "M": {
+      "structural_classes": [
+        "C00",
+        "C01",
+        "C02"
+      ],
+      "per_structure_max": 3,
+      "proposed_bounded_capacity_grid_items_per_hour": [
+        20,
+        72,
+        100
+      ],
+      "capacity_application": "simultaneously_to_preparation_and_dispatch_not_independent_fit",
+      "frozen_response_time_hours": {
+        "preparation": 0.5,
+        "dispatch": 0.5,
+        "transit_if_present": 1.6
+      },
+      "historical_max_throughput_items_per_hour": 20,
+      "catalog_throughput_max_items_per_hour": 100,
+      "historical_R3_response_time_grid_hours": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "nominal_historical_control": "capacity20_response0.5_transit1.6_if_present",
+      "search_status": "CAFE_VARIANT_PROPOSAL_NOT_R3_27_GRID",
+      "OpenModelica_construction_max": 9,
+      "OpenModelica_evaluation_max": 9,
+      "local_horizon_invocation_required": true,
+      "catalog_lint_not_executed": true,
+      "no_world_parameters_used": true,
+      "status": "UNAPPROVED_PARAMS_AND_NOT_LINTED",
+      "CAFN_source": "SAME_NINE_CANDIDATE_CURVES_READONLY_MASKED_ENDPOINT_SCORING_NO_NEW_OPENMODELICA",
+      "CAFN_extra_candidate_solver_runs": 0
+    }
+  },
+  "budget": {
+    "DES_world_runs": {
+      "construction_max": 1,
+      "evaluation_max": 1,
+      "total_max": 2
+    },
+    "Python_RK4_integrations_D": {
+      "CAF01_construction_max": 18,
+      "CAF_N_masked_max": 18,
+      "evaluation_max": 0,
+      "total_max": 36,
+      "CAF_N_extra_OpenModelica": 0
+    },
+    "OpenModelica_candidate_runs": {
+      "D_construction_max": 3,
+      "D_evaluation_max": 3,
+      "B_construction_max": 1,
+      "B_evaluation_max": 1,
+      "M_construction_max": 9,
+      "M_evaluation_max": 9,
+      "D_total_max": 6,
+      "B_total_max": 2,
+      "M_total_max": 18,
+      "construction_total_max": 13,
+      "evaluation_total_max": 13,
+      "total_max": 26
+    },
+    "other_cpu_calculations": "REF_CAF_and_REF_SCALE_count_and_record_CPU_time_but_no_OpenModelica",
+    "physical_solver_smokes": "MUST_CHARGE_TO_RUBRIC_NO_EXTRA_RUNS",
+    "provider_inferences": {
+      "Buffalo_CAF01_max": 1,
+      "Buffalo_CAF_N_max": 1,
+      "Buffalo_max": 2,
+      "D_M_REF_max": 0
+    },
+    "automatic_retries": 0,
+    "actual_DES_runs": 0,
+    "actual_OpenModelica_runs": 0,
+    "actual_RK4_integrations": 0,
+    "actual_provider_calls": 0,
+    "R3_27_M_candidates_both_worlds": "FORBIDDEN_UNDER_THIS_BUDGET_WOULD_COST_54_M_OpenModelica_runs",
+    "CAF_N_extra_DES_worlds": 0,
+    "CAF_N_extra_OpenModelica": 0
+  },
+  "metrics": {
+    "primary": [
+      "MAE_delivered_orders_across_6_future_times"
+    ],
+    "derived_not_independent": [
+      "MAE_pending_orders",
+      "RMSE_pending_orders",
+      "delta_delivered",
+      "delta_pending"
+    ],
+    "secondary": [
+      "RMSE_delivered_orders",
+      "REF_CAF_vs_each_arm",
+      "REF_SCALE_vs_each_arm",
+      "G2_native_material_stock_conservation_residual",
+      "A_real_vs_A_design_count_difference",
+      "all_attempts_by_engine",
+      "adapter_failures_separate_from_arm_scientific_failures",
+      "abstentions",
+      "walltime_and_CPU_and_provider_cost"
+    ],
+    "descriptive_gain_rule_vs_REF_CAF": "MAE_delivered improves by >=1 order with physical validity; not statistical inference",
+    "structural_claim_requires": "cannot be explained as proportional scaling by REF_SCALE; one case insufficient for causal claims",
+    "generalization_claim": "NONE"
+  },
+  "gates": [
+    "G0_COMMON_SCHEMA_UNITS_AND_TIME_CONVERSION",
+    "G1_PRIVATE_DES_SOURCE_NOT_YET_BUILT_AND_SEALED",
+    "G1B_BOUNDARY_LOSS_FALSE_AND_DES_EVENT_SCHEDULE",
+    "G2A_D_THREE_NO_LOSS_TOPOLOGIES_AND_18_PLUS_18_RK4_BUDGET",
+    "G2B_B_CAFE_LOCAL_ADAPTER_G0_G1_AND_MULTISTOCK_READONLY_HANDLING",
+    "G2C_M_NINE_CANDIDATES_CATALOG_LINT_AND_HORIZON",
+    "G3_PREDECLARED_SELECTION_LOCK_AND_HOLDOFF",
+    "G3N_CAF_N_MASK_AND_ISOLATED_PROVIDER_SECOND_CALL",
+    "G4_REF_CAF_AND_REF_SCALE_FROZEN_SAME_INPUTS",
+    "G5_EXPLICIT_SEPARATE_AUTHORIZATION_FOR_DES_SOLVERS_AND_TWO_PROVIDER_CALLS"
+  ],
+  "out_of_scope": [
+    "CAF02",
+    "MEM_CAF",
+    "PC05_PRODUCT",
+    "REAL_CAFE_INTERVENTION",
+    "CLEF",
+    "CLAIRIC",
+    "NEW_ARCHITECTURE"
+  ],
+  "provenance": "reviewed_v0_2_local_upload_and_repository_code_at_source_commit; OFFLINE_ONLY_NOT_FREEZE",
+  "revision_notes": {
+    "review": "PC01_V02_TECHNICAL_REVIEW_WITH_V03_PROPOSAL",
+    "date": "2026-10-28",
+    "new_findings": [
+      "loss_graphs_known_inadmissible_under_zero_loss_policy",
+      "CAF_N_REQUIRED_BY_V30_NOT_COSTED",
+      "DES_half_open_pulse_event_discretization_undefined",
+      "actual_A_sidecar_could_privilege_REF_over_native_arms"
+    ],
+    "offline_only": true
+  },
+  "unit_conversion": {
+    "arrival_construction_rate_items_per_hour": 72,
+    "arrival_evaluation_rate_items_per_hour": 90,
+    "pulse_duration_hours": 0.3333333333333333,
+    "forecast_horizon_hours": 0.6666666666666666,
+    "observation_times_hours": [
+      0,
+      0.08333333333333333,
+      0.16666666666666666,
+      0.25,
+      0.3333333333333333,
+      0.5,
+      0.6666666666666666
+    ],
+    "source_times_minutes": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      40
+    ],
+    "exact_rational_times": "1/12,1/6,1/4,1/3,1/2,2/3: keep rational until serialization/explicit precision"
+  },
+  "REF_SCALE": {
+    "method": "predeclared_proportional_delivered_scaling",
+    "rate_ratio": 1.25,
+    "predicted_D_eval": "min(A_eval_design(t),1.25*D_construct(t))",
+    "predicted_P_eval": "A_eval_design(t)-predicted_D_eval(t)",
+    "input_data": "public_construction_only_and_published_evaluation_pulse",
+    "independent_new_world_runs": 0,
+    "purpose": "separate plain linear scaling from structural transfer",
+    "if_wins": "do not claim structural recovery"
+  },
+  "CAF_N": {
+    "status": "PREPARATION_ONLY_NOT_EXECUTED",
+    "purpose": "cannot infer timing and peak of backlog from endpoints alone",
+    "source": "copy_of_CAF01_construction_without_new_DES",
+    "mask": "retain only delivered observations at t=0 and t=40min; remove internal t=5,10,15,20,30 values and derived P(t) there",
+    "pulse": "same publicly prescribed construction pulse 1.20/min through <20min",
+    "allowed_conclusions": [
+      "total_delivered_at_t40",
+      "terminal_approx_pending_with_known_input",
+      "insufficient_evidence_about_time_of_peak_or_intermediate_queue"
+    ],
+    "prohibited_conclusions": [
+      "exact_peak_pending_time",
+      "observed_waiting_times",
+      "unique_internal_structure"
+    ],
+    "methods": {
+      "D": "18 fresh RK4 parameter-grid integrations on masked endpoints, no extra OpenModelica",
+      "B": "one independent stateless inference with masked view, no new OpenModelica and no prior original CAF01 answer",
+      "M": "reuse nine sealed model trajectories only for endpoint fit, no new Modelica"
+    },
+    "REF": "REF_CAF may abstain under insufficient intermediate intervals; REF_SCALE is inapplicable for intermediate observations unless source D(t) exists",
+    "oracle": "deterministic identifiable-versus-unidentifiable checklist; do not use world-private parameter labels",
+    "independence": "same synthetic world, not additional prospective holdout",
+    "retries": 0
+  }
+}
