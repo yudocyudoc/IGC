@@ -306,16 +306,19 @@ def select(contract, evidence, rows):
 
 
 def lock_forecasts(contract, selection, submission):
-    """Preserve choice from construction, then lock conditional six-time curves.
+    """Lock construction-selected diagnostics without consulting holdout truth.
 
-    The evaluation outcome is not part of this interface. A hash alone is NOT
-    a third-party timestamp or an immutable external custody receipt.
+    CAF-N never requests future curves. For CAF01, an individual D candidate
+    failing its post-RK4 native G2 check forces *D-only* abstention; it never
+    invalidates otherwise correctly submitted M or B forecasts. A malformed
+    shared manifest/provenance still fails closed for all arms.
     """
     exact_keys(submission, ("schema", "selection_sha256",
                             "source_snapshot_sha256", "evaluation_pulse",
                             "forecast_by_candidate", "native_g2_checks"),
                "G3_LOCK_INPUT_FIELDS")
-    original_selection = {k:v for k,v in selection.items() if k != "selection_sha256"}
+    original_selection = {k: v for k, v in selection.items()
+                          if k != "selection_sha256"}
     require(selection.get("selection_sha256") == digest(original_selection),
             "G3_SELECTION_TAMPERED")
     require(submission["schema"] == SCHEMA
@@ -328,76 +331,145 @@ def lock_forecasts(contract, selection, submission):
     require(submission["evaluation_pulse"] ==
             {"kind": "pulse", "rate_per_minute": 1.5, "duration_minutes": 20},
             "G3_EVALUATION_PULSE_CHANGED")
-    # Native G2 for CAF01 D is performed AFTER 18 RK4 screens, for at most three
-    # preselected representatives, without revisiting candidate rankings.
-    # CAF-N has no new OpenModelica budget and is always abstention on internal path.
-    checks = submission["native_g2_checks"]
-    require(type(checks) is dict, "G3_NATIVE_G2_CHECKS_BAD")
-    planned = set(selection["decision"]["D"]["representatives"])
-    needed = (set(selection["decision"]["D"]["winners_pending_g2"])
-              if selection["case"] == "CAF01" else set())
-    require(set(checks) == needed and set(checks).issubset(planned),
-            "G3_NATIVE_G2_ONLY_PRESELECTED_D_WINNERS")
-    for ident, receipt in checks.items():
-        exact_keys(receipt, ("g2_receipt_sha256", "balance_max_abs",
-                             "rk4_native_max_abs_delta"),
-                   "G3_NATIVE_G2_CHECK_FIELDS")
-        require(type(receipt["g2_receipt_sha256"]) is str and
-                SHA.fullmatch(receipt["g2_receipt_sha256"]) is not None
-                and number(receipt["balance_max_abs"])
-                and 0 <= receipt["balance_max_abs"] <= MASS
-                and number(receipt["rk4_native_max_abs_delta"])
-                and 0 <= receipt["rk4_native_max_abs_delta"] <= PARITY,
-                "G3_NATIVE_G2_REPRESENTATIVE_UNVERIFIED")
-    required = {x for arm in selection["decision"].values() for x in arm["winners"]}
     supplied = submission["forecast_by_candidate"]
-    require(type(supplied) is dict and set(supplied) == required,
-            "G3_LOCK_FORECAST_MISSING_OR_EXTRANEOUS")
-    times = (5, 10, 15, 20, 30, 40)
-    for ident, curve in supplied.items():
-        require(type(curve) is list and len(curve) == 6, "G3_FUTURE_PREDICTION_SHAPE")
-        require(all(number(v) and -EPS <= v <= 1.5*min(t,20)+1+EPS
-                    for v,t in zip(curve,times)), "G3_FUTURE_PREDICTION_OUTSIDE_PHYSICAL_BOUND")
-        require(all(b+EPS>=a for a,b in zip(curve,curve[1:])),
-                "G3_FUTURE_PREDICTION_NONMONOTONIC")
-    result = {}
-    for arm, chosen in selection["decision"].items():
-        ids = chosen["winners"]
-        if not ids:
-            result[arm] = {"status": "NO_VALID_CANDIDATE",
-                           "prediction": None, "envelope": None}
-            continue
-        curves = [supplied[i] for i in ids]
-        bounds = [{"min":min(y), "max":max(y)}
-                  for y in zip(*curves)]
-        shared = all(hi["max"] - hi["min"] <= EPS for hi in bounds)
-        if chosen["parameter_ambiguity"]:
-            status = "ABSTAIN_POINT_PARAMETER_UNIDENTIFIABLE"
-            point = None
-        elif len(ids) == 1:
-            status = "CONDITIONAL_POINT_FORECAST_NOT_STRUCTURAL_ID"
-            point = curves[0]
-        elif shared:
-            status = "SHARED_FORECAST_MULTIPLE_STRUCTURES_NOT_IDENTIFIED"
-            point = curves[0]
-        else:
-            status = "ABSTAIN_POINT_DIVERGENT_COMPATIBLE_STRUCTURES"
-            point = None
-        if selection["case"] == "CAFN":
-            status = "CAFN_INTERNAL_PATH_AND_PEAK_UNIDENTIFIABLE"
-            point = None
-        result[arm] = {"status": status, "prediction": point,
-                       "envelope": bounds, "winners": ids}
+    checks = submission["native_g2_checks"]
+    require(type(supplied) is dict, "G3_LOCK_FORECAST_BAD_TYPE")
+    require(type(checks) is dict, "G3_NATIVE_G2_CHECKS_BAD")
+
+    # CAF-N is a negative control about non-identifiability from endpoints,
+    # NOT a future trajectory prediction exercise. Demanding six invented
+    # values would spend an unauthorized budget and fake an informative curve.
+    if selection["case"] == "CAFN":
+        require(not supplied and not checks,
+                "G3_CAFN_NO_FUTURE_CURVES_OR_ADDITIONAL_NATIVE_G2")
+        arm_results = {}
+        for arm, chosen in selection["decision"].items():
+            winners = chosen["winners"]
+            arm_results[arm] = {
+                "status": ("CAFN_INTERNAL_PATH_AND_PEAK_UNIDENTIFIABLE"
+                           if winners else "NO_VALID_CANDIDATE"),
+                "prediction": None, "envelope": None, "winners": winners,
+                "internal_trajectory_identifiable": False,
+                "non_identifiable": [
+                    "INTERMEDIATE_BACKLOG_TRAJECTORY",
+                    "TIME_OF_PEAK_PENDING",
+                    "INDIVIDUAL_WAITING_TIMES",
+                ],
+            }
+        effective_forecasts = {}
+        d_outcomes = {}
+        discarded_d = []
+    else:
+        require(selection["case"] == "CAF01", "G3_UNKNOWN_SELECTION_CASE")
+        d_decision = selection["decision"]["D"]
+        pending = set(d_decision["winners_pending_g2"])
+        planned = set(d_decision["representatives"])
+        require(set(checks).issubset(pending) and pending.issubset(planned),
+                "G3_NATIVE_G2_ONLY_PRESELECTED_D_WINNERS")
+
+        # A known D check may fail scientifically. Record its result rather
+        # than treating that as a schema error for independent arms B and M.
+        # Never select an alternate D winner after a failure.
+        d_outcomes = {}
+        safe_checks = {}
+        for ident in sorted(pending):
+            if ident not in checks:
+                d_outcomes[ident] = "FAIL_MISSING_NATIVE_G2_RECEIPT"
+                continue
+            receipt = checks[ident]
+            exact_keys(receipt, ("g2_receipt_sha256", "balance_max_abs",
+                                 "rk4_native_max_abs_delta"),
+                       "G3_NATIVE_G2_CHECK_FIELDS")
+            sha = receipt["g2_receipt_sha256"]
+            mass = receipt["balance_max_abs"]
+            parity = receipt["rk4_native_max_abs_delta"]
+            sha_ok = type(sha) is str and SHA.fullmatch(sha) is not None
+            mass_ok = number(mass)
+            parity_ok = number(parity)
+            safe_checks[ident] = {
+                "g2_receipt_sha256": sha if sha_ok else None,
+                "balance_max_abs": mass if mass_ok else None,
+                "rk4_native_max_abs_delta": parity if parity_ok else None,
+            }
+            if not sha_ok:
+                d_outcomes[ident] = "FAIL_INVALID_NATIVE_G2_RECEIPT"
+            elif not mass_ok or not (0 <= mass <= MASS):
+                d_outcomes[ident] = "FAIL_MATERIAL_BALANCE"
+            elif not parity_ok or not (0 <= parity <= PARITY):
+                d_outcomes[ident] = "FAIL_D_RK4_NATIVE_PARITY"
+            else:
+                d_outcomes[ident] = "PASS"
+        d_failed = sorted(i for i, status in d_outcomes.items() if status != "PASS")
+
+        # For D: either ALL construction-selected winners pass native G2,
+        # or D abstains as an arm. Do not promote a runner-up opportunistically.
+        # An optional already-produced D curve from a failed candidate is
+        # explicitly discarded, never validated as G2 or included in the lock.
+        required = {winner for arm, decision in selection["decision"].items()
+                    if arm != "D" or not d_failed
+                    for winner in decision["winners"]}
+        allowed = required | (set(d_decision["winners"]) if d_failed else set())
+        require(required.issubset(supplied) and set(supplied).issubset(allowed),
+                "G3_LOCK_FORECAST_MISSING_OR_EXTRANEOUS")
+        discarded_d = sorted(set(supplied) - required)
+        effective_forecasts = {key: supplied[key] for key in sorted(required)}
+        times = (5, 10, 15, 20, 30, 40)
+        for ident, curve in effective_forecasts.items():
+            require(type(curve) is list and len(curve) == 6,
+                    "G3_FUTURE_PREDICTION_SHAPE")
+            require(all(number(v) and -EPS <= v <= 1.5*min(t, 20)+1+EPS
+                        for v, t in zip(curve, times)),
+                    "G3_FUTURE_PREDICTION_OUTSIDE_PHYSICAL_BOUND")
+            require(all(b+EPS >= a for a,b in zip(curve, curve[1:])),
+                    "G3_FUTURE_PREDICTION_NONMONOTONIC")
+
+        arm_results = {}
+        for arm, chosen in selection["decision"].items():
+            ids = chosen["winners"]
+            if not ids:
+                arm_results[arm] = {"status": "NO_VALID_CANDIDATE",
+                                    "prediction": None, "envelope": None,
+                                    "winners": []}
+                continue
+            if arm == "D" and d_failed:
+                arm_results[arm] = {
+                    "status": "ABSTAIN_D_NATIVE_G2_FAILED",
+                    "prediction": None, "envelope": None,
+                    "winners": ids, "failed_preselected": d_failed,
+                    "native_g2_outcomes": d_outcomes,
+                    "replacement_forbidden": True,
+                }
+                continue
+            curves = [effective_forecasts[i] for i in ids]
+            bounds = [{"min":min(y), "max":max(y)} for y in zip(*curves)]
+            shared = all(bound["max"]-bound["min"] <= EPS for bound in bounds)
+            if chosen["parameter_ambiguity"]:
+                status, point = "ABSTAIN_POINT_PARAMETER_UNIDENTIFIABLE", None
+            elif len(ids) == 1:
+                status, point = "CONDITIONAL_POINT_FORECAST_NOT_STRUCTURAL_ID", curves[0]
+            elif shared:
+                status, point = "SHARED_FORECAST_MULTIPLE_STRUCTURES_NOT_IDENTIFIED", curves[0]
+            else:
+                status, point = "ABSTAIN_POINT_DIVERGENT_COMPATIBLE_STRUCTURES", None
+            arm_results[arm] = {"status": status, "prediction": point,
+                                "envelope": bounds, "winners": ids}
+
+    # No external custody or access to the evaluation response is implied.
     lock = {
-        "schema": SCHEMA, "status": "LOCK_CONTENT_PREPARED_NEEDS_EXTERNAL_IMMUTABLE_CUSTODY",
+        "schema": SCHEMA,
+        "status": "LOCK_CONTENT_PREPARED_NEEDS_EXTERNAL_IMMUTABLE_CUSTODY",
         "selection_sha256": selection["selection_sha256"],
         "source_snapshot_sha256": selection["source_snapshot_sha256"],
         "case": selection["case"],
-        "evaluation_times_minutes": list(times),
+        "evaluation_times_minutes": [5, 10, 15, 20, 30, 40]
+                                    if selection["case"] == "CAF01" else [],
         "evaluation_pulse": submission["evaluation_pulse"],
-        "forecast_by_candidate": supplied,
-        "native_g2_checks_for_preselected_D": checks,
-        "arm_forecasts": result,
+        "forecast_by_candidate": effective_forecasts,
+        "native_g2_checks_for_preselected_D":
+            safe_checks if selection["case"] == "CAF01" else {},
+        "native_g2_outcomes_for_preselected_D": d_outcomes,
+        "discarded_D_forecast_identifiers_due_to_failed_G2": discarded_d,
+        "arm_forecasts": arm_results,
         "evaluation_truth_included": False,
         "external_reveal_authorized": False,
         "g4_reference_baselines_still_require_separate_lock": True,
