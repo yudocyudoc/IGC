@@ -61,6 +61,11 @@ jobs:
           assert z['physical_candidate_solver_runs_new']==z['provider_calls_new']==0
           assert not z['R4_complete']
           assert Path('artifacts/r4-t2-forecast-frozen/forecast-lock.sha256').read_text().strip()=='sha256:'+hashlib.sha256(f.read_bytes()).hexdigest()
+          print('PT07_R4_T2_FORECAST_ENVELOPES',json.dumps(z['frozen_structure_envelopes'],sort_keys=True))
+          print('PT07_R4_T2_SELECTED_SEPARATION',json.dumps(next(x['separation'] for x in z['candidate_times_scored_before_new_observation'] if x['time_hours']==z['chosen_observation_time_hours']),sort_keys=True))
+          print('PT07_R4_T2_AGGREGATE_FORECAST',z['equal_structure_weight_point_prediction_items'])
+          print('PT07_R4_T2_REF_FORECAST',z['REF_persistence_prediction_items'])
+          print('PT07_R4_T2_SOURCE_CASE_SHA',z['source_case_sha256'])
           print('PT07_R4_T2_PREDICTIONS_AND_REF_LOCKED_NO_NEW_MEASUREMENTS')
           PY
       - uses: actions/upload-artifact@v4
