@@ -1,0 +1,44 @@
+name: CAF-01 G4 public baselines and custody-preparation checks
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_g4.py'
+      - 'experiments/cafeteria/pc01/test_caf01_g4.py'
+      - 'experiments/cafeteria/pc01/G4_REFERENCIAS_Y_CUSTODIA_PREHOLDOUT_2026-10-28.md'
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - '.github/workflows/caf01-g4.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  construction-only-g4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: G4 reference and custody-adversarial unit tests only
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g4.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g3.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Guarantee zero provider, DES or solver operations and no fake custody
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          source=Path('experiments/cafeteria/pc01/caf01_g4.py').read_text()
+          for forbidden in ('simulate(', 'subprocess.', 'requests.', 'urllib.',
+                            'run_toy_engine(', 'os.system(', 'BuffaloAI', 'openrouter'):
+              assert forbidden not in source, forbidden
+          assert 'if __name__' not in source
+          assert 'NOT_CUSTODIED_EXTERNAL_WITNESS_REQUIRED' in source
+          assert '"release_authorized": False' in source
+          print('G4_CONSTRUCTION_ONLY_NOT_CUSTODIED_NO_EXPERIMENTAL_RUNS')
+          PY
