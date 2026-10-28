@@ -1,0 +1,55 @@
+name: Arena R4 PT07 T2 one future world PRE-FLIGHT no solver
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r4_pt07_t2_one_world.py'
+      - 'scripts/arena_r4_pt07_t2_collect.py'
+      - 'scripts/arena_r4_pt07_t2_adjudicate.py'
+      - 'tests/test_arena_r4_pt07_t2_one_world.py'
+      - '.github/workflows/arena-r4-pt07-t2-one-preflight.yml'
+permissions: {contents: read, actions: read}
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r4-pt07-t2-forecast-lock-before-new-world-observation
+          run-id: 40614473892
+          github-token: ${{ github.token }}
+          path: artifacts/r4-original-lock
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/r3-original-t23
+      - name: Check original precommitted lock, original generator and exactly 1 proposed run
+        env:
+          ARENA_R4_ORIGINAL_LOCK_DIR: artifacts/r4-original-lock
+          ARENA_R4_ORIGINAL_T23_DIR: artifacts/r3-original-t23
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r4_pt07_t2_one_world.py' -v
+          python -m scripts.arena_r4_pt07_t2_one_world \
+            --lock artifacts/r4-original-lock \
+            --out artifacts/r4-one-future
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_r4_pt07_t2_one_world import SHA
+          p=Path('artifacts/r4-one-future')
+          b=json.loads((p/'budget.json').read_text())
+          assert b['forecast_lock_sha256']==SHA
+          assert b['world_simulate_max']==1 and b['candidate_simulate_max']==0
+          assert b['provider_inference_max']==b['automatic_retry_max']==0
+          assert (p/'one-world.mos').read_text().count('simulate(')==1
+          assert not list(p.rglob('*_res.csv'))
+          print('R4_ONE_WORLD_PREFLIGHT_ONLY_ZERO_NEW_PHYSICAL_RUNS')
+          PY

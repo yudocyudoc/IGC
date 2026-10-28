@@ -1,0 +1,150 @@
+name: Arena R4 PT07 T2 ONE authorized future world at locked t1
+on:
+  push:
+    branches: [experiment/arena-r4-pt07-t2-one-physical-20261028]
+    paths: ['data/diagnostics/ARENA_R4_PT07_T2_ONE_FUTURE_AUTH_20261028.json']
+permissions: {contents: read, actions: read}
+concurrency:
+  group: arena-r4-t2-one-authorized-physical-run-20261028
+  cancel-in-progress: false
+jobs:
+  one-new-world-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Approve only marker's original addition on first action attempt
+        id: gate
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_RUN_ATTEMPT" != 1 ] || ! git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD | grep -Fxq data/diagnostics/ARENA_R4_PT07_T2_ONE_FUTURE_AUTH_20261028.json; then
+            echo 'authorized=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          marker=json.loads(Path('data/diagnostics/ARENA_R4_PT07_T2_ONE_FUTURE_AUTH_20261028.json').read_text())
+          cert=json.loads(Path('data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json').read_text())
+          assert marker=={
+              'schema':'igc-arena-r4-a-t2-one-locked-time-physical-authorization/0.1',
+              'forecast_lock_sha256':'sha256:94b1231c33f605cbca4efb81aa6a6f31883e628e4303eae9cbdbd53eb78811d8',
+              'forecast_parent_main_commit':'e3b22a540928f932617f2d70c278e8abf1e9e36f',
+              'case_id':'R3-T2-EARLY-OBSERVABILITY',
+              'new_world_simulations_max':1,
+              'new_candidate_simulations_max':0,
+              'new_provider_calls_max':0,
+              'automatic_retries':0,
+              'observation_time_hours':1.0,
+              'no_parameter_or_model_changes':True,
+              'no_external_holdout_claim':True,
+              'authorized_by_user':True}
+          assert marker['forecast_lock_sha256']==cert['frozen_forecast_file_sha256']
+          assert cert['chosen_observation_time_hours']==1.0
+          PY
+          echo 'authorized=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        with:
+          name: arena-r4-pt07-t2-forecast-lock-before-new-world-observation
+          run-id: 40614473892
+          github-token: ${{ github.token }}
+          path: artifacts/original-frozen-lock
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/original-r3-t23
+      - name: Original physical source and immutable locked predictions BEFORE fresh solver
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        env:
+          ARENA_R4_ORIGINAL_LOCK_DIR: artifacts/original-frozen-lock
+          ARENA_R4_ORIGINAL_T23_DIR: artifacts/original-r3-t23
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_r4_pt07_t2_one_world.py' -v
+          python -m scripts.arena_r4_pt07_t2_one_world \
+            --lock artifacts/original-frozen-lock \
+            --out artifacts/r4-one
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          from scripts.arena_r4_pt07_t2_one_world import SHA
+          p=Path('artifacts/r4-one')
+          s=(p/'one-world.mos').read_text()
+          b=json.loads((p/'budget.json').read_text())
+          assert s.count('simulate(')==s.count('checkModel(')==1
+          assert 'simulate(ArenaR3T23Worlds.R3T2World' in s
+          assert 'simulate(ArenaR3T23Worlds.R3T3World' not in s
+          assert b['world_simulate_max']==1 and b['candidate_simulate_max']==0
+          assert b['forecast_lock_sha256']==SHA
+          assert (p/'ArenaR3T23Worlds-ORIGINAL.mo').read_bytes()==Path(
+             'artifacts/original-r3-t23/ArenaR3T23Worlds-NOT-SIMULATED.mo').read_bytes()
+          cert=json.loads(Path('data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json').read_text())
+          lock=Path('artifacts/original-frozen-lock/forecast-lock.json')
+          assert 'sha256:'+hashlib.sha256(lock.read_bytes()).hexdigest()==SHA==cert['frozen_forecast_file_sha256']
+          assert not list(p.rglob('*_res.csv'))
+          print('R4_T2_PRE_SOLUTION_LOCK_PRECEDES_FRESH_OBSERVATION')
+          PY
+      - name: Recover SAME original E1 Modelica libraries and pinned solver
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+      - name: Exactly ONE authorized original E1 T2 physical simulation
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/r4-one/one-world.mos 2>&1 | tee artifacts/r4-one/omc.log
+      - name: Preserve original result CSV and restore artifact ownership
+        if: always()
+        run: |
+          if [ -d artifacts/r4-one ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/r4-one; fi
+      - name: Reject unsuccessful solver and any extra simulation results
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        run: |
+          set -euo pipefail
+          test -s artifacts/r4-one/new-world/r4_t2_res.csv
+          test "$(find artifacts/r4-one -name '*_res.csv' | wc -l)" -eq 1
+          test "$(grep -c 'simulate(' artifacts/r4-one/one-world.mos)" -eq 1
+          if grep -Eq 'Failed to load|Simulation execution failed|Error occurred' artifacts/r4-one/omc.log; then exit 1; fi
+          echo 'R4_T2_ONE_REAL_NATIVE_WORLD_CSV_AT_LOCKED_HOUR'
+      - name: Validate physical provenance and extract ONLY one t1 observation
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        run: |
+          python -m scripts.arena_r4_pt07_t2_collect \
+            --new-root artifacts/r4-one \
+            --original-t23 artifacts/original-r3-t23 \
+            --lock artifacts/original-frozen-lock \
+            --catalog experiments/e0/catalog.json
+      - name: Score immutable 27 forecasts and REF BEFORE generator truth is read
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        run: |
+          python -m scripts.arena_r4_pt07_t2_adjudicate \
+            --root artifacts/r4-one --lock artifacts/original-frozen-lock --phase score
+      - name: Researcher-only reveal after scoring, never within selector
+        if: ${{ steps.gate.outputs.authorized == 'true' }}
+        run: |
+          python -m scripts.arena_r4_pt07_t2_adjudicate \
+            --root artifacts/r4-one --lock artifacts/original-frozen-lock --phase adjudicate
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-r4-pt07-t2-one-authorized-world-original-outcome
+          path: artifacts/r4-one/
+          retention-days: 60
+          if-no-files-found: warn
