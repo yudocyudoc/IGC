@@ -129,6 +129,37 @@ def render_bundle(contract):
     return package, "\n".join(cmds) + "\n", manifest
 
 
+
+def resolve_check_only_paths(mos, output_dir):
+    """Bind all local loadFile targets to absolute, checked paths.
+
+    Independent of omc working directory; only the three known file targets
+    are rewritten. Fails closed when a file or the expected template is absent.
+    """
+    output_dir = Path(output_dir).resolve()
+    paths = (
+        ROOT / "src/modelica/IGCMolecules.mo",
+        ROOT / "src/modelica/IGCInformationMolecules.mo",
+        output_dir / "CAF01MPreflight.mo",
+    )
+    old = (
+        "src/modelica/IGCMolecules.mo",
+        "src/modelica/IGCInformationMolecules.mo",
+        "CAF01MPreflight.mo",
+    )
+    for original, target in zip(old, paths):
+        if not target.is_file():
+            raise ValueError("MODELICA_LOAD_FILE_MISSING:" + str(target))
+        before = 'loadFile("' + original + '");'
+        if mos.count(before) != 1:
+            raise ValueError("MODELICA_LOAD_TEMPLATE_CHANGED:" + original)
+        resolved = target.as_posix()
+        if '"' in resolved or "\\n" in resolved or "\\r" in resolved:
+            raise ValueError("UNSAFE_MODELICA_LOAD_PATH")
+        mos = mos.replace(before, 'loadFile("' + resolved + '");')
+    return mos
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--out", required=True, type=Path)
@@ -139,7 +170,7 @@ def main():
     modelica, mos, manifest = render_bundle(contract)
     args.out.mkdir(parents=True)
     (args.out / "CAF01MPreflight.mo").write_text(modelica, encoding="utf-8")
-    (args.out / "check_only.mos").write_text(mos, encoding="utf-8")
+    (args.out / "check_only.mos").write_text(\n        resolve_check_only_paths(mos, args.out), encoding="utf-8")
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": manifest["status"], "candidates": len(manifest["models"])}))
 
