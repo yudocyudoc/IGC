@@ -170,7 +170,7 @@ def select(contract, evidence, rows):
     for r in rows:
         exact_keys(r, ("id", "gates", "construction_delivered",
                        "native_sha256", "g2_receipt_sha256",
-                       "balance_max_abs", "block_reason",
+                       "rk4_receipt_sha256", "balance_max_abs", "block_reason",
                        "candidate_evidence_sha256"), "G3_CANDIDATE_FIELDS")
         require(r["candidate_evidence_sha256"] == digest(evidence),
                 "G3_CANDIDATE_EVIDENCE_HASH_MISMATCH")
@@ -178,30 +178,53 @@ def select(contract, evidence, rows):
         require(type(ident) is str and ident in expected
                 and ident not in byid, "G3_UNKNOWN_OR_DUPLICATE_CANDIDATE")
         exact_keys(r["gates"], ("G0", "G1", "G2"), "G3_GATE_FIELDS")
-        require(all(x in ("PASS", "BLOCKED", "FAIL", "PENDING")
+        require(all(x in ("PASS", "RK4_SCREEN", "BLOCKED", "FAIL", "PENDING")
                     for x in r["gates"].values()), "G3_GATE_STATUS")
-        ready = all(x == "PASS" for x in r["gates"].values())
-        if ready:
-            require(all(isinstance(r[k], str) and SHA.fullmatch(r[k])
-                        for k in ("native_sha256", "g2_receipt_sha256")),
-                    "G3_MISSING_NATIVE_G2_RECEIPT")
+        arm = expected[ident]["arm"]
+        g = r["gates"]
+        screened = (arm == "D" and g["G0"] == g["G1"] == "PASS"
+                    and g["G2"] == "RK4_SCREEN")
+        native_pass = all(x == "PASS" for x in g.values())
+        require(not (g["G0"] == "RK4_SCREEN" or g["G1"] == "RK4_SCREEN"
+                     or (g["G2"] == "RK4_SCREEN" and arm != "D")),
+                "G3_RK4_SCOPE_ONLY_D")
+        if screened or native_pass:
+            require(isinstance(r["native_sha256"], str) and
+                    SHA.fullmatch(r["native_sha256"]) is not None,
+                    "G3_MISSING_NATIVE_SOURCE_HASH")
             require(number(r["balance_max_abs"]) and
                     0 <= r["balance_max_abs"] <= MASS, "G3_UNVERIFIED_MATERIAL_BALANCE")
+            if arm == "D":
+                require(isinstance(r["rk4_receipt_sha256"], str) and
+                        SHA.fullmatch(r["rk4_receipt_sha256"]) is not None,
+                        "G3_MISSING_D_RK4_RECEIPT")
+            else:
+                require(r["rk4_receipt_sha256"] is None,
+                        "G3_RK4_NOT_APPLICABLE_TO_B_M")
+            if native_pass:
+                require(isinstance(r["g2_receipt_sha256"], str) and
+                        SHA.fullmatch(r["g2_receipt_sha256"]) is not None,
+                        "G3_MISSING_NATIVE_G2_RECEIPT")
+            else:
+                require(r["g2_receipt_sha256"] is None,
+                        "G3_RK4_SCREEN_CANNOT_CLAIM_NATIVE_G2")
             require(r["block_reason"] is None, "G3_READY_WITH_BLOCK_REASON")
             mae, rmse = score(r["construction_delivered"], obs, times)
-            byid[ident] = {"id": ident, "arm": expected[ident]["arm"],
+            byid[ident] = {"id": ident, "arm": arm,
                            "structure": expected[ident]["structure"],
-                           "mae": mae, "rmse": rmse, "eligible": True}
+                           "mae": mae, "rmse": rmse, "eligible": True,
+                           "native_g2_pass": native_pass}
         else:
             require(r["construction_delivered"] is None
                     and (r["native_sha256"] is None or
                          (isinstance(r["native_sha256"], str) and
                           SHA.fullmatch(r["native_sha256"])))
                     and r["g2_receipt_sha256"] is None
+                    and r["rk4_receipt_sha256"] is None
                     and r["balance_max_abs"] is None
                     and type(r["block_reason"]) is str and bool(r["block_reason"]),
                     "G3_BLOCKED_ROW_CANNOT_CLAIM_G2_OR_CURVE")
-            byid[ident] = {"id": ident, "arm": expected[ident]["arm"],
+            byid[ident] = {"id": ident, "arm": arm,
                            "structure": expected[ident]["structure"],
                            "eligible": False, "block_reason": r["block_reason"],
                            "gates": r["gates"]}
@@ -212,7 +235,8 @@ def select(contract, evidence, rows):
         if not valid:
             decisions[arm] = {"status": "NO_VALID_CANDIDATE", "winners": [],
                               "representatives": [], "parameter_ambiguity": False,
-                              "blocked": [v["id"] for v in all_arm]}
+                              "blocked": [v["id"] for v in all_arm],
+                              "representatives_pending_g2": []}
             continue
         structures = sorted({v["structure"] for v in valid})
         representatives = []
@@ -238,6 +262,10 @@ def select(contract, evidence, rows):
             "near_best_alternatives": {s: ids for s, ids in structure_alternatives.items()},
             "best_mae": champion,
             "blocked": [v["id"] for v in all_arm if not v["eligible"]],
+            "representatives_pending_g2": [x["id"] for x in representatives
+                                           if not x["native_g2_pass"]],
+            "winners_pending_g2": [x["id"] for x in winners
+                                   if not x["native_g2_pass"]],
         }
     report = {
         "schema": SCHEMA,
@@ -251,10 +279,12 @@ def select(contract, evidence, rows):
         "selection_metric": "MAE_DELIVERED_EXCLUDING_T0",
         "competitive_band_orders": BAND,
         "numeric_equality_orders": EPS,
-        "g2_evidence": "RECEIPT_HASH_ASSERTED_REQUIRES_EXTERNAL_VERIFICATION",
+        "g2_evidence": "RK4_SCREEN_NOT_NATIVE_G2; RECEIPT_HASH_REQUIRES_EXTERNAL_VERIFICATION",
         "known_limitations": [
             "Competitive band is a prospective decision rule, NOT sensor noise bound.",
             "Construction fit is not causal recovery or a statistical test.",
+            "D's 18 RK4 rows are screened before native G2; only preselected representatives can receive native G2.",
+            "Native G2 failure blocks a representative; never reselect using future data.",
             "G2 receipt hashes and balances are not independently fetched by this module.",
             "M C72 represents the C72/C100 proven capacity alias within each structure.",
             "CAF-N intermediate backlog and peak timing are NOT IDENTIFIABLE.",
@@ -272,7 +302,8 @@ def lock_forecasts(contract, selection, submission):
     """
     exact_keys(submission, ("schema", "selection_sha256",
                             "source_snapshot_sha256", "evaluation_pulse",
-                            "forecast_by_candidate"), "G3_LOCK_INPUT_FIELDS")
+                            "forecast_by_candidate", "native_g2_checks"),
+               "G3_LOCK_INPUT_FIELDS")
     original_selection = {k:v for k,v in selection.items() if k != "selection_sha256"}
     require(selection.get("selection_sha256") == digest(original_selection),
             "G3_SELECTION_TAMPERED")
@@ -286,6 +317,22 @@ def lock_forecasts(contract, selection, submission):
     require(submission["evaluation_pulse"] ==
             {"kind": "pulse", "rate_per_minute": 1.5, "duration_minutes": 20},
             "G3_EVALUATION_PULSE_CHANGED")
+    # Native G2 for D is performed AFTER 18 RK4 screens, for at most three
+    # preselected representatives, without revisiting candidate rankings.
+    checks = submission["native_g2_checks"]
+    require(type(checks) is dict, "G3_NATIVE_G2_CHECKS_BAD")
+    planned = set(selection["decision"]["D"]["representatives"])
+    needed = set(selection["decision"]["D"]["winners_pending_g2"])
+    require(set(checks) == needed and set(checks).issubset(planned),
+            "G3_NATIVE_G2_ONLY_PRESELECTED_D_WINNERS")
+    for ident, receipt in checks.items():
+        exact_keys(receipt, ("g2_receipt_sha256", "balance_max_abs"),
+                   "G3_NATIVE_G2_CHECK_FIELDS")
+        require(type(receipt["g2_receipt_sha256"]) is str and
+                SHA.fullmatch(receipt["g2_receipt_sha256"]) is not None
+                and number(receipt["balance_max_abs"])
+                and 0 <= receipt["balance_max_abs"] <= MASS,
+                "G3_NATIVE_G2_REPRESENTATIVE_UNVERIFIED")
     required = {x for arm in selection["decision"].values() for x in arm["winners"]}
     supplied = submission["forecast_by_candidate"]
     require(type(supplied) is dict and set(supplied) == required,
@@ -333,6 +380,7 @@ def lock_forecasts(contract, selection, submission):
         "evaluation_times_minutes": list(times),
         "evaluation_pulse": submission["evaluation_pulse"],
         "forecast_by_candidate": supplied,
+        "native_g2_checks_for_preselected_D": checks,
         "arm_forecasts": result,
         "evaluation_truth_included": False,
         "external_reveal_authorized": False,
