@@ -66,6 +66,21 @@ jobs:
           print('PT07_R4_T2_AGGREGATE_FORECAST',z['equal_structure_weight_point_prediction_items'])
           print('PT07_R4_T2_REF_FORECAST',z['REF_persistence_prediction_items'])
           print('PT07_R4_T2_SOURCE_CASE_SHA',z['source_case_sha256'])
+          cert=json.loads(Path('data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json').read_text())
+          assert cert['frozen_forecast_file_sha256']=='sha256:'+hashlib.sha256(f.read_bytes()).hexdigest()
+          assert cert['source_case_sha256']==z['source_case_sha256']
+          assert cert['chosen_observation_time_hours']==z['chosen_observation_time_hours']
+          assert cert['compatible_configs_per_structure']=={k:len(v) for k,v in z['compatible_by_structure'].items()}
+          assert cert['equal_topology_weight_point_prediction_items']==z['equal_structure_weight_point_prediction_items']
+          assert cert['REF_last_observed_persistence_items']==z['REF_persistence_prediction_items']
+          for cls,env in z['frozen_structure_envelopes'].items():
+            declared=cert['forecast_envelopes_items'][cls]
+            assert declared=={'lower':env['lower_items'],'median':env['median_items'],'upper':env['upper_items']}
+          chosen=next(x for x in z['candidate_times_scored_before_new_observation'] if x['time_hours']==z['chosen_observation_time_hours'])
+          assert chosen['separation']['min_pairwise_envelope_gap_items']==cert['minimum_pairwise_forecast_envelope_gap_items']
+          assert cert['minimum_pairwise_forecast_envelope_gap_items']<cert['future_elimination_cutoff_items']
+          assert cert['robust_pairwise_discrimination_with_declared_cutoff_guaranteed'] is False
+          print('PT07_R4_DURABLE_FORECAST_CERTIFICATE_MATCHES_ORIGINAL_BYTES')
           print('PT07_R4_T2_PREDICTIONS_AND_REF_LOCKED_NO_NEW_MEASUREMENTS')
           PY
       - uses: actions/upload-artifact@v4
