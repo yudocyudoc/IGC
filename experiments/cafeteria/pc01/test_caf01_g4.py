@@ -228,6 +228,30 @@ class TestG4ConstructionOnly(unittest.TestCase):
             with self.subTest(p=p,y=y),self.assertRaises(G4Blocked):
                 score_six_delivered_values(p,y)
 
+    def test_Astra_31_deliveries_vs_30_arrivals_must_be_rejected(self):
+        # Reproduce the independent-review failure, with invented observations.
+        delivered = [2, 4, 6, 8, 20, 30]
+        forecast_31 = [2, 4, 6, 8, 20, 31]
+        with self.assertRaisesRegex(G4Blocked, "G4_SCORE_PHYSICAL_VALUES_REQUIRED"):
+            score_six_delivered_values(forecast_31, delivered)
+        report = score_six_delivered_values(
+            [2, 4, 6, 8, 20, 30], delivered)
+        self.assertEqual(report["MAE_delivered_orders"], 0.0)
+
+    def test_arrivals_bound_at_every_sample_not_only_final(self):
+        # Time 5 has 8 midpoint-scheduled arrivals; time 15 has 23.
+        observed = [2, 4, 6, 8, 20, 30]
+        for pred in ([8.1, 10, 15, 20, 25, 30],
+                     [2, 4, 23.1, 24, 25, 30],
+                     [2, 4, 6, 8, 31, 31]):
+            with self.subTest(prediction=pred):
+                with self.assertRaisesRegex(G4Blocked, "G4_SCORE_PHYSICAL_VALUES_REQUIRED"):
+                    score_six_delivered_values(list(pred), observed)
+        report = score_six_delivered_values(
+            [8, 15, 23, 30, 30, 30],
+            [8, 15, 23, 30, 30, 30])
+        self.assertEqual(report["MAE_delivered_orders"], 0)
+
     def test_byte_identical_custody_package_not_auto_published(self):
         e=self.evidence()
         selection,g3=self.g3_lock(e, {"M_C00_C72":[0,0,1,3,6,8,10]})
