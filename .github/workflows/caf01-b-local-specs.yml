@@ -1,0 +1,75 @@
+name: CAF-01 B local specs bridge - offline and checkModel only
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_b_local_specs.py'
+      - 'experiments/cafeteria/pc01/test_caf01_b_local_specs.py'
+      - 'experiments/cafeteria/pc01/fixtures/b_caf_local_synthetic_native.json'
+      - 'scripts/arena_b_native_to_modelica.py'
+      - 'scripts/arena_b_native_series.py'
+      - '.github/workflows/caf01-b-local-specs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-bridge-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Legacy and CAF-01 bridge tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_b_native_to_modelica.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_b_local_specs.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Translate explicitly SYNTHETIC Buffalo-shaped fixture
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_b_local_specs.py \
+            --native experiments/cafeteria/pc01/fixtures/b_caf_local_synthetic_native.json \
+            --out artifacts/caf01-b-local
+          test "$(grep -c 'checkModel(' artifacts/caf01-b-local/check_only.mos)" -eq 1
+          if grep -Eq 'simulate\(|buildModel\(' artifacts/caf01-b-local/check_only.mos; then
+            echo "B_UNAUTHORIZED_SIMULATION" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/caf01-b-local/report.json').read_text())
+          assert r['status']=='OFFLINE_TRANSLATED_NOT_EXECUTED'
+          assert r['native_equations_modified'] is False
+          assert r['buffalo_provider_calls']==r['native_simulation_runs']==0
+          assert r['actual_native_specs']['stopTime']==2/3
+          assert r['historical_specs_used_only_for_translation']['stopTime']==8
+          print('B_LOCAL_BRIDGE_SOURCE_INTACT_OFFLINE')
+          PY
+      - name: Real checkModel for synthetic fixture ONLY (not G0 parity)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/caf01-b-local/check_only.mos 2>&1 | tee artifacts/caf01-b-local/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' artifacts/caf01-b-local/omc.log; then
+            echo 'B_LOCAL_NATIVE_CHECK_FAILED' >&2
+            exit 1
+          fi
+          test "$(grep -Ec 'Check of BuffaloNative_[0-9a-f]{12} completed successfully' artifacts/caf01-b-local/omc.log)" -eq 1
+          echo 'B_LOCAL_SYNTHETIC_CHECKMODEL_SUCCESS_NO_PROVIDER_OR_SIMULATION'
+      - name: Restore artifact ownership
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-b-local ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-b-local; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: caf01-b-local-specs-synthetic-preflight-only
+          path: artifacts/caf01-b-local/
+          retention-days: 60
+          if-no-files-found: warn

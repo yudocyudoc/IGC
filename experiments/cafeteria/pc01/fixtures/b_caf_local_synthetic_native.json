@@ -1,0 +1,90 @@
+{
+  "model": {
+    "variables": [
+      {
+        "name": "pending work",
+        "type": "stock",
+        "equation": "0",
+        "units": "items",
+        "inflows": [
+          "arrivals"
+        ],
+        "outflows": [
+          "completions"
+        ]
+      },
+      {
+        "name": "delivered work",
+        "type": "stock",
+        "equation": "0",
+        "units": "items",
+        "inflows": [
+          "completions"
+        ],
+        "outflows": []
+      },
+      {
+        "name": "arrivals",
+        "type": "flow",
+        "equation": "arrival_rate * pulse_shape",
+        "units": "items per hour",
+        "uniflow": true
+      },
+      {
+        "name": "completions",
+        "type": "flow",
+        "equation": "pending_work // response_time",
+        "units": "items per hour",
+        "uniflow": true
+      },
+      {
+        "name": "arrival rate",
+        "type": "variable",
+        "equation": "72",
+        "units": "items per hour"
+      },
+      {
+        "name": "response time",
+        "type": "variable",
+        "equation": "0.5",
+        "units": "hour"
+      },
+      {
+        "name": "pulse shape",
+        "type": "variable",
+        "equation": "TIME",
+        "units": "dimensionless",
+        "graphicalFunction": {
+          "points": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 0.333333333,
+              "y": 1
+            },
+            {
+              "x": 0.333333334,
+              "y": 0
+            },
+            {
+              "x": 0.666666666,
+              "y": 0
+            }
+          ]
+        }
+      }
+    ],
+    "relationships": [],
+    "modules": [],
+    "specs": {
+      "startTime": 0,
+      "stopTime": 0.6666666666666666,
+      "dt": 0.008333333333333333,
+      "timeUnits": "hour",
+      "integrationMethod": "Euler"
+    }
+  },
+  "supportingInfo": "SYNTHETIC FIXTURE ONLY; NO BUFFALO PROVIDER OUTPUT OR CAF01 GROUND TRUTH"
+}
