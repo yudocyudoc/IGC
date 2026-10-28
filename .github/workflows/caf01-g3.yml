@@ -1,0 +1,57 @@
+name: CAF-01 G3 prospective selection and lock offline
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+      - 'experiments/cafeteria/pc01/test_caf01_g3.py'
+      - 'experiments/cafeteria/pc01/G3_POLITICA_SELECCION_Y_BLOQUEO_2026-10-28.md'
+      - 'experiments/cafeteria/pc01/caf01_m_equivalence.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - '.github/workflows/caf01-g3.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-decision-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Original M equivalence regressions and frozen v0.3 contract
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_equivalence.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: G3 deterministic selection and prospective lock tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g3.py' -v
+          python - <<'PY'
+          import sys, json
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_g3 import CONTRACT, plan
+          p=plan(json.loads(CONTRACT.read_text()))
+          assert len(p["construction_candidate_inventory"])==25
+          assert p["conditional_total_modelica_ceiling"]==20
+          assert p["v03_original_modelica_ceiling_unchanged"]==26
+          assert p["status"]=="POLICY_PREPARED_NOT_EXPERIMENT_AUTHORIZED"
+          print("G3_PREPARED_SIX_M_CLASSES_NO_EXPERIMENTAL_EXECUTION")
+          PY
+      - name: Guard no experimental output and no provider calls
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text=Path("experiments/cafeteria/pc01/caf01_g3.py").read_text()
+          for forbidden in ("subprocess", "requests.", "simulate(", "run_toy_engine(",
+                            "openrouter", "urllib", "fetch(", "os.system"):
+              assert forbidden not in text, forbidden
+          assert "if __name__" not in text
+          print("G3_NO_SOLVER_PROVIDER_DES_HOLDOUT_EXECUTION")
+          PY
