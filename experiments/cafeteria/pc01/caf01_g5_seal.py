@@ -212,7 +212,7 @@ def seal_offline(config_path, private_dir, public_receipt_path, *, nonce=None):
             "G5_OUTPUT_ALREADY_EXISTS")
     require(public_receipt_path.parent.is_dir()
             and not public_receipt_path.is_relative_to(private_dir)
-            and not private_dir.is_relative_to(public_receipt_path.parent),
+            and private_dir != public_receipt_path.parent,
             "G5_PUBLIC_AND_PRIVATE_PATHS_NOT_SEPARATE")
     try:
         config = json.loads(config_path.read_text(encoding="utf-8"))
