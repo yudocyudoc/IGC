@@ -1,0 +1,68 @@
+name: Arena R4 PT07 T2 REAL outcome replay postonly zero solver
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_r4_pt07_t2_postonly.py'
+      - '.github/workflows/arena-r4-pt07-t2-postonly.yml'
+      - 'docs/ARENA_R4_PT07_T2_REAL_PROSPECTIVE_RESULT_2026-10-28.md'
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  postonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r4-pt07-t2-forecast-lock-before-new-world-observation
+          run-id: 40614473892
+          github-token: ${{ github.token }}
+          path: artifacts/original-r4-forecast-lock
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/original-r3-t23
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r4-pt07-t2-one-authorized-world-original-outcome
+          run-id: 40618493022
+          github-token: ${{ github.token }}
+          path: artifacts/original-r4-new-world
+      - name: Recheck real solver provenance, locked future scoring, REF and private postselection
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_r4_pt07_t2_postonly \
+            --root artifacts/original-r4-new-world \
+            --original-t23 artifacts/original-r3-t23 \
+            --lock artifacts/original-r4-forecast-lock \
+            --catalog experiments/e0/catalog.json \
+            --out artifacts/r4-t2-postonly-audit.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('artifacts/r4-t2-postonly-audit.json').read_text())
+          assert a['status']=='R4_T2_REAL_PROSPECTIVE_RESULT_REPRODUCED_POSTONLY'
+          assert a['extra_solver_calls_this_audit']==a['extra_provider_calls_this_audit']==0
+          assert a['extra_solver_calls_this_audit']==a['new_parameter_fits_this_audit']==0
+          assert a['original_T2_early_replay_max_abs_delta']<=1e-5
+          e=a['locked_evaluation']
+          assert e['structural_result']=='ONE_STRUCTURE_SURVIVES_CONDITIONALLY'
+          assert e['structures_before']==['C00','C01','C02']
+          assert e['structures_after']==['C01']
+          assert e['forecast_beats_REF_in_abs_error'] is True
+          assert a['synthetic_adjudication']['generating_structure_retained'] is True
+          assert a['independent_external_holdout']=='NOT_ESTABLISHED'
+          print('R4_ONE_REAL_FUTURE_WORLD_RESULT_REPRODUCED_USING_NO_SOLVERS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-r4-pt07-t2-physical-postonly-lock-and-ref-audit
+          path: artifacts/r4-t2-postonly-audit.json
+          retention-days: 60
