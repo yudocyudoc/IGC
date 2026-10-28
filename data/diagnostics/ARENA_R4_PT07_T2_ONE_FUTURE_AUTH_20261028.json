@@ -1,0 +1,14 @@
+{
+  "schema": "igc-arena-r4-a-t2-one-locked-time-physical-authorization/0.1",
+  "forecast_lock_sha256": "sha256:94b1231c33f605cbca4efb81aa6a6f31883e628e4303eae9cbdbd53eb78811d8",
+  "forecast_parent_main_commit": "e3b22a540928f932617f2d70c278e8abf1e9e36f",
+  "case_id": "R3-T2-EARLY-OBSERVABILITY",
+  "new_world_simulations_max": 1,
+  "new_candidate_simulations_max": 0,
+  "new_provider_calls_max": 0,
+  "automatic_retries": 0,
+  "observation_time_hours": 1,
+  "no_parameter_or_model_changes": true,
+  "no_external_holdout_claim": true,
+  "authorized_by_user": true
+}
