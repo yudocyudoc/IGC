@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 
 from caf01_g3 import (CONTRACT, G3Blocked, BAND, EPS, MASS,
-                      SCHEMA, digest, inventory, lock_forecasts, plan, select)
+                      SCHEMA, digest, evaluation_accepted_count_at,
+                      inventory, lock_forecasts, plan, select)
 
 
 class TestCAF01G3(unittest.TestCase):
@@ -350,6 +351,29 @@ class TestCAF01G3(unittest.TestCase):
         with self.assertRaisesRegex(G3Blocked,"FUTURE_PREDICTION_OUTSIDE"):
             lock_forecasts(self.contract,s,bad)
 
+
+    def test_exact_public_midpoint_event_counts_bound_all_future_samples(self):
+        self.assertEqual(
+            [evaluation_accepted_count_at(t) for t in (5, 10, 15, 20, 30, 40)],
+            [8, 15, 23, 30, 30, 30])
+        e = self.evidence()
+        s = select(self.contract, e, self.rows(e, {
+            "M_C00_C72": [0, 1, 2, 3, 4, 5, 6]}))
+        candidate = "M_C00_C72"
+        # Regression from Astra: one surplus delivery after the public 20 min
+        # pulse is over and all exactly 30 orders were accepted.
+        for invalid in ([2, 4, 6, 8, 20, 31],
+                        [2, 4, 6, 8, 31, 31],
+                        [8.1, 10, 15, 20, 24, 30]):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(
+                        G3Blocked, "G3_FUTURE_PREDICTION_OUTSIDE_PHYSICAL_BOUND"):
+                    lock_forecasts(self.contract, s,
+                                   self.future(s, {candidate: list(invalid)}))
+        # Equal to the actual midpoint-calendar counts is legal.
+        exact = [8, 15, 23, 30, 30, 30]
+        locked = lock_forecasts(self.contract, s, self.future(s, {candidate: exact}))
+        self.assertEqual(locked["arm_forecasts"]["M"]["prediction"], exact)
 
     def test_D_screen_18_RK4_only_requires_selected_native_check_at_lock(self):
         e=self.evidence()
