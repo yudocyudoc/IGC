@@ -79,12 +79,20 @@ def score(lock,observation):
       "causal_structure_recovered":"NOT_DEMONSTRATED_WITHOUT_SEPARATE_ADJUDICATION"
     }
 
-def score_verified_lock(lock_file,hash_file,obs_file):
+def score_verified_lock(lock_file,hash_file,obs_file,certificate_file):
     lockbytes=Path(lock_file).read_bytes()
     digest_bytes="sha256:"+sha256(lockbytes).hexdigest()
     guard(Path(hash_file).read_text().strip()==digest_bytes,
           "R4_FORECAST_LOCK_INTEGRITY_FAIL")
     lock=json.loads(lockbytes)
+    cert=json.loads(Path(certificate_file).read_text())
+    guard(cert["schema"]=="igc-arena-r4-a-t2-frozen-prediction-certificate/0.1"
+          and cert["frozen_forecast_file_sha256"]==digest_bytes
+          and cert["source_case_sha256"]==lock["source_case_sha256"]
+          and cert["chosen_observation_time_hours"]==lock["chosen_observation_time_hours"]
+          and cert["compatible_configs_per_structure"]=={
+             k:len(v) for k,v in lock["compatible_by_structure"].items()},
+          "R4_FORECAST_NOT_THE_PRECOMMITTED_GIT_CERTIFICATE")
     obs=json.loads(Path(obs_file).read_text())
     guard(obs["forecast_lock_file_sha256"]==digest_bytes,
           "R4_FUTURE_OBSERVATION_BEFORE_FORECAST_LOCK_OR_WRONG_LOCK")
