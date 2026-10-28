@@ -49,7 +49,21 @@ Un SHA autoproducido en el mismo ordenador o un commit modificable **no demuestr
 5. **Después** de una verificación independiente del recibo y de G0–G4, autorizar por separado la única corrida DES de evaluación, revelar sus seis entregas y aplicar la regla de puntuación sin rehacer modelos ni referencias.
 6. Archivar fallos, intentos, recibos del proveedor, conteo real por motor y efectos de discretización; no hacer reintentos tácitos.
 
-Ni el paquete ni el código de G4 implementan esa custodia externa, timestamp, firma o autorización; no tienen acceso al DES de evaluación. G3 y G4 son preparación comprobable, **no preregistro científico irrevocable**.
+El código emite un archivo de contenido canonicalizado de forma reproducible, usando el CLI **solo para datos públicos de construcción ya autorizados**:
+
+```bash
+python experiments/cafeteria/pc01/caf01_g4.py \\
+  --evidence /ruta/visible-construccion.json \\
+  --selection /ruta/g3-seleccion.json \\
+  --g3-lock /ruta/g3-bloqueo.json \\
+  --out /ruta/paquete-g4-nuevo
+```
+
+La carpeta de salida **debe no existir previamente**, para evitar sobrescritura accidental. Genera `preholdout-package.json` y `preholdout-package.sha256`. Hay dos hashes distintos, ambos válidos pero **no intercambiables**: `preholdout_package_sha256` dentro del JSON se calcula del contenido sin su propio campo hash (para evitar autorreferencia); el `sha256` externo se calcula de **todos los bytes reales** del archivo completo, incluido su salto de línea final. El custodio deberá comprobar **este segundo hash**, referirse al snapshot de construcción, al hash del modelo privado y firmar/atestiguar el orden temporal. Los hashes se calculan y verifican con fixtures de prueba; no hay ningún paquete de construcción real generado aquí.
+
+`score_six_delivered_values` es una función aritmética pura para la fase posterior: calcula MAE/RMSE en seis instantes con entradas tipadas y físicamente acotadas. **No autentica recibos ni habilita la evaluación**; utilizarla con resultados reales exige la verificación independiente previa y la autorización separada.
+
+Ni el paquete ni el código de G4 implementan custodia externa, timestamp confiable, firma ni autorización; no tienen acceso al DES de evaluación. G3 y G4 son preparación comprobable, **no preregistro científico irrevocable**.
 
 ## 5. Revisión solicitada a Astra
 
