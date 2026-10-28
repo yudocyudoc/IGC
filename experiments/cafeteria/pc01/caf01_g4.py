@@ -337,7 +337,7 @@ def score_six_delivered_values(predicted, observed):
 
 def canonical_json_bytes(data):
     return json.dumps(data,sort_keys=True,ensure_ascii=False,
-                      separators=(",",":"),allow_nan=False).encode("utf-8")+b"\\n"
+                      separators=(",",":"),allow_nan=False).encode("utf-8")+b"\n"
 
 
 def emit_custody_candidate(bundle, output_dir):
@@ -367,7 +367,7 @@ def emit_custody_candidate(bundle, output_dir):
     (directory/name).write_bytes(data)
     byte_hash=hashlib.sha256(data).hexdigest()
     (directory/"preholdout-package.sha256").write_text(
-        byte_hash+"  "+name+"\\n",encoding="utf-8")
+        byte_hash+"  "+name+"\n",encoding="utf-8")
     return {"status":"BYTES_EMITTED_NOT_EXTERNAL_CUSTODY",
             "internal_content_sha256":bundle["preholdout_package_sha256"],
             "complete_file_sha256":"sha256:"+byte_hash,
