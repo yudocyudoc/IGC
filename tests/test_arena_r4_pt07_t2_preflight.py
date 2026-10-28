@@ -87,14 +87,15 @@ class RealT2Forecast(unittest.TestCase):
             obs["forecast_lock_file_sha256"]="sha256:"+sha256(raw).hexdigest()
             path=out/"future.json"
             path.write_bytes(canonical(obs)+b"\n")
+            cert=Path("data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json")
             result=score_verified_lock(out/"forecast-lock.json",
-                                       out/"forecast-lock.sha256",path)
+                                       out/"forecast-lock.sha256",path,cert)
             self.assertEqual(result["REF_model"],
                 "LAST_OBSERVED_DELIVERED_PERSISTENCE")
             (out/"forecast-lock.sha256").write_text("sha256:"+"f"*64)
             with self.assertRaisesRegex(ValueError,"R4_FORECAST_LOCK_INTEGRITY_FAIL"):
                 score_verified_lock(out/"forecast-lock.json",
-                                    out/"forecast-lock.sha256",path)
+                                    out/"forecast-lock.sha256",path,cert)
 
     def observation(self):
         return {
