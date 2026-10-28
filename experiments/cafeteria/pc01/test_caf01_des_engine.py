@@ -49,7 +49,7 @@ class TestCAF01IndependentDESPreflight(unittest.TestCase):
     def test_servers_are_finite_parallel_capacity(self):
         config = toy((2, "3"))
         out = run_toy_engine(config, ["1/2","3/2","5/2"],
-                             [0,3,4,5,"11/2"])
+                             [0,3,4,5,7])
         self.assertEqual(out[1].accepted_cum_orders, 3)
         self.assertEqual(out[1].stage_in_service, (2,))
         self.assertEqual(out[1].stage_waiting, (1,))
