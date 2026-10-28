@@ -1,0 +1,23 @@
+name: CAF-01 M equivalence static checks
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_equivalence.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_equivalence.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - '.github/workflows/caf01-m-equivalence.yml'
+  workflow_dispatch:
+jobs:
+  static-certificate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Analytic certificate
+        run: python experiments/cafeteria/pc01/caf01_m_equivalence.py
+      - name: Unit tests
+        run: python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_equivalence.py' -v
+      - name: Historical v0.3 contract tests
+        run: python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
