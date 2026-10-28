@@ -1,0 +1,20 @@
+name: CAF-01 M native dry-run preflight
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_native_preflight.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_native_preflight.py'
+      - '.github/workflows/caf01-m-native-preflight.yml'
+  workflow_dispatch:
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests - E1 composition and no solver calls
+        run: python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_native_preflight.py' -v
+      - name: Generate only (no OpenModelica)
+        run: python experiments/cafeteria/pc01/caf01_m_native_preflight.py --out /tmp/caf01-native-preflight
