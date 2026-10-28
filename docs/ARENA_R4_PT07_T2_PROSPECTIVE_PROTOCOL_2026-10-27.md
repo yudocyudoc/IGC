@@ -18,6 +18,24 @@ El paquete usa solo los **27 CSV físicos reales** del [ensayo T1, Actions #4057
 4. **Predicciones y REF:** al tiempo elegido se guardan las predicciones de **todos** los IDs compatibles. Para un pronóstico puntual agregado se toma la mediana de las tres medianas estructurales (peso idéntico por topología, no por número de configuraciones). La referencia determinista REF es `LAST_OBSERVED_DELIVERED_PERSISTENCE`: repetir el último `deliveredTotal` observado en t=0.15 h; no equivale ni invade el brazo D.
 5. **Sellado:** `forecast-lock.json` completo y SHA256 de sus **bytes originales** en `forecast-lock.sha256`. El lock contiene tiempos alternativos considerados, criterio de elección, todas las predicciones, REF, SHA de los 27 CSV y hashes del caso público/decisión. Contiene explícitamente `future_observation_value=null`, `R4_complete=false`.
 
+## 2A. Resultado real del preflight offline, todavía sin observación futura
+
+La reconstrucción [CI #40614154705](https://github.com/yudocyudoc/IGC/actions/runs/40614154705) verificó los 27 CSV E1 y encontró **27/27 configuraciones compatibles** con los cuatro puntos T2: **9 de C00, 9 de C01 y 9 de C02**. La regla prospectiva eligió **t = 1.0 h**. Se selló el archivo completo con SHA256 `94b1231c33f605cbca4efb81aa6a6f31883e628e4303eae9cbdbd53eb78811d8`; el certificado con hash y resultados numéricos también queda versionado en `data/diagnostics/ARENA_R4_PT07_T2_FROZEN_FORECAST_CERTIFICATE_20261027.json`.
+
+Bandas del observable `deliveredTotal` a la hora elegida, en items, calculadas **exclusivamente de las curvas candidatas**:
+
+| Estructura | Mínimo | Mediana | Máximo |
+|---|---:|---:|---:|
+| C00 | 0.176185 | 0.406265 | 0.896705 |
+| C01 | 0.026637 | 0.067112 | 0.164708 |
+| C02 | 0.003259 | 0.008751 | 0.023100 |
+
+Los tres intervalos **no se superponen**, pero la separación positiva **más pequeña** es solo **0.003536 items** (C01/C02), **inferior** al umbral de decisión futuro **0.020 items**. Por tanto, **una predicción con bandas disjuntas no garantiza por sí sola que la nueva observación elimine todas las estructuras rivales** bajo la tolerancia fijada. No se recalcula el tiempo por este hallazgo: fue elegido con la regla predeclarada.
+
+Predicción puntual agregada (mediana de medianas estructurales, peso igual por topología): **0.0671117253 items**. REF persistencia (último valor T2 en t=0.15): **0.00007814994 items**. Estos números son **pronósticos sellados**, no valores medidos de t=1.0 h.
+
+El sello no certifica independencia del generador público, solo integridad y precedencia operativa del pronóstico respecto de la nueva simulación, que **no se ha hecho**.
+
 ## 3. Regla de evaluación posterior, fijada de antemano
 
 Se autorizaría **una única ejecución nueva** del mismo generador T2 **sin cambiar ecuaciones, parámetros o estímulo**, hasta el tiempo elegido. La nueva observación deberá extraerse desde su CSV físico y su procedencia/hash deberán verificarse **después** de demostrar que el forecast-lock existía; una respuesta manuscrita de ejemplo o un JSON de prueba **no cuenta** como medición.
