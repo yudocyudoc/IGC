@@ -1,0 +1,69 @@
+name: CAF-01 D native checkModel preflight (no simulations)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_d_native_preflight.py'
+      - 'experiments/cafeteria/pc01/test_caf01_d_native_preflight.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - 'scripts/arena_d_v01.py'
+      - '.github/workflows/caf01-d-native-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-d-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contract and new D preflight unit tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_d_native_preflight.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Derive three D models and prepare check-only script
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_d_native_preflight.py --out artifacts/caf01-d-native
+          test "$(grep -c 'checkModel(' artifacts/caf01-d-native/check_only.mos)" -eq 3
+          if grep -Eq 'simulate\(|buildModel\(' artifacts/caf01-d-native/check_only.mos; then
+            echo "UNAUTHORIZED_D_SOLVER_CALL" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          j=json.loads(Path("artifacts/caf01-d-native/manifest.json").read_text())
+          assert j["model_count"] == 3
+          assert j["RK4_executed"] == j["modelica_simulations_executed"] == 0
+          assert [i["stocks"] for i in j["models"]] == [1,2,3]
+          print("D_THREE_NATIVE_CHECK_ONLY_MODELS_NO_EXPERIMENTAL_SOLVER")
+          PY
+      - name: Actual OpenModelica checkModel for three loss-free D graphs
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/caf01-d-native/check_only.mos 2>&1 | tee artifacts/caf01-d-native/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' artifacts/caf01-d-native/omc.log; then
+            echo "D_NATIVE_CHECKMODEL_ERROR" >&2
+            exit 1
+          fi
+          test "$(grep -Ec 'Check of DCAF_[123] completed successfully' artifacts/caf01-d-native/omc.log)" -eq 3
+          echo "D_THREE_NATIVE_CHECKMODEL_SUCCESS_NO_SIMULATION"
+      - name: Restore artifact ownership
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-d-native ]; then sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-d-native; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: caf01-d-three-native-check-only-evidence
+          path: artifacts/caf01-d-native/
+          retention-days: 60
+          if-no-files-found: warn
