@@ -43,6 +43,8 @@ class TestCAF01G3(unittest.TestCase):
                 "rk4_receipt_sha256": ("sha256:" + "d"*64
                                        if ok and item["arm"] == "D" else None),
                 "balance_max_abs": 0.002 if ok else None,
+                "rk4_native_max_abs_delta": (0.005 if ok and
+                                              item["arm"] == "D" else None),
                 "block_reason": None if ok else "AWAITING_G2",
                 "candidate_evidence_sha256": digest(evidence),
             })
@@ -247,6 +249,7 @@ class TestCAF01G3(unittest.TestCase):
                 r["native_sha256"]="sha256:"+"b"*64
                 r["rk4_receipt_sha256"]="sha256:"+"d"*64
                 r["balance_max_abs"]=0.002
+                r["rk4_native_max_abs_delta"]=None
                 r["block_reason"]=None
         chosen=select(self.contract,e,rows)
         self.assertEqual(len(chosen["decision"]["D"]["representatives"]),3)
@@ -258,7 +261,8 @@ class TestCAF01G3(unittest.TestCase):
             lock_forecasts(self.contract,chosen,f)
         f["native_g2_checks"] = {
             ident:{"g2_receipt_sha256":"sha256:"+"c"*64,
-                   "balance_max_abs":0.001}
+                   "balance_max_abs":0.001,
+                   "rk4_native_max_abs_delta":0.006}
             for ident in chosen["decision"]["D"]["winners_pending_g2"]}
         lock=lock_forecasts(self.contract,chosen,f)
         self.assertEqual(set(lock["native_g2_checks_for_preselected_D"]),
@@ -275,6 +279,7 @@ class TestCAF01G3(unittest.TestCase):
         d["native_sha256"]="sha256:"+"b"*64
         d["rk4_receipt_sha256"]="sha256:"+"d"*64
         d["balance_max_abs"]=0.002
+        d["rk4_native_max_abs_delta"]=None
         d["block_reason"]=None
         d["g2_receipt_sha256"]="sha256:"+"c"*64
         with self.assertRaisesRegex(G3Blocked,"SCREEN_CANNOT_CLAIM_NATIVE"):
@@ -293,15 +298,29 @@ class TestCAF01G3(unittest.TestCase):
                   "construction_delivered":[0,1,2,3,4,5,6],
                   "native_sha256":"sha256:"+"b"*64,
                   "rk4_receipt_sha256":"sha256:"+"d"*64,
-                  "balance_max_abs":0.001,"block_reason":None})
+                  "balance_max_abs":0.001,
+                  "rk4_native_max_abs_delta":None, "block_reason":None})
         s=select(self.contract,e,rows)
         self.assertEqual(s["decision"]["D"]["winners_pending_g2"],["D1_C48_T0.125"])
         f=self.future(s,{"D1_C48_T0.125":[1,2,3,4,5,6]})
         f["native_g2_checks"]={"D1_C48_T0.125":{
             "g2_receipt_sha256":"sha256:"+"f"*64,
-            "balance_max_abs":0.02}}
+            "balance_max_abs":0.02,
+            "rk4_native_max_abs_delta":0.004}}
         with self.assertRaisesRegex(G3Blocked,"REPRESENTATIVE_UNVERIFIED"):
             lock_forecasts(self.contract,s,f)
+
+
+    def test_D_RK4_native_parity_threshold_cannot_be_bypassed(self):
+        e=self.evidence()
+        rows=self.rows(e,{"D1_C48_T0.125":[0,1,2,3,4,5,6]})
+        item=next(x for x in rows if x["id"]=="D1_C48_T0.125")
+        item["rk4_native_max_abs_delta"]=0.013
+        with self.assertRaisesRegex(G3Blocked,"D_RK4_NATIVE_PARITY"):
+            select(self.contract,e,rows)
+        item["rk4_native_max_abs_delta"]=0.005
+        s=select(self.contract,e,rows)
+        self.assertEqual(s["decision"]["D"]["winners"],["D1_C48_T0.125"])
 
     def test_policy_fails_closed_if_original_contract_changes(self):
         c=copy.deepcopy(self.contract)
