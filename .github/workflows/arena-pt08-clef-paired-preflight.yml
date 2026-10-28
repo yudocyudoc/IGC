@@ -1,0 +1,61 @@
+name: Arena PT08 Clef PAIRED design original E1 offline — NO provider
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/arena_pt08_clef_paired_preflight.py'
+      - 'tests/test_arena_pt08_clef_paired_preflight.py'
+      - '.github/workflows/arena-pt08-clef-paired-preflight.yml'
+      - 'docs/ARENA_R4_PT07_CORTE_Y_PT08_GATE_2026-10-28.md'
+permissions: {contents: read, actions: read}
+jobs:
+  preregistration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t1-28-original-physical-results
+          run-id: 40578550337
+          github-token: ${{ github.token }}
+          path: artifacts/pt08-t1
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-r3-pt06-t23-two-physical-worlds-and-frozen-decisions
+          run-id: 40582633807
+          github-token: ${{ github.token }}
+          path: artifacts/pt08-t23
+      - name: Prepare six UNEXECUTED paired requests and check source/oracle separation
+        env:
+          ARENA_PT08_ORIGINAL_T1: artifacts/pt08-t1
+          ARENA_PT08_ORIGINAL_T23: artifacts/pt08-t23
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_pt08_clef_paired_preflight.py' -v
+          python -m scripts.arena_pt08_clef_paired_preflight \
+            --original-t1 artifacts/pt08-t1 \
+            --t23 artifacts/pt08-t23 \
+            --catalog experiments/e0/catalog.json \
+            --out artifacts/pt08-paired-not-run
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('artifacts/pt08-paired-not-run/manifest.json').read_text())
+          assert m['provider_requests_planned']==6
+          assert m['paired_treatments']==3
+          assert m['new_provider_calls_now']==m['new_solver_calls_now']==0
+          assert m['future_provider_authorization']=='NOT_GRANTED'
+          public=json.loads(Path('artifacts/pt08-paired-not-run/public-six-requests-NOT-SENT.json').read_text())
+          assert len(public['requests'])==6
+          assert not list(Path('artifacts/pt08-paired-not-run').glob('raw/*.json'))
+          print('PT08_PAIRED_CLEF_SIX_REQUESTS_PREREGISTERED_ZERO_INFERENCES')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-pt08-clef-paired-six-requests-not-sent
+          path: artifacts/pt08-paired-not-run/
+          retention-days: 60
