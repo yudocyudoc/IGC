@@ -170,7 +170,8 @@ def main():
     modelica, mos, manifest = render_bundle(contract)
     args.out.mkdir(parents=True)
     (args.out / "CAF01MPreflight.mo").write_text(modelica, encoding="utf-8")
-    (args.out / "check_only.mos").write_text(\n        resolve_check_only_paths(mos, args.out), encoding="utf-8")
+    (args.out / "check_only.mos").write_text(
+        resolve_check_only_paths(mos, args.out), encoding="utf-8")
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": manifest["status"], "candidates": len(manifest["models"])}))
 
