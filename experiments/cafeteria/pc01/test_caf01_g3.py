@@ -371,8 +371,12 @@ class TestCAF01G3(unittest.TestCase):
         self.assertEqual(len(chosen["decision"]["D"]["winners_pending_g2"]),3)
         f=self.future(chosen,{ident:[1,2,3,4,5,6]
                             for ident in chosen["decision"]["D"]["winners"]})
-        with self.assertRaisesRegex(G3Blocked,"G3_NATIVE_G2_ONLY_PRESELECTED"):
-            lock_forecasts(self.contract,chosen,f)
+        pending_lock = lock_forecasts(self.contract,chosen,f)
+        self.assertEqual(pending_lock["arm_forecasts"]["D"]["status"],
+                         "ABSTAIN_D_NATIVE_G2_FAILED")
+        self.assertEqual(set(pending_lock["native_g2_outcomes_for_preselected_D"].values()),
+                         {"FAIL_MISSING_NATIVE_G2_RECEIPT"})
+        self.assertFalse(pending_lock["forecast_by_candidate"])
         f["native_g2_checks"] = {
             ident:{"g2_receipt_sha256":"sha256:"+"c"*64,
                    "balance_max_abs":0.001,
