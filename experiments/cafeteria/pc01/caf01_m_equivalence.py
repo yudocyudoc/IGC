@@ -55,6 +55,10 @@ def certificate(contract):
     caps = [Decimal(str(c)) for c in m["proposed_bounded_capacity_grid_items_per_hour"]]
     if len(caps) != m["per_structure_max"] or len(caps) != len(set(caps)):
         raise ValueError("NO_CERTIFICATE: grid shape changed")
+    # Alcance de este contrato: capacidades estrictamente enteras y positivas.
+    # Rechazar no enteros evita colisiones/truncamiento al serializar miembros.
+    if any(not c.is_finite() or c <= 0 or c != c.to_integral_value() for c in caps):
+        raise ValueError("NO_CERTIFICATE: capacities must be positive finite integers")
     inactive = sorted(c for c in caps if c >= max_release)
     classes = []
     for structure in m["structural_classes"]:
