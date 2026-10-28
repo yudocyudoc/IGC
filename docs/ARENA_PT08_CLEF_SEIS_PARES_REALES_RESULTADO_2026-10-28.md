@@ -1,6 +1,6 @@
-# Arena IGC · PT-08-A — Seis solicitudes Clef reales, ejecución directa
+# Arena IGC · R5 / PT-08-A — Cierre del primer corte experimental negativo
 
-**Fecha:** 2026-10-28 UTC. **Estado:** seis inferencias ejecutadas mediante conexión directa Cloudflare, todas HTTP 200, **sin** reintentos, sin OpenModelica. No se ejecutó GitHub Actions para hacer llamadas. Este informe describe resultados observados en la respuesta de la conexión, no un archivo crudo guardado automáticamente por Actions antes de la calificación.
+**Fecha:** 2026-10-28 UTC. **Dictamen de cierre:** **R5 / PT-08-A, primer corte experimental NEGATIVO; Clef NO se incorpora como filtro irreversible**. **Estado de evidencia:** seis inferencias observadas mediante conexión directa Cloudflare, todas HTTP 200, **sin** reintentos reportados, sin OpenModelica. No se ejecutó GitHub Actions para hacer llamadas. Este informe describe resultados observados en la respuesta de la conexión, no un archivo crudo guardado automáticamente por Actions antes de la calificación.
 
 ## Solicitudes congeladas
 
@@ -34,3 +34,9 @@ Al publicar un workflow de GitHub Actions con secreto de Cloudflare, la herramie
 La decisión para **PT-08-A** es conservar el experimento negativo, revisar si la calidad de Clef justifica otro contraste independiente antes de cualquier incorporación y **no ampliar por inercia** a Clairic ni alterar E1, D/B/M o ATMS. Este primer contraste es de **tres tratamientos informativos sobre un solo mundo sintético**. No permite estimar generalización.
 
 **Metodología:** No ajustar a posteriori umbrales 0.30/0.70; no re-prompt; no repetir automáticamente estas seis llamadas; no llamar cero errores a los falsos descartes.
+
+## 6. Cierre administrativo verificable
+
+Se retiró del PR #70 el **ejecutor de nuevas inferencias**; no procede volver a llamar Clef para este corte. Se versionó `data/diagnostics/ARENA_PT08_R5_CLEF_OBSERVACIONES_RECONSTRUIDAS_2026-10-28.json`, con seis vectores NOUL observados, los SHA originales de cada solicitud y un marcador explícito: **reconstrucción posterior de salida de conexión, no captura cruda independiente anterior a calificar**. La ruta de validación offline `scripts/arena_pt08_r5_verify_closure.py` recupera las seis solicitudes originales de [Actions #40620696061](https://github.com/yudocyudoc/IGC/actions/runs/40620696061), comprueba sus hashes y los del oráculo predeclarado, vuelve a calcular con umbrales 0.30/0.70 los conjuntos y falsos descartes y comprueba el resultado negativo. El [workflow de cierre](https://github.com/yudocyudoc/IGC/blob/main/.github/workflows/arena-pt08-r5-close.yml) **no contiene llamada a proveedor**.
+
+El dictamen no es «Clef incapaz en general» sino **«Clef no superó la compuerta de filtrado conservador en estas tres condiciones de un único caso sintético»**. Cierre de campaña no es certificación de validez externa ni autorización para activar PT-09/Clairic. La siguiente etapa debe regirse por la hoja de ruta y por una pregunta distinta; no por ajustar el experimento terminado.
