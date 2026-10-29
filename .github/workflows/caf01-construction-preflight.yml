@@ -46,8 +46,14 @@ jobs:
           assert "workflow_dispatch:" in workflow
           assert "pull_request:" not in workflow and "push:" not in workflow
           assert "environment: caf01-construction" in workflow
+          assert "github.ref == 'refs/heads/main'" in workflow
           assert "github.run_number == 1" in workflow
           assert "github.run_attempt == 1" in workflow
+          runner=Path("experiments/cafeteria/pc01/caf01_construction_github.py").read_text()
+          assert 'os.getenv("GITHUB_REF") == "refs/heads/main"' in runner
+          assert 'on_invocation=log_des_invocation' in runner
+          assert "CAF01_DES_CONSTRUCTION_INVOCATION_STARTED=1" in runner
+          assert "historical_local_DES_construction_invocations" in runner
           assert "secrets.CAF01_PRIVATE_ENVELOPE_B64" in workflow
           assert "actions/upload-artifact@v4" in workflow
           assert "caf01-construction-public/" in workflow
