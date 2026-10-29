@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import hmac
+from fractions import Fraction
 import json
 import os
 from pathlib import Path
@@ -106,12 +107,61 @@ def hard_budget(contract):
     }
 
 
-def make_public_receipt(config, nonce, *, pinned_files, budget):
-    """Contains no stage count, service time, servers, configuration or nonce."""
+
+def private_analytic_metrics(config):
+    """Exact ex-ante capacity/latency math; NEVER calls DES or predicts D(t).
+
+    Keep this object in the evaluator's private context. It MUST NOT be
+    serialized in producer views or the public commitment receipt.
+    """
     try:
-        validate_private_config(config)
+        stages = validate_private_config(config)
     except DESBlocked as exc:
         raise G5Blocked("G5_INVALID_PRIVATE_CONFIG") from exc
+    throughputs = tuple(Fraction(servers, 1) / duration
+                        for servers, duration in stages)
+    minimum = min(throughputs)
+    latency = sum((duration for _, duration in stages), Fraction(0))
+    return {
+        "private_nominal_throughput_by_stage": throughputs,
+        "private_nominal_bottleneck": minimum,
+        "private_rho_construction": Fraction(6, 5) / minimum,
+        "private_rho_evaluation": Fraction(3, 2) / minimum,
+        "private_zero_queue_latency_minutes": latency,
+    }
+
+
+def check_private_design(config):
+    """Fail closed against the Astra-approved public DESIGN criteria only.
+
+    This arithmetic is not a DES preview, identifiability check, or physical
+    plausibility review. Human operational justification remains mandatory.
+    """
+    metrics = private_analytic_metrics(config)
+    rho = metrics["private_rho_construction"]
+    latency = metrics["private_zero_queue_latency_minutes"]
+    require(Fraction(21, 20) <= rho <= Fraction(5, 4)
+            and 0 < latency <= Fraction(4),
+            "G5_PRIVATE_DESIGN_OUTSIDE_APPROVED_ANALYTIC_REGIME")
+    require(metrics["private_rho_evaluation"] == Fraction(5, 4) * rho,
+            "G5_EVALUATION_LOAD_RATIO_CHANGED")
+    # The first construction acceptance occurs at t=5/12 minutes.
+    require(Fraction(5, 12) + latency < Fraction(5),
+            "G5_FIRST_DELIVERY_BEFORE_FIVE_NOT_GUARANTEED")
+    return {
+        "status": "APPROVED_ANALYTIC_BAND_ONLY_NOT_DES_VALIDATED",
+        "private_parameters_exposed": False,
+        "operational_rationale_approved": False,
+        "world_selected_or_executed_by_this_check": False,
+        "seal_or_construction_authorized": False,
+    }
+
+
+def make_public_receipt(config, nonce, *, pinned_files, budget):
+    """Contains no stage count, service time, servers, configuration or nonce."""
+    # Check the approved private analytic regime BEFORE issuing any
+    # official CAF-01 precommitment. Do not include the private metrics.
+    check_private_design(config)
     require(type(nonce) is bytes and len(nonce) == 32,
             "G5_NONCE_MUST_BE_32_PRIVATE_BYTES")
     require(set(pinned_files) == set(FILES_TO_PIN)
@@ -248,6 +298,9 @@ def main():
     p = argparse.ArgumentParser(description="G5 private world precommit: NO experiments")
     cmd = p.add_subparsers(dest="command", required=True)
     cmd.add_parser("plan", help="print budget ceilings, no secret and no runs")
+    pre = cmd.add_parser("preflight",
+                         help="check private load/latency without DES or printing values")
+    pre.add_argument("--config", required=True, type=Path)
     s = cmd.add_parser("seal", help="explicitly seal researcher-selected config offline")
     s.add_argument("--config", required=True, type=Path)
     s.add_argument("--private-dir", required=True, type=Path)
@@ -256,6 +309,17 @@ def main():
     args = p.parse_args()
     if args.command == "plan":
         print(json.dumps(hard_budget(json.loads(CONTRACT.read_text())), sort_keys=True))
+        return
+    if args.command == "preflight":
+        secret_path = _outside_repo(args.config)
+        require(secret_path.is_file() and not secret_path.is_symlink(),
+                "G5_PRIVATE_INPUT_MISSING")
+        try:
+            secret_config = json.loads(secret_path.read_text(encoding="utf-8"))
+        except (ValueError, UnicodeError) as exc:
+            raise G5Blocked("G5_BAD_PRIVATE_INPUT_JSON") from exc
+        result = check_private_design(secret_config)
+        print(json.dumps(result, sort_keys=True))
         return
     require(args.ack_researcher_selected_offline,
             "G5_EXPLICIT_PRIVATE_SELECTION_ACK_REQUIRED")
