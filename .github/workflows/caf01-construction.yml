@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   one-construction:
-    if: ${{ github.event.inputs.confirmation == 'RUN_ONE_CAF01_CONSTRUCTION' && github.run_attempt == 1 && github.run_number == 1 }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.confirmation == 'RUN_ONE_CAF01_CONSTRUCTION' && github.run_attempt == 1 && github.run_number == 1 }}
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     environment: caf01-construction
