@@ -75,7 +75,7 @@ class TestCAF01G5OfflineSeal(unittest.TestCase):
             [{"servers":1,"service_minutes":"1/2"}],  # ρ=0.6
             [{"servers":1,"service_minutes":"3/2"}],  # ρ=1.8
             [{"servers":2,"service_minutes":"2"},
-             {"servers":1,"service_minutes":"4"}],    # load passes; L=6 >4
+             {"servers":9,"service_minutes":"4"}],    # load passes; L=6 >4
         ]:
             cfg={"schema":DES_SCHEMA,"tie_policy":TIE_POLICY,"stages":stages}
             with self.subTest(stages=stages),self.assertRaisesRegex(
@@ -172,7 +172,7 @@ class TestCAF01G5OfflineSeal(unittest.TestCase):
     def test_config_changed_or_moved_tamper_blocks(self):
         r=self.receipt()
         mutated=invented()
-        mutated["stages"][0]["service_minutes"]="4"
+        mutated["stages"][0]["service_minutes"]="59/30"
         with self.assertRaisesRegex(G5Blocked,"PRECOMMITMENT_OR_SOURCE_CHANGED"):
             verify_receipt(mutated,b"\x05"*32,r,
                            pinned_files=snapshot_files(),
