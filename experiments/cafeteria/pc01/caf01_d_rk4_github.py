@@ -115,7 +115,7 @@ def run_case(case, on_invocation=None):
             "structure": structure,
             "structure_hash": structure_hash,
             "nominal_parameters": params,
-        }, public_pulse)
+        }, {"kind": "pulse", **public_pulse})
         native_sha = "sha256:" + hashlib.sha256(native_source.encode("utf-8")).hexdigest()
         receipt = {
             "schema": "igc-caf01-d-rk4-candidate-receipt/0.1",
