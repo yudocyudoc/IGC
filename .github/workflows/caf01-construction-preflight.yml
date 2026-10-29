@@ -1,0 +1,62 @@
+name: CAF-01 — GitHub construction runner security preflight (TOY ONLY)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_construction_github.py'
+      - 'experiments/cafeteria/pc01/test_caf01_construction_github.py'
+      - 'experiments/cafeteria/pc01/receipts/CAF01_G5_PRECOMMIT_PUBLIC_2026-10-29.json'
+      - '.github/workflows/caf01-construction.yml'
+      - '.github/workflows/caf01-construction-preflight.yml'
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc01/caf01_g5_seal.py'
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+      - 'experiments/cafeteria/pc01/caf01_g4.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-and-toy-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Public receipt byte hash; toy fixtures and regression only
+        run: |
+          set -euo pipefail
+          python -m unittest discover \
+            -s experiments/cafeteria/pc01 \
+            -p test_caf01_construction_github.py -v
+          python -m unittest discover \
+            -s experiments/cafeteria/pc01 \
+            -p test_caf01_g5_seal.py -v
+          echo 'CAF01_NO_REAL_WORLD_DES_IN_CI'
+      - name: Enforce manual-only and secret-never-in-PR workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          workflow=Path(".github/workflows/caf01-construction.yml").read_text()
+          assert "workflow_dispatch:" in workflow
+          assert "pull_request:" not in workflow and "push:" not in workflow
+          assert "environment: caf01-construction" in workflow
+          assert "github.ref == 'refs/heads/main'" in workflow
+          assert "github.run_number == 1" in workflow
+          assert "github.run_attempt == 1" in workflow
+          runner=Path("experiments/cafeteria/pc01/caf01_construction_github.py").read_text()
+          assert 'os.getenv("GITHUB_REF") == "refs/heads/main"' in runner
+          assert 'on_invocation=log_des_invocation' in runner
+          assert "CAF01_DES_CONSTRUCTION_INVOCATION_STARTED=1" in runner
+          assert "historical_local_DES_construction_invocations" in runner
+          assert "secrets.CAF01_PRIVATE_ENVELOPE_B64" in workflow
+          assert "actions/upload-artifact@v4" in workflow
+          assert "caf01-construction-public/" in workflow
+          assert "CAF01_EVALUATION" not in workflow
+          print("CAF01_WORKFLOW_MANUAL_ONE_SHOT_NO_HOLDOUT")
+          PY
