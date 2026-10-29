@@ -1,0 +1,57 @@
+name: CAF-01 — one authorized construction world (secret, NEVER evaluation)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter RUN_ONE_CAF01_CONSTRUCTION. This consumes the sole construction slot."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: caf01-construction-one-shot
+  cancel-in-progress: false
+
+jobs:
+  one-construction:
+    if: ${{ github.event.inputs.confirmation == 'RUN_ONE_CAF01_CONSTRUCTION' && github.run_attempt == 1 && github.run_number == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    environment: caf01-construction
+    steps:
+      - name: Checkout exact dispatched default-branch commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use pinned Python runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm world envelope secret exists, without printing it
+        env:
+          CAF01_PRIVATE_ENVELOPE_B64: ${{ secrets.CAF01_PRIVATE_ENVELOPE_B64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CAF01_PRIVATE_ENVELOPE_B64" ]]; then
+            echo 'CAF01_REQUIRED_ENVIRONMENT_SECRET_MISSING'
+            exit 1
+          fi
+          echo 'CAF01_SECRET_PRESENT_NOT_DISCLOSED'
+      - name: Run exactly one DES construction with verified precommit
+        env:
+          CAF01_PRIVATE_ENVELOPE_B64: ${{ secrets.CAF01_PRIVATE_ENVELOPE_B64 }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_construction_github.py \
+            --output-dir "$RUNNER_TEMP/caf01-construction-public"
+      - name: Publish ONLY public construction, CAF-N and G4 reference artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf01-construction-public-run-${{ github.run_id }}
+          path: ${{ runner.temp }}/caf01-construction-public/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 6
