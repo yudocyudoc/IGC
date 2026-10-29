@@ -4,7 +4,9 @@
 The private DES world and nonce are supplied ONLY via an Actions secret, never
 via a tracked file, CLI parameter, log, or uploaded artifact. Exactly one
 construction DES run; evaluation is NOT implemented in this executable.
-No retries. The previous ChatGPT-local run is not used as evidence.
+No automatic retries. A prior local construction with the same sealed world is
+part of the campaign history; this GitHub execution is a traceable REPRODUCTION,
+not the first physical invocation or a restoration of the original budget.
 """
 from __future__ import annotations
 
@@ -29,6 +31,10 @@ EXPECTED_RECEIPT_FILE_SHA256 = (
 TIMES = (0, 5, 10, 15, 20, 30, 40)
 EXPECTED_A = (0, 6, 12, 18, 24, 24, 24)
 SECRET_ENV = "CAF01_PRIVATE_ENVELOPE_B64"
+# Historical local invocation documented in the researcher's 2026-10-29
+# construction record. This is a REPRODUCTION and exceeds the original
+# one-construction-invocation ceiling if all actual DES calls are counted.
+HISTORICAL_LOCAL_CONSTRUCTION_INVOCATIONS = 1
 
 
 class ConstructionBlocked(ValueError):
@@ -88,7 +94,7 @@ def prepare_authorized_inputs(encoded, receipt, contract):
     return config
 
 
-def produce_construction_public_only(config, receipt, contract):
+def produce_construction_public_only(config, receipt, contract, *, on_invocation=None):
     """One DES run with the public construction pulse; no evaluation path.
 
     The private stage queue/busy arrays are used ONLY for conservation checks.
@@ -97,6 +103,11 @@ def produce_construction_public_only(config, receipt, contract):
     arrivals = half_open_arrivals("6/5", "20")
     require(len(arrivals) == 24, "CAF01_PUBLIC_CONSTRUCTION_PULSE_CHANGED")
     observations = tuple(Fraction(t) for t in TIMES)
+    # The attempt is consumed when this call begins, EVEN IF the DES crashes,
+    # balance validation fails, or artifact upload never happens. Log the
+    # invocation BEFORE the engine gets control, without revealing private data.
+    if on_invocation is not None:
+        on_invocation()
     snapshots = run_toy_engine(config, arrivals, observations)  # EXACTLY 1 DES
     require(len(snapshots) == 7, "CAF01_CONSTRUCTION_TIME_MASK_CHANGED")
 
@@ -190,7 +201,13 @@ def write_public_bundle(bundle, output_dir, receipt):
         "world_precommitment_sha256": receipt["world_precommitment_sha256"],
         "public_receipt_file_sha256": "sha256:" + EXPECTED_RECEIPT_FILE_SHA256,
         "files_sha256": checksums,
-        "DES_construction_world_runs_consumed": 1,
+        "DES_construction_world_runs_consumed_this_github_attempt": 1,
+        "historical_local_DES_construction_invocations": HISTORICAL_LOCAL_CONSTRUCTION_INVOCATIONS,
+        "total_known_DES_construction_invocations_after_github_attempt":
+            HISTORICAL_LOCAL_CONSTRUCTION_INVOCATIONS + 1,
+        "original_PC01_construction_invocation_ceiling": 1,
+        "original_PC01_one_construction_invocation_ceiling_exceeded": True,
+        "github_execution_classification": "REPRODUCTION_OF_SAME_SEALED_WORLD",
         "DES_evaluation_world_runs_consumed": 0,
         "RK4_integrations_consumed": 0,
         "OpenModelica_runs_consumed": 0,
@@ -203,21 +220,37 @@ def write_public_bundle(bundle, output_dir, receipt):
     return manifest
 
 
+def require_main_first_github_dispatch():
+    """Second, independent fail-closed main/ref check inside Python runner."""
+    require(os.getenv("GITHUB_ACTIONS") == "true"
+            and os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
+            and os.getenv("GITHUB_REF") == "refs/heads/main"
+            and os.getenv("GITHUB_REPOSITORY") == "yudocyudoc/IGC"
+            and os.getenv("GITHUB_RUN_ATTEMPT") == "1"
+            and os.getenv("GITHUB_RUN_NUMBER") == "1",
+            "CAF01_ONLY_FIRST_MANUAL_MAIN_GITHUB_WORKFLOW_RUN")
+
+
+def log_des_invocation():
+    """Log chargeable attempt before starting DES; never disclose secrets."""
+    print("CAF01_DES_CONSTRUCTION_INVOCATION_STARTED=1", flush=True)
+    print("CAF01_DES_CONSTRUCTION_ATTEMPT_COUNTS_EVEN_IF_FAILED=1", flush=True)
+    print("CAF01_HISTORICAL_LOCAL_CONSTRUCTION_INVOCATIONS=1", flush=True)
+    print("CAF01_GITHUB_RUN_CLASSIFICATION=REPRODUCTION", flush=True)
+
+
 def main():
     """GH workflow only. Never a command to run experimental truth locally."""
     import argparse
     parser = argparse.ArgumentParser(description="GitHub-only CAF-01 construction")
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()
-    require(os.getenv("GITHUB_ACTIONS") == "true"
-            and os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
-            and os.getenv("GITHUB_RUN_ATTEMPT") == "1"
-            and os.getenv("GITHUB_RUN_NUMBER") == "1",
-            "CAF01_ONLY_FIRST_MANUAL_GITHUB_WORKFLOW_RUN")
+    require_main_first_github_dispatch()
     receipt = read_pinned_public_receipt()
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
     config = prepare_authorized_inputs(os.environ.get(SECRET_ENV), receipt, contract)
-    result = produce_construction_public_only(config, receipt, contract)
+    result = produce_construction_public_only(config, receipt, contract,
+                                              on_invocation=log_des_invocation)
     manifest = write_public_bundle(result, args.output_dir, receipt)
     # Safe to print ONLY public ids, never stage outputs or envelope.
     print("CAF01_CONSTRUCTION_SUCCESS_PUBLIC_ONLY")
@@ -232,7 +265,7 @@ if __name__ == "__main__":
         main()
     except Exception as exc:
         # No secret, config, nonce, or potentially sensitive traceback in logs.
-        # If this occurred after DES started, DO NOT retry the workflow:
-        # independently review the consumed attempt first.
+        # Invocation START marker in logs proves that the GitHub DES attempt
+        # was consumed even if no artifact was produced. Never retry silently.
         print("CAF01_CONSTRUCTION_BLOCKED_OR_FAILED")
         raise SystemExit(1) from None
