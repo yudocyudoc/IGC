@@ -33,7 +33,22 @@ La selección de un escenario no debe descansar exclusivamente en una descripci�
 - **Latencia mínima sin cola**: \(L_0=\sum_i\tau_i\). Contrastar con los siete momentos de lectura y los 40 minutos de horizonte; tiempos excesivos podrían hacer trivial el resultado sin revelar dinámica útil.
 - **Coherencia de recursos**: etapa, servidor y tiempo deben poder explicarse como operación plausible; si falta justificación física, se rechaza **antes** de usar el DES.
 
-La ficha privada debe congelar **criterios numéricos de aceptación ex ante** para estos cálculos, la configuración elegida y las razones de cualquier descarte *previo a la construcción*. No publicarlos en el paquete de entrada de D/B/M. **Estos cálculos no son una simulación DES, no prueban congestión observada ni identificabilidad, y no deben utilizarse para examinar iterativamente la curva de entregas hasta obtener un mundo conveniente.** Tras la primera construcción autorizada, si el supuesto de congestión visible resulta incorrecto, se reporta como resultado o límite del diseño: **no se sustituye el mundo**.
+### Criterios cuantitativos propuestos para el primer mundo (públicos antes del sello)
+
+Para evitar seleccionar libremente el escenario después de conocer sus resultados, propongo registrar **ahora**, sujetos al dictamen de Astra y antes de escoger la configuración privada, las siguientes restricciones de diseño:
+
+| Comprobación analítica | Regla propuesta | Justificación y límite |
+|---|---|---|
+| Congestión de construcción | **\(1.05 \le \rho_c \le 1.25\)** | La entrada prescrita supera moderadamente la capacidad nominal del cuello de botella; no implica que cada lectura revele cola ni que REF-CAF sea identificable |
+| Presión de evaluación | **\(1.3125 \le \rho_e \le 1.5625\)**, consecuencia de \(\rho_e=1.25\rho_c\) | La misma capacidad se somete a un aumento de entrada del 25%; no se ajusta según el resultado |
+| Capacidad nominal implícita | **\(0.96 \le \mu_* \le 1.2/1.05\approx1.142857\)** pedidos/min | Se deduce algebraicamente de \(\rho_c\); **no** es una capacidad DES medida |
+| Latencia sin espera | **\(0<L_0\le4\)** minutos | El primer pedido aceptado durante construcción ocurre a \(5/12\) min y, con las reglas FIFO y recursos inicialmente libres, debería poder terminar antes de la primera lectura a 5 min; no garantiza entregas posteriores ni identifica etapas |
+
+Estos rangos son **hipótesis operativas sintéticas explícitas**, no distribuciones empíricas de cafeterías reales, ni restricciones extraídas de las rejillas D/M/B. La cota de 4 minutos es intencionalmente una condición de observabilidad temprana; la banda de carga es una regla de diseño, no una garantía de saturación estimable por REF-CAF. **Astra puede rechazarlas o corregirlas antes del primer sello**, dejando el cambio registrado en la propia ficha; no se deben mover tras observar una curva.
+
+**Procedimiento privado de una sola selección:** primero justificar operaciones, recursos y tiempos plausibles; calcular \(\mu_i,\mu_*,\rho_c,\rho_e,L_0\) sin invocar el motor DES; comprobar las cuatro reglas; si el primer diseño incumple alguna, documentar el motivo físico del ajuste **antes del sello y sin obtener salidas DES**. Una vez fijado y sellado, no hacer barridos, reintentos, reemplazos o previsualizaciones del mundo para maximizar ajuste, congestión, identificabilidad o ventaja predictiva. La existencia de una elección ex ante no prueba que se observe el fenómeno deseado.
+
+La ficha privada debe conservar la **configuración escogida**, sus justificaciones y valores analíticos; la política de aceptación es pública, pero **no** los parámetros particulares ni sus evaluaciones. No incluir estos datos privados en el paquete que reciben D/B/M. **Estos cálculos no son una simulación DES, no prueban congestión observada ni identificabilidad.** Tras la primera construcción autorizada, si el supuesto de congestión visible resulta incorrecto, se reporta como resultado o límite del diseño: **no se sustituye el mundo**.
 
 La condición de primera prueba será, por tanto, **transferencia de dinámica con señales ya disponibles**, no inferencia de una limitación completamente latente. Esta es una elección de alcance científico, no una promesa de que los tres brazos alcanzarán identificabilidad.
 
