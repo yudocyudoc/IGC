@@ -45,6 +45,21 @@ Se rechazan rutas relativas y rutas dentro del checkout, sobrescrituras, archivo
 
 **Un hash autoproducido o el éxito de verify_receipt no constituyen custodia inmutable.** Es obligatorio un acuse independiente que vincule el mismo compromiso, las fuentes y un momento anterior a construcción.
 
+### Validación analítica privada exigida antes del sello — ficha CAF-01 aprobada
+
+El comando `preflight` verifica sobre una configuración externa, sin invocar DES, las bandas científicas aprobadas por Astra el 29 de octubre de 2026. Usa aritmética racional exacta: por etapa `mu_i=servers_i/service_minutes_i`, capacidad mínima `mu*=min(mu_i)`, cargas `rho_c=(6/5)/mu*` y `rho_e=(3/2)/mu*`, y latencia nominal `L0=sum(service_minutes_i)`. Se exige `21/20 <= rho_c <= 5/4`, `0 < L0 <= 4`, la identidad `rho_e=(5/4)*rho_c` y la finalización posible sin cola del primer pedido antes de t=5. En el límite de carga las comparaciones son inclusivas y exactas, no aproximaciones flotantes.
+
+Uso **solo en equipo del investigador** y con rutas de configuración absolutas fuera del repositorio:
+
+```bash
+python experiments/cafeteria/pc01/caf01_g5_seal.py preflight \
+  --config /ruta-externa/seleccion-privada.json
+```
+
+La salida muestra solo `APPROVED_ANALYTIC_BAND_ONLY_NOT_DES_VALIDATED`, junto con indicadores de que **no** se aprobó la justificación operativa ni se autorizó sellado, construcción o evaluación. No imprime servidores, tiempos, topología, capacidad ni carga. Un fallo rechaza el diseño sin crear sobre, nonce ni recibo. **El comando seal aplica la misma comprobación antes de emitir el compromiso.**
+
+La justificación de operaciones, recursos y tiempos **sigue siendo una decisión humana**; esta validación no mide una cafetería real, no asegura congestión observable, no identifica una estructura y no permite barrer varias configuraciones buscando resultados de DES. Los valores concretos permanecen en la ficha privada, no en GitHub ni en ningún contexto de D/B/M/REF; la política pública del evaluador no es parte de sus entradas. Cuando se escoja una sola configuración y se apruebe la justificación, el sellado y custodia deben realizarse en el equipo del investigador, separados de las sesiones de productores.
+
 ## 4. Orden estricto de permisos y revelación
 
 1. **Antes de construcción:** decidir y justificar mundo/servidores/servicios offline, aprobar política de empates, pin del código y presupuesto; sellar con nonce y obtener acuse externo fechado del compromiso. No permitir datos de los brazos al investigador al escoger ese mundo.
