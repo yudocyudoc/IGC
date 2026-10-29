@@ -1,0 +1,68 @@
+name: CAF-01 G5 offline private-world seal and budget preflight
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_g5_seal.py'
+      - 'experiments/cafeteria/pc01/test_caf01_g5_seal.py'
+      - 'experiments/cafeteria/pc01/G5_SELLADO_PRIVADO_Y_PRESUPUESTO_2026-10-28.md'
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+      - 'experiments/cafeteria/pc01/caf01_g4.py'
+      - 'experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json'
+      - '.github/workflows/caf01-g5-seal.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  toy-seal-and-budget-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline G5 toy-only tests and original contract
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g5_seal.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_des_engine.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g3.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_g4.py' -v
+          python experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py --tests
+      - name: Original ceilings and explicit NO-EXECUTION status
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_g5_seal.py plan > /tmp/caf01-g5-budget-plan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("/tmp/caf01-g5-budget-plan.json").read_text())
+          b=p['binding_preparation_ceiling_original_v03']
+          assert b['DES']['total']==2
+          assert b['RK4_D']['total']==36
+          assert b['OpenModelica']['total']==26
+          assert b['Buffalo']['total']==2
+          assert b['automatic_retries']==0
+          assert p['conditional_not_yet_authorized_OM_reduction']['total']==20
+          assert p['status']=='CEILINGS_ONLY_ZERO_RUNS_NOT_EXECUTION_AUTHORIZED'
+          print('G5_CEILINGS_NOT_AUTHORIZATION')
+          PY
+      - name: No real world configuration or secret leaked into GitHub
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('experiments/cafeteria/pc01')
+          src=(root/'caf01_g5_seal.py').read_text()
+          assert 'run_toy_engine(' not in src
+          assert 'simulate(' not in src
+          assert 'BuffaloAI' not in src
+          assert 'private_commitment(' in src
+          assert 'secrets.token_bytes(32)' in src
+          assert not (root/'private').exists()
+          assert not list(root.glob('*.nonce'))
+          print('G5_NO_WORLD_NO_NONCE_IN_REPOSITORY_NO_ENGINE_RUN')
+          PY
