@@ -1,0 +1,66 @@
+name: CAF-01 - D official-input runner tests (NO RK4)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/**'
+      - 'scripts/arena_d_v01.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'scripts/arena_v0_contract.py'
+      - '.github/workflows/caf01-d-rk4.yml'
+      - '.github/workflows/caf01-d-rk4-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  d-runner-mocked-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run the five runner tests with real integrations forbidden
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sys
+          import unittest
+          from unittest.mock import patch
+
+          with patch(
+              "scripts.arena_d_v1_screen.integrate",
+              side_effect=AssertionError("REAL_RK4_FORBIDDEN_IN_CI"),
+          ) as real_integrator:
+              suite = unittest.defaultTestLoader.discover(
+                  "experiments/cafeteria/pc01",
+                  pattern="test_caf01_d_rk4_github.py",
+              )
+              result = unittest.TextTestRunner(verbosity=2).run(suite)
+              if real_integrator.call_count or not result.wasSuccessful():
+                  raise SystemExit(1)
+          print("CAF01_D_PREFLIGHT_REAL_RK4=0")
+          PY
+      - name: Check that scientific execution remains separate and manual
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow = Path(".github/workflows/caf01-d-rk4.yml").read_text()
+          assert "workflow_dispatch:" in workflow
+          assert "pull_request:" not in workflow and "push:" not in workflow
+          assert "github.ref == 'refs/heads/main'" in workflow
+          assert "github.run_number == 1" in workflow
+          assert "github.run_attempt == 1" in workflow
+          assert "RUN_CAF01_D_18_PLUS_18_RK4" in workflow
+          assert "case: [CAF01, CAFN]" in workflow
+          assert "fail-fast: false" in workflow
+          assert "secrets." not in workflow
+          assert "actions/upload-artifact@v4" in workflow
+          print("CAF01_D_MANUAL_WORKFLOW_SEPARATE_FROM_CI")
+          PY

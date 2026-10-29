@@ -1,0 +1,76 @@
+name: CAF-01 - D screening, one authorized 18 + 18 RK4 run
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter RUN_CAF01_D_18_PLUS_18_RK4. Consumes up to 18 CAF01 and 18 CAFN integrations."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: caf01-d-rk4-one-shot
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RUN_CAF01_D_18_PLUS_18_RK4' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact dispatched commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify official inputs and runner with mocked integrations
+        run: |
+          set -euo pipefail
+          python -m unittest discover \
+            -s experiments/cafeteria/pc01 \
+            -p test_caf01_d_rk4_github.py -v
+
+  screen:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [CAF01, CAFN]
+    name: D RK4 - ${{ matrix.case }} - maximum 18 integrations
+    env:
+      CAF_D_CASE: ${{ matrix.case }}
+    steps:
+      - name: Checkout exact dispatched commit in isolated case job
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute this case once and retain invocation markers
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/caf01-d-logs"
+          python experiments/cafeteria/pc01/caf01_d_rk4_github.py \
+            --case "$CAF_D_CASE" \
+            --out "$RUNNER_TEMP/caf01-d-$CAF_D_CASE" \
+            2>&1 | tee "$RUNNER_TEMP/caf01-d-logs/$CAF_D_CASE.log"
+      - name: Preserve case output and consumed-attempt log even on failure
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf01-d-rk4-${{ matrix.case }}-run-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/caf01-d-${{ matrix.case }}/D_RK4_SCREEN.json
+            ${{ runner.temp }}/caf01-d-logs/${{ matrix.case }}.log
+          if-no-files-found: error
+          retention-days: 90
