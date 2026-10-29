@@ -7,6 +7,8 @@ import copy
 import hashlib
 import json
 import os
+import io
+from contextlib import redirect_stdout
 from pathlib import Path
 import tempfile
 import unittest
@@ -18,6 +20,7 @@ from caf01_construction_github import (
     PUBLIC_RECEIPT_PATH, SECRET_ENV, TIMES, decode_private_envelope,
     prepare_authorized_inputs, produce_construction_public_only,
     read_pinned_public_receipt, write_public_bundle,
+    require_main_first_github_dispatch, log_des_invocation,
 )
 from caf01_g5_seal import (CONTRACT, canonical, hard_budget,
                            make_public_receipt, sha_bytes, snapshot_files)
@@ -107,7 +110,12 @@ class TestCAF01GitHubConstructionPreparation(unittest.TestCase):
                                          "GITHUB_RUN_ID":"toy-ci",
                                          "GITHUB_RUN_ATTEMPT":"1"}):
                 manifest=write_public_bundle(output,folder,r)
-            self.assertEqual(manifest["DES_construction_world_runs_consumed"],1)
+            self.assertEqual(manifest["DES_construction_world_runs_consumed_this_github_attempt"],1)
+            self.assertEqual(manifest["historical_local_DES_construction_invocations"],1)
+            self.assertEqual(manifest["total_known_DES_construction_invocations_after_github_attempt"],2)
+            self.assertTrue(manifest["original_PC01_one_construction_invocation_ceiling_exceeded"])
+            self.assertEqual(manifest["github_execution_classification"],
+                             "REPRODUCTION_OF_SAME_SEALED_WORLD")
             self.assertEqual(manifest["DES_evaluation_world_runs_consumed"],0)
             self.assertEqual(len(manifest["files_sha256"]),7)
             for p in folder.iterdir():
@@ -129,6 +137,46 @@ class TestCAF01GitHubConstructionPreparation(unittest.TestCase):
                 write_public_bundle({"secret.json":{"nonce_hex":"NEVER"}},
                                     p,r)
             self.assertFalse(p.exists())
+
+    def test_main_branch_gate_denies_nonmain_without_DES(self):
+        good = {"GITHUB_ACTIONS":"true",
+                "GITHUB_EVENT_NAME":"workflow_dispatch",
+                "GITHUB_REF":"refs/heads/main",
+                "GITHUB_REPOSITORY":"yudocyudoc/IGC",
+                "GITHUB_RUN_ATTEMPT":"1",
+                "GITHUB_RUN_NUMBER":"1"}
+        with patch.dict(os.environ,good,clear=True):
+            require_main_first_github_dispatch()
+        for name, bad in (
+            ("GITHUB_REF","refs/heads/experimental"),
+            ("GITHUB_REF","refs/tags/test"),
+            ("GITHUB_RUN_ATTEMPT","2"),
+            ("GITHUB_RUN_NUMBER","2"),
+            ("GITHUB_EVENT_NAME","pull_request"),
+            ("GITHUB_REPOSITORY","somewhere/else"),
+        ):
+            with self.subTest(name=name,bad=bad):
+                with patch.dict(os.environ,{**good,name:bad},clear=True):
+                    with self.assertRaisesRegex(
+                        ConstructionBlocked, "ONLY_FIRST_MANUAL_MAIN_GITHUB"):
+                        require_main_first_github_dispatch()
+
+    def test_des_invocation_logged_and_charged_even_if_engine_raises(self):
+        receipt = self.fake_receipt()
+        output = io.StringIO()
+        with patch("caf01_construction_github.run_toy_engine",
+                   side_effect=RuntimeError("fictional engine failure")), \
+             redirect_stdout(output):
+            with self.assertRaisesRegex(RuntimeError, "fictional engine failure"):
+                produce_construction_public_only(
+                    invented_config(), receipt, self.contract,
+                    on_invocation=log_des_invocation)
+        markers=output.getvalue()
+        self.assertIn("CAF01_DES_CONSTRUCTION_INVOCATION_STARTED=1",markers)
+        self.assertIn("CAF01_DES_CONSTRUCTION_ATTEMPT_COUNTS_EVEN_IF_FAILED=1",markers)
+        self.assertIn("CAF01_HISTORICAL_LOCAL_CONSTRUCTION_INVOCATIONS=1",markers)
+        self.assertNotIn("service_minutes",markers)
+        self.assertNotIn("nonce_hex",markers)
 
     def test_no_evaluation_runner_and_pulse_is_construction(self):
         import inspect
