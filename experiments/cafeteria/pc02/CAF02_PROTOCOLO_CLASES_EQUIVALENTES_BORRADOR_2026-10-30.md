@@ -1,4 +1,9 @@
-# CAF-02 — Protocolo preparatorio: predicción por clases compatibles
+# CAF-02 — Componente auxiliar histórico de calibración C00 (PR #99)
+
+**RECTIFICACIÓN 2026-10-30:** Este documento explica un subsistema útil, pero **no representa el objetivo principal de CAF-02**. Para la pregunta estructural original del plan v3.0 §7 y la secuencia K0→K1→K2, consultar [CAF02_PROTOCOLO_DISCRIMINACION_ESTRUCTURAL_K0_K1_K2_2026-10-30.md](CAF02_PROTOCOLO_DISCRIMINACION_ESTRUCTURAL_K0_K1_K2_2026-10-30.md). La justificación operacional externa de cada rango **no es prerrequisito universal** para una investigación sintética; sí debe distinguirse de admisibilidad matemática y de identificación. La regla relativa sola era defectuosa: el calibrador exige además adecuación absoluta y admite cero candidatos. Los umbrales actuales son sintéticos e ilustrativos. **No usar los pasos P0–P5 aquí como autorización para CAF-02.**
+
+---
+
 
 **Fecha:** 2026-10-30. **Estado:** \`BORRADOR_NO_AUTORIZADO\`. Este documento y su código son una **preparación**, no un preregistro válido, un nuevo mundo ni una evaluación científica. **No ejecutar un nuevo DES o revelar datos reservados** hasta completar las compuertas externas.
 

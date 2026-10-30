@@ -66,6 +66,7 @@ def validate_policy(policy):
         "future_public_pulse","response_times_preparation_minutes",
         "response_times_dispatch_minutes","shared_capacities_per_hour",
         "compatibility_mae_allowance_orders",
+        "absolute_max_construction_MAE_orders",
         "point_max_envelope_width_orders","operational_basis",
         "future_truth_available","independent_world_custody_verified",
         "independent_forecast_custody_verified",
@@ -97,6 +98,8 @@ def validate_policy(policy):
          "OUT_OF_SCOPE_PARAMETER_GRID")
     need(number(policy["compatibility_mae_allowance_orders"])
          and 0<=policy["compatibility_mae_allowance_orders"]<=3
+         and number(policy["absolute_max_construction_MAE_orders"])
+         and 0<=policy["absolute_max_construction_MAE_orders"]<=10
          and number(policy["point_max_envelope_width_orders"])
          and 0<=policy["point_max_envelope_width_orders"]<=5,
          "INVALID_PROPOSED_THRESHOLDS")
@@ -254,7 +257,11 @@ def fit(policy,evidence):
                     "construction_class_key":model_group_key(tp,td,cap,rate),
                 })
     best=min(x["MAE_construction"] for x in grid)
-    threshold=best+policy["compatibility_mae_allowance_orders"]
+    relative_ceiling=best+policy["compatibility_mae_allowance_orders"]
+    absolute_ceiling=policy["absolute_max_construction_MAE_orders"]
+    threshold=min(relative_ceiling,absolute_ceiling)
+    # Absolute adequacy gate: no candidate survives when even the best
+    # model fails to explain construction. Narrow agreement is insufficient.
     compatible=[x for x in grid
                 if x["MAE_construction"] <= threshold+1e-12]
     # A class of construction-equivalent variants MUST retain every nominal
@@ -293,12 +300,21 @@ def fit(policy,evidence):
             "class_remains_equivalent_in_future":
                 max(b-a for a,b in zip(lower,upper))<=1e-8,
         })
-    low=[min(x[i] for x in all_future_curves) for i in range(6)]
-    high=[max(x[i] for x in all_future_curves) for i in range(6)]
-    width=max(b-a for a,b in zip(low,high))
+    adequate=bool(compatible)
+    low=([min(x[i] for x in all_future_curves) for i in range(6)]
+         if adequate else None)
+    high=([max(x[i] for x in all_future_curves) for i in range(6)]
+          if adequate else None)
+    width=(max(b-a for a,b in zip(low,high)) if adequate else None)
     authorized_width=policy["point_max_envelope_width_orders"]
-    admissible=width<=authorized_width
+    admissible=adequate and width<=authorized_width
     mid=[(a+b)/2 for a,b in zip(low,high)] if admissible else None
+    if not adequate:
+        point_status="NO_ADEQUATE_CANDIDATE_ABSTAIN_ALL_FORECASTS"
+    elif not admissible:
+        point_status="ABSTAIN_POINT_COMPATIBLE_FORECASTS_DIVERGE"
+    else:
+        point_status="ILLUSTRATIVE_MID_ENVELOPE_NOT_A_SEALED_FORECAST"
     return {
         "schema":SCHEMA,
         "status":"SYNTHETIC_FIXTURE_EXPLORATORY_NO_WORLD_NO_PROSPECTIVE_FORECAST",
@@ -314,8 +330,11 @@ def fit(policy,evidence):
         "Modelica_solver_invocations":0,
         "provider_inferences":0,
         "forecast_model":"UNCHANGED_E1_C00_TWO_BOUNDED_QUEUES",
-        "selection_rule":"MAE <= MIN_GRID_MAE + PREDECLARED_ALLOWANCE",
+        "selection_rule":
+            "MAE <= MIN(MIN_GRID_MAE + ALLOWANCE, ABSOLUTE_ADEQUACY_CEILING)",
         "construction_best_MAE":best,
+        "absolute_construction_adequacy_ceiling_MAE":absolute_ceiling,
+        "absolute_construction_adequacy_pass":adequate,
         "construction_compatibility_threshold_MAE":threshold,
         "nominal_grid_candidates":len(grid),
         "nominal_compatible_candidates":len(compatible),
@@ -327,8 +346,7 @@ def fit(policy,evidence):
         "full_compatible_envelope_upper":high,
         "full_compatible_envelope_max_width_orders":width,
         "draft_point_width_threshold_orders":authorized_width,
-        "point_status":("ILLUSTRATIVE_MID_ENVELOPE_NOT_A_SEALED_FORECAST"
-                        if admissible else "ABSTAIN_POINT_COMPATIBLE_FORECASTS_DIVERGE"),
+        "point_status":point_status,
         "illustrative_point_mid_envelope":mid,
         "parameters_identified_as_individual_stage_times":False,
         "predictions_included_not_truth":True,
@@ -359,6 +377,7 @@ def main():
     print("NOMINAL_COMPATIBLE="+str(report["nominal_compatible_candidates"]))
     print("CONSTRUCTION_EQUIVALENT_CLASSES="+str(
         report["construction_equivalent_classes"]))
+    print("ABSOLUTE_ADEQUACY_PASS="+str(report["absolute_construction_adequacy_pass"]))
     print("FUTURE_ENVELOPE_MAX_WIDTH="+str(
         report["full_compatible_envelope_max_width_orders"]))
     print("FUTURE_POINT_STATUS="+report["point_status"])

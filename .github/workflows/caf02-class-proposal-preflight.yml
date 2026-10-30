@@ -22,6 +22,11 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_class_predictor.py' -v
+      - name: Structural K0 K1 K2 guards - rival molecules, extra evidence, no future truth
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_structural_k0k1k2.py' -v
+          python experiments/cafeteria/pc02/caf02_structural_k0k1k2.py
       - name: Build synthetic fixture inside runner - no real or old DES data
         run: |
           set -euo pipefail

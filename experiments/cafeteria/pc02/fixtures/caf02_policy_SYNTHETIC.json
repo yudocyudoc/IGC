@@ -31,5 +31,6 @@
   },
   "future_truth_available": false,
   "independent_world_custody_verified": false,
-  "independent_forecast_custody_verified": false
+  "independent_forecast_custody_verified": false,
+  "absolute_max_construction_MAE_orders": 5
 }

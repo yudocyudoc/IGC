@@ -17,6 +17,7 @@ def policy():
         "response_times_dispatch_minutes":[1.0,3.0],
         "shared_capacities_per_hour":[72,100],
         "compatibility_mae_allowance_orders":0.0,
+        "absolute_max_construction_MAE_orders":5.0,
         "point_max_envelope_width_orders":0.5,
         "operational_basis":{
             "status":"NOT_YET_JUSTIFIED",
@@ -78,6 +79,35 @@ class ClassProtocolTests(unittest.TestCase):
         self.assertIsNone(r["illustrative_point_mid_envelope"])
         self.assertFalse(r["evaluation_authorized"])
         self.assertFalse(r["future_truth_seen"])
+
+    def test_absolute_adequacy_rejects_uniformly_bad_but_narrow_family(self):
+        p=policy()
+        p["response_times_preparation_minutes"]=[60.0]
+        p["response_times_dispatch_minutes"]=[60.0]
+        p["shared_capacities_per_hour"]=[100]
+        p["absolute_max_construction_MAE_orders"]=0.1
+        p["point_max_envelope_width_orders"]=5.0
+        result=c.fit(p,evidence())
+        self.assertGreater(result["construction_best_MAE"],0.1)
+        self.assertFalse(result["absolute_construction_adequacy_pass"])
+        self.assertEqual(result["nominal_compatible_candidates"],0)
+        self.assertEqual(result["construction_equivalent_classes"],0)
+        self.assertIsNone(result["full_compatible_envelope_lower"])
+        self.assertIsNone(result["full_compatible_envelope_upper"])
+        self.assertIsNone(result["full_compatible_envelope_max_width_orders"])
+        self.assertIsNone(result["illustrative_point_mid_envelope"])
+        self.assertEqual(result["point_status"],
+                         "NO_ADEQUATE_CANDIDATE_ABSTAIN_ALL_FORECASTS")
+
+    def test_absolute_gate_fails_closed_on_missing_or_invalid_ceiling(self):
+        p=policy()
+        p.pop("absolute_max_construction_MAE_orders")
+        with self.assertRaisesRegex(c.Blocked,"POLICY_EXACT_FIELDS"):
+            c.validate_policy(p)
+        p=policy()
+        p["absolute_max_construction_MAE_orders"]=-1
+        with self.assertRaisesRegex(c.Blocked,"INVALID_PROPOSED_THRESHOLDS"):
+            c.validate_policy(p)
 
     def test_guard_disallows_old_world_and_future_truth(self):
         e=evidence()
