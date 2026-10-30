@@ -22,7 +22,7 @@ FIXED_BYTES = {
     "D_G2_1_res.csv":"85e19d1523d841f370d92dbea9b48bc06e63ad6d4d7d3a8d30b913c4fa001ca3",
     "D_G2_1.log":"5a85889a51668a4914b30b01757a9f0dd6aa37c67b5ee8ba869f384a5451b06a",
     "D_G2_1.attempt":"47bc1f5daf18b26ac329fa190b4b97d21183dac539aa6ac404a245f505e0d340",
-    "D_G2_1.exit_code":"9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3ab86aa",
+    "D_G2_1.exit_code":"9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
     "D_G2_VERIFIED.json":"58b10e787659bd76cc56411ab58cd36a006570426636190788efd2a2288e843d",
     "D_G2_1_receipt.json":"d124fa8a0c148c4015a9d9f7e89c255d9354769891bfe9688e03446620caa47d",
 }
