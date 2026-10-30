@@ -322,7 +322,10 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
     # same family may already have been the only adequate K0 hypothesis.
     structural_reduction=bool(families_removed) and bool(survivors)
     parametric_reduction=count_after<count_before and not families_removed
-    if not survivors:
+    if not families_before:
+        status="K0_NO_ADEQUATE_M_FAMILY_K1_OBSERVED"
+        revision_type="K0_ALREADY_NO_ADEQUATE_HYPOTHESIS"
+    elif not survivors:
         status="K1_NO_COMPATIBLE_FAMILY"
         revision_type="K1_ALL_K0_HYPOTHESES_CONTRADICTED"
     elif structural_reduction:
