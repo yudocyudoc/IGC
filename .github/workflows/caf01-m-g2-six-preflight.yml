@@ -27,6 +27,35 @@ jobs:
             -p 'test_caf01_m_g2_six_native.py' -v
           python -m unittest discover -s experiments/cafeteria/pc01 \
             -p 'test_caf01_m_producer_admission.py' -v
+      - name: Produce all nine final CAF models for native CHECK-ONLY
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_g2_six_native.py prepare --out artifacts/m-g2-check-only
+          test "$(grep -c 'checkModel(' artifacts/m-g2-check-only/M_CHECK_ONLY.mos)" -eq 9
+          if grep -Eq 'simulate\(|buildModel\(' artifacts/m-g2-check-only/M_CHECK_ONLY.mos; then
+            exit 1
+          fi
+      - name: Set up unchanged Modelica libraries for CHECK-ONLY
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+      - name: Native checkModel of all nine sources (NO simulate)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/m-g2-check-only/M_CHECK_ONLY.mos \
+            2>&1 | tee artifacts/m-g2-check-only/check_only.console.txt
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' artifacts/m-g2-check-only/check_only.console.txt; then exit 1; fi
+          test "$(grep -Ec 'Check of CAF01MPreflight\.[^ ]+ completed successfully' artifacts/m-g2-check-only/check_only.console.txt)" -eq 9
+          echo "M_G2_NINE_REAL_CHECKMODEL_COMPILED_ZERO_NATIVE_SIMULATIONS"
       - name: Explicitly gate manual one-shot construction and isolate all six sources
         run: |
           python - <<'PY'
