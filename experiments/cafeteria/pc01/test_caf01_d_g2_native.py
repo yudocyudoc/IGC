@@ -185,6 +185,23 @@ class TestDNativeG2(unittest.TestCase):
             self.assertEqual(result["native_candidates"][0]["status"],"PASS")
             self.assertEqual(len(list(out.glob("D_G2_*_receipt.json"))),3)
 
+    def test_cli_reports_global_error_only_after_persisting_receipts(self):
+        from caf01_d_g2_native import main
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/"three"
+            self.fake_prepared_with_three_solver_outputs(out,invalid_mass=2)
+            with patch("caf01_d_g2_native.require_github_one_shot"), \
+                 patch("sys.argv",["caf01_d_g2_native.py","verify","--out",str(out)]):
+                with self.assertRaises(SystemExit) as ex:
+                    main()
+            self.assertEqual(ex.exception.code,1)
+            self.assertTrue((out/"D_G2_VERIFIED.json").is_file())
+            self.assertEqual(len(list(out.glob("D_G2_*_receipt.json"))),3)
+            self.assertEqual(json.loads((out/"D_G2_1_receipt.json").read_text())["status"],
+                             "PASS")
+            self.assertEqual(json.loads((out/"D_G2_3_receipt.json").read_text())["status"],
+                             "PASS")
+
     def test_restrict_to_first_manual_main_run(self):
         good={"GITHUB_ACTIONS":"true","GITHUB_REF":"refs/heads/main",
               "GITHUB_EVENT_NAME":"workflow_dispatch",
