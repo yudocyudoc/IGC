@@ -57,7 +57,8 @@ def parse_policy(policy):
           and d["loss"] is False
           and d["post_K1_rule"] ==
               "FILTER_ONLY_K0_COMPATIBLE_CANDIDATES_USING_EXACT_K1_SELECTED_PULSE_AND_RESIDUAL_WITHOUT_REFITTING_GRID"
-          and d["use_common_preselected_M_K1_option"] is True
+          and d["use_common_preselected_M_K1_option"] is False
+          and d["use_joint_M_D_preselected_K1_option"] is True
           and d["native_parity_status"]=="NOT_VERIFIED_FOR_NEW_GRID",
           "D_GRAMMAR_OR_POLICY_CHANGED")
     cap=d["capacity_items_per_hour"]
@@ -228,7 +229,10 @@ def validate_common_decision(decision,policy):
           and decision.get("status") in (
               "K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION",
               "K1_MENU_CANNOT_ROBUSTLY_DISCRIMINATE",
-              "K0_NO_TWO_ADEQUATE_STRUCTURES"
+              "K0_NO_TWO_ADEQUATE_STRUCTURES",
+              "K1_PRECOMMITTED_POTENTIAL_HYPOTHESIS_REDUCTION",
+              "K1_PRECOMMITTED_NO_MODELLED_REDUCTION_ADEQUACY_TEST",
+              "K1_NO_ADEQUATE_HYPOTHESIS_NO_TRIAL",
           )
           and "proposed_measurement" in decision
           and type(decision.get("precommitted_policy")) is dict,
@@ -244,8 +248,19 @@ def validate_common_decision(decision,policy):
               policy["k1"]["effective_revision_tolerance_orders"],
           "D_K1_SELECTION_AND_REVISION_TOLERANCE_DRIFT")
     choice=decision["proposed_measurement"]
-    if decision["status"]!="K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION":
-        check(choice is None,"D_NONDISCRIMINATING_M_HAS_NO_K1")
+    joint=decision["status"].startswith("K1_PRECOMMITTED_")
+    if joint:
+        from caf02_joint_md_k1_design import hash_object, SCHEMA
+        check(decision.get("schema")==SCHEMA
+              and decision.get("policy_fingerprint")==hash_object(policy)
+              and decision.get("K0_fingerprints",{}).get("D") is not None
+              and p.get("method")=="JOINT_M_D_DESIGN_V1",
+              "D_COMMON_JOINT_DESIGN_TAMPERED_OR_DIFFERENT_POLICY")
+    if decision["status"] not in (
+        "K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION",
+        "K1_PRECOMMITTED_POTENTIAL_HYPOTHESIS_REDUCTION",
+        "K1_PRECOMMITTED_NO_MODELLED_REDUCTION_ADEQUACY_TEST"):
+        check(choice is None,"D_NONDISCRIMINATING_COMMON_NO_K1")
         return None
     check(type(choice) is dict and set(choice)=={"rate_per_minute","t_min"}
           and any((x["rate_per_minute"],x["t_min"])==
@@ -259,6 +274,11 @@ def revise_k1(k0,common_selection,evidence,policy):
     d=parse_policy(policy)
     check(k0["policy_sha256"]==digest(policy),"D_K0_K1_POLICY_CHANGED")
     choice=validate_common_decision(common_selection,policy)
+    if common_selection["status"].startswith("K1_PRECOMMITTED_"):
+        from caf02_joint_md_k1_design import hash_object
+        check(common_selection.get("K0_fingerprints",{}).get("D")==
+                  hash_object(k0),
+              "D_K0_PARENT_FINGERPRINT_MISMATCH")
     # A no-K1 decision is not a permission to ask D's own question.
     if choice is None:
         check(evidence is None,"D_K1_EVIDENCE_INJECTED_WITHOUT_SELECTION")
