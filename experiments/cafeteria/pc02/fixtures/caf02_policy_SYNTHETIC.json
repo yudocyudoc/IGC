@@ -1,0 +1,35 @@
+{
+  "schema": "igc-caf02-class-calibration-policy/0.1",
+  "campaign_id": "CAF02",
+  "status": "DRAFT_NOT_OPERATIONALLY_APPROVED",
+  "construction_pulse": {
+    "rate_per_minute": 1.2,
+    "duration_minutes": 20
+  },
+  "future_public_pulse": {
+    "rate_per_minute": 1.5,
+    "duration_minutes": 20
+  },
+  "response_times_preparation_minutes": [
+    1,
+    3
+  ],
+  "response_times_dispatch_minutes": [
+    1,
+    3
+  ],
+  "shared_capacities_per_hour": [
+    72,
+    100
+  ],
+  "compatibility_mae_allowance_orders": 0,
+  "point_max_envelope_width_orders": 0.5,
+  "operational_basis": {
+    "status": "NOT_YET_JUSTIFIED",
+    "responseTime_interpretation": "AGGREGATE_STOCK_TO_OUTFLOW_NOT_PER_ORDER_SERVICE_DURATION",
+    "notes": "SYNTHETIC_TEST_VALUES_NOT_OPERATIONALLY_APPROVED"
+  },
+  "future_truth_available": false,
+  "independent_world_custody_verified": false,
+  "independent_forecast_custody_verified": false
+}
