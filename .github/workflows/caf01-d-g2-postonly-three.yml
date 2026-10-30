@@ -79,8 +79,8 @@ jobs:
           assert "integrate(" not in runner
           assert "simulate(" not in runner
           assert "subprocess" not in runner and "docker" not in runner
-          assert "openmodelica/openmodelica:" not in workflow
-          assert "omc " not in workflow
+          assert "openmodelica/" + "openmodelica:" not in workflow
+          assert "\n          omc " not in workflow
           assert "run-id: 40983808227" in workflow
           assert "original_failed_receipts_retained" in runner
           print("CAF01_D_G2_POSTONLY_NO_RK4_OMC_DES_EVALUATION")
