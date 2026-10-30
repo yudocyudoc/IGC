@@ -26,10 +26,47 @@ class TestBIndependentInput(unittest.TestCase):
         for row in (a,b):
             self.assertFalse(row["isolation"]["prior_B_native_model_supplied"])
             self.assertFalse(row["isolation"]["evaluation_truth_supplied"])
-            self.assertEqual(row["task"]["required_native_solver_specs"]["stopTime"],2/3)
-            self.assertEqual(row["native_adapter"]["native_G2"],"NOT_RUN")
+            self.assertEqual(row["budget"]["automatic_retries_allowed"],0)
+        self.assertEqual(a["task"]["required_native_solver_specs"]["stopTime"],2/3)
+        self.assertEqual(a["native_adapter"]["native_G2"],"NOT_RUN")
+        self.assertIsNone(b["task"]["required_native_solver_specs"])
+        self.assertEqual(b["native_adapter"]["native_G2"],"NOT_APPLICABLE")
+        self.assertIsNone(b["native_adapter"]["local_bridge"])
             self.assertNotIn("D_RK4_SCREEN",json.dumps(row))
             self.assertNotIn("M_PRODUCER_PACKET",json.dumps(row))
+
+    def test_masked_negative_is_diagnostic_with_valid_explicit_abstention(self):
+        a=build("CAF01",self.contract)
+        n=build("CAFN",self.contract)
+        self.assertEqual(a["task"]["type"],"independent_stock_flow_model_proposal")
+        self.assertTrue(a["task"]["native_model_required"])
+        self.assertEqual(a["task"]["independent_native_model_max"],1)
+        self.assertEqual(n["task"]["type"],"independent_identifiability_diagnosis")
+        self.assertFalse(n["task"]["native_model_required"])
+        self.assertEqual(n["task"]["independent_native_model_max"],0)
+        self.assertTrue(n["task"]["allow_explicit_abstention"])
+        self.assertIn("INSUFFICIENT_EVIDENCE",n["task"]["valid_diagnostic_outcomes"])
+        self.assertTrue(n["task"]["no_unobserved_intermediate_trajectory_assumptions"])
+        self.assertTrue(n["task"]["no_individual_model_ranking_or_parameter_fitting"])
+        self.assertIn("NOT_REQUIRED",n["task"]["model_output"])
+        self.assertEqual(n["budget"]["CAF_N_extra_native_sims_allowed"],0)
+        self.assertEqual([x["t_min"] for x in n["public_evidence"]["observations"]],
+                         [0,40])
+        self.assertNotIn("Buffalo native model JSON",json.dumps(n))
+
+    def test_file_outputs_preserve_independent_task_types(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp)/"B"
+            generate(directory)
+            a=json.loads((directory/"B_CAF01_PROVIDER_REQUEST.json").read_text())
+            n=json.loads((directory/"B_CAFN_PROVIDER_REQUEST.json").read_text())
+            self.assertEqual(a["task"]["type"],"independent_stock_flow_model_proposal")
+            self.assertTrue(a["task"]["native_model_required"])
+            self.assertEqual(n["task"]["type"],"independent_identifiability_diagnosis")
+            self.assertFalse(n["task"]["native_model_required"])
+            self.assertTrue(n["task"]["allow_explicit_abstention"])
+            self.assertIn("INSUFFICIENT_EVIDENCE",n["task"]["valid_diagnostic_outcomes"])
+            self.assertEqual(len(n["public_evidence"]["observations"]),2)
 
     def test_negative_independence_requires_fresh_no_history(self):
         c=copy.deepcopy(self.contract)
