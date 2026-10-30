@@ -50,6 +50,9 @@ class TestC00Exploration(unittest.TestCase):
         self.assertEqual(report["status"],
                          "POSTHOC_CONSTRUCTION_ONLY_NOT_A_FORECAST")
         self.assertEqual(len(report["complete_grid"]),9*9*3)
+        self.assertTrue(report["cap_72_100_are_equivalent_during_72_per_hour_construction"])
+        self.assertLess(report["unique_comparable_classes_after_capacity_alias"],
+                        report["all_comparable_count"])
         self.assertEqual(len(report["historical_response_times_minutes"]),3)
         self.assertTrue(all(row["native_G2_certification"] is False
                             for row in report["complete_grid"]))
