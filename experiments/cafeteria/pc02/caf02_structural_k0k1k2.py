@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from functools import lru_cache
 from pathlib import Path
 
 from caf02_class_predictor import Blocked, need, number, canonical
@@ -98,10 +99,16 @@ def params(family,p,d,c,transit):
             "tau_transit_minutes":transit if family=="C01" else None}
 
 
+@lru_cache(maxsize=12000)
+def _cached_curve(structure,tp,td,cap,transit,rate):
+    return tuple(simulate(structure,tp,td,cap,transit or 1,rate))
+
+
 def curve(m,rate):
-    return simulate(m["structure"],m["tau_preparation_minutes"],
-                    m["tau_dispatch_minutes"],m["capacity_per_hour"],
-                    m["tau_transit_minutes"] or 1,rate)
+    """Cache repeated analytic-molecule numerical responses; never mutate."""
+    return _cached_curve(m["structure"],m["tau_preparation_minutes"],
+                         m["tau_dispatch_minutes"],m["capacity_per_hour"],
+                         m["tau_transit_minutes"],rate)
 
 
 def k0_calibrate(observed,rate,times_indices,parameter_grid,
