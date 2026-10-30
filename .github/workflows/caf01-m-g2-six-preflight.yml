@@ -1,0 +1,49 @@
+name: CAF-01 M G2 six — offline tests only, NO solver
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_g2_six_native.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_g2_six_native.py'
+      - '.github/workflows/caf01-m-g2-six.yml'
+      - '.github/workflows/caf01-m-g2-six-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-six-no-solver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exercise six synthetic balance receipts and final E1 CAF source checks
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 \
+            -p 'test_caf01_m_g2_six_native.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 \
+            -p 'test_caf01_m_producer_admission.py' -v
+      - name: Explicitly gate manual one-shot construction and isolate all six sources
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+          s=Path("experiments/cafeteria/pc01/caf01_m_g2_six_native.py").read_text()
+          w=Path(".github/workflows/caf01-m-g2-six.yml").read_text()
+          ast.parse(s)
+          assert "github.run_number == 1" in w and "github.run_attempt == 1" in w
+          assert "github.ref == 'refs/heads/main'" in w
+          assert "RUN_CAF01_M_SIX_G2_ONCE" in w
+          assert "for n in 1 2 3 4 5 6; do" in w
+          assert "CAF01_M_G2_OMC_INVOCATION_STARTED" in w
+          assert "sudo chown -R" in w
+          assert w.index("sudo chown -R")<w.index("python experiments/cafeteria/pc01/caf01_m_g2_six_native.py verify")
+          assert "M_G2_@@N@@.console.txt" not in w
+          assert "M_negative_control_additional_solver_attempts" in s
+          assert "D_or_B_results_read" in s
+          print("M_G2_SIX_OFFLINE_MOCKS_NO_NATIVE_SIMULATIONS")
+          PY
