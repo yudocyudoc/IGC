@@ -192,6 +192,29 @@ def campaign():
     comparable = [x for x in rows
                   if x["MAE_construction"] <=
                   baseline["MAE"] + COMPARABILITY_TOLERANCE]
+    # For the construction pulse (72/h, empty initial states), each stage
+    # has inflow <= 72/h. Capacities 72 and 100 therefore cannot bind.
+    # These are nominal parameter aliases, NOT independent model solutions.
+    for tau_p in tau_all:
+        for tau_d in tau_all:
+            c72=next(x for x in rows if
+                     x["tau_preparation_minutes"]==tau_p
+                     and x["tau_dispatch_minutes"]==tau_d
+                     and x["shared_capacity_orders_per_hour"]==72)
+            c100=next(x for x in rows if
+                      x["tau_preparation_minutes"]==tau_p
+                      and x["tau_dispatch_minutes"]==tau_d
+                      and x["shared_capacity_orders_per_hour"]==100)
+            require(max(abs(x-y) for x,y in zip(
+                c72["predicted_delivered_construction"],
+                c100["predicted_delivered_construction"]))<1e-8,
+                "CONSTRUCTION_CAPACITY_ALIAS_72_100_INVALID")
+    unique_comparable = {
+        (x["tau_preparation_minutes"],x["tau_dispatch_minutes"],
+         72 if x["shared_capacity_orders_per_hour"]==100
+         else x["shared_capacity_orders_per_hour"])
+        for x in comparable
+    }
     return {
         "schema": "igc-caf01-m-c00-representability-exploratory/0.1",
         "status": "POSTHOC_CONSTRUCTION_ONLY_NOT_A_FORECAST",
@@ -217,6 +240,8 @@ def campaign():
             "EXPLORATORY_CONSTRUCTION_MAE <= REF_CAF_IN_SAMPLE_MAE + 0.25",
         "historical_comparable_count": sum(x in historical for x in comparable),
         "all_comparable_count": len(comparable),
+        "unique_comparable_classes_after_capacity_alias": len(unique_comparable),
+        "cap_72_100_are_equivalent_during_72_per_hour_construction": True,
         "near_best_count_plus_0_25_orders":
             sum(x["MAE_construction"] <= best["MAE_construction"]+.25 for x in rows),
         "complete_grid": rows,
@@ -260,7 +285,19 @@ def markdown(r):
         f"Configuraciones históricas comparables con REF-CAF (+0.25): "
         f"{r['historical_comparable_count']}.",
         f"Configuraciones totales comparables (+0.25): "
-        f"{r['all_comparable_count']}.",
+        f"{r['all_comparable_count']} combinaciones nominales, "
+        f"{r['unique_comparable_classes_after_capacity_alias']} clases distintas "
+        "tras agrupar capacidades 72/100 durante construcción.",
+        "",
+        "| Minuto | Entregados construcción | Mejor M exploratoria | Error firmado |",
+        "|---:|---:|---:|---:|",
+        *[
+            f"| {t} | {obs:g} | {p:.4f} | {p-obs:+.4f} |"
+            for t, obs, p in zip(
+                TIMES, r["observed_construction_delivered"],
+                best["predicted_delivered_construction"])
+        ],
+        "",
         f"Máxima diferencia entre integraciones Heun: "
         f"{r['max_coarse_fine_difference_orders']:.6f} pedidos.",
         "",
