@@ -4,8 +4,8 @@
 REUSES D's original 1..3 stock no-loss grammar and RK4 from
 scripts.arena_d_v1_screen.integrate, including its exact pulse boundary.
 A separate CAF02 adapter is needed because original D2 mandates exactly the
-same pulse as K0. D receives the one K1 selected by M; its preference is
-diagnostic only, never affects which trial the world executes.
+same pulse as K0. D and M jointly preselect ONE K1 from public K0 data; D's
+independent diagnostic preference never creates an additional world trial.
 
 This is an offline model pipeline, not the DES, ATMS persisted ledger,
 native OpenModelica G2 certification or an independent prospective result.
