@@ -1,0 +1,110 @@
+name: CAF-01 B first-dispatch — offline original SDK and masked diagnostic (ZERO provider)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_b_buffalo_live_visible.py'
+      - 'experiments/cafeteria/pc01/caf01_b_masked_diagnostic_cf.mjs'
+      - 'experiments/cafeteria/pc01/test_caf01_b_buffalo_live_visible.py'
+      - '.github/workflows/caf01-b-two-one-shot.yml'
+      - '.github/workflows/caf01-b-two-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  B-independent-dry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline provider-input tests including two-case asymmetry
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_b_buffalo_live_visible.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_b_producer_admission.py' -v
+      - name: Generate CAF01 strict original Buffalo-visible object with NO provider
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_b_buffalo_live_visible.py prepare --out artifacts/b-visible-CAF01
+          test -f artifacts/b-visible-CAF01/b-visible.json
+      - name: Install unchanged original Buffalo SD-AI SDK for offline transport smoke
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Run original Buffalo quantitative engine ONLY on offline synthetic CF response
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible-CAF01/b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/B-original-DRY
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/B-original-DRY/receipt.json").read_text())
+          assert r["live_provider_calls"]==0
+          assert r["intercepted_http_calls"]==1
+          assert r["model_returned"] is True
+          assert r["structured_request_seen"] is True
+          print("B_ORIGINAL_SDK_CAF01_SCHEMA_REACHED_OFFLINE_NO_REAL_INFERENCE")
+          PY
+      - name: Stage CAFN diagnostic ONLY and test provider payload in DRY RUN
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/CAFN-only
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_b_producer_admission import build
+          from caf01_g3 import CONTRACT
+          r=build("CAFN",json.loads(CONTRACT.read_text()))
+          Path("artifacts/CAFN-only/B_CAFN_PROVIDER_REQUEST.json").write_text(
+            json.dumps(r,sort_keys=True,ensure_ascii=False,indent=2)+"\n")
+          PY
+          B_CAFN_INPUT="$PWD/artifacts/CAFN-only/B_CAFN_PROVIDER_REQUEST.json" \
+          B_CAFN_OUTPUT="$PWD/artifacts/CAFN-dry" \
+          node experiments/cafeteria/pc01/caf01_b_masked_diagnostic_cf.mjs --dry-run
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/CAFN-dry/B_CAFN_RECEIPT.json").read_text())
+          assert r["status"]=="DRY_RUN_VALIDATED_NO_PROVIDER_CALL"
+          assert r["provider_calls_started"]==0
+          assert r["model_required"] is False
+          assert r["other_arm_data_read"] is False
+          print("B_CAFN_IDENTIFIABILITY_REQUEST_NO_NATIVE_MODEL_NO_PROVIDER_CALL")
+          PY
+      - name: Guard manual run budget and absolute inter-job isolation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          w=Path(".github/workflows/caf01-b-two-one-shot.yml").read_text()
+          assert w.count("github.run_number == 1")==2
+          assert w.count("github.run_attempt == 1")==2
+          assert w.count("github.ref == 'refs/heads/main'")==2
+          assert "RUN_CAF01_B_TWO_INDEPENDENT_ONCE" in w
+          assert "CAF01_B_PROVIDER_CALL_ATTEMPT_STARTED" in w
+          assert "CAFN_B_PROVIDER_CALL_ATTEMPT_STARTED" in w
+          assert "BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL" in w
+          assert "B_CAFN_AUTH: RUN_CAF01_B_TWO_INDEPENDENT_ONCE" in w
+          assert w.count("actions/upload-artifact@v4")==2
+          assert "for n in " not in w and "docker run" not in w
+          print("B_ONE_SHOT_PROVIDERS_PREPARED_NO_RETRIES_NO_SIMULATIONS")
+          PY

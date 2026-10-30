@@ -1,0 +1,132 @@
+name: CAF-01 B Buffalo — one original native proposal plus one masked diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RUN_CAF01_B_TWO_INDEPENDENT_ONCE (up to 2 one-shot real provider inferences)"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: caf01-b-two-independent-one-shot
+  cancel-in-progress: false
+
+jobs:
+  CAF01-original-Buffalo-SDK:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RUN_CAF01_B_TWO_INDEPENDENT_ONCE' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create ONLY original CAF01 native proposal input from public construction
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_b_buffalo_live_visible.py prepare --out artifacts/B-CAF01-visible
+      - name: Pin original Buffalo SD-AI code without modifications
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: One real Buffalo Cloudflare inference — CAF01 only (NO retries)
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/B-CAF01-visible/b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/B-CAF01-native
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "CAF01_B_PROVIDER_CALL_ATTEMPT_STARTED=1/1"
+          node scripts/arena_b_openrouter_cloudflare.mjs
+      - name: Independently preserve native source and classify adapter limitations
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f artifacts/B-CAF01-native/native-output.json ]; then
+            python experiments/cafeteria/pc01/caf01_b_buffalo_live_visible.py intake \
+              --native artifacts/B-CAF01-native/native-output.json \
+              --out artifacts/B-CAF01-adapter
+          else
+            echo "B_CAF01_NO_NATIVE_OUTPUT_PROVIDER_NOT_SCIENCE_FAILURE"
+          fi
+      - name: Archive original Buffalo response, call markers and adapter report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-B-original-native-once-${{ github.run_id }}
+          path: |
+            artifacts/B-CAF01-visible/
+            artifacts/B-CAF01-native/
+            artifacts/B-CAF01-adapter/
+          if-no-files-found: warn
+          retention-days: 90
+
+  CAFN-masked-independent-diagnostic:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RUN_CAF01_B_TWO_INDEPENDENT_ONCE' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage CAFN ONLY — no CAF01 original model, history, or other arm result
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/CAFN-only
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_b_producer_admission import build
+          from caf01_g3 import CONTRACT
+          r=build("CAFN",json.loads(CONTRACT.read_text()))
+          assert r["task"]["type"]=="independent_identifiability_diagnosis"
+          assert r["task"]["native_model_required"] is False
+          assert [x["t_min"] for x in r["public_evidence"]["observations"]]==[0,40]
+          Path("artifacts/CAFN-only/B_CAFN_PROVIDER_REQUEST.json").write_text(
+            json.dumps(r,sort_keys=True,ensure_ascii=False,indent=2)+"\n")
+          PY
+      - name: One real masked identifiability diagnostic using same provider model
+        env:
+          B_CAFN_INPUT: ${{ github.workspace }}/artifacts/CAFN-only/B_CAFN_PROVIDER_REQUEST.json
+          B_CAFN_OUTPUT: ${{ github.workspace }}/artifacts/CAFN-diagnostic
+          B_CAFN_AUTH: RUN_CAF01_B_TWO_INDEPENDENT_ONCE
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "CAFN_B_PROVIDER_CALL_ATTEMPT_STARTED=1/1"
+          node experiments/cafeteria/pc01/caf01_b_masked_diagnostic_cf.mjs
+      - name: Archive only CAFN independent diagnostic and exact prompt receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-B-CAFN-masked-diagnostic-once-${{ github.run_id }}
+          path: |
+            artifacts/CAFN-only/
+            artifacts/CAFN-diagnostic/
+          if-no-files-found: warn
+          retention-days: 90
