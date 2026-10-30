@@ -1,0 +1,133 @@
+name: CAF-01 G4 - external RFC3161 witness of frozen forecast (NO solvers)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf01-g4-external-tsa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  external-immutable-timestamp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download exact completed G4 native forecasts and preholdout candidate
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006338774
+          name: CAF01-G4-two-model-forecasts-run-41006338774
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-ORIGINAL
+      - name: Authenticate exact native results, G3 lock and G4 package byte hash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/G4-rfc3161-witness
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          p=Path(os.environ["RUNNER_TEMP"])/"G4-ORIGINAL"
+          package=p/"caf01-G4-preholdout-content/custody_candidate/preholdout-package.json"
+          expected="8ce3d5713df480201dfcb982b5aa291857a09584eeb5fa2456cacfdff179df8f"
+          h=hashlib.sha256(package.read_bytes()).hexdigest()
+          assert h==expected,"G4_PINNED_BYTES_CHANGED"
+          sha_file=p/"caf01-G4-preholdout-content/custody_candidate/preholdout-package.sha256"
+          assert sha_file.read_text().strip()==expected+"  preholdout-package.json"
+          d=json.loads(package.read_bytes())
+          assert d["custody"]["release_authorized"] is False
+          assert d["custody"]["state"]=="NOT_CUSTODIED_EXTERNAL_WITNESS_REQUIRED"
+          assert d["source_snapshot_sha256"]=="sha256:26ca23076a44410bcafc4a7a944a5d5f6c6528dd59c96e7459e43c93a68812ad"
+          assert d["selection_sha256"]=="sha256:8d01851ef98028b2afe756577a119346aea73c4cd806fe6ee5efbd8d0f1a5a3b"
+          assert d["actual_evaluation_values_included"] is False
+          assert d["g3_lock"]["arm_forecasts"]["D"]["status"]=="ABSTAIN_POINT_PARAMETER_UNIDENTIFIABLE"
+          assert d["g3_lock"]["arm_forecasts"]["M"]["status"]=="CONDITIONAL_POINT_FORECAST_NOT_STRUCTURAL_ID"
+          assert d["g3_lock"]["arm_forecasts"]["B"]["status"]=="NO_VALID_CANDIDATE"
+          original=p/"caf01-G4-preholdout-content/G4_MODEL_FORECAST_ATTEMPTS.json"
+          r=json.loads(original.read_bytes())
+          assert r["status"]=="BOTH_MODEL_FORECASTS_NATIVE_PASS"
+          assert r["new_native_model_attempts_consumed"]==2
+          assert r["DES_evaluation_world_runs"]==0
+          assert r["evaluation_truth_read"] is False
+          out=Path("artifacts/G4-rfc3161-witness")
+          binding={
+            "schema":"igc-caf01-g4-rfc3161-external-witness-binding/0.1",
+            "status":"SUBMITTED_FOR_EXTERNAL_TIMESTAMP_NOT_AN_EVALUATION_RELEASE",
+            "exact_G4_preholdout_file_sha256":"sha256:"+expected,
+            "G4_internal_content_sha256":d["preholdout_package_sha256"],
+            "G3_selection_sha256":d["selection_sha256"],
+            "DES_private_world_precommitment_public_hash":d["source_snapshot_sha256"],
+            "G5_public_precommit_receipt_content_sha256":
+               "sha256:feff6d77444455a49f39cac57a7f65f6eb1039318205b1e8dde8d10ef48355bd",
+            "G5_original_prior_external_custody":"NOT_VERIFIED",
+            "native_model_forecast_GitHub_run":41006338774,
+            "native_model_attempts_used":2,
+            "DES_evaluation_world_runs":0,
+            "evaluation_truth_read":False,
+            "future_evaluation_release_authorized":False,
+            "timestamp_authority":"freetsa.org RFC3161 independent service",
+            "statement":"Signed timestamp, if independently verified, proves these forecast and commitment hashes existed by its genTime; does not prove historical private DES parameters were committed independently before construction."
+          }
+          data=(json.dumps(binding,sort_keys=True,separators=(",",":"),ensure_ascii=False)+"\n").encode()
+          (out/"binding.json").write_bytes(data)
+          (out/"binding.sha256").write_text(hashlib.sha256(data).hexdigest()+"  binding.json\n")
+          (out/"preholdout-package.json").write_bytes(package.read_bytes())
+          (out/"preholdout-package.sha256").write_text(expected+"  preholdout-package.json\n")
+          print("G4_EXTERNAL_WITNESS_BINDING_BYTE_EXACT_PREHOLDOUT_HASH="+expected)
+          PY
+      - name: Create independent RFC3161 signed timestamp request of binding manifest
+        run: |
+          set -euo pipefail
+          cd artifacts/G4-rfc3161-witness
+          openssl ts -query -data binding.json -sha256 -cert -out binding.tsq
+          test -s binding.tsq
+          openssl ts -query -in binding.tsq -text | tee binding-request-details.txt
+      - name: Request one signed external timestamp, fail closed if unreachable
+        run: |
+          set -euo pipefail
+          cd artifacts/G4-rfc3161-witness
+          curl --fail --silent --show-error --retry 0 --max-time 35 \
+            -H 'Content-Type: application/timestamp-query' \
+            --data-binary '@binding.tsq' https://freetsa.org/tsr \
+            -o binding.tsr
+          test -s binding.tsr
+          openssl ts -reply -in binding.tsr -text > binding-response-details.txt
+          grep -F 'Status: Granted.' binding-response-details.txt
+      - name: Independently verify timestamp signature with pinned FreeTSA cert chain
+        run: |
+          set -euo pipefail
+          cd artifacts/G4-rfc3161-witness
+          curl -fsS --retry 0 --max-time 25 https://freetsa.org/files/tsa.crt -o tsa.crt
+          curl -fsS --retry 0 --max-time 25 https://freetsa.org/files/cacert.pem -o cacert.pem
+          echo '8bfb0305bb64e2571ca507552ef3245cb1c2fee8728e0ff8689225081ea13467  tsa.crt' | sha256sum -c -
+          echo '2151b61137ffa86bf664691ba67e7da0b19f98c758e3d228d5d8ebf27e044438  cacert.pem' | sha256sum -c -
+          openssl ts -verify -in binding.tsr -queryfile binding.tsq \
+            -CAfile cacert.pem -untrusted tsa.crt | tee verification.txt
+          grep -F 'Verification: OK' verification.txt
+          sha256sum -c binding.sha256
+          sha256sum -c preholdout-package.sha256
+          openssl ts -reply -in binding.tsr -text | grep -E 'Time stamp:|Serial number:|Policy OID:'
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          x=json.loads(Path("binding.json").read_bytes())
+          pkg=Path("preholdout-package.json").read_bytes()
+          assert x["exact_G4_preholdout_file_sha256"]=="sha256:"+hashlib.sha256(pkg).hexdigest()
+          assert x["future_evaluation_release_authorized"] is False
+          assert x["G5_original_prior_external_custody"]=="NOT_VERIFIED"
+          print("EXTERNAL_RFC3161_VERIFIED_CAF01_G4_FORECAST_HISTORICAL_G5_LIMIT_PRESERVED")
+          PY
+      - name: Publish full independently signed and locally verified evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-G4-rfc3161-independent-witness-${{ github.run_id }}
+          path: artifacts/G4-rfc3161-witness/
+          if-no-files-found: warn
+          retention-days: 90
