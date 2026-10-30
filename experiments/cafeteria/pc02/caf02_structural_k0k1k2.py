@@ -276,7 +276,10 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
          and number(policy.get("absolute_residual_max_orders"))
          and number(policy.get("numerical_guard_orders"))
          and policy["absolute_residual_max_orders"]==absolute_residual_max
-         and preselected["status"]=="K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION"
+         and preselected["status"] in (
+             "K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION",
+             "K1_PRECOMMITTED_POTENTIAL_HYPOTHESIS_REDUCTION",
+             "K1_PRECOMMITTED_NO_MODELLED_REDUCTION_ADEQUACY_TEST")
          and preselected["proposed_measurement"] is not None
          and set(evidence)=={"rate_per_minute","t_min","delivered"}
          and {k:evidence[k] for k in ("rate_per_minute","t_min")}
@@ -286,6 +289,16 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
              evidence["rate_per_minute"]*min(evidence["t_min"],20)+1e-8
          and number(absolute_residual_max) and absolute_residual_max>=0,
          "K1_NOT_PRECOMMITTED_OR_EVIDENCE_INVALID")
+    if preselected["status"].startswith("K1_PRECOMMITTED_"):
+        from caf02_joint_md_k1_design import hash_object, SCHEMA
+        need(preselected.get("schema")==SCHEMA
+             and preselected.get("K0_fingerprints",{}).get("M")==
+                 hash_object(k0)
+             and policy.get("method")=="JOINT_M_D_DESIGN_V1"
+             and policy["effective_revision_tolerance_orders"]==
+                 policy["absolute_residual_max_orders"]+
+                 policy["numerical_guard_orders"],
+             "JOINT_M_K0_OR_K1_POLICY_FINGERPRINT_MISMATCH")
     i=T_VALUES.index(evidence["t_min"])
     effective_tolerance=(
         policy["absolute_residual_max_orders"]+
