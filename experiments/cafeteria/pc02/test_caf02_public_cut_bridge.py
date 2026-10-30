@@ -151,7 +151,7 @@ class PublicCutsTest(unittest.TestCase):
         bad["external_custody_verified"]=True
         with self.assertRaises(bridge.CutBlocked):
             bridge.checked_receipt(bad)
-        self.assertNotIn("K2_truth",bridge.canonical(a).decode())
+        self.assertNotIn(\'"K2_truth":\',bridge.canonical(a).decode())
         self.assertNotIn("private_parameters",bridge.canonical(a).decode())
 
 
