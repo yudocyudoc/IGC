@@ -12,6 +12,7 @@ must be established separately before a prospective experiment can start.
 from __future__ import annotations
 from copy import deepcopy
 from hashlib import sha256
+from fractions import Fraction
 import json
 import re
 
@@ -229,11 +230,18 @@ def validate_k2_reserved(payload,g4a,g4b):
          and payload["world_precommitment_ref"]==g4a["world_precommitment_ref"],
          "K2_RESERVED_MASK_OR_WORLD_REF_INVALID")
     ys=payload["delivered"]
+    # The private DES schedules t_j=(j+1/2)/1.35, with acceptances at
+    # snapshot time INCLUDED. Simple floor(1.35*t) is WRONG at minutes 5
+    # and 10: there can be 7 and 14 accepted orders, respectively.
+    rate=Fraction(27,20)
+    arrivals=[Fraction(2*j+1,2)/rate for j in range(27)]
+    max_accepted=[sum(x<=t for x in arrivals) for t in TIMES]
+    need(max_accepted==[7,14,20,27,27,27],
+         "K2_PUBLIC_ARRIVAL_SCHEDULE_CHANGED")
     need(type(ys) is list and len(ys)==6
          and all(type(y) is int for y in ys)
          and all(0<=x<=y for x,y in zip([0]+ys[:-1],ys))
-         and all(y<=int(1.35*min(t,20)+1e-9)
-                 for y,t in zip(ys,TIMES)),
+         and all(y<=cap for y,cap in zip(ys,max_accepted)),
          "K2_RESERVED_INTEGER_OR_PHYSICAL_LIMIT")
     return ys
 
