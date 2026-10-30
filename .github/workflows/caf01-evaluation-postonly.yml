@@ -1,0 +1,123 @@
+name: CAF-01 post-only observed six points and frozen scores - NO solvers
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf01-evaluation-postonly.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reproduce-public-evaluation-result:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download single original reserved DES evaluation (READ ONLY)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41014808222
+          name: CAF01-reserved-evaluation-one-shot-41014808222
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/EVALUATION-ORIGINAL
+      - name: Download original frozen G4 (READ ONLY)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006338774
+          name: CAF01-G4-two-model-forecasts-run-41006338774
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-ORIGINAL
+      - name: Download existing signed FreeTSA witness (READ ONLY)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006622753
+          name: CAF01-G4-rfc3161-independent-witness-41006622753
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-WITNESS
+      - name: Audit exact evaluation bytes, reproduce frozen scoring, print public observations
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,sys
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          sys.path.insert(0,str(Path("experiments/cafeteria/pc01").resolve()))
+          from caf01_evaluation_github import load_frozen_package,score_locked,PACKAGE_SHA,G3_LOCK_SHA,WORLD_SHA
+          eva=root/"EVALUATION-ORIGINAL"
+          names={"01_DES_PUBLIC_EVALUATION.json","02_LOCKED_SCORES.json","03_SHA256_MANIFEST.json"}
+          assert {x.name for x in eva.iterdir()}==names,"EXTRA_OR_MISSING_EVALUATION_FILE"
+          def read(p): return json.loads(p.read_bytes())
+          def sha(p): return "sha256:"+hashlib.sha256(p.read_bytes()).hexdigest()
+          manifest=read(eva/"03_SHA256_MANIFEST.json")
+          assert manifest["GitHub_run_id"]=="41014808222"
+          assert manifest["one_DES_evaluation_attempt"]==1
+          assert manifest["no_additional_OpenModelica_RK4_or_Buffalo"] is True
+          assert set(manifest["files"])==names-{"03_SHA256_MANIFEST.json"}
+          for name,value in manifest["files"].items():
+              assert sha(eva/name)==value, "EVALUATION_HASH_INVALID"
+          g4=root/"G4-ORIGINAL/caf01-G4-preholdout-content/custody_candidate/preholdout-package.json"
+          witness=root/"G4-WITNESS"
+          pkg,_=load_frozen_package(g4,witness)
+          observed_file=read(eva/"01_DES_PUBLIC_EVALUATION.json")
+          scored_file=read(eva/"02_LOCKED_SCORES.json")
+          assert all(scored_file.get(k)==v for k,v in observed_file.items())
+          assert set(scored_file)==set(observed_file)|{"scoring"}
+          assert observed_file["schema"]=="igc-caf01-reserved-evaluation-g5-waiver/0.1"
+          assert observed_file["scientific_status"]=="DESCRIPTIVE_EVALUATION_WITH_HISTORICAL_G5_PROTOCOL_DEVIATION"
+          assert observed_file["historical_G5_external_custody"]=="NOT_VERIFIED"
+          assert observed_file["historical_G5_requirement"]=="EXPLICITLY_WAIVED_NOT_RETROACTIVELY_SATISFIED"
+          assert observed_file["evaluation_DES_runs_consumed_this_attempt"]==1
+          assert observed_file["original_construction_budget_exceeded"] is True
+          assert observed_file["no_refit_no_replacement"] is True
+          assert observed_file["g4_exact_file_sha256"]=="sha256:"+PACKAGE_SHA
+          assert observed_file["g3_forecast_lock_sha256"]==G3_LOCK_SHA
+          assert observed_file["source_snapshot_sha256"]==WORLD_SHA
+          rows=observed_file["evaluation_readouts"]
+          assert [r["t_min"] for r in rows]==[0,5,10,15,20,30,40]
+          assert [r["accepted_cum_orders"] for r in rows]==[0,8,15,23,30,30,30]
+          assert all(r["accepted_cum_orders"]==r["delivered_cum_orders"]+r["pending_orders"] for r in rows)
+          assert all(r["delivered_cum_orders"]>=0 and r["pending_orders"]>=0 for r in rows)
+          observed=observed_file["primary_observed_delivered_six_times"]
+          assert len(observed)==6 and all(type(x) is int for x in observed)
+          assert observed==[r["delivered_cum_orders"] for r in rows[1:]]
+          scoring=score_locked(pkg,observed)
+          assert scoring==scored_file["scoring"],"ORIGINAL_SCORES_NOT_REPRODUCIBLE"
+          assert set(scoring["scores"]).issubset({"M","REF-CAF","REF-SCALE"})
+          assert "M" in scoring["scores"] and "REF-SCALE" in scoring["scores"]
+          assert scoring["D"]["competitive_MAE"] is None
+          assert scoring["Buffalo"]["competitive_MAE"] is None
+          print("CAF01_EVAL_POSTONLY_STATUS=PASS_ORIGINAL_DATA_AND_FROZEN_SCORES")
+          print("CAF01_EVAL_POSTONLY_OBSERVED_DELIVERED="+json.dumps(observed))
+          print("CAF01_EVAL_POSTONLY_ACCEPTED="+json.dumps([x["accepted_cum_orders"] for x in rows[1:]]))
+          for name in ("M","REF-CAF","REF-SCALE"):
+              if name in scoring["scores"]:
+                  item=scoring["scores"][name]
+                  print("CAF01_EVAL_POSTONLY_"+name+"_MAE="+str(item["MAE_delivered_orders"]))
+                  print("CAF01_EVAL_POSTONLY_"+name+"_RMSE="+str(item["RMSE_delivered_orders"]))
+              else:
+                  print("CAF01_EVAL_POSTONLY_"+name+"_ABSTENTION")
+          print("CAF01_EVAL_POSTONLY_COMPARISONS="+json.dumps(scoring["comparisons"],sort_keys=True))
+          print("CAF01_EVAL_POSTONLY_G5_HISTORICAL_CUSTODY_NOT_VERIFIED")
+          print("CAF01_EVAL_POSTONLY_NO_DES_NO_OMC_NO_RK4_NO_PROVIDER")
+          summary=Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a") as f:
+              f.write("# CAF-01 — evaluación reservada: resultado verificado\n\n")
+              f.write("Solo lectura de los artefactos originales; ninguna simulación nueva.\n\n")
+              f.write("| Minuto | Aceptados | Entregados |\n|---:|---:|---:|\n")
+              for r in rows[1:]:
+                  f.write(f"| {r['t_min']} | {r['accepted_cum_orders']} | {r['delivered_cum_orders']} |\n")
+              f.write("\n| Participante | MAE | RMSE | Condición |\n|---|---:|---:|---|\n")
+              for name in ("M","REF-CAF","REF-SCALE"):
+                  if name in scoring["scores"]:
+                      s=scoring["scores"][name]
+                      f.write(f"| {name} | {s['MAE_delivered_orders']:.6f} | {s['RMSE_delivered_orders']:.6f} | puntuado |\n")
+                  else:
+                      f.write(f"| {name} | — | — | abstención |\n")
+              f.write("| D | — | — | abstención puntual |\n")
+              f.write("| Buffalo | — | — | sin candidato |\n\n")
+              f.write("G5 previo sin custodia externa histórica verificada; waiver expreso. Resultado descriptivo, no generalización.\n")
+          PY
