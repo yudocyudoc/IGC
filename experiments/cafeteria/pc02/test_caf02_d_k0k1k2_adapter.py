@@ -94,6 +94,9 @@ class DCAF02AdapterTests(unittest.TestCase):
         forecast=d.prepare_k2(result,empty_revision,p)
         self.assertIsNone(forecast["K0_union"])
         self.assertIsNone(forecast["K1_union"])
+        self.assertEqual(forecast["K0_pre_K2_point_decision"]["status"],
+                         "ABSTAIN_ALL_NO_ADEQUATE_D_CANDIDATE")
+        self.assertIsNone(forecast["K1_pre_K2_point_decision"]["point_delivered"])
 
     def test_nonbinding_D_capacities_alias_in_K0_but_not_future(self):
         initial=d.predicted(2,72,1,1.2,d.TIMES)
@@ -216,6 +219,11 @@ class DCAF02AdapterTests(unittest.TestCase):
         self.assertIsNotNone(vals)
         self.assertGreater(vals["candidate_count"],1)
         self.assertEqual(len(vals["lower"]),6)
+        decision=forecast["K0_pre_K2_point_decision"]
+        self.assertIn(decision["status"],
+                      ("POINT_ELIGIBLE_MID_ENVELOPE","SET_ONLY_ABSTAIN_POINT"))
+        self.assertEqual(decision["point_delivered"] is not None,
+                         decision["status"]=="POINT_ELIGIBLE_MID_ENVELOPE")
         self.assertEqual(len(vals["upper"]),6)
         self.assertTrue(all(a<=b for a,b in zip(vals["lower"],vals["upper"])))
         # Scorer is pure and does not secretly read any DES world.
