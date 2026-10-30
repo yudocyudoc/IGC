@@ -73,6 +73,7 @@ def prepare(out):
         # Every one-shot script independently loads the unchanged material
         # catalogue and exactly the published package. No source edits.
         loader="\n".join([
+            f'cd("{out.resolve().as_posix()}");',
             f'loadFile("{(HERE.parents[2]/"src/modelica/IGCMolecules.mo").resolve().as_posix()}");',
             f'loadFile("{(HERE.parents[2]/"src/modelica/IGCInformationMolecules.mo").resolve().as_posix()}");',
             f'loadFile("{(out/"CAF01MPreflight.mo").resolve().as_posix()}");',
