@@ -28,7 +28,8 @@ HERE = Path(__file__).resolve().parent
 EVIDENCE_PATH = HERE / "public_inputs/run_40915090599/CAF01.json"
 EVIDENCE_SHA256 = "727501a3b5b33a63ab5a5d5f0f907d5431d0ee4f0d8b24ffd6f97758d59386fb"
 PARENT_SHA256 = "e77dbbabc18370104f74c1ee88b86ec3a29d91a2cb3ec30b546a882f4a3675b3"
-PARENT_RUN = "40974820126"
+PARENT_RUN = "40974820126"           # the RK4 screening run containing this file
+CONSTRUCTION_RUN = "40915090599"     # its upstream physical DES construction run
 PARENT_ARTIFACT_ID = "12941329156"
 TIMES_MINUTES = (0, 5, 10, 15, 20, 30, 40)
 STEP_HOURS = 1 / 120
@@ -53,7 +54,7 @@ def read_parent(path):
     obj = json.loads(raw)
     require(obj.get("case") == "CAF01"
             and obj.get("schema") == "igc-caf01-d-only-rk4-screen/0.1"
-            and obj.get("source_GitHub_workflow_run") == PARENT_RUN
+            and obj.get("source_GitHub_workflow_run") == CONSTRUCTION_RUN
             and obj.get("source_world_precommit") == WORLD
             and obj.get("source_evidence_file_sha256") == "sha256:" + EVIDENCE_SHA256
             and obj.get("actual_RK4_invocations_this_case") == 18
@@ -165,7 +166,8 @@ def prepare(parent_file, output_dir):
     manifest = {
         "schema": "igc-caf01-d-native-g2/0.1",
         "stage": "PREPARED_ONLY_NOT_SOLVER_VERIFIED",
-        "source_run": PARENT_RUN, "source_artifact_id": PARENT_ARTIFACT_ID,
+        "source_RK4_screen_run": PARENT_RUN, "source_DES_construction_run": CONSTRUCTION_RUN,
+        "source_artifact_id": PARENT_ARTIFACT_ID,
         "source_file_sha256": "sha256:" + PARENT_SHA256,
         "public_evidence_sha256": "sha256:" + EVIDENCE_SHA256,
         "world_precommit": WORLD,
@@ -247,7 +249,8 @@ def verify(out):
     result = {
         "schema":"igc-caf01-d-g2-receipts/0.1",
         "status":"ALL_THREE_NATIVE_G2_PASSED",
-        "source_GitHub_run":PARENT_RUN,
+        "source_RK4_screen_run":PARENT_RUN,
+        "source_DES_construction_run":CONSTRUCTION_RUN,
         "source_public_evidence":"sha256:"+EVIDENCE_SHA256,
         "physical_balance_ceiling":BOUND_MASS,
         "RK4_OMC_parity_ceiling":BOUND_PARITY,
