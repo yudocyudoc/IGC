@@ -187,6 +187,43 @@ def integrate_c00(tau_p,tau_d,cap_per_hour,rate,duration=20,step=DT_MIN):
     return samples
 
 
+def construction_only_references(obs,construction_rate,future_rate):
+    """Fixed rules from G4, recomputed only with public construction.
+
+    REF-CAF estimates a public effective delivery rate, not a physical DES
+    capacity; REF-SCALE proportionally transfers deliveries. No future truth.
+    """
+    c=[0,*obs]
+    eligible=[]
+    for i in range(4):
+        a,b=TIMES[i:i+2]
+        if (construction_rate*a-c[i] > 1
+            and construction_rate*b-c[i+1] > 1):
+            eligible.append((c[i+1]-c[i])/(b-a))
+    ref_caf = None
+    if len(eligible)>=2:
+        mu=float(median(eligible))
+        ref_caf={
+            "status":"READY_EMPIRICAL_ONLY_NOT_PHYSICAL_CAPACITY",
+            "mu_effective_orders_per_min":mu,
+            "predicted_delivered":[min(future_rate*min(t,20),mu*t)
+                                   for t in TIMES[1:]],
+            "construction_rate_samples":eligible,
+        }
+    else:
+        ref_caf={"status":"ABSTAIN_FEWER_THAN_TWO_SATURATED_CONSTRUCTION_WINDOWS",
+                 "predicted_delivered":None,
+                 "construction_rate_samples":eligible}
+    ref_scale={
+        "status":"READY_PROPORTIONALITY_CONTROL",
+        "ratio":future_rate/construction_rate,
+        "predicted_delivered":[min(future_rate*min(t,20),
+                                   future_rate/construction_rate*y)
+                               for t,y in zip(TIMES[1:],obs)],
+    }
+    return {"REF_CAF":ref_caf,"REF_SCALE":ref_scale}
+
+
 def model_group_key(tau_p,tau_d,cap,construction_rate):
     """Guaranteed equal outputs during construction, not on any future pulse."""
     if cap>=construction_rate*60 - 1e-9:
@@ -284,6 +321,8 @@ def fit(policy,evidence):
         "nominal_compatible_candidates":len(compatible),
         "construction_equivalent_classes":len(classes),
         "construction_class_details":class_reports,
+        "frozen_rule_reference_proposals_construction_only":
+            construction_only_references(obs,rate,future_rate),
         "full_compatible_envelope_lower":low,
         "full_compatible_envelope_upper":high,
         "full_compatible_envelope_max_width_orders":width,
