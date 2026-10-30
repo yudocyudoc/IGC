@@ -71,6 +71,14 @@ jobs:
           assert "run-id: 40974820126" in wf
           assert "caf01-d-rk4-CAF01-run-40974820126" in wf
           assert 'for n in 1 2 3; do' in wf
+          assert 'if docker run' in wf
+          assert 'D_G2_${n}.attempt' in wf
+          assert 'D_G2_${n}.exit_code' in wf
+          assert 'D_G2_*_receipt.json' in wf
+          assert 'Verify EACH representative and persist all receipts' in wf
+          assert 'if: always()' in wf
+          assert 'PARTIAL_NATIVE_G2' in s
+          assert 'D_G2_{ordinal}_receipt.json' in s
           assert "CAF01_D_G2_OMC_INVOCATION_STARTED" in wf
           assert "docker run" in wf
           assert "openmodelica/openmodelica:v1.26.5-minimal" in wf
