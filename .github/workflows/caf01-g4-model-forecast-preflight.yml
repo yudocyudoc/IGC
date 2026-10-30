@@ -112,7 +112,7 @@ jobs:
           assert "github.ref == 'refs/heads/main'" in w
           assert "github.event_name == 'push'" in w
           assert "for arm in D M; do" in w
-          assert w.count("CAF01_\${arm}_FORECAST.attempt")>=1
+          assert "CAF01_${arm}_FORECAST" in w and "${prefix}.attempt" in w
           assert "sudo chown -R" in w
           assert "omc " in w
           assert "DES" not in w or "DES" in "DES"
