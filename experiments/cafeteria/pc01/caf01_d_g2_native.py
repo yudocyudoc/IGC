@@ -239,6 +239,14 @@ def verify(out):
             and [x["ordinal"] for x in mf["selected_models"]]==[1,2,3]
             and [x["topology_stocks"] for x in mf["selected_models"]]==[1,2,3],
             "D_G2_PREFLIGHT_MANIFEST_BAD")
+    def optional_file_sha256(file):
+        # A damaged or unreadable per-candidate file must not abort evaluation
+        # of other candidates before their independent receipts are persisted.
+        try:
+            return sha(file.read_bytes()) if file.is_file() else None
+        except OSError:
+            return None
+
     checks = []
     for info in mf["selected_models"]:
         ordinal = info["ordinal"]
@@ -254,8 +262,8 @@ def verify(out):
             "reason_code":None,
             "invocation_started":attempted,
             "native_source_sha256":info["source_sha256"],
-            "native_csv_sha256":sha(path.read_bytes()) if path.is_file() else None,
-            "native_log_sha256":sha(log_path.read_bytes()) if log_path.is_file() else None,
+            "native_csv_sha256":optional_file_sha256(path),
+            "native_log_sha256":optional_file_sha256(log_path),
             "rk4_receipt_sha256":info["rk4_receipt_sha256"],
             "balance_max_abs":None,
             "rk4_native_max_abs_delta":None,
