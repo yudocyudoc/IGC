@@ -1,0 +1,202 @@
+{
+  "schema": "igc-caf02-independent-k0k1k2-proposal/0.1",
+  "status": "DRAFT_FOR_REVIEW_NOT_FROZEN_NOT_AUTHORIZED",
+  "source_plan": "docs/ARENA_PLAN_CAMPANA_CAFETERIA_V3_0_2026-10-27.md#section-7",
+  "former_synthetic_preflight": "experiments/cafeteria/pc02/CAF02_INFORME_DISCRIMINABILIDAD_ACOTADA_2026-10-30.md",
+  "question": "Can K1 evidence reduce observationally compatible C00/C01 hypotheses without false exclusion and improve K2 prospective set forecast?",
+  "scope": {
+    "primary": "M_TWO_E1_STRUCTURES_C00_C01_ONLY",
+    "additional_arms": "D_AND_B_DIAGNOSTICS_IF_NATIVE_FEASIBLE_NOT_PRIMARY_CAUSAL_CLAIM",
+    "new_molecules": false,
+    "new_architecture": false,
+    "real_cafe": false
+  },
+  "units": {
+    "time": "minutes",
+    "stock": "accepted_order_equivalents",
+    "rate": "orders_per_minute",
+    "candidate_native_time": "hours",
+    "candidate_native_capacity": "items_per_hour"
+  },
+  "boundary": {
+    "initial_material_stocks": 0,
+    "initial_delivered": 0,
+    "no_loss": true,
+    "no_cancellations": true,
+    "orders_one_type": true,
+    "stop_minutes": 40,
+    "reset_each_cut": true,
+    "arrival_pulse_half_open_at_20": true
+  },
+  "rival_structures": {
+    "C00": [
+      "preparation",
+      "dispatch"
+    ],
+    "C01": [
+      "preparation",
+      "dispatch",
+      "transit"
+    ],
+    "candidate_library": "experiments/e1/registry.base.json"
+  },
+  "candidate_parameters": {
+    "preparation_tau_minutes": [
+      1,
+      1.5,
+      2,
+      3
+    ],
+    "dispatch_tau_minutes": [
+      1,
+      1.5,
+      2,
+      3
+    ],
+    "shared_preparation_dispatch_capacity_orders_per_hour": [
+      72,
+      100
+    ],
+    "transit_tau_minutes_C01": [
+      0.25,
+      1,
+      6
+    ],
+    "transit_capacity_orders_per_hour_C01": 100,
+    "initial_stock": 0,
+    "total_nominal_grid_count_C00": 32,
+    "total_nominal_grid_count_C01": 96,
+    "interpretation": "SYNTHETIC_EFFECTIVE_STOCK_TO_OUTFLOW_RESPONSE_TIMES_NOT_REAL_SERVICE_MINUTES",
+    "prohibit_post_K0_grid_expansion": true
+  },
+  "k0": {
+    "public_arrival_pulse": {
+      "rate_per_minute": 1.2,
+      "duration_minutes": 20
+    },
+    "delivered_observation_times_minutes": [
+      5,
+      10
+    ],
+    "model_adequacy_absolute_MAE_orders": 1,
+    "model_adequacy_relative_to_family_best_MAE_orders": 0.4,
+    "rule": "KEEP_ALL_GRID_CANDIDATES_MAE_LE_MIN_FAMILY_BEST_PLUS_0_4_AND_ABSOLUTE_1_0",
+    "zero_candidates": "K0_NO_ADEQUATE_CANDIDATE"
+  },
+  "k1": {
+    "menu": [
+      {
+        "rate_per_minute": 1,
+        "t_min": 10,
+        "duration_minutes": 20
+      },
+      {
+        "rate_per_minute": 1.5,
+        "t_min": 20,
+        "duration_minutes": 20
+      },
+      {
+        "rate_per_minute": 1.8,
+        "t_min": 30,
+        "duration_minutes": 20
+      }
+    ],
+    "observable": "ONE_CUMULATIVE_DELIVERY_COUNT_AFTER_EMPTY_RESET",
+    "absolute_residual_tolerance_orders": 0.75,
+    "numerical_allowance_orders": 0.02,
+    "effective_revision_tolerance_orders": 0.77,
+    "minimum_positive_expanded_gap_orders": 0.05,
+    "selection": "MAX_POSITIVE_SEPARATION_OF_FULL_K0_CALIBRATED_FAMILY_INTERVALS_EXPANDED_BY_0_77_EACH_WITH_MENU_ORDER_TIEBREAK",
+    "if_no_two_families": "NO_DISCRIMINATIVE_K1_SKIP_K1_RUN",
+    "if_all_intervals_overlap": "NO_GUARANTEED_SEPARATION_SKIP_K1_RUN",
+    "if_no_family_survives": "REJECT_BOTH_NO_IMPUTATION",
+    "revision": "KEEP_EACH_K0_CANDIDATE_IF_ABS(PRED_MINUS_K1_OBS)_LE_0_77_NO_RECALIBRATION"
+  },
+  "k2": {
+    "future_public_pulse": {
+      "rate_per_minute": 1.35,
+      "duration_minutes": 20
+    },
+    "delivered_scored_times_minutes": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      40
+    ],
+    "measurement": "REAL_DES_INTEGER_DELIVERIES_ONLY_AFTER_G4_SEAL",
+    "comparison": "SEPARATELY_SEALED_K0_AND_K1_PREDICTIONS_ON_SAME_K2_WORLD_AND_RESET",
+    "no_k1": "K1_IDENTICAL_TO_K0_NO_REVISION_CLAIM",
+    "no_survivor": "ABSTAIN_NO_PREDICTION",
+    "set_loss_definition": "MEAN_6_OF_HALF_ENVELOPE_WIDTH_PLUS_DISTANCE_TO_INTERVAL",
+    "delta_success_at_least_orders": 0.25,
+    "point_eligibility_max_width_orders": 2,
+    "references": [
+      "REF_CAF",
+      "REF_SCALE"
+    ],
+    "refuse_zero_loss_for_abstention": true,
+    "paired_score_requires_both_nonempty": true,
+    "secondary": [
+      "MAE_IF_POINT_ELIGIBLE",
+      "RMSE_IF_POINT_ELIGIBLE",
+      "COVERAGE_OF_SIX",
+      "MEAN_WIDTH",
+      "MAX_WIDTH",
+      "FALSE_STRUCTURAL_EXCLUSION",
+      "ABSTENTION",
+      "RUN_COUNTS"
+    ],
+    "reference_version_contract": {
+      "REF_CAF": "REF_CAF_K0_1WINDOW_2026-10-30",
+      "REF_CAF_rule": "mu=(D10-D5)/5; only when ideal design backlog exceeds one order at both 5 and 10; K2 D_hat(t)=min(A_K2(t),mu*t); otherwise ABSTAIN",
+      "REF_SCALE": "REF_SCALE_K0_PIECEWISE_EXTRAPOLATION_2026-10-30",
+      "REF_SCALE_rule": "piecewise construct D_K0(0)=0,D5,D10; extrapolate linearly beyond 10 using (D10-D5)/5, cap by A_K0; scale by K2/K0 input rate, cap by A_K2",
+      "common_K0_information": "t=5_and_t=10_delivered_only_NO_ACTUAL_PRIVATE_ARRIVALS",
+      "earlier_CAF01_versions_reused": false,
+      "baseline_unchanged_from_K0_to_K1": true
+    }
+  },
+  "resource_ceiling": {
+    "world_DES": {
+      "K0_max": 1,
+      "K1_max_if_selected": 1,
+      "K2_max_if_authorized": 1,
+      "total_max": 3,
+      "retries": 0
+    },
+    "synthetic_E1_construction_candidate_calculations": {
+      "C00": 32,
+      "C01": 96,
+      "total": 128
+    },
+    "selected_K1_candidate_forecasts_max": 384,
+    "native_G2_verification_max_proposed": 12,
+    "D_provider_inferences_max": 0,
+    "B_provider_inferences_max_proposed": 1,
+    "M_provider_inferences_max": 0,
+    "autonomous_repair_loops": 0,
+    "aborted_attempts_charge_budget": true,
+    "other_solver_budgets": "MUST_NOT_CLAIM_NATIVE_PARITY_FOR_UNEXECUTED_CANDIDATES",
+    "K2_prior_and_posterior_candidate_forecasts_max": 256,
+    "total_candidate_trajectory_calculations_upper_bound": 768,
+    "full_menu_required_for_select_k1": true
+  },
+  "custody": {
+    "G5_world_source_and_private_parameters_before_K0": "REQUIRED_EXTERNAL_WITNESS",
+    "G4a_K0_models_selected_K1_measurement_and_K2_prior_before_K1": "REQUIRED_EXTERNAL_WITNESS",
+    "G4b_K1_revisions_and_K2_post_before_K2": "REQUIRED_EXTERNAL_WITNESS",
+    "world_conceptually_independent_of_E1": "REQUIRED_DOCUMENTED_CONSTRUCTION_WITH_DIFFERENCES",
+    "allow_historical_CAF01_data_as_new_world": false
+  },
+  "unresolved_gates": {
+    "actual_DES_count_vs_fluid_model_discrepancy": "REVIEW_BEFORE_G5_NO_HOLDOUT_TUNING",
+    "native_G2_vs_surrogate_equivalence": "CHECK_WITHOUT_USING_NEW_WORLD_DATA",
+    "numerical_allowance_end_to_end": "PRELIMINARY_GRID_STEP_REFINEMENT_NOT_FORMAL_GLOBAL_PROOF",
+    "D_B_scope_and_budget": "REPORT_NOT_TESTED_IF_CANNOT_RUN_NATIVELY",
+    "external_custody": "NOT_YET_ESTABLISHED",
+    "source_world": "NOT_CREATED"
+  },
+  "no_world_runs_authorized": true
+}

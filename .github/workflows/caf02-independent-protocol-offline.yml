@@ -1,0 +1,42 @@
+name: CAF-02 independent protocol draft - offline numeric and scoring checks
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json'
+      - 'experiments/cafeteria/pc02/CAF02_PROTOCOLO_INDEPENDIENTE_K0_K1_K2_PROPUESTA_2026-10-30.md'
+      - 'experiments/cafeteria/pc02/caf02_k2_set_scoring.py'
+      - 'experiments/cafeteria/pc02/caf02_k0_limited_references.py'
+      - 'experiments/cafeteria/pc02/caf02_numerical_margin_preflight.py'
+      - 'experiments/cafeteria/pc02/test_caf02_independent_protocol_draft.py'
+      - '.github/workflows/caf02-independent-protocol-offline.yml'
+permissions:
+  contents: read
+
+jobs:
+  draft-only-no-world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate scoring, abstentions, and draft policy (no K2 truth)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_independent_protocol_draft.py' -v
+      - name: Inspect finite grid Heun step refinement only (no DES, no native OMC)
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_numerical_margin_preflight.py \
+            --output-dir "$RUNNER_TEMP/CAF02-NUMERIC-FINITE-GRID"
+          echo 'NUMERICAL_CONVERGENCE_NOT_NATIVE_PARITY_NOT_DES_MODEL_VALIDITY'
+      - name: Retain limited numerical evidence as CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-PROTOCOL-NUMERICAL-WITNESS-${{ github.run_id }}
+          path: ${{ runner.temp }}/CAF02-NUMERIC-FINITE-GRID/
+          if-no-files-found: error
+          retention-days: 45
