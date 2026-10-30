@@ -1,0 +1,58 @@
+name: CAF-01 D G2 — post-only audit of failed D1 (NO solvers)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_d_g2_postonly_recovery.py'
+      - 'experiments/cafeteria/pc01/caf01_d_g2_native.py'
+      - '.github/workflows/caf01-d-g2-postonly.yml'
+      - '.github/workflows/caf01-d-g2-remainder.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  salvage-existing-D1-no-solver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 40982542200
+          name: caf01-D-native-G2-run-40982542200
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/failed-G2-original
+      - name: Re-audit immutable D1 CSV and native log; preserve prior FAIL
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_d_g2_postonly_recovery.py \
+            --original "$RUNNER_TEMP/failed-G2-original" \
+            --out "$RUNNER_TEMP/failed-G2-postonly-audited"
+          python - <<'PY'
+          import os,json,sys
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"failed-G2-postonly-audited"
+          r=json.loads((p/"D_G2_VERIFIED.json").read_bytes())
+          assert r["status"]=="PARTIAL_NATIVE_G2"
+          assert [x["status"] for x in r["native_candidates"]]==["PASS","FAIL","FAIL"]
+          assert r["native_construction_simulations_consumed"]==1
+          assert (p/"historical_receipts_do_not_overwrite/D_G2_VERIFIED.json").is_file()
+          assert sorted(x.name for x in p.glob("D_G2_*_res.csv"))==["D_G2_1_res.csv"]
+          print("CAFG2_D1_RECOVERED_NATIVE_PASS_D2_D3_UNEXECUTED_ZERO_NEW_SOLVERS")
+          PY
+      - name: Publish independent supplemental D1 recovery record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf01-D1-G2-POSTONLY-no-new-solver-${{ github.run_id }}
+          path: ${{ runner.temp }}/failed-G2-postonly-audited/
+          retention-days: 90
+          if-no-files-found: warn
