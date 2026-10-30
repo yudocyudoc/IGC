@@ -4,6 +4,7 @@ on:
     paths:
       - 'experiments/cafeteria/pc02/caf02_public_cut_bridge.py'
       - 'experiments/cafeteria/pc02/caf02_private_source_boundary.py'
+      - 'experiments/cafeteria/pc02/caf02_k2_adjudicator_boundary.py'
       - 'experiments/cafeteria/pc02/caf02_g2_native_correspondence_plan.py'
       - 'experiments/cafeteria/pc02/test_caf02_public_cut_bridge.py'
       - 'experiments/cafeteria/pc02/test_caf02_private_source_boundary.py'
