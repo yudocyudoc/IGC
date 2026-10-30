@@ -37,7 +37,29 @@ La mejor alternativa C00 hipotética presenta esta curva en construcción:
 | 30 | 24 | 23.8076 | −0.1924 |
 | 40 | 24 | 23.9931 | −0.0069 |
 
-**0** combinaciones del subconjunto histórico alcanzaron la banda de comparabilidad. **22** combinaciones nominales del barrido completo sí la alcanzaron, pero corresponden a **11 clases diferentes**: a una entrada máxima de 72 pedidos/h con estados iniciales vacíos, las capacidades 72/100 pedidos/h nunca restringen el flujo de las dos etapas y resultan equivalentes. No se contaron estas duplicaciones como 22 soluciones comportamentales independientes.
+**0** combinaciones del subconjunto histórico alcanzaron la banda de comparabilidad. **22** combinaciones nominales del barrido completo sí la alcanzaron; el desglose correcto de equivalencias observables es:
+
+| Nivel de equivalencia | Conteo | Qué distingue |
+|---|---:|---|
+| Combinaciones nominales | **22** | Tiempos ordenados de ambas etapas y capacidad nominal |
+| Agrupando capacidades sin efecto sobre el flujo | **11** | Las capacidades 72/100 pedidos/h son equivalentes para este pulso |
+| Agrupando también la permutación de tiempos `preparación ↔ despacho` | **7** | Respuestas acumuladas de entregas distintas **dentro de la cuadrícula** |
+
+Las siete parejas de tiempos **sin orden**, expresadas en minutos, son **{1,1}, {1,2}, {1,3}, {1,5}, {2,2}, {2,3}, {3,3}**; todas pertenecen al régimen en el que la capacidad no satura. El resultado refleja una simetría **exacta de las ecuaciones lineales**, corroborada con comparaciones numéricas sobre los seis tiempos, no una tolerancia arbitraria en el MAE.
+
+## Simetría de parámetros e identificabilidad de observables
+
+Para las dos moléculas BoundedQueue en régimen sin saturación y con condiciones iniciales vacías, la función de transferencia entre el flujo entrante y el flujo de entrega es:
+
+```text
+H(s) = 1 / [(1 + τ_preparación·s)(1 + τ_despacho·s)]
+```
+
+Como el denominador es simétrico, **intercambiar τ de preparación y τ de despacho no altera la trayectoria de entregas**. En particular, `(1 min, 3 min)` y `(3 min, 1 min)` producen exactamente la misma salida en el modelo lineal, aun cuando el inventario interno de cada etapa pueda ser diferente. Una observación exclusiva de entregas no puede atribuir un τ a su etapa concreta. La equivalencia 72/100 h⁻¹ es adicional: bajo este pulso público de 72 pedidos/h con stocks inicialmente vacíos, ninguna de esas dos capacidades restringe la salida.
+
+**Límite importante:** la simetría por permutación NO se presupone para capacidades de 20 pedidos/h, cuyo límite puede activarse y generar no linealidad. Tampoco que existan siete respuestas distintas en esta cuadrícula demuestra identificación de siete parejas a partir de seis observaciones discretas con error. Es un conteo de **clases de respuesta del barrido**, no un teorema de identificación estadística de la pareja sin orden.
+
+El parámetro de cada molécula `responseTime` regula `salida = stock/responseTime` antes de aplicar su límite. **No equivale automáticamente al tiempo de servicio físico por pedido**: esa conexión requiere una justificación de agregación y mediciones operacionales antes de fijar rangos para un estudio futuro.
 
 Diferencia numérica máxima entre Heun grueso/fino: **0.000188 pedidos**. Son resultados de una aproximación numérica auditada y un rango discreto, **no** una prueba matemática de óptimo global.
 
@@ -49,4 +71,11 @@ Diferencia numérica máxima entre Heun grueso/fino: **0.000188 pedidos**. Son r
 4. La incapacidad de igualar REF-CAF **en el subconjunto histórico inspeccionado** no demuestra imposibilidad para todos los tiempos mayores o para otras topologías C01/C02. Tampoco demuestra que SD sea inferior a una cola empírica simple.
 5. La evaluación reservada original permanece **cerrada**; ninguna predicción anterior fue corregida, sustituida o puntuada otra vez. La nueva parametrización **no** adquiere derecho a una puntuación competitiva en ese mundo ya revelado.
 
-**Decisión técnica sugerida:** antes de evaluar otra vez, obtener rangos de servicio sustentados operativamente y estudiar si el modelo puede identificar parámetros de forma estable a partir de construcción. Es un nuevo protocolo, no una enmienda retrospectiva de CAF-01.
+## Próximo protocolo: capacidad predictiva de clases equivalentes (todavía NO autorizado)
+
+1. **Antes de datos nuevos**, justificar físicamente rangos de `responseTime` como escala de vaciado del stock respecto a su flujo, distinguiéndola del tiempo de servicio por pedido. Fijar asimismo las capacidades, límites de los stocks, reglas de observación, arquitectura C00 y comparadores.
+2. **Calibración con construcción exclusivamente:** conservar el conjunto de pares compatibles y **sus clases equivalentes de salida**, no asignar arbitrariamente tiempos individuales a preparación/despacho. Informar dispersión y sensibilidad de los pronósticos, y abstenerse cuando los compatibles diverjan más allá de una tolerancia fijada **antes de ver evaluación**.
+3. **Nuevo mundo y datos reservados independientes:** preregistrar escenario, compromiso del mundo privado con custodia externa independiente **antes de construcción**, presupuesto de invocaciones, reglas G1–G5 y sello de pronósticos **antes de evaluación**. El DES de CAF-01 ya revelado no constituye otra evaluación válida.
+4. **Comparación prospectiva:** frente a REF-CAF y REF-SCALE, comparar MAE/RMSE fijados y la cobertura/anchura del conjunto pronosticado; separar predicción de entregas de cualquier pretensión de identificar etapas internas. Registrar abstenciones y resultados negativos sin reparametrización retrospectiva.
+
+**Decisión técnica:** **no** modificar las moléculas E1 por esta evidencia; **no** abrir todavía otra evaluación. El objetivo siguiente es pronosticar correctamente mediante clases observacionalmente equivalentes, con límites operacionales sustentados y una prueba futura independiente.
