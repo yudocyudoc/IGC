@@ -1,0 +1,52 @@
+name: CAF-02 class-prediction proposal - synthetic preflight only
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/**'
+      - '.github/workflows/caf02-class-proposal-preflight.yml'
+permissions:
+  contents: read
+
+jobs:
+  synthetic-classes-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test safety gates, capacity alias break-up, grouping and abstention
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_class_predictor.py' -v
+      - name: Build synthetic fixture inside runner - no real or old DES data
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path("experiments/cafeteria/pc02").resolve()))
+          from test_caf02_class_predictor import evidence
+          folder=Path(os.environ["RUNNER_TEMP"])
+          (folder/"CAF02_CONSTRUCTION_SYNTHETIC_ONLY.json").write_text(
+              json.dumps(evidence(),sort_keys=True,indent=2)+"\n")
+          print("CAF02_FIXTURE_SYNTHETIC_NOT_REAL_WORLD")
+          PY
+      - name: Run proposed class fitter, preserve all nominal future variants
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_class_predictor.py \
+            --policy experiments/cafeteria/pc02/fixtures/caf02_policy_SYNTHETIC.json \
+            --construction "$RUNNER_TEMP/CAF02_CONSTRUCTION_SYNTHETIC_ONLY.json" \
+            --output-dir "$RUNNER_TEMP/CAF02-CLASS-PROPOSAL"
+          echo 'CAF02_NO_DES_NO_OPENMODELICA_NO_PROVIDER_NO_HOLDOUT'
+      - name: Publish only explicitly synthetic proposal, not a forecast seal
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-SYNTHETIC-CLASS-DRYRUN-${{ github.run_id }}
+          path: ${{ runner.temp }}/CAF02-CLASS-PROPOSAL/
+          if-no-files-found: error
+          retention-days: 30
