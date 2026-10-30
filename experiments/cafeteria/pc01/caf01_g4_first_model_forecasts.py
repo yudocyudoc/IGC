@@ -17,7 +17,12 @@ import csv
 import hashlib
 import json
 import math
+import sys
 from pathlib import Path
+
+HERE=Path(__file__).resolve().parent
+ROOT=HERE.parents[2]
+sys.path.insert(0,str(ROOT))
 
 from caf01_g3 import CONTRACT,lock_forecasts,digest
 from caf01_g4 import prepare_preholdout_package,emit_custody_candidate
@@ -25,7 +30,6 @@ from caf01_m_producer_admission import published_caf_model_sources
 from scripts.arena_d_v01 import topology, modelica
 from scripts.arena_v0_contract import digest as topology_digest
 
-HERE=Path(__file__).resolve().parent
 TIMES=(5,10,15,20,30,40)
 HORIZON=2/3
 RATE=90
@@ -121,6 +125,7 @@ def prepare(d_folder,m_folder,g3_file,out):
     d_src,m_src,d_old,m_old=model_sources(m_folder,d_rec,m_rec)
     out.mkdir(parents=True,exist_ok=False)
     d_class=d_src.split("\n",1)[0].split()[1]
+    class_name="CAF01_C00_C72"
     (out/(d_class+".mo")).write_bytes(d_src.encode())
     (out/"CAF01MPreflight.mo").write_bytes(m_src.encode())
     (out/"G3_CONSTRUCTION_SELECTION.json").write_bytes(g3_file.read_bytes())
@@ -203,6 +208,7 @@ def verify_native(folder,arm):
         prevt=-1.0
         prev_del=-1.0
         mass_max=0.0
+        loss_max=0.0
         out=[]
         for row in rows:
             t=float(row["time"])
@@ -217,12 +223,13 @@ def verify_native(folder,arm):
                  "FORECAST_CSV_UNPHYSICAL")
             expected=RATE*min(max(t,0),1/3)
             mass_max=max(mass_max,abs(sum(state)+d+lost-expected))
+            loss_max=max(loss_max,abs(lost))
             need(abs(d-extra)<.008,"FORECAST_M_DELIVERY_ALIAS_CHANGED")
             prevt,prev_del=t,d
         need(abs(float(rows[0]["time"]))<1e-8
              and abs(prevt-HORIZON)<1e-6
              and mass_max<=.008
-             and abs(lost)<.008,
+             and loss_max<.008,
              "FORECAST_MASS_OR_GRID_FAILED")
         for minute in TIMES:
             samples=[float(row[delivered]) for row in rows
