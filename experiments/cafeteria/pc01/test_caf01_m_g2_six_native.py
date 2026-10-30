@@ -21,13 +21,23 @@ class TestMNativeG2Six(unittest.TestCase):
             (folder/f"M_G2_{n}.exit_code").write_text("1\n" if n==fail else "0\n")
             (folder/f"M_G2_{n}.log").write_text("native fictional solver log\n")
             (folder/f"M_G2_{n}.console.txt").write_text("stdout\n")
+            transit_count=int(item["structure"][-1])
+            fields=["time","inTransit","deliveredTotal",
+                    "receipt0.deliveries.level",
+                    "preparation0.stock.level","dispatch0.stock.level",
+                    *[f"transit{k}.stock.level" for k in range(transit_count)]]
             with (folder/item["expected_csv"]).open("w",newline="") as fp:
-                w=csv.DictWriter(fp,fieldnames=["time","inTransit","deliveredTotal"])
+                w=csv.DictWriter(fp,fieldnames=fields)
                 w.writeheader()
                 for i in range(81):
                     t=i/120
-                    w.writerow({"time":t,"inTransit":72*min(t,1/3),
-                                "deliveredTotal":0})
+                    record={"time":t,"inTransit":0,
+                            "deliveredTotal":0,"receipt0.deliveries.level":0,
+                            "preparation0.stock.level":72*min(t,1/3),
+                            "dispatch0.stock.level":0}
+                    for k in range(transit_count):
+                        record[f"transit{k}.stock.level"]=0
+                    w.writerow(record)
         return manifest
 
     def test_prepare_six_exact_preselected_sources_no_solvers(self):
@@ -79,17 +89,58 @@ class TestMNativeG2Six(unittest.TestCase):
             self.synthetic(folder)
             p=folder/"M_G2_3_res.csv"
             with p.open("w",newline="") as fp:
-                w=csv.DictWriter(fp,fieldnames=["time","inTransit","deliveredTotal"])
+                fields=["time","inTransit","deliveredTotal",
+                        "receipt0.deliveries.level",
+                        "preparation0.stock.level","dispatch0.stock.level",
+                        "transit0.stock.level"]
+                w=csv.DictWriter(fp,fieldnames=fields)
                 w.writeheader()
                 for i in range(81):
                     t=i/120
-                    w.writerow({"time":t,"inTransit":72*min(t,1/3)+1,
-                                "deliveredTotal":0})
+                    w.writerow({"time":t,"inTransit":0,
+                                "deliveredTotal":0,"receipt0.deliveries.level":0,
+                                "preparation0.stock.level":72*min(t,1/3)+1,
+                                "dispatch0.stock.level":0,"transit0.stock.level":0})
             r=verify(folder)
             self.assertEqual(r["native_candidates"][2]["status"],"FAIL")
             self.assertEqual(r["native_candidates"][2]["reason_code"],
                              "M_G2_NATIVE_MASS_BALANCE_FAILED")
             self.assertEqual(r["native_candidates"][0]["status"],"PASS")
+
+    def test_transit_only_report_is_not_entire_pending_stock(self):
+        # This would fail the OLD verifier even though the E1 physical levels
+        # conserve every order. The "inTransit" display is intentionally zero.
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"M"
+            self.synthetic(folder)
+            report=verify(folder)
+            self.assertEqual(report["native_g2_pass_count"],6)
+            for r in report["native_candidates"]:
+                self.assertEqual(r["status"],"PASS")
+                self.assertIn("preparation0.stock.level",
+                              r["native_material_stock_columns"])
+                self.assertIn("dispatch0.stock.level",
+                              r["native_material_stock_columns"])
+                self.assertAlmostEqual(r["balance_max_abs"],0,places=8)
+
+    def test_missing_one_material_stock_or_bad_transit_alias_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"M"
+            self.synthetic(folder)
+            target=folder/"M_G2_3_res.csv"
+            rows=list(csv.DictReader(target.open(newline="")))
+            fields=list(rows[0])
+            with target.open("w",newline="") as fp:
+                w=csv.DictWriter(fp,fieldnames=fields)
+                w.writeheader()
+                for row in rows:
+                    row["inTransit"]="2"
+                    w.writerow(row)
+            check=verify(folder)
+            self.assertEqual(check["native_candidates"][2]["status"],"FAIL")
+            self.assertEqual(check["native_candidates"][2]["reason_code"],
+                             "M_G2_NATIVE_REPORT_ALIAS_INCONSISTENT")
+            self.assertEqual(check["native_candidates"][0]["status"],"PASS")
 
     def test_only_first_manual_main_dispatch(self):
         good={"GITHUB_ACTIONS":"true","GITHUB_REF":"refs/heads/main",
