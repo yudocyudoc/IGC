@@ -315,7 +315,10 @@ def revise_k1(k0,common_selection,evidence,policy):
     n_after=sum(len(v) for v in out.values())
     structural_reduction=bool(excluded) and bool(after)
     parametric_only=n_after<n_before and not excluded
-    if not after:
+    if not before:
+        status="K0_NO_ADEQUATE_D_FAMILY_K1_OBSERVED"
+        kind="K0_ALREADY_NO_ADEQUATE_HYPOTHESIS"
+    elif not after:
         status="K1_NO_COMPATIBLE_D_FAMILY"
         kind="K1_ALL_K0_HYPOTHESES_CONTRADICTED"
     elif structural_reduction:
