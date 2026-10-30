@@ -17,7 +17,7 @@ El D2 histórico sí implementó un ciclo con nueva medición, revisión conjunt
 | Repertorio | Cadenas genéricas **D1/D2/D3** con 1, 2 o 3 stocks, sin pérdidas | E1 C00/C01 con 2 o 3 stocks |
 | Parámetros | **Un `response_time` compartido** entre etapas; capacidad compartida | Tiempos por etapa, tránsito configurable y capacidades definidas en su repertorio |
 | Calibración | RK4 existente `scripts.arena_d_v1_screen.integrate` | Integrador de moléculas E1 del protocolo |
-| Nueva evidencia K1 | **Un único pulso y dato escogidos conjuntamente por M+D**; D puede proponer diagnóstico adicional sin cambiar prueba | M elige una opción del menú común conforme al protocolo |
+| Nueva evidencia K1 | **Un único pulso y dato escogidos conjuntamente por M+D**; D puede proponer diagnóstico adicional sin cambiar prueba | M participa en la selección conjunta sobre su conjunto C00/C01 |
 | Predicción K2 | **Todos** los candidatos adecuados proyectados; envolvente, punto condicionado por ancho o abstención | Igual política de puntuación de conjuntos |
 | Capacidad nativa | Historial D1/D2 sí tuvo pruebas de OMC; **nuevo dominio todavía no certificado** | No implica G2 para toda la rejilla M |
 
