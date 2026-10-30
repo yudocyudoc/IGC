@@ -1,0 +1,92 @@
+name: CAF-01 D - native G2 preparation tests (MOCKED, NO OMC)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_d_g2_native.py'
+      - 'experiments/cafeteria/pc01/test_caf01_d_g2_native.py'
+      - '.github/workflows/caf01-d-g2-native.yml'
+      - '.github/workflows/caf01-d-g2-preflight.yml'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json'
+      - 'scripts/arena_d_v01.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  g2-mocked-preparation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Synthetic preparation and physical verification only (NO solver)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 \
+            -p test_caf01_d_g2_native.py -v
+      - name: Download actual immutable D result from approved GitHub run
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40974820126
+          name: caf01-d-rk4-CAF01-run-40974820126
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/original-D-parent
+      - name: Verify three selected model source hashes with REAL parent (NO solver)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_d_g2_native import prepare
+          original=Path(os.environ["RUNNER_TEMP"])/"original-D-parent/caf01-d-CAF01/D_RK4_SCREEN.json"
+          result=prepare(original,Path(os.environ["RUNNER_TEMP"])/"D-three-G2-preflight")
+          assert result["selected_model_count"] == 3
+          assert result["simulation_attempts_at_prepare"] == 0
+          assert not result["evaluation_read"]
+          assert not result["CAFN_read"]
+          print("CAF01_D_G2_PINNED_REAL_PARENT_3_NATIVE_HASHES_MATCH_NO_SOLVER")
+          PY
+      - name: Enforce separation from experiment and three-instance limit
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("experiments/cafeteria/pc01/caf01_d_g2_native.py").read_text()
+          wf=Path(".github/workflows/caf01-d-g2-native.yml").read_text()
+          assert "pull_request:" not in wf and "push:" not in wf
+          assert "github.ref == 'refs/heads/main'" in wf
+          assert "github.run_number == 1" in wf
+          assert "github.run_attempt == 1" in wf
+          assert "RUN_CAF01_D_G2_THREE_ONCE" in wf
+          assert "run-id: 40974820126" in wf
+          assert "caf01-d-rk4-CAF01-run-40974820126" in wf
+          assert 'for n in 1 2 3; do' in wf
+          assert 'if docker run' in wf
+          assert 'D_G2_${n}.attempt' in wf
+          assert 'D_G2_${n}.exit_code' in wf
+          assert 'D_G2_*_receipt.json' in wf
+          assert 'Verify EACH representative and persist all receipts' in wf
+          assert 'if: always()' in wf
+          assert 'PARTIAL_NATIVE_G2' in s
+          assert 'D_G2_{ordinal}_receipt.json' in s
+          assert "CAF01_D_G2_OMC_INVOCATION_STARTED" in wf
+          assert "docker run" in wf
+          assert "openmodelica/openmodelica:v1.26.5-minimal" in wf
+          assert "PARENT_SHA256 = " in s
+          assert "compare_omc_csv" in s
+          assert "PARENT_ARTIFACT_ID" in s
+          assert "evaluation_read" in s
+          assert "run_toy_engine" not in s
+          assert "integrate(" not in s
+          print("D_G2_PREFLIGHT_NO_OMC_NO_RK4_NO_DES_NO_HOLDOUT")
+          PY

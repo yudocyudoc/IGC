@@ -1,0 +1,100 @@
+name: CAF-01 D - native G2 three representatives (NO evaluation)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter RUN_CAF01_D_G2_THREE_ONCE (spends up to 3 OMC construction runs)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: caf01-d-native-g2-one-shot
+  cancel-in-progress: false
+
+jobs:
+  D-native-G2:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RUN_CAF01_D_G2_THREE_ONCE' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download ONLY CAF01 D original GitHub construction-screen artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40974820126
+          name: caf01-d-rk4-CAF01-run-40974820126
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/caf01-d-parent
+      - name: Check pinned parent hash scores representatives and original equations
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_d_g2_native.py prepare \
+            --parent "$RUNNER_TEMP/caf01-d-parent/caf01-d-CAF01/D_RK4_SCREEN.json" \
+            --out artifacts/caf01-d-g2
+          test "$(find artifacts/caf01-d-g2 -maxdepth 1 -name 'D_G2_*.mos' | wc -l)" -eq 3
+      - name: Attempt all three previously selected models without retry or substitution
+        run: |
+          set -euo pipefail
+          for n in 1 2 3; do
+            # Durable, conservative budget marker: write BEFORE calling OMC.
+            printf 'INVOCATION_STARTED\n' > "artifacts/caf01-d-g2/D_G2_${n}.attempt"
+            echo "CAF01_D_G2_OMC_INVOCATION_STARTED=$n/3" \
+              | tee "artifacts/caf01-d-g2/D_G2_${n}.log"
+            # A failed process must not prevent the next model being checked.
+            # pipefail still reports Docker/OMC failure inside the if.
+            if docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$PWD/artifacts/caf01-d-g2/D_G2_${n}.mos" \
+              2>&1 | tee -a "artifacts/caf01-d-g2/D_G2_${n}.log"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            printf '%s\n' "$rc" > "artifacts/caf01-d-g2/D_G2_${n}.exit_code"
+            echo "CAF01_D_G2_OMC_EXIT_CODE model=$n status=$rc" \
+              | tee -a "artifacts/caf01-d-g2/D_G2_${n}.log"
+          done
+      - name: Verify EACH representative and persist all receipts before global verdict
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f artifacts/caf01-d-g2/preflight.json ]; then
+            python experiments/cafeteria/pc01/caf01_d_g2_native.py verify \
+              --out artifacts/caf01-d-g2
+          else
+            echo "D_G2_NO_PREPARED_PARENT_NO_SOLVER_ATTEMPT" >&2
+            exit 1
+          fi
+      - name: Restore Docker-created files to non-root owner
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-d-g2 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-d-g2
+          fi
+      - name: Keep three G2 receipts CSVs source hashes and attempt logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf01-D-native-G2-run-${{ github.run_id }}
+          path: |
+            artifacts/caf01-d-g2/preflight.json
+            artifacts/caf01-d-g2/D_G2_VERIFIED.json
+            artifacts/caf01-d-g2/D_G2_*_receipt.json
+            artifacts/caf01-d-g2/D_G2_*.attempt
+            artifacts/caf01-d-g2/D_G2_*.exit_code
+            artifacts/caf01-d-g2/*.mo
+            artifacts/caf01-d-g2/*.mos
+            artifacts/caf01-d-g2/D_G2_*.log
+            artifacts/caf01-d-g2/D_G2_*_res.csv
+          if-no-files-found: warn
+          retention-days: 90
