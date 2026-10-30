@@ -6,6 +6,7 @@ from pathlib import Path
 
 import caf02_k2_set_scoring as k
 import caf02_numerical_margin_preflight as n
+import caf02_k0_limited_references as refs
 
 BASE=Path(__file__).resolve().parent
 POLICY=BASE/"CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json"
@@ -107,6 +108,42 @@ class ProposedIndependentScoringTests(unittest.TestCase):
                          128+384+256)
         self.assertEqual(x["custody"]["G5_world_source_and_private_parameters_before_K0"],
                          "REQUIRED_EXTERNAL_WITNESS")
+
+    def test_K0_limited_references_use_only_two_public_values(self):
+        v=refs.forecast(3,7,1.2,1.35)
+        self.assertTrue(v["used_only_public_K0_two_values"])
+        self.assertFalse(v["K2_truth_seen"])
+        self.assertFalse(v["K1_measurement_seen"])
+        self.assertEqual(v["REF_CAF"]["status"],"READY")
+        self.assertAlmostEqual(v["REF_CAF"]["estimated_rate_orders_per_minute"],.8)
+        self.assertEqual(len(v["REF_CAF"]["predicted_K2_delivered"]),6)
+        self.assertEqual(len(v["REF_SCALE"]["predicted_K2_delivered"]),6)
+        self.assertEqual(v["REF_SCALE"]["status"],"READY_FIXED_EXTRAPOLATION")
+
+    def test_K0_reference_CAF_abstains_without_two_backlogged_endpoints(self):
+        v=refs.forecast(5,10)
+        self.assertIsNone(v["REF_CAF"]["predicted_K2_delivered"])
+        self.assertEqual(v["REF_CAF"]["status"],
+                         "ABSTAIN_NO_SATURATED_5_TO_10_WINDOW")
+        self.assertIsNotNone(v["REF_SCALE"]["predicted_K2_delivered"])
+
+    def test_K0_reference_cannot_accept_private_or_impossible_counts(self):
+        with self.assertRaises(ValueError):
+            refs.forecast(7,7)
+        with self.assertRaises(ValueError):
+            refs.forecast(3,2)
+        with self.assertRaises(TypeError):
+            refs.forecast(3,7,unexpected_private_truth=25)
+
+    def test_reference_versions_are_not_silent_CAF01_substitution(self):
+        x=json.loads(POLICY.read_text(encoding="utf-8"))
+        versions=x["k2"]["reference_version_contract"]
+        self.assertFalse(versions["earlier_CAF01_versions_reused"])
+        self.assertEqual(versions["REF_CAF"],
+                         "REF_CAF_K0_1WINDOW_2026-10-30")
+        self.assertEqual(versions["REF_SCALE"],
+                         "REF_SCALE_K0_PIECEWISE_EXTRAPOLATION_2026-10-30")
+        self.assertTrue(versions["baseline_unchanged_from_K0_to_K1"])
 
     def test_numerical_input_guard_rejects_non_draft(self):
         x=json.loads(POLICY.read_text(encoding="utf-8"))
