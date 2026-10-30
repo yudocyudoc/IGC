@@ -13,6 +13,10 @@ def rival_members():
     }
 
 
+def select(k0, menu, gap, residual=.01, numerical=.01):
+    return select(k0,menu,gap,residual,numerical)
+
+
 class K0K1K2Tests(unittest.TestCase):
     def test_registry_contains_existing_rivals_only(self):
         evidence=s.verify_existing_repertoire()
@@ -52,7 +56,7 @@ class K0K1K2Tests(unittest.TestCase):
                               [0,1,2,3],grid,.01,1.)
         self.assertFalse(result["C00"]["eligible"])
         self.assertFalse(result["C01"]["eligible"])
-        out=s.select_k1_measurement(result,[{"rate_per_minute":1.5,"t_min":20}],.1)
+        out=select(result,[{"rate_per_minute":1.5,"t_min":20}],.1)
         self.assertEqual(out["status"],"K0_NO_TWO_ADEQUATE_STRUCTURES")
 
     def test_k1_design_is_based_on_calibrated_rival_envelopes(self):
@@ -60,7 +64,7 @@ class K0K1K2Tests(unittest.TestCase):
         menu=[{"rate_per_minute":1.2,"t_min":10},
               {"rate_per_minute":1.5,"t_min":20},
               {"rate_per_minute":1.0,"t_min":30}]
-        chosen=s.select_k1_measurement(k0,menu,.25)
+        chosen=select(k0,menu,.25)
         self.assertEqual(chosen["status"],
                          "K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION")
         self.assertIn(chosen["proposed_measurement"],menu)
@@ -70,7 +74,7 @@ class K0K1K2Tests(unittest.TestCase):
     def test_k1_abstains_on_uninformative_menu_not_posthoc_select(self):
         k0=rival_members()
         menu=[{"rate_per_minute":1.2,"t_min":10}]
-        chosen=s.select_k1_measurement(k0,menu,100)
+        chosen=select(k0,menu,100)
         self.assertEqual(chosen["status"],"K1_MENU_CANNOT_ROBUSTLY_DISCRIMINATE")
         self.assertIsNone(chosen["proposed_measurement"])
         with self.assertRaises(s.Blocked):
@@ -80,7 +84,7 @@ class K0K1K2Tests(unittest.TestCase):
     def test_k1_revision_removes_only_contradicted_family(self):
         k0=rival_members()
         menu=[{"rate_per_minute":1.5,"t_min":20}]
-        chosen=s.select_k1_measurement(k0,menu,.1)
+        chosen=select(k0,menu,.1)
         chosen_p=chosen["proposed_measurement"]
         self.assertIsNotNone(chosen_p)
         i=s.T_VALUES.index(chosen_p["t_min"])
@@ -95,7 +99,7 @@ class K0K1K2Tests(unittest.TestCase):
 
     def test_evidence_cannot_change_the_preselected_menu(self):
         k0=rival_members()
-        selected=s.select_k1_measurement(k0,
+        selected=select(k0,
             [{"rate_per_minute":1.2,"t_min":20}],.1)
         with self.assertRaises(s.Blocked):
             s.k1_revise(k0,selected,
@@ -104,13 +108,32 @@ class K0K1K2Tests(unittest.TestCase):
     def test_k1_rejects_physically_impossible_delivery_count(self):
         k0=rival_members()
         option={"rate_per_minute":1.2,"t_min":20}
-        selected=s.select_k1_measurement(k0,[option],.1)
+        selected=select(k0,[option],.1)
         with self.assertRaises(s.Blocked):
             s.k1_revise(k0,selected,{**option,"delivered":25.0},.1)
 
+    def test_overlap_with_K1_tolerance_has_no_robust_separation(self):
+        gap=s.expanded_interval_separation(
+            (10.0,10.0),(10.2,10.2),.15,.01)
+        self.assertAlmostEqual(gap["raw_gap_orders"],.2)
+        self.assertEqual(gap["expanded_gap_orders"],0)
+        self.assertLessEqual(10.1,10.0+.15)
+        self.assertGreaterEqual(10.1,10.2-.15)
+
+    def test_revision_refuses_unannounced_tolerance_change(self):
+        k0=rival_members()
+        selected=select(k0,[{"rate_per_minute":1.5,"t_min":20}],.1,
+                        residual=.01,numerical=.01)
+        self.assertIsNotNone(selected["proposed_measurement"])
+        option=selected["proposed_measurement"]
+        val=s.curve(k0["C01"]["eligible"][0],
+                    option["rate_per_minute"])[s.T_VALUES.index(option["t_min"])]
+        with self.assertRaises(s.Blocked):
+            s.k1_revise(k0,selected,{**option,"delivered":val},.25)
+
     def test_k2_both_versions_present_without_future_truth(self):
         k0=rival_members()
-        selected=s.select_k1_measurement(k0,
+        selected=select(k0,
             [{"rate_per_minute":1.5,"t_min":20}],.1)
         option=selected["proposed_measurement"]
         i=s.T_VALUES.index(option["t_min"])
