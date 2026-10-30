@@ -230,6 +230,8 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
          and {k:evidence[k] for k in ("rate_per_minute","t_min")}
              ==preselected["proposed_measurement"]
          and number(evidence["delivered"]) and evidence["delivered"]>=0
+         and evidence["delivered"] <=
+             evidence["rate_per_minute"]*min(evidence["t_min"],20)+1e-8
          and number(absolute_residual_max) and absolute_residual_max>=0,
          "K1_NOT_PRECOMMITTED_OR_EVIDENCE_INVALID")
     i=T_VALUES.index(evidence["t_min"])
