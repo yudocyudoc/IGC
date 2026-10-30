@@ -162,14 +162,17 @@
       "C01": 96,
       "total": 128
     },
-    "selected_K1_candidate_forecasts_max": 128,
+    "selected_K1_candidate_forecasts_max": 384,
     "native_G2_verification_max_proposed": 12,
     "D_provider_inferences_max": 0,
     "B_provider_inferences_max_proposed": 1,
     "M_provider_inferences_max": 0,
     "autonomous_repair_loops": 0,
     "aborted_attempts_charge_budget": true,
-    "other_solver_budgets": "MUST_NOT_CLAIM_NATIVE_PARITY_FOR_UNEXECUTED_CANDIDATES"
+    "other_solver_budgets": "MUST_NOT_CLAIM_NATIVE_PARITY_FOR_UNEXECUTED_CANDIDATES",
+    "K2_prior_and_posterior_candidate_forecasts_max": 256,
+    "total_candidate_trajectory_calculations_upper_bound": 768,
+    "full_menu_required_for_select_k1": true
   },
   "custody": {
     "G5_world_source_and_private_parameters_before_K0": "REQUIRED_EXTERNAL_WITNESS",
