@@ -44,6 +44,14 @@ class SyntheticMapTests(unittest.TestCase):
         self.assertEqual(r["status"],
                          "DETERMINISTIC_INTERNAL_SOFTWARE_MAPPING_NOT_PROSPECTIVE")
         self.assertEqual(len(r["case_results"]),20)
+        # Regression snapshot of this fixed SYNTHETIC map, not a claim of
+        # independent generalization or a new preregistration.
+        self.assertEqual(r["summary"]["K0_both_families_survive"],14)
+        self.assertEqual(r["summary"]["K1_robust_designs"],2)
+        self.assertEqual(r["summary"]["K1_menu_not_discriminating"],12)
+        self.assertEqual(r["summary"]["K1_did_not_have_two_adequate_families"],6)
+        self.assertEqual(
+            r["summary"]["false_exclusion_of_true_family_after_K1_conditional_on_K0"],0)
         self.assertEqual(r["resource_use"]["DES"],0)
         self.assertEqual(r["resource_use"]["external_holdout"],0)
         for x in r["case_results"]:
