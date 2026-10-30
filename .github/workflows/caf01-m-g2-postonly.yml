@@ -1,0 +1,118 @@
+name: CAF-01 M G2 post-only recovery — six original native CSVs (NO solver)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_g2_six_native.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_g2_six_native.py'
+      - 'experiments/cafeteria/pc01/caf01_m_g2_postonly_recovery.py'
+      - '.github/workflows/caf01-m-g2-postonly.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  six-original-CSV-reverification-no-OMC:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regressions using fictional CSV, no native solver
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 \
+            -p 'test_caf01_m_g2_six_native.py' -v
+      - name: Download only original run 40999625128 scientific artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40999625128
+          name: CAF01-M-G2-SIX-run-40999625128
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/M-native-original
+      - name: Strict SHA precommit and POST-ONLY six material stock balances
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_g2_postonly_recovery.py \
+            --original "$RUNNER_TEMP/M-native-original" \
+            --out "$RUNNER_TEMP/M-native-recovery"
+          python - <<'PY'
+          from pathlib import Path
+          import json,os
+          p=Path(os.environ["RUNNER_TEMP"])/"M-native-recovery"
+          r=json.loads((p/"M_G2_AGGREGATE.json").read_bytes())
+          assert r["status"]=="ALL_SIX_M_NATIVE_G2_PASS"
+          assert r["native_construction_simulations_consumed"]==6
+          assert len(r["native_candidates"])==6
+          assert all(x["status"]=="PASS" and
+                     x["balance_max_abs"]<0.008 and
+                     len(x["native_material_stock_columns"]) in (2,3,4)
+                     for x in r["native_candidates"])
+          assert len(list(p.glob("M_G2_*_receipt.json")))==6
+          h=json.loads((p/"historical_original_FAIL_receipts/M_G2_AGGREGATE.json").read_bytes())
+          assert h["native_g2_fail_count"]==6
+          assert h["native_construction_simulations_consumed"]==6
+          print("CAF01_M_G2_SIX_NATIVE_MATERIAL_BALANCE_POSTONLY_PASS_ZERO_NEW_OMC")
+          PY
+      - name: Adversarial test: tamper only one material stock after recovery
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv,os,shutil,sys,json
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_m_g2_six_native import verify
+          root=Path(os.environ["RUNNER_TEMP"])
+          orig=root/"M-native-recovery"
+          tamper=root/"M-material-stock-corruption-test"
+          tamper.mkdir()
+          for name in ["M_G2_PREFLIGHT.json",*[f"M_G2_{i}{suffix}"
+              for i in range(1,7)
+              for suffix in (".log",".console.txt",".attempt",".exit_code","_res.csv")]]:
+              shutil.copyfile(orig/name,tamper/name)
+          target=tamper/"M_G2_4_res.csv"
+          with target.open(newline="") as fp:
+              records=list(csv.DictReader(fp))
+          fields=list(records[0])
+          records[20]["preparation0.stock.level"]=str(
+              float(records[20]["preparation0.stock.level"])+1)
+          with target.open("w",newline="") as fp:
+              writer=csv.DictWriter(fp,fieldnames=fields)
+              writer.writeheader(); writer.writerows(records)
+          r=verify(tamper)
+          assert [x["status"] for x in r["native_candidates"]]==[
+              "PASS","PASS","PASS","FAIL","PASS","PASS"]
+          assert r["native_candidates"][3]["reason_code"]=="M_G2_NATIVE_MASS_BALANCE_FAILED"
+          assert len(list(tamper.glob("M_G2_*_receipt.json")))==6
+          print("CAF01_M_G2_REJECTS_ONE_TAMPERED_PHYSICAL_STOCK_KEEP_OTHER_FIVE")
+          PY
+      - name: Forbid new solver, RK4, DES, or Buffalo calls in this recovery
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          s=Path("experiments/cafeteria/pc01/caf01_m_g2_postonly_recovery.py").read_text()
+          wf=Path(".github/workflows/caf01-m-g2-postonly.yml").read_text()
+          ast.parse(s)
+          assert "subprocess" not in s
+          assert "integrate(" not in s
+          assert "docker run" not in wf
+          assert "omc " not in wf
+          assert "run-id: 40999625128" in wf
+          assert "all_original_FAIL_receipts_preserved" in s
+          print("CAF01_M_POSTONLY_NO_SCIENTIFIC_SIMULATIONS_OR_INFERENCES")
+          PY
+      - name: Upload certified supplemental receipts and original FAIL history
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-M-G2-postonly-six-${{ github.run_id }}
+          path: ${{ runner.temp }}/M-native-recovery/
+          retention-days: 90
+          if-no-files-found: warn
