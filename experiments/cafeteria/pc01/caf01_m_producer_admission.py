@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from caf01_g3 import CONTRACT, digest, validate_evidence
@@ -42,7 +43,32 @@ def load_public(case,contract,pub=PUB):
          "M_MASK_OR_SOURCE_CHANGED_"+case)
     return evidence
 
-def packet(contract,pub=PUB):
+def published_caf_model_sources(package, expected_names):
+    """Extract byte-for-byte Modelica class blocks from the FINAL CAF package.
+
+    A digest here must authenticate the exact text the downstream native
+    runner loads, never the earlier E1 probe source returned by checked_models.
+    """
+    need(package.startswith("within;\npackage CAF01MPreflight\n")
+         and package.endswith("end CAF01MPreflight;\n"),
+         "M_CAF_FINAL_PACKAGE_SHAPE_CHANGED")
+    regex=re.compile(
+        r"^  model ([A-Za-z][A-Za-z0-9_]*)\n.*?^  end \1;$",
+        re.MULTILINE | re.DOTALL,
+    )
+    pairs=[(m.group(1),m.group(0)) for m in regex.finditer(package)]
+    need([name for name,_ in pairs]==list(expected_names)
+         and len(pairs)==9 and len({name for name,_ in pairs})==9,
+         "M_CAF_MODEL_SOURCE_EXTRACTION_MISMATCH")
+    for name,source in pairs:
+        need("parameter Real publicRate=72;" in source
+             and "y=if time < (1.0/3.0) then publicRate else 0" in source
+             and "Modelica.Blocks.Sources.Pulse pulse(amplitude=6" not in source,
+             "M_UNREPLACED_E1_STIMULUS:"+name)
+    return dict(pairs)
+
+
+def packet(contract,pub=PUB,caf_package=None):
     m=contract["methods"]["M"]
     need(m["structural_classes"]==["C00","C01","C02"]
          and m["proposed_bounded_capacity_grid_items_per_hour"]==[20,72,100]
@@ -50,6 +76,11 @@ def packet(contract,pub=PUB):
          and m["CAFN_extra_candidate_solver_runs"]==0,
          "M_METHOD_CONTRACT_CHANGED")
     items=checked_models(contract)
+    actual_package,_,_=render_bundle(contract)
+    if caf_package is not None:
+        need(caf_package==actual_package, "M_CAF_FINAL_PACKAGE_DIFFERS_FROM_RENDERER")
+    caf_sources=published_caf_model_sources(
+        actual_package,[item["name"] for item in items])
     cert=certificate(contract)
     need(cert["status"]=="STATIC_UPPER_BOUND_ONLY"
          and cert["inactive_capacities"]==[72,100]
@@ -71,14 +102,15 @@ def packet(contract,pub=PUB):
                 "capacity_items_per_hour":capacity,
                 "nominal_capacity_aliases":[capacity] if capacity==20 else [72,100],
                 "source_sha256":"sha256:"+hashlib.sha256(
-                    item["model"].encode("utf-8")).hexdigest(),
+                    caf_sources[item["name"]].encode("utf-8")).hexdigest(),
                 "E1_graph_sha256":item["original_graph_sha256"],
             })
     need(len(members)==6,"M_SIX_CLASSES_REQUIRED")
     source_models=[{
         "model_name":i["name"],"structure":i["structure"],
         "capacity_items_per_hour":i["capacity"],
-        "source_sha256":"sha256:"+hashlib.sha256(i["model"].encode()).hexdigest(),
+        "source_sha256":"sha256:"+hashlib.sha256(
+            caf_sources[i["name"]].encode("utf-8")).hexdigest(),
     } for i in items]
     views={}
     for case in ("CAF01","CAFN"):
@@ -93,6 +125,9 @@ def packet(contract,pub=PUB):
         "status":"ADMISSION_ONLY_NATIVE_SIMULATION_PENDING",
         "source_DES_construction_public_snapshot":WORLD,
         "contract_semantic_sha256":digest(contract),
+        "published_CAF01MPreflight_mo_sha256":"sha256:"+hashlib.sha256(
+            actual_package.encode("utf-8")).hexdigest(),
+        "model_source_hash_scope":"EXACT_FINAL_CAF_MODELICA_CLASS_BLOCK",
         "allowed_arms":["M"],
         "public_construction_views":views,
         "frozen_time_unit":"hours",
@@ -128,8 +163,8 @@ def packet(contract,pub=PUB):
 def generate(out):
     need(not out.exists(),"M_OUTPUT_ALREADY_EXISTS")
     contract=json.loads(CONTRACT.read_text(encoding="utf-8"))
-    p=packet(contract)
     models,check_only,_=render_bundle(contract)
+    p=packet(contract,caf_package=models)
     need("simulate(" not in check_only
          and check_only.count("checkModel(")==9
          and "der(" not in models,
@@ -141,6 +176,23 @@ def generate(out):
         json.dumps(p,sort_keys=True,ensure_ascii=False,indent=2)+"\n",
         encoding="utf-8")
     (out/"CAF01MPreflight.mo").write_text(models,encoding="utf-8")
+    # Verify the manifest against the actual on-disk file, not just the
+    # renderer's in-memory string.
+    saved=(out/"CAF01MPreflight.mo").read_bytes()
+    need("sha256:"+hashlib.sha256(saved).hexdigest()==
+         p["published_CAF01MPreflight_mo_sha256"],
+         "M_GENERATED_PACKAGE_HASH_CHANGED_ON_DISK")
+    physical=published_caf_model_sources(
+        saved.decode("utf-8"),
+        [i["model_name"] for i in p["nine_nominal_model_sources"]])
+    for row in p["nine_nominal_model_sources"]:
+        need("sha256:"+hashlib.sha256(
+            physical[row["model_name"]].encode("utf-8")).hexdigest()==
+            row["source_sha256"],"M_SAVED_CAF_MODEL_HASH_MISMATCH")
+    for row in p["six_structural_capacity_classes"]:
+        need("sha256:"+hashlib.sha256(
+            physical[row["class_name"]].encode("utf-8")).hexdigest()==
+            row["source_sha256"],"M_SAVED_CAF_REPRESENTATIVE_HASH_MISMATCH")
     (out/"M_NO_SOLVER_README.txt").write_text(
         "NO SIMULATION HAS RUN. Use the separate approved G2 runner; this is "
         "the construction-only input and native-source staging packet.\n",
