@@ -1,0 +1,49 @@
+name: CAF-01 reserved evaluation preflight - original G4 and signed TSA, NO DES
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_evaluation_github.py'
+      - 'experiments/cafeteria/pc01/test_caf01_evaluation_github.py'
+      - '.github/workflows/caf01-evaluation-preflight.yml'
+      - '.github/workflows/caf01-evaluation-one-shot.yml'
+      - 'experiments/cafeteria/pc01/CAF01_G5_HISTORICAL_WAIVER_AND_EVALUATION.md'
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preflight-public-artifacts-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Synthetic tests only, NO DES world, NO secret
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_evaluation_github.py' -v
+      - name: Fetch immutable G4 model-forecast artifact from original run
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006338774
+          name: CAF01-G4-two-model-forecasts-run-41006338774
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-ORIGINAL
+      - name: Fetch existing independently timestamped G4 sidecar
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006622753
+          name: CAF01-G4-rfc3161-independent-witness-41006622753
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-WITNESS
+      - name: Verify original exact bytes, external signed TSA and G5 historical status WITHOUT DES
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_evaluation_github.py preflight \
+            --g4 "$RUNNER_TEMP/G4-ORIGINAL/caf01-G4-preholdout-content/custody_candidate/preholdout-package.json" \
+            --witness "$RUNNER_TEMP/G4-WITNESS"
+          echo "CAF01_EVALUATION_PREFLIGHT_NO_SECRET_NO_DES_NO_OMC_NO_RK4_NO_PROVIDER"
