@@ -1,0 +1,60 @@
+name: CAF-01 D - native G2 preparation tests (MOCKED, NO OMC)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_d_g2_native.py'
+      - 'experiments/cafeteria/pc01/test_caf01_d_g2_native.py'
+      - '.github/workflows/caf01-d-g2-native.yml'
+      - '.github/workflows/caf01-d-g2-preflight.yml'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json'
+      - 'scripts/arena_d_v01.py'
+      - 'scripts/arena_d_v1_screen.py'
+      - 'experiments/cafeteria/pc01/caf01_g3.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g2-mocked-preparation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Synthetic preparation and physical verification only (NO solver)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 \
+            -p test_caf01_d_g2_native.py -v
+      - name: Enforce separation from experiment and three-instance limit
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("experiments/cafeteria/pc01/caf01_d_g2_native.py").read_text()
+          wf=Path(".github/workflows/caf01-d-g2-native.yml").read_text()
+          assert "pull_request:" not in wf and "push:" not in wf
+          assert "github.ref == 'refs/heads/main'" in wf
+          assert "github.run_number == 1" in wf
+          assert "github.run_attempt == 1" in wf
+          assert "RUN_CAF01_D_G2_THREE_ONCE" in wf
+          assert "run-id: 40974820126" in wf
+          assert "caf01-d-rk4-CAF01-run-40974820126" in wf
+          assert 'for n in 1 2 3; do' in wf
+          assert "CAF01_D_G2_OMC_INVOCATION_STARTED" in wf
+          assert "docker run" in wf
+          assert "openmodelica/openmodelica:v1.26.5-minimal" in wf
+          assert "PARENT_SHA256 = " in s
+          assert "compare_omc_csv" in s
+          assert "PARENT_ARTIFACT_ID" in s
+          assert "evaluation_read" in s
+          assert "run_toy_engine" not in s
+          assert "integrate(" not in s
+          print("D_G2_PREFLIGHT_NO_OMC_NO_RK4_NO_DES_NO_HOLDOUT")
+          PY
