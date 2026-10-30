@@ -79,6 +79,21 @@ class DCAF02AdapterTests(unittest.TestCase):
         self.assertFalse(k0["native_G2_verified"])
         self.assertFalse(k0["K2_truth_seen"])
 
+    def test_k0_can_reject_all_54_even_if_observed_totals_are_materially_possible(self):
+        p=policy()
+        # Six deliveries at minute 5, followed by no further deliveries at 10
+        # are not materially impossible, but not adequately represented by
+        # this D grid and should never create false narrow confidence.
+        obs=[{"t_min":5,"delivered":6},
+             {"t_min":10,"delivered":6}]
+        result=d.calibrate_k0(obs,p)
+        self.assertEqual(result["candidate_evaluations"],54)
+        self.assertEqual(sum(len(x) for x in result["compatible"].values()),0)
+        empty_revision=d.revise_k1(result,no_k1(p),None,p)
+        forecast=d.prepare_k2(result,empty_revision,p)
+        self.assertIsNone(forecast["K0_union"])
+        self.assertIsNone(forecast["K1_union"])
+
     def test_nonbinding_D_capacities_alias_in_K0_but_not_future(self):
         initial=d.predicted(2,72,1,1.2,d.TIMES)
         initial_other=d.predicted(2,100,1,1.2,d.TIMES)
