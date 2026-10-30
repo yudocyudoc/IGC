@@ -1,0 +1,153 @@
+name: CAF-01 G4 - FIRST native selected D and M forecasts (NO DES)
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/caf01-g4-first-native-once.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: caf01-g4-first-model-forecasts-once
+  cancel-in-progress: false
+jobs:
+  model-forecast-ONE-SHOT:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'push' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download original public G3 construction selection
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41002562344
+          name: CAF01-G3-G4-original-public-construction-41002562344
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G3
+      - name: Download original G2 physical D
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40984572504
+          name: CAF01-D-G2-postonly-three-40984572504
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/D
+      - name: Download original G2 physical M
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41000243810
+          name: CAF01-M-G2-postonly-six-41000243810
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/M
+      - name: Prepare exactly two frozen models under public future pulse 90 per hour
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_g4_first_model_forecasts.py prepare \
+            --d-native "$RUNNER_TEMP/D" --m-native "$RUNNER_TEMP/M" \
+            --g3 "$RUNNER_TEMP/G3/G3_CONSTRUCTION_SELECTION.json" \
+            --out artifacts/caf01-G4-native-forecast
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/caf01-G4-native-forecast/FORECAST_PREFLIGHT.json").read_bytes())
+          assert r["status"]=="PREPARED_NOT_SIMULATED"
+          assert r["max_new_model_OMC_attempts"]==2
+          assert r["D_parameter_ambiguity"] is True
+          assert r["DES_evaluation_world_runs"]==0
+          assert r["evaluation_truth_accessed"] is False
+          print("G4_MODEL_INPUTS_FROZEN_ZERO_NEW_SOLVER")
+          PY
+      - name: Install pinned OpenModelica and E1 libraries
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+          git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD > artifacts/caf01-G4-native-forecast/MSL_COMMIT.txt
+          git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD > artifacts/caf01-G4-native-forecast/SYSTEMDYNAMICS_COMMIT.txt
+      - name: Native checkModel only BEFORE attempts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("artifacts/caf01-G4-native-forecast")
+          for arm in ("D","M"):
+            src=(p/f"{arm}_FORECAST.mos").read_text()
+            assert src.count("simulate(")==1 and src.count("checkModel(")==1
+            check="\n".join(x for x in src.splitlines()
+                           if not x.strip().startswith("simulate("))+"\n"
+            assert "simulate(" not in check
+            (p/f"{arm}_CHECK_ONLY.mos").write_text(check)
+          PY
+          for arm in D M; do
+            docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "artifacts/caf01-G4-native-forecast/${arm}_CHECK_ONLY.mos" \
+              2>&1 | tee "artifacts/caf01-G4-native-forecast/${arm}_CHECK_ONLY.console.txt"
+            if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' \
+              "artifacts/caf01-G4-native-forecast/${arm}_CHECK_ONLY.console.txt"; then
+              exit 1
+            fi
+          done
+          echo "G4_PRECHECK_D_M_PASSED_ZERO_SIMULATIONS"
+      - name: Spend at most one selected native MODEL forecast per arm, no retry
+        run: |
+          set -euo pipefail
+          for arm in D M; do
+            prefix="CAF01_${arm}_FORECAST"
+            printf 'INVOCATION_STARTED\n' > "artifacts/caf01-G4-native-forecast/${prefix}.attempt"
+            echo "G4_MODEL_${arm}_OMC_ATTEMPT_STARTED" \
+              | tee "artifacts/caf01-G4-native-forecast/${prefix}.console.txt"
+            if docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$PWD/artifacts/caf01-G4-native-forecast/${arm}_FORECAST.mos" \
+              2>&1 | tee -a "artifacts/caf01-G4-native-forecast/${prefix}.console.txt"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            printf '%s\n' "$rc" > "artifacts/caf01-G4-native-forecast/${prefix}.exit_code"
+            echo "G4_MODEL_${arm}_OMC_EXIT=$rc" \
+              | tee -a "artifacts/caf01-G4-native-forecast/${prefix}.console.txt"
+          done
+      - name: Chown native generated files BEFORE physical verification
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-G4-native-forecast ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-G4-native-forecast
+          fi
+      - name: Verify native CSVs; lock G3 and produce G4 custody candidate, NO DES
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f artifacts/caf01-G4-native-forecast/FORECAST_PREFLIGHT.json ]; then
+            python experiments/cafeteria/pc01/caf01_g4_first_model_forecasts.py finalize \
+              --folder artifacts/caf01-G4-native-forecast \
+              --public experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json \
+              --out artifacts/caf01-G4-preholdout-content
+          else
+            echo "G4_SOURCE_PREPARATION_FAILED_NO_SIMULATIONS" >&2
+            exit 1
+          fi
+      - name: Preserve original native CSVs, attempts and custody-ready G4 bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-G4-two-model-forecasts-run-${{ github.run_id }}
+          path: |
+            artifacts/caf01-G4-native-forecast/
+            artifacts/caf01-G4-preholdout-content/
+          retention-days: 90
+          if-no-files-found: warn

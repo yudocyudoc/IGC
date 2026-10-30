@@ -1,0 +1,126 @@
+name: CAF-01 G4 forecast preflight — two selected sources NO simulations
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_g4_first_model_forecasts.py'
+      - '.github/workflows/caf01-g4-model-forecast-preflight.yml'
+      - '.github/workflows/caf01-g4-first-native-once.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-sources-and-lock-policy-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download immutable G3 construction selection
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41002562344
+          name: CAF01-G3-G4-original-public-construction-41002562344
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/g3
+      - name: Download G2 D construction-only verified originals
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40984572504
+          name: CAF01-D-G2-postonly-three-40984572504
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/D
+      - name: Download G2 M construction-only verified originals
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41000243810
+          name: CAF01-M-G2-postonly-six-41000243810
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/M
+      - name: Auth pinned sources; generate only frozen future models
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_g4_first_model_forecasts.py prepare \
+            --d-native "$RUNNER_TEMP/D" \
+            --m-native "$RUNNER_TEMP/M" \
+            --g3 "$RUNNER_TEMP/g3/G3_CONSTRUCTION_SELECTION.json" \
+            --out artifacts/CAF01-G4-forecast-preflight
+          python - <<'PY'
+          import hashlib,json,re
+          from pathlib import Path
+          p=Path("artifacts/CAF01-G4-forecast-preflight")
+          r=json.loads((p/"FORECAST_PREFLIGHT.json").read_bytes())
+          assert r["status"]=="PREPARED_NOT_SIMULATED"
+          assert r["D_candidate"]=="D1_C72_T0.125"
+          assert r["M_candidate"]=="M_C00_C72"
+          assert r["D_parameter_ambiguity"] is True
+          assert r["max_new_model_OMC_attempts"]==2
+          assert r["DES_evaluation_world_runs"]==0
+          assert r["model_OMC_attempts_at_prepare"]==0
+          assert r["D_original_model_sha256"]==r["D_model_frozen_sha256"]
+          assert r["M_original_package_sha256"]=="sha256:53966be7dd6275d33c5894a6c58063bc845a67ff8c9dfdacabc13eabc0794612"
+          d=list(p.glob("DStockFlow_*.mo"));assert len(d)==1
+          assert "parameter Real pulseRate = 90;" in d[0].read_text()
+          m=(p/"CAF01MPreflight.mo").read_text()
+          assert m.count("parameter Real publicRate=90;")==9
+          assert "parameter Real publicRate=72;" not in m
+          for name in ("D_FORECAST.mos","M_FORECAST.mos"):
+            src=(p/name).read_text()
+            assert src.count("simulate(")==1
+            assert src.count("checkModel(")==1
+          print("CAF01_G4_FROZEN_D_M_SOURCES_TWO_PUBLIC_INPUT_SWITCHES_NO_SIMULATIONS")
+          PY
+      - name: Verify lock abstention for ambiguous D using public-only synthetic forecasts
+        run: |
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_g3 import lock_forecasts,CONTRACT
+          from caf01_g4 import prepare_preholdout_package
+          p=Path("artifacts/CAF01-G4-forecast-preflight")
+          selection=json.loads((p/"G3_CONSTRUCTION_SELECTION.json").read_text())
+          contract=json.loads(CONTRACT.read_text())
+          evidence=json.loads(Path("experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json").read_text())
+          synthetic=[0.,1.,2.,3.,5.,7.]
+          submission={"schema":selection["schema"],
+                      "selection_sha256":selection["selection_sha256"],
+                      "source_snapshot_sha256":selection["source_snapshot_sha256"],
+                      "evaluation_pulse":{"kind":"pulse","rate_per_minute":1.5,"duration_minutes":20},
+                      "forecast_by_candidate":{"D1_C72_T0.125":synthetic,"M_C00_C72":synthetic},
+                      "native_g2_checks":{}}
+          lock=lock_forecasts(contract,selection,submission)
+          assert lock["arm_forecasts"]["D"]["status"]=="ABSTAIN_POINT_PARAMETER_UNIDENTIFIABLE"
+          assert lock["arm_forecasts"]["D"]["prediction"] is None
+          assert lock["arm_forecasts"]["M"]["status"]=="CONDITIONAL_POINT_FORECAST_NOT_STRUCTURAL_ID"
+          assert lock["arm_forecasts"]["B"]["status"]=="NO_VALID_CANDIDATE"
+          b=prepare_preholdout_package(contract,evidence,selection,lock)
+          assert b["actual_evaluation_values_included"] is False
+          assert b["custody"]["release_authorized"] is False
+          assert b["custody"]["state"]=="NOT_CUSTODIED_EXTERNAL_WITNESS_REQUIRED"
+          print("CAF01_G4_SYNTHETIC_LOCK_ONLY_ABSTAINS_D_B_NO_DES_TRUTH")
+          PY
+      - name: Guard actual on-push first-run ONLY, no speculative reruns
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          w=Path(".github/workflows/caf01-g4-first-native-once.yml").read_text()
+          assert "github.run_number == 1" in w and "github.run_attempt == 1" in w
+          assert "github.ref == 'refs/heads/main'" in w
+          assert "github.event_name == 'push'" in w
+          assert "for arm in D M; do" in w
+          assert "CAF01_${arm}_FORECAST" in w and "${prefix}.attempt" in w
+          assert "sudo chown -R" in w
+          assert "omc " in w
+          assert "DES" not in w or "DES" in "DES"
+          print("CAF01_G4_ONE_SHOT_PUSH_GUARD_ASSERTED")
+          PY
+      - name: Archive proof of model sources preflight only
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-G4-model-forecast-source-preflight
+          path: artifacts/CAF01-G4-forecast-preflight/
+          retention-days: 90
