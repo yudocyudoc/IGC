@@ -30,7 +30,15 @@ jobs:
       - name: Produce all nine final CAF models for native CHECK-ONLY
         run: |
           set -euo pipefail
-          python experiments/cafeteria/pc01/caf01_m_g2_six_native.py prepare --out artifacts/m-g2-check-only
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_m_g2_six_native import prepare
+          m=prepare(Path("artifacts/m-g2-check-only"))
+          assert m["native_invocations_at_prepare"]==0
+          print("M_G2_CHECK_ONLY_PREPARED_WITHOUT_MANUAL_SCIENTIFIC_DISPATCH")
+          PY
           test "$(grep -c 'checkModel(' artifacts/m-g2-check-only/M_CHECK_ONLY.mos)" -eq 9
           if grep -Eq 'simulate\(|buildModel\(' artifacts/m-g2-check-only/M_CHECK_ONLY.mos; then
             exit 1
