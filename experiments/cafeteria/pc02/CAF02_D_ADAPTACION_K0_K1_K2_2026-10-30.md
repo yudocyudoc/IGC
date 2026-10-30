@@ -17,7 +17,7 @@ El D2 histórico sí implementó un ciclo con nueva medición, revisión conjunt
 | Repertorio | Cadenas genéricas **D1/D2/D3** con 1, 2 o 3 stocks, sin pérdidas | E1 C00/C01 con 2 o 3 stocks |
 | Parámetros | **Un `response_time` compartido** entre etapas; capacidad compartida | Tiempos por etapa, tránsito configurable y capacidades definidas en su repertorio |
 | Calibración | RK4 existente `scripts.arena_d_v1_screen.integrate` | Integrador de moléculas E1 del protocolo |
-| Nueva evidencia K1 | **El mismo pulso y dato escogidos por M**; D puede proponer diagnóstico independiente sin cambiar prueba | M elige una opción del menú común conforme al protocolo |
+| Nueva evidencia K1 | **Un único pulso y dato escogidos conjuntamente por M+D**; D puede proponer diagnóstico adicional sin cambiar prueba | M elige una opción del menú común conforme al protocolo |
 | Predicción K2 | **Todos** los candidatos adecuados proyectados; envolvente, punto condicionado por ancho o abstención | Igual política de puntuación de conjuntos |
 | Capacidad nativa | Historial D1/D2 sí tuvo pruebas de OMC; **nuevo dominio todavía no certificado** | No implica G2 para toda la rejilla M |
 
@@ -29,9 +29,11 @@ En `CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json` se añaden reglas 
 
 - Estructuras D1, D2, D3 sin pérdidas; capacidad por etapa compartida de **48/72/100 pedidos/h** y tiempo de respuesta común de **1, 1.5, 2, 3, 6, 10 minutos**. Son 3×3×6=**54 candidatos nominales**. Se conservan los invariantes materiales y la conversión de unidades a horas del RK4 histórico.
 - K0 recibe exclusivamente los dos valores públicos de entregas a minutos 5 y 10, entrada 1.2 pedidos/minuto. Evalúa todos los candidatos, con compuerta absoluta **MAE ≤1.0** y proximidad relativa **MAE ≤ mejor de cada familia +0.4**. Si ninguno cumple, abstención total y registro del mal ajuste.
-- K1: el menú y la opción ejecutada son los **comunes de CAF-02** (1.0 a t10, 1.5 a t20, 1.8 a t30). D puede presentar una **preferencia diagnóstica** basada en su propio conjunto, pero no solicitar una corrida alternativa. Si M no elige K1, D conserva exactamente sus hipótesis K0; no se simula una prueba suplementaria.
+- K1: el menú y la opción ejecutada son los **comunes de CAF-02** (1.0 a t10, 1.5 a t20, 1.8 a t30). D puede presentar una **preferencia diagnóstica** basada en su propio conjunto, pero la regla conjunta M+D selecciona un solo ensayo. Si ninguno de los brazos conserva candidatos, no se ejecuta K1; no se simula una prueba suplementaria. No se exige separación familiar completa para observar K1.
 - Si K1 se ejecuta, proyectar **el pulso seleccionado**, no el pulso de K0. Mantener únicamente candidatos que ya sobrevivieron K0 y satisfacen `abs(predicción_K1 - observación_K1) ≤0.77 pedidos`. **No** volver a generar o reajustar toda la rejilla; la revisión es restricción de hipótesis condicionada a evidencia, no creación de topología.
 - K2: proyectar por separado los conjuntos pre-K1 y post-K1 bajo la misma entrada pública K2 (1.35 pedidos/min), con seis tiempos. Conservar envolventes por D1/D2/D3 y la unión. Puntuar mediante la **misma función no probabilística** de CAF-02 (`ancho/2 + distancia_a_intervalo`); punto solo si ancho máximo ≤2 pedidos; conjunto vacío equivale a abstención, jamás a MAE cero.
+
+La selección K1 conjunta usa un índice de reducción potencial de candidatos bajo conteos enteros hipotéticos, con pesos equilibrados por brazo/familia y tolerancia **idéntica de 0.77** para selección y revisión; no son probabilidades empíricas. Si no hay reducción prevista pero sí candidatos adecuados, la regla toma la primera opción y clasifica la medida como comprobación de adecuación. La separación robusta familiar sigue como diagnóstico, no veto.
 
 La rejilla deliberadamente cambia respecto a CAF-01 (tiempos anteriores 7.5/15 min, capacidades 48/72/96) y ello se declara ahora **antes de un nuevo mundo**. No se reabre CAF-01 ni se proclama que esta elección es óptima. D sigue siendo un método diferente de M: compartir `response_time` entre stocks restringe lo que puede representar.
 
@@ -39,7 +41,7 @@ La rejilla deliberadamente cambia respecto a CAF-01 (tiempos anteriores 7.5/15 m
 
 La cota de integraciones RK4 matemáticas **sin reutilización de caché** es 54 (K0) + hasta 162 (tres opciones K1 para diagnóstico) + hasta 54 (opción común K1) + hasta 108 (dos versiones K2) = **378**. **No** son 378 corridas OpenModelica ni nuevas evaluaciones DES. Presupuesto propuesto de G2 nativo D: máximo 3 verificaciones representativas predefinidas; **todavía no ejecutadas** ni suficientes para certificar 54 combinaciones automáticamente.
 
-El adaptador `caf02_d_k0k1k2_adapter.py` utiliza las funciones existentes `integrate` y `topology`. Su API acepta paquetes públicos de K0 y el resultado explícito del selector común M; **rechaza** cambios de pulso, tiempo, tolerancias, rejilla o introducción de evidencia K1 sin elección. No acepta una política con estado `AUTHORIZED` en el preflight para evitar confundir prueba de software con campaña real.
+El adaptador `caf02_d_k0k1k2_adapter.py` utiliza las funciones existentes `integrate` y `topology`. Su API acepta paquetes públicos de K0 y el resultado explícito del selector conjunto M+D; **rechaza** cambios de pulso, tiempo, tolerancias, rejilla o introducción de evidencia K1 sin elección. No acepta una política con estado `AUTHORIZED` en el preflight para evitar confundir prueba de software con campaña real.
 
 El adaptador **no** lee el evaluador DES, el holdout de CAF-01, parámetros privados del mundo, otro brazo salvo la *opción pública K1*, ni archivos secretos. No llama Buffalo, OpenModelica ni genera/modifica moléculas. Su línea lógica de apoyo `ATMS_logical_support_proposed` no es una escritura efectuada al ledger: **ATMS persistente está pendiente**, al igual que la custodia G4a/G4b externa.
 
@@ -49,6 +51,6 @@ El adaptador **no** lee el evaluador DES, el holdout de CAF-01, parámetros priv
 
 **No acreditado por esta entrega:** rendimiento de D en un mundo DES independiente, paridad OpenModelica para la nueva rejilla, testigo G5 anterior a K0, event sourcing real de D+ATMS, adquisición de K1 del generador externo ni utilidad combinada de D/B/M.
 
-**Comparación justa:** cada brazo recibe idénticos K0 y K1 públicos, pero usa su propia gramática y presupuesto documentados. El menú K1 seleccionado por M introduce una asimetría de diseño que debe indicarse. El resultado de D puede mejorar, empeorar, abstenerse o ser menos identificable; cualquiera es publicable. Solo si **ambos** generan pronósticos K2 válidos y sellados se puede comparar su pérdida de conjunto en K2.
+**Comparación justa:** cada brazo recibe idénticos K0 y K1 públicos, pero usa su propia gramática y presupuesto documentados. El menú K1 ahora tiene aportaciones equilibradas de M y D. Esto no lo convierte en un diseño óptimo: los pesos por familia son convenciones de selección, no probabilidades de modelos verdaderos. El resultado de D puede mejorar, empeorar, abstenerse o ser menos identificable; cualquiera es publicable. Solo si **ambos** generan pronósticos K2 válidos y sellados se puede comparar su pérdida de conjunto en K2.
 
 **Decisión:** D pasa de “diagnóstico opcional si es viable” a método comparativo principal **en el borrador**, sin afirmar que su contrato nativo o persistencia histórica ya esté integrado. No cambiar ni arquitectura D, ni E1, ni CAF-01.
