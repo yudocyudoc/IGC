@@ -14,7 +14,7 @@ def rival_members():
 
 
 def select(k0, menu, gap, residual=.01, numerical=.01):
-    return select(k0,menu,gap,residual,numerical)
+    return s.select_k1_measurement(k0,menu,gap,residual,numerical)
 
 
 class K0K1K2Tests(unittest.TestCase):
