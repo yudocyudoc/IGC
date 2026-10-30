@@ -1,0 +1,81 @@
+name: CAF-01 reserved DES evaluation ONCE - historical G5 waiver required
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Exact: RUN_CAF01_RESERVED_DES_EVALUATION_ONCE (consumes sole reserved DES evaluation)"
+        required: true
+        type: string
+      historical_g5_waiver:
+        description: "Exact: ACCEPT_UNVERIFIED_HISTORICAL_G5_CUSTODY (not retroactive validity)"
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: caf01-reserved-DES-evaluation-single-attempt
+  cancel-in-progress: false
+
+jobs:
+  one-evaluation-only:
+    if: ${{ github.ref == 'refs/heads/main' && github.event.inputs.confirmation == 'RUN_CAF01_RESERVED_DES_EVALUATION_ONCE' && github.event.inputs.historical_g5_waiver == 'ACCEPT_UNVERIFIED_HISTORICAL_G5_CUSTODY' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: caf01-construction
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download exact frozen G4 model forecasts (run 41006338774)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006338774
+          name: CAF01-G4-two-model-forecasts-run-41006338774
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-ORIGINAL
+      - name: Download signed external witness already verified (run 41006622753)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41006622753
+          name: CAF01-G4-rfc3161-independent-witness-41006622753
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G4-WITNESS
+      - name: Preflight exact G3/G4/TSA/G5 public bytes - NO DES and NO private secret yet
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_evaluation_github.py preflight \
+            --g4 "$RUNNER_TEMP/G4-ORIGINAL/caf01-G4-preholdout-content/custody_candidate/preholdout-package.json" \
+            --witness "$RUNNER_TEMP/G4-WITNESS"
+      - name: Verify existing environment secret is present without printing it
+        env:
+          CAF01_PRIVATE_ENVELOPE_B64: ${{ secrets.CAF01_PRIVATE_ENVELOPE_B64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CAF01_PRIVATE_ENVELOPE_B64" ]]; then
+            echo "CAF01_EVALUATION_SECRET_MISSING_NO_DES"
+            exit 1
+          fi
+          echo "CAF01_PRECOMMITTED_WORLD_SECRET_PRESENT_NO_DISCLOSURE"
+      - name: One DES reserved-world evaluation and frozen six-time scoring - NO retries
+        env:
+          CAF01_PRIVATE_ENVELOPE_B64: ${{ secrets.CAF01_PRIVATE_ENVELOPE_B64 }}
+          CAF01_EVAL_CONFIRMATION: ${{ github.event.inputs.confirmation }}
+          CAF01_G5_WAIVER: ${{ github.event.inputs.historical_g5_waiver }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_evaluation_github.py evaluate \
+            --g4 "$RUNNER_TEMP/G4-ORIGINAL/caf01-G4-preholdout-content/custody_candidate/preholdout-package.json" \
+            --witness "$RUNNER_TEMP/G4-WITNESS" \
+            --output-dir "$RUNNER_TEMP/CAF01-RESERVED-EVALUATION-OUTPUT"
+      - name: Preserve public six-point evaluation and frozen scoring even on scoring failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-reserved-evaluation-one-shot-${{ github.run_id }}
+          path: ${{ runner.temp }}/CAF01-RESERVED-EVALUATION-OUTPUT/
+          if-no-files-found: warn
+          retention-days: 90
