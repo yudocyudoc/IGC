@@ -3,13 +3,14 @@
   "status": "DRAFT_FOR_REVIEW_NOT_FROZEN_NOT_AUTHORIZED",
   "source_plan": "docs/ARENA_PLAN_CAMPANA_CAFETERIA_V3_0_2026-10-27.md#section-7",
   "former_synthetic_preflight": "experiments/cafeteria/pc02/CAF02_INFORME_DISCRIMINABILIDAD_ACOTADA_2026-10-30.md",
-  "question": "Can K1 evidence reduce observationally compatible C00/C01 hypotheses without false exclusion and improve K2 prospective set forecast?",
+  "question": "Do M and D reduce compatible model hypotheses after one ex-ante shared K1, and does that revision improve K2 forecasts even without full structural identification?",
   "scope": {
-    "primary": "M_TWO_E1_STRUCTURES_C00_C01_ONLY",
-    "additional_arms": "D_AND_B_DIAGNOSTICS_IF_NATIVE_FEASIBLE_NOT_PRIMARY_CAUSAL_CLAIM",
+    "primary": "M_AND_D_PARALLEL_K0_K1_K2_EXISTING_GRAMMARS",
+    "additional_arms": "B_IF_NATIVE_FEASIBLE_NOT_ASSUMED",
     "new_molecules": false,
     "new_architecture": false,
-    "real_cafe": false
+    "real_cafe": false,
+    "caveat": "D is not M: D has 1/2/3-stock generic chain with a shared tau and shared capacity; M has stage-specific response times; compare as fixed distinct methods on the same K0/K1/K2, not equal model families"
   },
   "units": {
     "time": "minutes",
@@ -106,11 +107,19 @@
     "numerical_allowance_orders": 0.02,
     "effective_revision_tolerance_orders": 0.77,
     "minimum_positive_expanded_gap_orders": 0.05,
-    "selection": "MAX_POSITIVE_SEPARATION_OF_FULL_K0_CALIBRATED_FAMILY_INTERVALS_EXPANDED_BY_0_77_EACH_WITH_MENU_ORDER_TIEBREAK",
-    "if_no_two_families": "NO_DISCRIMINATIVE_K1_SKIP_K1_RUN",
-    "if_all_intervals_overlap": "NO_GUARANTEED_SEPARATION_SKIP_K1_RUN",
+    "selection": "JOINT_M_D_BALANCED_FAMILY_WEIGHTED_EXPECTED_COMPATIBLE_CANDIDATE_REDUCTION_USING_SYNTHETIC_ROUNDED_PREDICTIONS_NOT_GUARANTEED_IDENTIFICATION",
+    "if_no_two_families": "K1_STILL_ELIGIBLE_IF_EITHER_ARM_HAS_ANY_K0_ADEQUATE_CANDIDATE",
+    "if_all_intervals_overlap": "K1_STILL_ELIGIBLE_WITH_NO_GUARANTEED_STRUCTURAL_IDENTIFICATION",
     "if_no_family_survives": "REJECT_BOTH_NO_IMPUTATION",
-    "revision": "KEEP_EACH_K0_CANDIDATE_IF_ABS(PRED_MINUS_K1_OBS)_LE_0_77_NO_RECALIBRATION"
+    "revision": "KEEP_EACH_K0_CANDIDATE_IF_ABS(PRED_MINUS_K1_OBS)_LE_0_77_NO_RECALIBRATION",
+    "trigger": "EXECUTE_ONE_SHARED_K1_IF_ANY_M_OR_D_K0_CANDIDATE_SURVIVES; OTHERWISE_SKIP",
+    "tie_break": "MENU_ORDER_A_B_C",
+    "selection_tolerance_kept_unchanged": 0.77,
+    "zero_information_case": "PRECOMMITTED_MENU_FIRST_NO_CLAIM_OF_INFORMATION_GAIN",
+    "structural_certainty_distinct_from_candidate_reduction": true,
+    "design_assumptions": "Each surviving FAMILY gets equal ex-ante weight within each arm; within family each candidate equal weight. Rounded candidate predictions (integer DES counts) are hypothetical for designing expected candidate reduction, not observations or posterior probabilities. M and D each contribute 50 percent of the design score if nonempty. Do not change menu/tolerance by K1 result.",
+    "selection_version": "JOINT_M_D_DESIGN_V1",
+    "only_possible_one_K1": true
   },
   "k2": {
     "future_public_pulse": {
@@ -156,7 +165,9 @@
       "common_K0_information": "t=5_and_t=10_delivered_only_NO_ACTUAL_PRIVATE_ARRIVALS",
       "earlier_CAF01_versions_reused": false,
       "baseline_unchanged_from_K0_to_K1": true
-    }
+    },
+    "reference_comparison_scope": "K0_ONLY_CONVENTIONAL_REFERENCES_HAVE_LESS_INFORMATION_THAN_POST_K1_M_D; EXPLAIN_THAT_K1_GAIN_IS_INFORMATION_PLUS_METHOD_NOT_CAUSAL_ALGORITHM_ADVANTAGE",
+    "reference_update_with_K1": "NOT_DEFINED_NO_EQUAL_INFORMATION_SUPERIORITY_CLAIM"
   },
   "resource_ceiling": {
     "world_DES": {
@@ -181,7 +192,12 @@
     "other_solver_budgets": "MUST_NOT_CLAIM_NATIVE_PARITY_FOR_UNEXECUTED_CANDIDATES",
     "K2_prior_and_posterior_candidate_forecasts_max": 256,
     "total_candidate_trajectory_calculations_upper_bound": 768,
-    "full_menu_required_for_select_k1": true
+    "full_menu_required_for_select_k1": true,
+    "D_construction_candidate_integrations_max": 54,
+    "D_internal_menu_candidate_projections_max": 162,
+    "D_K1_selected_candidate_projections_max": 54,
+    "D_K2_prior_and_posterior_candidate_projections_max": 108,
+    "D_total_candidate_trajectory_calls_max": 378
   },
   "custody": {
     "G5_world_source_and_private_parameters_before_K0": "REQUIRED_EXTERNAL_WITNESS",
@@ -194,9 +210,59 @@
     "actual_DES_count_vs_fluid_model_discrepancy": "REVIEW_BEFORE_G5_NO_HOLDOUT_TUNING",
     "native_G2_vs_surrogate_equivalence": "CHECK_WITHOUT_USING_NEW_WORLD_DATA",
     "numerical_allowance_end_to_end": "PRELIMINARY_GRID_STEP_REFINEMENT_NOT_FORMAL_GLOBAL_PROOF",
-    "D_B_scope_and_budget": "REPORT_NOT_TESTED_IF_CANNOT_RUN_NATIVELY",
+    "D_B_scope_and_budget": "D_OFFLINE_ADAPTER_AND_JOINT_SELECTION_CI_REQUIRED_NATIVE_G2_AND_ATMS_NOT_YET_VERIFIED_B_NOT_TESTED",
     "external_custody": "NOT_YET_ESTABLISHED",
     "source_world": "NOT_CREATED"
   },
-  "no_world_runs_authorized": true
+  "no_world_runs_authorized": true,
+  "d_method": {
+    "method": "ARENA_D_CAF02_FINITE_GRID_ADAPTER_USING_LEGACY_D_RK4_NO_LOSS",
+    "source_integrator": "scripts/arena_d_v1_screen.py:integrate",
+    "source_historical_cycle": "scripts/arena_d_v2_revision.py:revise (same-pulse restriction not directly reused)",
+    "available_structures": [
+      "D1",
+      "D2",
+      "D3"
+    ],
+    "loss": false,
+    "capacity_items_per_hour": [
+      48,
+      72,
+      100
+    ],
+    "shared_response_time_minutes": [
+      1,
+      1.5,
+      2,
+      3,
+      6,
+      10
+    ],
+    "loss_time_hours_dummy_unused": 1,
+    "max_candidates_K0": 54,
+    "K0_absolute_mae_orders": 1,
+    "K0_relative_to_family_best_mae_orders": 0.4,
+    "K1_effective_tolerance_orders": 0.77,
+    "use_common_preselected_M_K1_option": false,
+    "D_may_propose_diagnostic_K1_preference_but_cannot_change_common_trial": true,
+    "D_K1_when_not_selected": "IDENTICAL_TO_K0",
+    "post_K1_rule": "FILTER_ONLY_K0_COMPATIBLE_CANDIDATES_USING_EXACT_K1_SELECTED_PULSE_AND_RESIDUAL_WITHOUT_REFITTING_GRID",
+    "no_candidate": "ABSTAIN_NO_ADEQUATE_D_STRUCTURE",
+    "K2_set_score": "SAME_UNION_ENVELOPE_LOSS_AND_POINT_ELIGIBILITY_AS_M",
+    "numeric_solver_step_hours": 0.0008333333333333334,
+    "attribution": "CAF02_NEW_ADAPTER_NOT_HISTORICAL_D2_ATMS_COMMIT",
+    "native_parity_status": "NOT_VERIFIED_FOR_NEW_GRID",
+    "historical_CAF01_score_unchanged": true,
+    "budget": {
+      "K0_integrations_max": 54,
+      "K1_menu_projections_diagnostic_max": 162,
+      "K1_selected_pre_revision_projections_max": 54,
+      "K2_K0_plus_K1_projections_max": 108,
+      "total_distinct_candidate_trajectory_calls_max": 378,
+      "OpenModelica_candidate_calls_max_proposed": 3,
+      "D_ATMS_persistence": "NOT_CONNECTED_ONLY_READONLY_SUPPORT_LINEAGE",
+      "no_new_DES_runs": true
+    },
+    "use_joint_M_D_preselected_K1_option": true
+  }
 }
