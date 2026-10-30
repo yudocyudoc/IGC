@@ -5,6 +5,7 @@ import json
 import unittest
 
 import caf02_public_cut_bridge as bridge
+import caf02_k2_adjudicator_boundary as adjudicator
 import caf02_d_k0k1k2_adapter as d
 import caf02_joint_md_k1_design as joint
 
@@ -134,7 +135,8 @@ class PublicCutsTest(unittest.TestCase):
         bb=bridge.create_g4b_candidate(a,e,p)
         payload={"cut":"K2","world_precommitment_ref":G5,
                  "delivered":[0,1,2,3,5,6]}
-        self.assertEqual(bridge.validate_k2_reserved(payload,a,bb),
+        self.assertFalse(hasattr(bridge,\"validate_k2_reserved\"))
+        self.assertEqual(adjudicator.validate_k2_after_external_release(payload,a,bb),
                          payload["delivered"])
         with self.assertRaisesRegex(bridge.CutBlocked,"K0_PUBLIC_MASK"):
             bridge.create_g4a_candidate(payload,p)
