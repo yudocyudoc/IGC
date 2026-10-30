@@ -99,6 +99,12 @@ class ProposedIndependentScoringTests(unittest.TestCase):
         self.assertEqual(x["candidate_parameters"]["total_nominal_grid_count_C00"],32)
         self.assertEqual(x["candidate_parameters"]["total_nominal_grid_count_C01"],96)
         self.assertEqual(len(x["k1"]["menu"]),3)
+        self.assertEqual(x["resource_ceiling"]["selected_K1_candidate_forecasts_max"],
+                         128*3)
+        self.assertEqual(x["resource_ceiling"]["K2_prior_and_posterior_candidate_forecasts_max"],
+                         128*2)
+        self.assertEqual(x["resource_ceiling"]["total_candidate_trajectory_calculations_upper_bound"],
+                         128+384+256)
         self.assertEqual(x["custody"]["G5_world_source_and_private_parameters_before_K0"],
                          "REQUIRED_EXTERNAL_WITNESS")
 
