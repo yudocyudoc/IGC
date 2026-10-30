@@ -1,0 +1,38 @@
+name: CAF-01 M C00 exploratory representability - PUBLIC CONSTRUCTION ONLY
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_c00_representability.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_c00_representability.py'
+      - '.github/workflows/caf01-m-c00-representability.yml'
+permissions:
+  contents: read
+
+jobs:
+  construction-only-exploration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify mathematical kernel, exact source hash and epistemic guards
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_c00_representability.py' -v
+      - name: Construction-only bounded queue sensitivity, exploratory and no future truth
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_c00_representability.py \
+            --output-dir "$RUNNER_TEMP/caf01-c00-exploratory"
+          echo 'EXPLORATORY_CONSTRUCTION_ONLY_NO_DES_NO_OMC_NO_RK4_NO_BUFFALO'
+      - name: Archive full candidate grid and interpretation as post-hoc, never G4 replacement
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-M-C00-construction-exploratory-${{ github.run_id }}
+          path: ${{ runner.temp }}/caf01-c00-exploratory/
+          if-no-files-found: error
+          retention-days: 90
