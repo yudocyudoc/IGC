@@ -1,0 +1,56 @@
+name: CAF-01 M producer admission — isolated construction ONLY (NO simulations)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_m_producer_admission.py'
+      - 'experiments/cafeteria/pc01/test_caf01_m_producer_admission.py'
+      - 'experiments/cafeteria/pc01/caf01_m_native_preflight.py'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAFN.json'
+      - '.github/workflows/caf01-m-producer-admission.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-M-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run isolated M public evidence tests and original M preflight tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_producer_admission.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_m_native_preflight.py' -v
+      - name: Generate construction-only M packet with 6 classes and 9 original Modelica sources
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_producer_admission.py --out artifacts/caf01-M-independent
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/caf01-M-independent")
+          x=json.loads((p/"M_PRODUCER_PACKET.json").read_text())
+          assert x["allowed_arms"]==["M"]
+          assert len(x["six_structural_capacity_classes"])==6
+          assert len(x["nine_nominal_model_sources"])==9
+          assert [r["t_min"] for r in x["public_construction_views"]["CAFN"]["evidence"]["observations"]]==[0,40]
+          assert x["budget"]["M_construction_OpenModelica_used_by_this_packet"]==0
+          assert x["Buffalo_provider_calls"]==0
+          assert x["future_evaluation_observations_read"] is False
+          assert not list(p.glob("*.mos"))
+          assert not list(p.glob("*.csv"))
+          print("CAF01_M_INDEPENDENT_SIX_CLASSES_NINE_SOURCES_NO_SOLVERS")
+          PY
+      - name: Upload ONLY the M producer admission packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-M-producer-public-construction-admission
+          path: artifacts/caf01-M-independent/
+          retention-days: 90
+          if-no-files-found: error
