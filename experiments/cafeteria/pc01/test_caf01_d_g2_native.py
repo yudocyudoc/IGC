@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from caf01_d_g2_native import (
     EVIDENCE_SHA256, PARENT_SHA256, WORLD, evaluate_csv, load_inputs,
-    prepare, read_parent, require_github_one_shot, selected_rows,
+    prepare, read_parent, require_github_one_shot, selected_rows, verify,
 )
 from caf01_g3 import inventory, score
 from scripts.arena_d_v01 import modelica, topology
@@ -112,6 +112,78 @@ class TestDNativeG2(unittest.TestCase):
             write(tamper=True)
             with self.assertRaisesRegex(ValueError,"BALANCE_OR_PARITY_BLOCKED"):
                 evaluate_csv(f,1,[0]*7)
+
+    def fake_prepared_with_three_solver_outputs(self, output_dir, *,
+                                                invalid_mass=None,
+                                                exit_failure=None,
+                                                missing_attempt=None):
+        """Three fabricated native CSVs. NO OMC/DES/RK4 ever invoked."""
+        _, contract, observations=load_inputs()
+        invented=invented_parent(contract,observations)
+        with patch("caf01_d_g2_native.read_parent",return_value=invented):
+            prepare(output_dir.parent/"fake_parent.json",output_dir)
+        mf_path=output_dir/"preflight.json"
+        mf=json.loads(mf_path.read_bytes())
+        for info in mf["selected_models"]:
+            info["rk4_curve"]=[0.]*7  # invented, not the real D screen results
+            n=info["ordinal"]
+            count=info["topology_stocks"]
+            if missing_attempt!=n:
+                (output_dir/f"D_G2_{n}.attempt").write_text("INVOCATION_STARTED\n")
+            (output_dir/f"D_G2_{n}.exit_code").write_text(
+                "2\n" if n==exit_failure else "0\n")
+            (output_dir/f"D_G2_{n}.log").write_text("fictional synthetic OMC log\n")
+            p=output_dir/info["expected_csv"]
+            fields=["time","delivered",*[f"s{i}" for i in range(1,count+1)],"lost"]
+            with p.open("w",newline="") as fp:
+                writer=csv.DictWriter(fp,fieldnames=fields)
+                writer.writeheader()
+                for i in range(81):
+                    t=i/120
+                    mass=72*min(t,1/3)
+                    row={"time":t,"delivered":0,"lost":0}
+                    row.update({f"s{k}":(mass if k==1 else 0)
+                                for k in range(1,count+1)})
+                    if n==invalid_mass:
+                        row["s1"]+=1
+                    writer.writerow(row)
+        mf_path.write_text(json.dumps(mf)+"\n")
+
+    def test_partial_failure_keeps_two_independent_pass_receipts(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/"three"
+            self.fake_prepared_with_three_solver_outputs(out,invalid_mass=2)
+            result=verify(out)
+            self.assertEqual(result["status"],"PARTIAL_NATIVE_G2")
+            self.assertEqual(result["representatives_passed"],2)
+            self.assertEqual(result["native_construction_simulations_consumed"],3)
+            self.assertEqual([r["status"] for r in result["native_candidates"]],
+                             ["PASS","FAIL","PASS"])
+            self.assertEqual(result["native_candidates"][1]["reason_code"],
+                             "D_G2_BALANCE_OR_PARITY_BLOCKED")
+            self.assertTrue((out/"D_G2_VERIFIED.json").is_file())
+            self.assertEqual(len(list(out.glob("D_G2_*_receipt.json"))),3)
+            for i,expected in ((1,"PASS"),(2,"FAIL"),(3,"PASS")):
+                receipt=json.loads((out/f"D_G2_{i}_receipt.json").read_bytes())
+                self.assertEqual(receipt["status"],expected)
+                self.assertEqual(receipt["id"],result["native_candidates"][i-1]["id"])
+                self.assertEqual(receipt["invocation_started"],True)
+
+    def test_failed_solver_exit_and_missing_attempt_cannot_erase_pass(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/"three"
+            self.fake_prepared_with_three_solver_outputs(out,exit_failure=2,
+                                                         missing_attempt=3)
+            result=verify(out)
+            self.assertEqual([r["status"] for r in result["native_candidates"]],
+                             ["PASS","FAIL","FAIL"])
+            self.assertEqual(result["native_candidates"][1]["reason_code"],
+                             "D_G2_SOLVER_EXIT_NONZERO")
+            self.assertEqual(result["native_candidates"][2]["reason_code"],
+                             "D_G2_INVOCATION_NOT_RECORDED")
+            self.assertEqual(result["native_construction_simulations_consumed"],2)
+            self.assertEqual(result["native_candidates"][0]["status"],"PASS")
+            self.assertEqual(len(list(out.glob("D_G2_*_receipt.json"))),3)
 
     def test_restrict_to_first_manual_main_run(self):
         good={"GITHUB_ACTIONS":"true","GITHUB_REF":"refs/heads/main",
