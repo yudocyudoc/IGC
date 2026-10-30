@@ -27,6 +27,20 @@ jobs:
           set -euo pipefail
           python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_structural_k0k1k2.py' -v
           python experiments/cafeteria/pc02/caf02_structural_k0k1k2.py
+      - name: Complete synthetic K0 calibration to K1 discrimination map
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_discriminability_map.py' -v
+          python experiments/cafeteria/pc02/caf02_discriminability_map.py \
+            --output-dir "$RUNNER_TEMP/CAF02-DISCRIMINABILITY-MAP"
+          echo 'CAF02_MAP_WITH_CALIBRATED_RIVALS_AND_EXPANDED_TOLERANCES'
+      - name: Archive discriminability results only, no independent truth
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-STRUCTURAL-DISCRIMINABILITY-SYNTHETIC-${{ github.run_id }}
+          path: ${{ runner.temp }}/CAF02-DISCRIMINABILITY-MAP/
+          if-no-files-found: error
+          retention-days: 60
       - name: Build synthetic fixture inside runner - no real or old DES data
         run: |
           set -euo pipefail
