@@ -6,6 +6,7 @@ from fractions import Fraction
 
 import caf02_private_source_boundary as source
 import caf02_public_cut_bridge as bridge
+import caf02_k2_adjudicator_boundary as adjudicator
 
 G5="sha256:"+"a"*64
 
@@ -77,7 +78,7 @@ class SourceMasksTest(unittest.TestCase):
                            "world_precommitment_ref":G5})
         bb=bridge.package({"cut":"G4b_PRE_K2_CANDIDATE_NOT_SEALED",
                            "parent_G4a_candidate_sha256":a["candidate_sha256"]})
-        self.assertEqual(bridge.validate_k2_reserved(optimistic,a,bb),counts)
+        self.assertEqual(adjudicator.validate_k2_after_external_release(optimistic,a,bb),counts)
 
     def test_private_mass_violation_and_wrong_sample_blocked(self):
         bad=snap(5,6,2)
