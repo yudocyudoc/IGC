@@ -98,6 +98,42 @@ def analytic_equal_uncapped(t, tau_min, rate=RATE, duration=DURATION):
     return rate*(integrated_step(t)-integrated_step(t-duration))
 
 
+def analytic_uncapped_two_stage(t, tau_p, tau_d, rate=RATE, duration=DURATION):
+    """Analytic pulse deliveries for the EXISTING LINEAR nonbinding C00 case.
+
+    H(s) = 1 / ((1 + tau_p*s)*(1 + tau_d*s)); its factors commute.
+    The integrated step response is exact for unequal as well as equal taus.
+    """
+    require(t >= 0 and tau_p > 0 and tau_d > 0, "INVALID_ANALYTIC_INPUT")
+    if tau_p == tau_d:
+        return analytic_equal_uncapped(t, tau_p, rate=rate, duration=duration)
+
+    def integrated_step(x):
+        if x <= 0:
+            return 0.0
+        qp = -math.expm1(-x / tau_p)
+        qd = -math.expm1(-x / tau_d)
+        return x - (tau_p*tau_p*qp - tau_d*tau_d*qd) / (tau_p-tau_d)
+
+    return rate*(integrated_step(t) - integrated_step(t-duration))
+
+
+def comparable_output_key(row):
+    """Observable-equivalence key, never a unique stage assignment.
+
+    Stage-time swapping is justified ONLY when capacities are inactive:
+    72/100 items/hour are >= this public construction pulse's 72/hour.
+    Below input (capacity=20), nonlinear saturation may BREAK symmetry.
+    """
+    tau_p = row["tau_preparation_minutes"]
+    tau_d = row["tau_dispatch_minutes"]
+    cap = row["shared_capacity_orders_per_hour"]
+    require(cap in CAPACITIES_PER_HOUR, "UNKNOWN_CAPACITY_CLASS")
+    if cap in (72, 100):
+        return (72, *sorted((tau_p, tau_d)))
+    return (cap, tau_p, tau_d)
+
+
 def integrate_c00(tau_p, tau_d, capacity_per_hour, step_minutes):
     """Finite-capacity two-stock Heun, deterministic, with mass audit.
 
@@ -215,6 +251,54 @@ def campaign():
          else x["shared_capacity_orders_per_hour"])
         for x in comparable
     }
+    # Linear two-stage transfer is invariant to tau_p <-> tau_d. Verify that
+    # symmetry numerically for the two explicitly nonbinding capacities.
+    for tau_p in tau_all:
+        for tau_d in tau_all:
+            for cap in (72, 100):
+                a = next(x for x in rows
+                         if x["tau_preparation_minutes"]==tau_p
+                         and x["tau_dispatch_minutes"]==tau_d
+                         and x["shared_capacity_orders_per_hour"]==cap)
+                b = next(x for x in rows
+                         if x["tau_preparation_minutes"]==tau_d
+                         and x["tau_dispatch_minutes"]==tau_p
+                         and x["shared_capacity_orders_per_hour"]==cap)
+                require(max(abs(u-v) for u,v in zip(
+                    a["predicted_delivered_construction"],
+                    b["predicted_delivered_construction"])) < 1e-8,
+                    "NONBINDING_STAGE_TIME_PERMUTATION_MISMATCH")
+    groups = {}
+    for row in comparable:
+        groups.setdefault(comparable_output_key(row), []).append(row)
+    # Verify every merged class is an equivalent DELIVERY response, not
+    # simply similar MAE. We do not merge saturated capacity=20 by swapping.
+    for members in groups.values():
+        reference = members[0]["predicted_delivered_construction"]
+        require(all(max(abs(u-v) for u,v in zip(
+            x["predicted_delivered_construction"], reference)) < 1e-8
+            for x in members), "INVALID_OBSERVABLE_EQUIVALENCE_CLASS")
+    group_representatives = [members[0]["predicted_delivered_construction"]
+                             for members in groups.values()]
+    require(all(max(abs(u-v) for u,v in zip(a,b)) > 1e-6
+                for i,a in enumerate(group_representatives)
+                for b in group_representatives[i+1:]),
+            "OUTPUT_CLASSES_NOT_DISTINCT_ON_OBSERVED_GRID")
+    expected_pairs = {(1.0,1.0),(1.0,2.0),(1.0,3.0),(1.0,5.0),
+                      (2.0,2.0),(2.0,3.0),(3.0,3.0)}
+    require(len(comparable)==22 and len(unique_comparable)==11
+            and set(groups)=={(72,*p) for p in expected_pairs},
+            "COMPARABLE_CLASS_COUNTS_OR_SYMMETRY_CHANGED")
+    # Analytic demonstration for the original C00 molecules in the fast regime.
+    for tau_p,tau_d in ((1.0,3.0),(3.0,1.0)):
+        curve = next(x for x in rows
+                     if x["tau_preparation_minutes"]==tau_p
+                     and x["tau_dispatch_minutes"]==tau_d
+                     and x["shared_capacity_orders_per_hour"]==72)
+        exact = [analytic_uncapped_two_stage(t,tau_p,tau_d) for t in TIMES]
+        require(max(abs(u-v) for u,v in zip(
+            exact, curve["predicted_delivered_construction"])) < 0.002,
+            "FAST_C00_ANALYTIC_NUMERICAL_DISCREPANCY")
     return {
         "schema": "igc-caf01-m-c00-representability-exploratory/0.1",
         "status": "POSTHOC_CONSTRUCTION_ONLY_NOT_A_FORECAST",
@@ -241,7 +325,22 @@ def campaign():
         "historical_comparable_count": sum(x in historical for x in comparable),
         "all_comparable_count": len(comparable),
         "unique_comparable_classes_after_capacity_alias": len(unique_comparable),
+        "unique_comparable_delivery_responses_after_tau_permutation": len(groups),
+        "comparable_delivery_response_classes": [
+            {"nonbinding_capacity_class_orders_per_hour": key[0],
+             "unordered_response_times_minutes": list(key[1:]),
+             "nominal_combinations": len(members),
+             "members": [{
+                 "tau_preparation_minutes": x["tau_preparation_minutes"],
+                 "tau_dispatch_minutes": x["tau_dispatch_minutes"],
+                 "shared_capacity_orders_per_hour": x["shared_capacity_orders_per_hour"]
+             } for x in members],
+             "delivered_curve_construction": members[0]["predicted_delivered_construction"],
+             "MAE_construction": members[0]["MAE_construction"]}
+            for key,members in sorted(groups.items())
+        ],
         "cap_72_100_are_equivalent_during_72_per_hour_construction": True,
+        "stage_specific_tau_from_deliveries_identifiable": False,
         "near_best_count_plus_0_25_orders":
             sum(x["MAE_construction"] <= best["MAE_construction"]+.25 for x in rows),
         "complete_grid": rows,
@@ -250,6 +349,10 @@ def campaign():
             "REF-CAF diagnostic is in-sample; it is NOT the G4 future MAE.",
             "Short response times are mathematical hypotheses without operational justification.",
             "A good fit is representability, not identifiability or structural recovery.",
+            "In nonbinding linear C00, swapping preparation/dispatch response times leaves deliveries identical but can change internal inventories.",
+            "Seven distinct responses count only this discrete comparison grid; unordered tau pairs need not be identifiable from six samples.",
+            "Saturated capacity=20 is not assumed stage-swap symmetric.",
+            "responseTime is stock-to-outflow response scale, not automatically service duration per order.",
             "Heun approximates existing molecule equations but is not an OpenModelica G2 run.",
             "C01/C02 transit topologies not tested; no global M-family impossibility follows.",
             "Original G3/G4/evaluation data are never read or scored here.",
@@ -288,6 +391,14 @@ def markdown(r):
         f"{r['all_comparable_count']} combinaciones nominales, "
         f"{r['unique_comparable_classes_after_capacity_alias']} clases distintas "
         "tras agrupar capacidades 72/100 durante construcción.",
+        f"Al agrupar también el intercambio de tiempos entre etapas sin "
+        f"saturación, quedan **{r['unique_comparable_delivery_responses_after_tau_permutation']} "
+        "respuestas distintas** en esta cuadrícula. Esto NO identifica "
+        "individualmente tau de preparación y despacho.",
+        "",
+        "Parejas de tiempos sin orden (min): "
+        + ", ".join(str(tuple(c["unordered_response_times_minutes"]))
+                    for c in r["comparable_delivery_response_classes"]) + ".",
         "",
         "| Minuto | Entregados construcción | Mejor M exploratoria | Error firmado |",
         "|---:|---:|---:|---:|",
@@ -302,6 +413,12 @@ def markdown(r):
         f"{r['max_coarse_fine_difference_orders']:.6f} pedidos.",
         "",
         "## Interpretación obligatoria",
+        "",
+        "En régimen lineal sin saturación, H(s)=1/((1+tau_p*s)(1+tau_d*s)): "
+        "intercambiar tau_p y tau_d conserva la respuesta de entregas. "
+        "No necesariamente conserva los stocks de cada etapa. "
+        "El parámetro responseTime representa escala de vaciado "
+        "stock/flujo, no un tiempo de servicio individual certificado.",
         "",
         "Los tiempos menores de 15 minutos no cuentan con justificación "
         "operativa aportada: encontrar un ajuste bueno en esa banda "

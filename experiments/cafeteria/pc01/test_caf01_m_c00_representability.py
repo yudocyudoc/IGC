@@ -36,6 +36,31 @@ class TestC00Exploration(unittest.TestCase):
         self.assertTrue(all(x<=24+1e-6 for x in p))
         self.assertTrue(all(b>=a for a,b in zip(p,p[1:])))
 
+    def test_nonbinding_stage_swap_has_exactly_same_deliveries(self):
+        left=c.integrate_c00(1,3,72,c.DT_FINE)
+        right=c.integrate_c00(3,1,72,c.DT_FINE)
+        analytic_left=[c.analytic_uncapped_two_stage(t,1,3) for t in c.TIMES]
+        analytic_right=[c.analytic_uncapped_two_stage(t,3,1) for t in c.TIMES]
+        self.assertLess(max(abs(a-b) for a,b in zip(left,right)),1e-8)
+        self.assertLess(max(abs(a-b) for a,b in zip(analytic_left,analytic_right)),1e-12)
+        self.assertLess(max(abs(a-b) for a,b in zip(left,analytic_left)),0.002)
+        # The observable is unchanged; internal first-stage stock differs.
+        def first_stock(t,tau):
+            import math
+            return c.RATE*tau*(-math.expm1(-t/tau))
+        self.assertGreater(abs(first_stock(5,1)-first_stock(5,3)),1)
+
+    def test_capacity_alias_and_time_permutation_keys(self):
+        a={"tau_preparation_minutes":1.0,"tau_dispatch_minutes":3.0,
+           "shared_capacity_orders_per_hour":72}
+        b={"tau_preparation_minutes":3.0,"tau_dispatch_minutes":1.0,
+           "shared_capacity_orders_per_hour":100}
+        self.assertEqual(c.comparable_output_key(a),c.comparable_output_key(b))
+        # For cap20, nonlinear saturation makes swap equivalence UNPROVEN.
+        a["shared_capacity_orders_per_hour"]=20
+        b["shared_capacity_orders_per_hour"]=20
+        self.assertNotEqual(c.comparable_output_key(a),c.comparable_output_key(b))
+
     def test_finite_cap_changes_behavior(self):
         low=c.integrate_c00(2,3,20,c.DT_FINE)
         high=c.integrate_c00(2,3,72,c.DT_FINE)
@@ -51,8 +76,17 @@ class TestC00Exploration(unittest.TestCase):
                          "POSTHOC_CONSTRUCTION_ONLY_NOT_A_FORECAST")
         self.assertEqual(len(report["complete_grid"]),9*9*3)
         self.assertTrue(report["cap_72_100_are_equivalent_during_72_per_hour_construction"])
-        self.assertLess(report["unique_comparable_classes_after_capacity_alias"],
-                        report["all_comparable_count"])
+        self.assertEqual(report["all_comparable_count"],22)
+        self.assertEqual(report["unique_comparable_classes_after_capacity_alias"],11)
+        self.assertEqual(report["unique_comparable_delivery_responses_after_tau_permutation"],7)
+        self.assertEqual(
+            {tuple(x["unordered_response_times_minutes"])
+             for x in report["comparable_delivery_response_classes"]},
+            {(1.0,1.0),(1.0,2.0),(1.0,3.0),(1.0,5.0),
+             (2.0,2.0),(2.0,3.0),(3.0,3.0)})
+        self.assertTrue(all(x["nonbinding_capacity_class_orders_per_hour"]==72
+                            for x in report["comparable_delivery_response_classes"]))
+        self.assertFalse(report["stage_specific_tau_from_deliveries_identifiable"])
         self.assertEqual(len(report["historical_response_times_minutes"]),3)
         self.assertTrue(all(row["native_G2_certification"] is False
                             for row in report["complete_grid"]))
