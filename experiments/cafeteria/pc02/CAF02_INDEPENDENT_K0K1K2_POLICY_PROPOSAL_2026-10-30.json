@@ -5,11 +5,12 @@
   "former_synthetic_preflight": "experiments/cafeteria/pc02/CAF02_INFORME_DISCRIMINABILIDAD_ACOTADA_2026-10-30.md",
   "question": "Can K1 evidence reduce observationally compatible C00/C01 hypotheses without false exclusion and improve K2 prospective set forecast?",
   "scope": {
-    "primary": "M_TWO_E1_STRUCTURES_C00_C01_ONLY",
-    "additional_arms": "D_AND_B_DIAGNOSTICS_IF_NATIVE_FEASIBLE_NOT_PRIMARY_CAUSAL_CLAIM",
+    "primary": "M_AND_D_PARALLEL_K0_K1_K2_EXISTING_GRAMMARS",
+    "additional_arms": "B_IF_NATIVE_FEASIBLE_NOT_ASSUMED",
     "new_molecules": false,
     "new_architecture": false,
-    "real_cafe": false
+    "real_cafe": false,
+    "caveat": "D is not M: D has 1/2/3-stock generic chain with a shared tau and shared capacity; M has stage-specific response times; compare as fixed distinct methods on the same K0/K1/K2, not equal model families"
   },
   "units": {
     "time": "minutes",
@@ -181,7 +182,12 @@
     "other_solver_budgets": "MUST_NOT_CLAIM_NATIVE_PARITY_FOR_UNEXECUTED_CANDIDATES",
     "K2_prior_and_posterior_candidate_forecasts_max": 256,
     "total_candidate_trajectory_calculations_upper_bound": 768,
-    "full_menu_required_for_select_k1": true
+    "full_menu_required_for_select_k1": true,
+    "D_construction_candidate_integrations_max": 54,
+    "D_internal_menu_candidate_projections_max": 162,
+    "D_K1_selected_candidate_projections_max": 54,
+    "D_K2_prior_and_posterior_candidate_projections_max": 108,
+    "D_total_candidate_trajectory_calls_max": 378
   },
   "custody": {
     "G5_world_source_and_private_parameters_before_K0": "REQUIRED_EXTERNAL_WITNESS",
@@ -194,9 +200,58 @@
     "actual_DES_count_vs_fluid_model_discrepancy": "REVIEW_BEFORE_G5_NO_HOLDOUT_TUNING",
     "native_G2_vs_surrogate_equivalence": "CHECK_WITHOUT_USING_NEW_WORLD_DATA",
     "numerical_allowance_end_to_end": "PRELIMINARY_GRID_STEP_REFINEMENT_NOT_FORMAL_GLOBAL_PROOF",
-    "D_B_scope_and_budget": "REPORT_NOT_TESTED_IF_CANNOT_RUN_NATIVELY",
+    "D_B_scope_and_budget": "D_OFFLINE_ADAPTER_PENDING_CI_NATIVE_G2_NOT_VERIFIED_B_NOT_TESTED",
     "external_custody": "NOT_YET_ESTABLISHED",
     "source_world": "NOT_CREATED"
   },
-  "no_world_runs_authorized": true
+  "no_world_runs_authorized": true,
+  "d_method": {
+    "method": "ARENA_D_CAF02_FINITE_GRID_ADAPTER_USING_LEGACY_D_RK4_NO_LOSS",
+    "source_integrator": "scripts/arena_d_v1_screen.py:integrate",
+    "source_historical_cycle": "scripts/arena_d_v2_revision.py:revise (same-pulse restriction not directly reused)",
+    "available_structures": [
+      "D1",
+      "D2",
+      "D3"
+    ],
+    "loss": false,
+    "capacity_items_per_hour": [
+      48,
+      72,
+      100
+    ],
+    "shared_response_time_minutes": [
+      1,
+      1.5,
+      2,
+      3,
+      6,
+      10
+    ],
+    "loss_time_hours_dummy_unused": 1,
+    "max_candidates_K0": 54,
+    "K0_absolute_mae_orders": 1,
+    "K0_relative_to_family_best_mae_orders": 0.4,
+    "K1_effective_tolerance_orders": 0.77,
+    "use_common_preselected_M_K1_option": true,
+    "D_may_propose_diagnostic_K1_preference_but_cannot_change_common_trial": true,
+    "D_K1_when_not_selected": "IDENTICAL_TO_K0",
+    "post_K1_rule": "FILTER_ONLY_K0_COMPATIBLE_CANDIDATES_USING_EXACT_K1_SELECTED_PULSE_AND_RESIDUAL_WITHOUT_REFITTING_GRID",
+    "no_candidate": "ABSTAIN_NO_ADEQUATE_D_STRUCTURE",
+    "K2_set_score": "SAME_UNION_ENVELOPE_LOSS_AND_POINT_ELIGIBILITY_AS_M",
+    "numeric_solver_step_hours": 0.0008333333333333334,
+    "attribution": "CAF02_NEW_ADAPTER_NOT_HISTORICAL_D2_ATMS_COMMIT",
+    "native_parity_status": "NOT_VERIFIED_FOR_NEW_GRID",
+    "historical_CAF01_score_unchanged": true,
+    "budget": {
+      "K0_integrations_max": 54,
+      "K1_menu_projections_diagnostic_max": 162,
+      "K1_selected_pre_revision_projections_max": 54,
+      "K2_K0_plus_K1_projections_max": 108,
+      "total_distinct_candidate_trajectory_calls_max": 378,
+      "OpenModelica_candidate_calls_max_proposed": 3,
+      "D_ATMS_persistence": "NOT_CONNECTED_ONLY_READONLY_SUPPORT_LINEAGE",
+      "no_new_DES_runs": true
+    }
+  }
 }
