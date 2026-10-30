@@ -224,37 +224,89 @@ def evaluate_csv(path, stocks, rk4_curve):
 
 
 def verify(out):
+    """Emit one durable receipt per representative; no cross-candidate fail-fast.
+
+    A PASS requires a recorded attempt, zero solver exit status, a clean log,
+    and valid native stocks/parity. A FAIL must not erase another PASS. A
+    malformed *shared* preflight/provenance still fails closed before analysis.
+    """
     mf = json.loads((out/"preflight.json").read_bytes())
     require(mf["schema"]=="igc-caf01-d-native-g2/0.1"
             and mf["stage"]=="PREPARED_ONLY_NOT_SOLVER_VERIFIED"
             and mf["source_file_sha256"]=="sha256:"+PARENT_SHA256
-            and mf["selected_model_count"]==3,
+            and mf["selected_model_count"]==3
+            and len(mf["selected_models"])==3
+            and [x["ordinal"] for x in mf["selected_models"]]==[1,2,3]
+            and [x["topology_stocks"] for x in mf["selected_models"]]==[1,2,3],
             "D_G2_PREFLIGHT_MANIFEST_BAD")
     checks = []
     for info in mf["selected_models"]:
+        ordinal = info["ordinal"]
         path = out/info["expected_csv"]
-        require(path.is_file(), "D_G2_NATIVE_RESULT_MISSING")
-        # OMC diagnostics must not contain a failed model or simulation,
-        # even if the process returned exit code zero.
-        log = (out/f"D_G2_{info['ordinal']}.log").read_text()
-        require("Error:" not in log and "Simulation Failed" not in log
-                and "Failed to load" not in log,
-                "D_G2_NATIVE_LOG_ERROR")
-        measure = evaluate_csv(path,info["topology_stocks"],info["rk4_curve"])
-        checks.append({"id":info["id"], "native_source_sha256":info["source_sha256"],
-                       "native_csv_sha256":sha(path.read_bytes()),
-                       "native_log_sha256":sha(log.encode()),
-                       "rk4_receipt_sha256":info["rk4_receipt_sha256"],
-                       **measure})
+        log_path = out/f"D_G2_{ordinal}.log"
+        attempt_path = out/f"D_G2_{ordinal}.attempt"
+        exit_path = out/f"D_G2_{ordinal}.exit_code"
+        attempted = attempt_path.exists()
+        receipt = {
+            "id":info["id"],
+            "ordinal":ordinal,
+            "status":"FAIL",
+            "reason_code":None,
+            "invocation_started":attempted,
+            "native_source_sha256":info["source_sha256"],
+            "native_csv_sha256":sha(path.read_bytes()) if path.is_file() else None,
+            "native_log_sha256":sha(log_path.read_bytes()) if log_path.is_file() else None,
+            "rk4_receipt_sha256":info["rk4_receipt_sha256"],
+            "balance_max_abs":None,
+            "rk4_native_max_abs_delta":None,
+            "native_csv_rows":None,
+            "delivered_final":None,
+        }
+        try:
+            require(attempted,"D_G2_INVOCATION_NOT_RECORDED")
+            require(attempt_path.read_bytes()==b"INVOCATION_STARTED\n",
+                    "D_G2_INVALID_ATTEMPT_MARKER")
+            require(exit_path.is_file(),"D_G2_SOLVER_EXIT_STATUS_MISSING")
+            require(exit_path.read_bytes()==b"0\n","D_G2_SOLVER_EXIT_NONZERO")
+            require(log_path.is_file(),"D_G2_NATIVE_LOG_MISSING")
+            log=log_path.read_text(encoding="utf-8")
+            require("Error:" not in log and "Simulation Failed" not in log
+                    and "Failed to load" not in log,
+                    "D_G2_NATIVE_LOG_ERROR")
+            require(path.is_file(),"D_G2_NATIVE_RESULT_MISSING")
+            measure=evaluate_csv(path,info["topology_stocks"],info["rk4_curve"])
+            receipt.update(measure)
+        except Exception as exc:
+            # Publish only fixed, non-private machine codes: no raw exceptions,
+            # tracebacks, paths or solver output in the public receipt.
+            reason=str(exc)
+            if (not reason.startswith("D_G2_")
+                    and reason not in {
+                        "MODEL_SIMULATOR_PARITY_FAILED", "BAD_OMC_SAMPLES",
+                        "NONFINITE_OMC_SAMPLES", "MISSING_OMC_COMPARISON_TIME"
+                    }):
+                reason="D_G2_NATIVE_VERIFICATION_ERROR"
+            if len(reason)>90 or not reason.replace("_","").isalnum():
+                reason="D_G2_NATIVE_VERIFICATION_ERROR"
+            receipt["reason_code"]=reason
+        # Write each result before starting the next candidate, whether PASS
+        # or FAIL. A later candidate cannot erase an already persisted PASS.
+        (out/f"D_G2_{ordinal}_receipt.json").write_bytes(canonical(receipt)+b"\n")
+        checks.append(receipt)
+    passes=sum(x["status"]=="PASS" for x in checks)
+    attempts=sum(x["invocation_started"] for x in checks)
     result = {
         "schema":"igc-caf01-d-g2-receipts/0.1",
-        "status":"ALL_THREE_NATIVE_G2_PASSED",
+        "status":("ALL_THREE_NATIVE_G2_PASSED" if passes==3
+                  else "PARTIAL_NATIVE_G2" if passes else "NO_NATIVE_G2_PASSES"),
         "source_RK4_screen_run":PARENT_RUN,
         "source_DES_construction_run":CONSTRUCTION_RUN,
         "source_public_evidence":"sha256:"+EVIDENCE_SHA256,
         "physical_balance_ceiling":BOUND_MASS,
         "RK4_OMC_parity_ceiling":BOUND_PARITY,
-        "native_construction_simulations_consumed":3,
+        "native_construction_simulations_consumed":attempts,
+        "representatives_passed":passes,
+        "representatives_failed":3-passes,
         "new_RK4_integrations":0,
         "new_DES_world_runs":0,
         "evaluation_simulations":0,
@@ -287,7 +339,11 @@ def main():
         print("D_G2_PREPARED_ONLY count="+str(info["selected_model_count"]))
     else:
         result=verify(a.out)
-        print("D_G2_VERIFIED="+result["status"])
+        print("D_G2_VERIFIED="+result["status"],flush=True)
+        if result["status"] != "ALL_THREE_NATIVE_G2_PASSED":
+            # Report the global problem only AFTER every individual receipt
+            # and the aggregate report have been written to disk.
+            raise SystemExit(1)
 
 
 if __name__=="__main__":
