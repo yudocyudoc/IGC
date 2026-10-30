@@ -245,5 +245,36 @@ def authorize_world_execution(*args,**kwargs):
         "AND_EXPLICIT_SEPARATE_AUTHORIZATION_REQUIRED")
 
 
+def main():
+    """Opt-in LOCAL preparation, never external approval or world invocation."""
+    import argparse
+    from pathlib import Path
+    ap=argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--stage",required=True,choices=("G4a","G4b"))
+    ap.add_argument("--public-evidence",help="K0/K1 masked JSON; omit only for skipped K1")
+    ap.add_argument("--g4a-candidate",help="mandatory for G4b")
+    ap.add_argument("--out",required=True,help="must not exist")
+    args=ap.parse_args()
+    policy=json.loads(d.POLICY.read_text(encoding="utf-8"))
+    need(policy["status"]=="DRAFT_FOR_REVIEW_NOT_FROZEN_NOT_AUTHORIZED",
+         "ONLY_LOCAL_DRAFT_PREPARATION_SUPPORTED")
+    need(not Path(args.out).exists(),"CUT_OUTPUT_ALREADY_EXISTS")
+    if args.stage=="G4a":
+        need(bool(args.public_evidence) and not args.g4a_candidate,
+             "G4a_REQUIRES_K0_ONLY")
+        public=json.loads(Path(args.public_evidence).read_text(encoding="utf-8"))
+        candidate=create_g4a_candidate(public,policy)
+    else:
+        need(bool(args.g4a_candidate),"G4b_PARENT_G4a_MANDATORY")
+        parent=json.loads(Path(args.g4a_candidate).read_text(encoding="utf-8"))
+        public=(json.loads(Path(args.public_evidence).read_text(encoding="utf-8"))
+                if args.public_evidence else None)
+        candidate=create_g4b_candidate(parent,public,policy)
+    with Path(args.out).open("xb") as handle:
+        handle.write(canonical(candidate))
+    print("CAF02_STAGE_CANDIDATE_ONLY_NOT_EXTERNALLY_CUSTODIED",args.stage,
+          candidate["candidate_sha256"],"NO_DES_NO_NATIVE_NO_K2")
+
+
 if __name__=="__main__":
-    print("CAF02_CUTS_PREPARATION_ONLY_NO_DES_NO_NATIVE_NO_K2")
+    main()
