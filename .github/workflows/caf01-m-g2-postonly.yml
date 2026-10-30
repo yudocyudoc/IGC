@@ -60,7 +60,7 @@ jobs:
           assert h["native_construction_simulations_consumed"]==6
           print("CAF01_M_G2_SIX_NATIVE_MATERIAL_BALANCE_POSTONLY_PASS_ZERO_NEW_OMC")
           PY
-      - name: Adversarial test: tamper only one material stock after recovery
+      - name: "Adversarial test: tamper only one material stock after recovery"
         run: |
           set -euo pipefail
           python - <<'PY'
