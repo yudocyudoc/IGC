@@ -121,7 +121,10 @@ class DCAF02AdapterTests(unittest.TestCase):
         self.assertTrue(any(r["id"]=="D2_C72_T3"
                             for r in k1["compatible"]["D2"]))
         self.assertEqual(k1["revision_kind"],
-                         "K0_HYPOTHESIS_SUPPORT_RESTRICTED_NOT_TOPOLOGY_GENERATION")
+                         "PARAMETRIC_RESTRICTION_NO_STRUCTURAL_EXCLUSION")
+        self.assertFalse(k1["structural_hypothesis_reduction_at_K1"])
+        self.assertTrue(k1["parametric_only_reduction_at_K1"])
+        self.assertEqual(k1["families_excluded_by_K1"],[])
         for family in ("D1","D2","D3"):
             prior={x["id"] for x in k0["compatible"][family]}
             revised={x["id"] for x in k1["compatible"][family]}
