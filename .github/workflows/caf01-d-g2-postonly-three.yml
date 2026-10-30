@@ -1,0 +1,95 @@
+name: CAF-01 D G2 - post-only verification of three native CSVs (NO solver)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_d_g2_postonly_three.py'
+      - '.github/workflows/caf01-d-g2-postonly-three.yml'
+      - 'experiments/cafeteria/pc01/caf01_d_g2_native.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original-native-data-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download ONLY existing G2 remainder artifact from failed run (NO OMC)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40983808227
+          name: caf01-D-G2-D2-D3-REMAINDER-40983808227
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/G2-original-readonly
+      - name: Verify PINNED original SHA and all three native balances and parities
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_d_g2_postonly_three.py \
+            --original "$RUNNER_TEMP/G2-original-readonly" \
+            --out "$RUNNER_TEMP/G2-postonly-three"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"G2-postonly-three"
+          summary=json.loads((root/"D_G2_VERIFIED.json").read_bytes())
+          assert summary["status"]=="ALL_THREE_NATIVE_G2_PASSED"
+          assert [x["status"] for x in summary["native_candidates"]]==["PASS"]*3
+          assert summary["native_construction_simulations_consumed"]==3
+          assert max(x["balance_max_abs"] for x in summary["native_candidates"])<.008
+          assert max(x["rk4_native_max_abs_delta"] for x in summary["native_candidates"])<.012
+          assert (root/"historical_failed_runner_reports_unchanged"/"D_G2_VERIFIED.json").is_file()
+          print("CAF01_D_G2_NATIVE_THREE_PASS_POSTONLY_NO_NEW_SOLVER")
+          PY
+      - name: Adversarial synthetic corruption of one post-only exit code
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os,sys,json,shutil
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_d_g2_native import verify
+          base=Path(os.environ["RUNNER_TEMP"])/"G2-postonly-three"
+          fail=base.parent/"G2-postonly-TAMPER-TEST"
+          fail.mkdir()
+          for name in ["preflight.json",*[f"D_G2_{n}{suffix}"
+            for n in (1,2,3) for suffix in (".log",".exit_code",".attempt","_res.csv")]]:
+            shutil.copyfile(base/name,fail/name)
+          (fail/"D_G2_2.exit_code").write_text("1\n")
+          r=verify(fail)
+          assert [x["status"] for x in r["native_candidates"]]==["PASS","FAIL","PASS"]
+          assert r["native_candidates"][1]["reason_code"]=="D_G2_SOLVER_EXIT_NONZERO"
+          assert r["native_construction_simulations_consumed"]==3
+          print("CAF01_D_G2_POSTONLY_REJECTS_TAMPERED_EXIT_PRESERVES_OTHER_RECEIPTS")
+          PY
+      - name: Static guard — never invoke OpenModelica/RK4/DES
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          runner=Path("experiments/cafeteria/pc01/caf01_d_g2_postonly_three.py").read_text()
+          workflow=Path(".github/workflows/caf01-d-g2-postonly-three.yml").read_text()
+          assert "integrate(" not in runner
+          assert "simulate(" not in runner
+          assert "subprocess" not in runner and "docker" not in runner
+          assert "openmodelica/openmodelica:" not in workflow
+          assert "omc " not in workflow
+          assert "run-id: 40983808227" in workflow
+          assert "original_failed_receipts_retained" in runner
+          print("CAF01_D_G2_POSTONLY_NO_RK4_OMC_DES_EVALUATION")
+          PY
+      - name: Upload supplemental audit and original failed receipts as historical
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-D-G2-postonly-three-${{ github.run_id }}
+          path: ${{ runner.temp }}/G2-postonly-three/
+          retention-days: 90
+          if-no-files-found: warn
