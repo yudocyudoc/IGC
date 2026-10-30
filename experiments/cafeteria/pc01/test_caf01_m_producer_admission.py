@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Construction-only admission tests, zero RK4/OMC/DES/provider calls."""
 import copy
+import hashlib
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from caf01_g3 import CONTRACT
-from caf01_m_producer_admission import load_public, packet, generate, PUB
+from caf01_m_producer_admission import (
+    load_public, packet, generate, PUB, published_caf_model_sources,
+)
+from caf01_m_native_preflight import checked_models
 
 class TestIndependentMProducer(unittest.TestCase):
     @classmethod
@@ -30,6 +34,52 @@ class TestIndependentMProducer(unittest.TestCase):
         self.assertNotIn("D_RK4_SCREEN",json.dumps(p))
         self.assertNotIn("G4_references",json.dumps(p))
         self.assertNotIn("D_G2_VERIFIED",json.dumps(p))
+
+    def test_all_nine_final_caf_hashes_match_generated_file_and_six_members(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/"M"
+            generate(out)
+            package_bytes=(out/"CAF01MPreflight.mo").read_bytes()
+            package=package_bytes.decode("utf-8")
+            manifest=json.loads((out/"M_PRODUCER_PACKET.json").read_text())
+            nine=manifest["nine_nominal_model_sources"]
+            six=manifest["six_structural_capacity_classes"]
+            sources=published_caf_model_sources(
+                package,[r["model_name"] for r in nine])
+            self.assertEqual(len(sources),9)
+            self.assertEqual(len(six),6)
+            self.assertEqual(
+                manifest["published_CAF01MPreflight_mo_sha256"],
+                "sha256:"+hashlib.sha256(package_bytes).hexdigest())
+            old={r["name"]:r["model"] for r in checked_models(self.contract)}
+            for row in nine:
+                name=row["model_name"]
+                final_hash="sha256:"+hashlib.sha256(
+                    sources[name].encode("utf-8")).hexdigest()
+                old_hash="sha256:"+hashlib.sha256(
+                    old[name].encode("utf-8")).hexdigest()
+                self.assertEqual(row["source_sha256"],final_hash)
+                self.assertNotEqual(final_hash,old_hash)
+                self.assertIn("publicRate=72;",sources[name])
+            for row in six:
+                self.assertEqual(
+                    row["source_sha256"],
+                    "sha256:"+hashlib.sha256(
+                        sources[row["class_name"]].encode("utf-8")).hexdigest())
+
+    def test_final_extractor_blocks_e1_or_truncated_package(self):
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/"M"
+            p=generate(out)
+            source=(out/"CAF01MPreflight.mo").read_text()
+            names=[x["model_name"] for x in p["nine_nominal_model_sources"]]
+            with self.assertRaisesRegex(ValueError,"M_UNREPLACED_E1_STIMULUS"):
+                published_caf_model_sources(
+                    source.replace("publicRate=72","publicRate=73"),names)
+            with self.assertRaisesRegex(ValueError,"M_CAF_MODEL_SOURCE_EXTRACTION_MISMATCH"):
+                published_caf_model_sources(source,names[:8])
+            with self.assertRaisesRegex(ValueError,"M_CAF_FINAL_PACKAGE_SHAPE_CHANGED"):
+                published_caf_model_sources(source[:-1],names)
 
     def test_cafn_has_only_two_points_no_hidden_intermediates(self):
         p=packet(self.contract)
