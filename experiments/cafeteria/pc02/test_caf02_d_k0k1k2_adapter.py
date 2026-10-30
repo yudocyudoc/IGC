@@ -22,7 +22,7 @@ def k0_input(stocks=2,cap=72,tau=3,rate=1.2):
 
 
 def external_choice(p,rate=1.8,t=30):
-    """Stub of common M choice; NEVER claimed to be externally witnessed."""
+    """Legacy synthetic choice fixture; NEVER an externally witnessed joint decision."""
     return {
         "status":"K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION",
         "proposed_measurement":{"rate_per_minute":rate,"t_min":t},
@@ -197,7 +197,7 @@ class DCAF02AdapterTests(unittest.TestCase):
         with self.assertRaises(d.DBlocked):
             d.revise_k1(k0,external_choice(p),None,altered)
 
-    def test_no_M_K1_means_no_D_experiment_or_fake_gain(self):
+    def test_legacy_no_K1_choice_means_no_D_experiment_or_fake_gain(self):
         p=policy()
         k0=d.calibrate_k0(k0_input(),p)
         d_rank=d.diagnostic_k1_preference(k0,p)
