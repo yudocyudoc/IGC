@@ -1,0 +1,137 @@
+name: CAF-01 D G2 — remaining D2 and D3 ONLY (NO evaluation)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RECOVER_CAF01_G2_D2_D3_ONCE — spends at most 2 remaining OMC construction attempts"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: caf01-d-g2-remaining-two-once
+  cancel-in-progress: false
+
+jobs:
+  G2-D2-D3-only:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RECOVER_CAF01_G2_D2_D3_ONCE' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download historical failed G2 artifact (D1 original CSV)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40982542200
+          name: caf01-D-native-G2-run-40982542200
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/failed-G2-original
+      - name: Download frozen D RK4 parent (NO new fit)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40974820126
+          name: caf01-d-rk4-CAF01-run-40974820126
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/original-D-screen
+      - name: Before any solver, prove D1 already spent and source hashes unchanged
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os,shutil,sys,hashlib
+          from pathlib import Path
+          sys.path.insert(0,"experiments/cafeteria/pc01")
+          from caf01_d_g2_postonly_recovery import check_original
+          from caf01_d_g2_native import prepare
+          src=Path(os.environ["RUNNER_TEMP"])/"failed-G2-original"
+          check_original(src)
+          old=json.loads((src/"preflight.json").read_bytes())
+          parent=Path(os.environ["RUNNER_TEMP"])/"original-D-screen/caf01-d-CAF01/D_RK4_SCREEN.json"
+          out=Path("artifacts/caf01-d-g2")
+          new=prepare(parent,out)
+          assert hashlib.sha256((out/"preflight.json").read_bytes()).hexdigest()=="e0509cc0ba4310a0c037939ae35451466a4036f8e07ab849d16528edda67f5ee"
+          assert new["selected_models"]==old["selected_models"],"REPRESENTATIVES_CHANGED"
+          historical=out/"original_G2_run_40982542200"
+          historical.mkdir()
+          for name in ["D_G2_VERIFIED.json","D_G2_1_receipt.json",
+                       "D_G2_2_receipt.json","D_G2_3_receipt.json"]:
+            shutil.copy2(src/name,historical/name)
+          # Preserve the original D1 native output. Never run D1 again.
+          for name in ["D_G2_1_res.csv","D_G2_1.log","D_G2_1.attempt","D_G2_1.exit_code"]:
+            shutil.copy2(src/name,out/name)
+          assert not (out/"D_G2_2.attempt").exists()
+          assert not (out/"D_G2_3.attempt").exists()
+          print("D1_ALREADY_CONSUMED_ONE_AND_NATIVE_CSV_REUSED;D2_D3_ONLY_REMAIN")
+          PY
+      - name: Invoke ONLY remaining D2 and D3 (noncolliding console logs)
+        run: |
+          set -euo pipefail
+          for n in 2 3; do
+            printf 'INVOCATION_STARTED\n' > "artifacts/caf01-d-g2/D_G2_${n}.attempt"
+            echo "CAF01_D_G2_REMAINDER_OMC_INVOCATION_STARTED=$n/3" \
+              | tee "artifacts/caf01-d-g2/D_G2_${n}.console.txt"
+            # NEVER tee to D_G2_n.log: OpenModelica writes that root-owned log.
+            if docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$PWD/artifacts/caf01-d-g2/D_G2_${n}.mos" \
+              2>&1 | tee -a "artifacts/caf01-d-g2/D_G2_${n}.console.txt"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            printf '%s\n' "$rc" > "artifacts/caf01-d-g2/D_G2_${n}.exit_code"
+            echo "CAF01_D_G2_REMAINDER_EXIT_CODE model=$n status=$rc" \
+              | tee -a "artifacts/caf01-d-g2/D_G2_${n}.console.txt"
+          done
+      - name: Verify preserved D1 and BOTH remaining candidates individually
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f artifacts/caf01-d-g2/preflight.json ]; then
+            python experiments/cafeteria/pc01/caf01_d_g2_native.py verify \
+              --out artifacts/caf01-d-g2
+          else
+            echo "G2_REMAINDER_NO_PREPARED_MODELS_NO_SOLVERS" >&2
+            exit 1
+          fi
+      - name: Record cross-run native budget even on failure
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib,os
+          p=pathlib.Path("artifacts/caf01-d-g2")
+          if p.is_dir():
+            attempts=[n for n in (2,3) if (p/f"D_G2_{n}.attempt").is_file()]
+            row={"schema":"igc-caf01-d-g2-cross-run-budget/0.1",
+                 "original_native_run":40982542200,
+                 "original_consumed_D1":1,
+                 "new_recovery_run":os.getenv("GITHUB_RUN_ID"),
+                 "newly_invoked_ordinals":attempts,
+                 "newly_consumed_count":len(attempts),
+                 "cumulative_construction_native_attempts":1+len(attempts),
+                 "new_DES_runs":0,"new_RK4_integrations":0,
+                 "evaluation_world_opened":False}
+            (p/"D_G2_CROSS_RUN_ACCOUNTING.json").write_text(json.dumps(row,sort_keys=True)+"\n")
+          PY
+      - name: Restore solver output files ownership
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-d-g2 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-d-g2
+          fi
+      - name: Publish BOTH failure and PASS receipts and cross-run budget
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf01-D-G2-D2-D3-REMAINDER-${{ github.run_id }}
+          path: artifacts/caf01-d-g2/
+          retention-days: 90
+          if-no-files-found: warn
