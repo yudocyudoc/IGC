@@ -1,0 +1,29 @@
+name: CAF-02 D method K0 K1 K2 offline contract only
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf02_d_k0k1k2_adapter.py'
+      - 'experiments/cafeteria/pc02/test_caf02_d_k0k1k2_adapter.py'
+      - 'experiments/cafeteria/pc02/CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json'
+      - 'experiments/cafeteria/pc02/CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md'
+      - '.github/workflows/caf02-d-offline-adapter.yml'
+permissions:
+  contents: read
+
+jobs:
+  D-offline-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check legacy D RK4 K0 and K1 alternate public pulse adapter
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_d_k0k1k2_adapter.py' -v
+          echo 'CAF02_D_OFFLINE_ONLY_K0_K1_K2_ENVELOPES_NOT_NATIVE_G2'
+          echo 'NO_WORLD_DES_NO_OMC_NO_BUFFALO_NO_CAF01_HOLDOUT'
