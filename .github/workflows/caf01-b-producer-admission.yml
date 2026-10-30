@@ -1,0 +1,64 @@
+name: CAF-01 Buffalo producer intake — two isolated requests NO provider
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_b_producer_admission.py'
+      - 'experiments/cafeteria/pc01/test_caf01_b_producer_admission.py'
+      - 'experiments/cafeteria/pc01/caf01_b_local_specs.py'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json'
+      - 'experiments/cafeteria/pc01/public_inputs/run_40915090599/CAFN.json'
+      - '.github/workflows/caf01-b-producer-admission.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-provider-input-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test independent B input masks and old translator limitations, NO network
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_b_producer_admission.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc01 -p 'test_caf01_b_local_specs.py' -v
+      - name: Construct two independently distributable request files
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_b_producer_admission.py --out artifacts/caf01-b-input
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/caf01-b-input")
+          a=json.loads((p/"B_CAF01_PROVIDER_REQUEST.json").read_text())
+          n=json.loads((p/"B_CAFN_PROVIDER_REQUEST.json").read_text())
+          assert [x["t_min"] for x in n["public_evidence"]["observations"]]==[0,40]
+          assert [x["t_min"] for x in a["public_evidence"]["observations"]]==[0,5,10,15,20,30,40]
+          for x in (a,n):
+            assert x["status"]=="STAGED_NOT_SENT_NO_NATIVE_PROVIDER_RESPONSE"
+            assert x["budget"]["provider_inferences_from_this_preparation"]==0
+            assert x["budget"]["automatic_retries_allowed"]==0
+            assert x["isolation"]["prior_B_native_model_supplied"] is False
+            assert x["isolation"]["private_world_mechanism_supplied"] is False
+            assert x["isolation"]["other_arms_results_unavailable"] is True
+          print("CAF01_B_INDEPENDENT_CAFN_ENDPOINTS_ONLY_ZERO_PROVIDER_CALLS")
+          PY
+      - name: Export CAF01 provider request AS SEPARATE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-B-provider-input-CAF01-UNSENT
+          path: artifacts/caf01-b-input/B_CAF01_PROVIDER_REQUEST.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Export CAFN provider request AS SEPARATE artifact (no CAF01 context)
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-B-provider-input-CAFN-MASKED-UNSENT
+          path: artifacts/caf01-b-input/B_CAFN_PROVIDER_REQUEST.json
+          retention-days: 90
+          if-no-files-found: error
