@@ -48,6 +48,50 @@ def build(case,contract,pub=PUB):
             and b["CAF_local_specs_proposal"]==SPEC,
             "B_CONTRACT_PROVIDER_SCOPE_DRIFT")
     evidence=case_evidence(case,contract,pub)
+    # The masked negative case is an IDENTIFIABILITY diagnostic, not a
+    # request to manufacture a stock-flow explanation from two endpoints.
+    # A complete and valid Buffalo response can explicitly abstain.
+    if case=="CAF01":
+        task={
+            "type":"independent_stock_flow_model_proposal",
+            "boundary":"accepted_order_equivalents -> delivered",
+            "material_unit":"one accepted order equivalent = one delivered item",
+            "allowed_loss_or_cancellation":False,
+            "initial_pending":0,
+            "independent_native_model_max":1,
+            "native_model_required":True,
+            "required_native_solver_specs":SPEC,
+            "model_output":"Buffalo native model JSON, stock-flow equations and variables, no hand-created repair from other methods",
+            "explain_identifiability_limits":True,
+            "no_future_evaluation_outcomes":True,
+        }
+    else:
+        task={
+            "type":"independent_identifiability_diagnosis",
+            "boundary":"accepted_order_equivalents -> delivered",
+            "material_unit":"one accepted order equivalent = one delivered item",
+            "allowed_loss_or_cancellation":False,
+            "initial_pending":0,
+            "independent_native_model_max":0,
+            "native_model_required":False,
+            "required_native_solver_specs":None,
+            "model_output":"NOT_REQUIRED; do not create an executable native model",
+            "valid_diagnostic_outcomes":[
+                "INSUFFICIENT_EVIDENCE",
+                "PARTIALLY_IDENTIFIABLE_WITH_EXPLICIT_LIMITS",
+                "IDENTIFIABLE_WITH_EXPLICIT_JUSTIFICATION",
+            ],
+            "diagnostic_questions":[
+                "What aspects, if any, are identifiable from the public pulse and delivery counts at t=0 and t=40 only?",
+                "Which materially different causal structures or parameters could yield those same endpoints?",
+                "What additional observations would distinguish the alternatives?",
+            ],
+            "allow_explicit_abstention":True,
+            "no_unobserved_intermediate_trajectory_assumptions":True,
+            "no_individual_model_ranking_or_parameter_fitting":True,
+            "explain_identifiability_limits":True,
+            "no_future_evaluation_outcomes":True,
+        }
     return {
         "schema":"igc-caf01-b-independent-provider-request/0.1",
         "status":"STAGED_NOT_SENT_NO_NATIVE_PROVIDER_RESPONSE",
@@ -58,18 +102,7 @@ def build(case,contract,pub=PUB):
         "original_public_evidence_file_sha256":"sha256:"+FILES[case],
         "evidence_semantic_sha256":digest(evidence),
         "public_evidence":evidence,
-        "task":{
-            "type":"independent_stock_flow_model_proposal",
-            "boundary":"accepted_order_equivalents -> delivered",
-            "material_unit":"one accepted order equivalent = one delivered item",
-            "allowed_loss_or_cancellation":False,
-            "initial_pending":0,
-            "independent_native_model_max":1,
-            "required_native_solver_specs":SPEC,
-            "model_output":"Buffalo native model JSON, stock-flow equations and variables, no hand-created repair from other methods",
-            "explain_identifiability_limits":True,
-            "no_future_evaluation_outcomes":True,
-        },
+        "task":task,
         "isolation":{
             "different_B_request_has_not_been_supplied":True,
             "other_arms_results_unavailable":True,
@@ -87,11 +120,14 @@ def build(case,contract,pub=PUB):
             "CAF_N_extra_native_sims_allowed":0,
         },
         "native_adapter":{
-            "local_bridge":"caf01_b_local_specs.py",
-            "translation":"OFFLINE_ONLY_UNTIL_NATIVE_RESPONSE_AVAILABLE",
-            "historical_timing_versus_CAF_timing":"G0_G1_PARITY_UNVERIFIED",
-            "native_series_roles":"UNVERIFIED_FOR_ACTUAL_PROVIDER_MODEL",
-            "native_G2":"NOT_RUN",
+            "local_bridge":"caf01_b_local_specs.py" if case=="CAF01" else None,
+            "translation":("OFFLINE_ONLY_UNTIL_NATIVE_RESPONSE_AVAILABLE"
+                           if case=="CAF01" else "NOT_APPLICABLE_TO_MASKED_DIAGNOSTIC"),
+            "historical_timing_versus_CAF_timing":(
+                "G0_G1_PARITY_UNVERIFIED" if case=="CAF01" else "NOT_APPLICABLE"),
+            "native_series_roles":("UNVERIFIED_FOR_ACTUAL_PROVIDER_MODEL"
+                                   if case=="CAF01" else "NOT_APPLICABLE"),
+            "native_G2":"NOT_RUN" if case=="CAF01" else "NOT_APPLICABLE",
             "provider_model_failure_can_only_be_claimed_after_actual_PROVIDER_RESULT":False,
         },
     }
