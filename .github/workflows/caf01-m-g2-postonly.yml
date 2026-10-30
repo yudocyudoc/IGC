@@ -102,8 +102,12 @@ jobs:
           ast.parse(s)
           assert "subprocess" not in s
           assert "integrate(" not in s
-          assert "docker run" not in wf
-          assert "omc " not in wf
+          import re
+          # Ignore the static assertion lines themselves to avoid a
+          # self-matching false positive; block actual command invocations.
+          operational="\n".join(line for line in wf.splitlines()
+                                 if "assert " not in line)
+          assert not re.search(r'^\s+(?:docker\s+run|omc\s+)', operational, re.M)
           assert "run-id: 40999625128" in wf
           assert "all_original_FAIL_receipts_preserved" in s
           print("CAF01_M_POSTONLY_NO_SCIENTIFIC_SIMULATIONS_OR_INFERENCES")
