@@ -1,0 +1,114 @@
+name: CAF-01 M — exactly six native construction G2 simulations
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RUN_CAF01_M_SIX_G2_ONCE to spend at most six original E1 construction OMC slots"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: caf01-m-native-six-first-only
+  cancel-in-progress: false
+jobs:
+  M-G2-six:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'RUN_CAF01_M_SIX_G2_ONCE' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare six fixed CAF native classes and verify final source hashes
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_m_g2_six_native.py prepare --out artifacts/caf01-m-g2
+          test "$(find artifacts/caf01-m-g2 -maxdepth 1 -name 'M_G2_*.mos' | wc -l)" -eq 6
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("artifacts/caf01-m-g2/M_G2_PREFLIGHT.json").read_text())
+          assert p["native_invocations_at_prepare"] == 0
+          assert len(p["six_predeclared_members"]) == 6
+          assert p["M_negative_control_additional_solver_attempts"] == 0
+          assert p["evaluation_observations_read"] is False
+          assert p["D_or_B_results_read"] is False
+          print("M_G2_PREPARED_SIX_FROZEN_CLASSES_ZERO_OMC")
+          PY
+      - name: Install historical E1 libraries for native compilation (NO simulation)
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          mkdir -p "$RUNNER_TEMP/e1-home" "$RUNNER_TEMP/e1-libs"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e1-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e1-libs/systemdynamics/LICENSE"
+          echo "MSL_SOURCE_SHA=$(git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD)"
+          echo "SYSTEM_DYNAMICS_SOURCE_SHA=$(git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD)"
+      - name: Verify all nine CAF Modelica classes compile BEFORE spending any G2 budget
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+            -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc artifacts/caf01-m-g2/M_CHECK_ONLY.mos \
+            2>&1 | tee artifacts/caf01-m-g2/check_only.console.txt
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' artifacts/caf01-m-g2/check_only.console.txt; then
+            exit 1
+          fi
+          test "$(grep -Ec 'Check of CAF01MPreflight\.[^ ]+ completed successfully' artifacts/caf01-m-g2/check_only.console.txt)" -eq 9
+          echo "M_G2_NINE_MODEL_CHECKS_PASS_ZERO_SIMULATIONS"
+      - name: Invoke ONLY six originally selected M G2 native construction models
+        run: |
+          set -euo pipefail
+          for n in 1 2 3 4 5 6; do
+            printf 'INVOCATION_STARTED\n' > "artifacts/caf01-m-g2/M_G2_${n}.attempt"
+            echo "CAF01_M_G2_OMC_INVOCATION_STARTED=$n/6" \
+              | tee "artifacts/caf01-m-g2/M_G2_${n}.console.txt"
+            if docker run --rm -v "$PWD:$PWD" -w "$PWD" \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$PWD/artifacts/caf01-m-g2/M_G2_${n}.mos" \
+              2>&1 | tee -a "artifacts/caf01-m-g2/M_G2_${n}.console.txt"; then
+              rc=0
+            else
+              rc=$?
+            fi
+            printf '%s\n' "$rc" > "artifacts/caf01-m-g2/M_G2_${n}.exit_code"
+            echo "CAF01_M_G2_EXIT model=$n code=$rc" \
+              | tee -a "artifacts/caf01-m-g2/M_G2_${n}.console.txt"
+          done
+      - name: Restore Docker-created CSV and log file ownership BEFORE verification
+        if: always()
+        run: |
+          if [ -d artifacts/caf01-m-g2 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/caf01-m-g2
+            find artifacts/caf01-m-g2 -maxdepth 1 -type f -name 'M_G2_*.log' -exec chmod u+r {} +
+          fi
+      - name: Verify six physical balances and always save each independent result
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f artifacts/caf01-m-g2/M_G2_PREFLIGHT.json ]; then
+            python experiments/cafeteria/pc01/caf01_m_g2_six_native.py verify --out artifacts/caf01-m-g2
+          else
+            echo "M_G2_NO_PREFLIGHT_NO_SIMULATIONS" >&2
+            exit 1
+          fi
+      - name: Archive complete attempts, results, failures, and preflight
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-M-G2-SIX-run-${{ github.run_id }}
+          path: artifacts/caf01-m-g2/
+          if-no-files-found: warn
+          retention-days: 90
