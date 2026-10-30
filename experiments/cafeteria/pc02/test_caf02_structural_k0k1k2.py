@@ -74,7 +74,7 @@ class K0K1K2Tests(unittest.TestCase):
     def test_k1_abstains_on_uninformative_menu_not_posthoc_select(self):
         k0=rival_members()
         menu=[{"rate_per_minute":1.2,"t_min":10}]
-        chosen=select(k0,menu,100)
+        chosen=select(k0,menu,9.0)
         self.assertEqual(chosen["status"],"K1_MENU_CANNOT_ROBUSTLY_DISCRIMINATE")
         self.assertIsNone(chosen["proposed_measurement"])
         with self.assertRaises(s.Blocked):
