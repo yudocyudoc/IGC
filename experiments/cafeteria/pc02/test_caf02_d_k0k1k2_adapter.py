@@ -7,6 +7,7 @@ from pathlib import Path
 
 import caf02_d_k0k1k2_adapter as d
 import caf02_k2_set_scoring as scoring
+import caf02_structural_k0k1k2 as m
 from scripts.arena_d_v1_screen import integrate
 
 
@@ -122,6 +123,44 @@ class DCAF02AdapterTests(unittest.TestCase):
             revised={x["id"] for x in k1["compatible"][family]}
             self.assertTrue(revised.issubset(prior))
         self.assertFalse(k1["ATMS_persisted"])
+
+    def test_actual_M_selector_decision_wires_into_D_with_same_public_K0(self):
+        p=policy()
+        # Entirely SYNTHETIC scenario. Unlike external_choice(), this uses
+        # the real M K0 fitter and selector (either selects or abstains).
+        generated=m.params("C01",1,1,72,6)
+        curve=list(m.curve(generated,1.2))
+        observed=[{"t_min":5,"delivered":curve[0]},
+                  {"t_min":10,"delivered":curve[1]}]
+        grid={
+            "preparation_tau":p["candidate_parameters"]["preparation_tau_minutes"],
+            "dispatch_tau":p["candidate_parameters"]["dispatch_tau_minutes"],
+            "shared_cap":p["candidate_parameters"][
+                "shared_preparation_dispatch_capacity_orders_per_hour"],
+            "transit_tau":p["candidate_parameters"]["transit_tau_minutes_C01"],
+        }
+        m_k0=m.k0_calibrate(curve,1.2,[0,1],grid,1.0,.4)
+        m_choice=m.select_k1_measurement(m_k0,
+            [{k:v for k,v in o.items() if k!="duration_minutes"}
+             for o in p["k1"]["menu"]],
+            p["k1"]["minimum_positive_expanded_gap_orders"],
+            p["k1"]["absolute_residual_tolerance_orders"],
+            p["k1"]["numerical_allowance_orders"])
+        d_k0=d.calibrate_k0(observed,p)
+        if m_choice["proposed_measurement"] is None:
+            d_k1=d.revise_k1(d_k0,m_choice,None,p)
+            self.assertFalse(d_k1["K1_evidence_used"])
+        else:
+            chosen=m_choice["proposed_measurement"]
+            value=m.curve(generated,chosen["rate_per_minute"])[
+                m.T_VALUES.index(chosen["t_min"])]
+            d_k1=d.revise_k1(d_k0,m_choice,
+                {**chosen,"delivered":value},p)
+            self.assertTrue(d_k1["K1_evidence_used"])
+        out=d.prepare_k2(d_k0,d_k1,p)
+        self.assertFalse(out["K2_truth_included"])
+        self.assertFalse(out["G4_external_witness_verified"])
+        self.assertEqual(out["world_DES_runs"],0)
 
     def test_K1_rejects_wrong_pulse_or_time_even_if_D_prefers_it(self):
         p=policy()
