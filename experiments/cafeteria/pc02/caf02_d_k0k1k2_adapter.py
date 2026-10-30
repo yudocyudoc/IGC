@@ -325,12 +325,30 @@ def prepare_k2(k0,k1,policy):
             "candidate_count":sum(v["candidate_count"] for v in active),
         }
     a,b=overall(prior),overall(revised)
+    def point_decision(envelope):
+        if envelope is None:
+            return {"status":"ABSTAIN_ALL_NO_ADEQUATE_D_CANDIDATE",
+                    "point_delivered":None,
+                    "max_width_orders":None}
+        widths=[u-l for l,u in zip(envelope["lower"],envelope["upper"])]
+        max_width=max(widths)
+        threshold=policy["k2"]["point_eligibility_max_width_orders"]
+        return {
+            "status":("POINT_ELIGIBLE_MID_ENVELOPE" if max_width<=threshold
+                      else "SET_ONLY_ABSTAIN_POINT"),
+            "point_delivered":(
+                [(l+u)/2 for l,u in zip(envelope["lower"],envelope["upper"])]
+                if max_width<=threshold else None),
+            "max_width_orders":max_width,
+        }
     check(k1["K1_evidence_used"] or a==b,
           "D_NO_K1_MUST_NOT_CHANGE_FORECAST")
     return {
         "status":"D_K0_K1_FORECAST_SETS_READY_FOR_EXTERNAL_SEAL_NOT_SEALED",
         "K0_families":prior,"K1_families":revised,
         "K0_union":a,"K1_union":b,
+        "K0_pre_K2_point_decision":point_decision(a),
+        "K1_pre_K2_point_decision":point_decision(b),
         "K0_point_eligibility_max_width_orders":
             policy["k2"]["point_eligibility_max_width_orders"],
         "K1_revision_kind":k1["revision_kind"],
