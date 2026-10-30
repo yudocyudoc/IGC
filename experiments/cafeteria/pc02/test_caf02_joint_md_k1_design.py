@@ -140,6 +140,32 @@ class JointK1Tests(unittest.TestCase):
             self.assertEqual(len(updated["families_excluded_by_K1"]),1)
             self.assertEqual(updated["status"],"STRUCTURAL_REVISION_ONE_FAMILY_REMAINS")
 
+    def test_D_can_trigger_K1_when_M_had_no_K0_hypotheses(self):
+        p=policy()
+        qualifying=[]
+        for d5 in range(7):
+            for d10 in range(d5,13):
+                mk0,dk0=joint.from_public_k0(d5,d10,p)
+                if (not any(mk0[f]["eligible"] for f in m.FAMILIES)
+                    and d.all_survivors(dk0)):
+                    qualifying.append((d5,d10,mk0,dk0))
+        self.assertEqual(len(qualifying),10)
+        d5,d10,mk0,dk0=qualifying[0]
+        selected=joint.select(mk0,dk0,p)
+        self.assertIsNotNone(selected["proposed_measurement"])
+        chosen=selected["proposed_measurement"]
+        evidence={**chosen,"delivered":0}
+        revised=m.k1_revise(mk0,selected,evidence,.75)
+        self.assertEqual(revised["families_before_K1"],[])
+        self.assertEqual(revised["surviving_families"],[])
+        self.assertFalse(revised["structural_hypothesis_reduction_at_K1"])
+        self.assertEqual(revised["status"],
+                         "K0_NO_ADEQUATE_M_FAMILY_K1_OBSERVED")
+        self.assertEqual(revised["revision_type"],
+                         "K0_ALREADY_NO_ADEQUATE_HYPOTHESIS")
+        d1=d.revise_k1(dk0,selected,evidence,p)
+        self.assertTrue(d1["K1_evidence_used"])
+
     def test_rejects_changing_d_parent_or_m_parent(self):
         p=policy()
         mk0,dk0=joint.from_public_k0(3,8,p)
