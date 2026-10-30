@@ -95,6 +95,51 @@ class JointK1Tests(unittest.TestCase):
         self.assertFalse(d2["K2_truth_included"])
         self.assertFalse(d2["G4_external_witness_verified"])
 
+    def test_M_K0_single_C01_K1_prunes_parameters_not_structure(self):
+        p=policy()
+        mk0,dk0=joint.from_public_k0(0,2,p)
+        self.assertEqual(len(mk0["C00"]["eligible"]),0)
+        self.assertEqual(len(mk0["C01"]["eligible"]),6)
+        chosen=joint.select(mk0,dk0,p)
+        self.assertIsNotNone(chosen["proposed_measurement"])
+        option=chosen["proposed_measurement"]
+        cap=int(option["rate_per_minute"]*min(option["t_min"],20))
+        revisions=[
+            m.k1_revise(mk0,chosen,{**option,"delivered":y},.75)
+            for y in range(cap+1)
+        ]
+        pruned=[x for x in revisions if x["updated"]["C00"]["count_after"]==0
+                and 0<x["updated"]["C01"]["count_after"]<6]
+        self.assertTrue(pruned,"Expected at least one parameter-pruning K1 value")
+        for updated in pruned:
+            self.assertEqual(updated["families_before_K1"],["C01"])
+            self.assertEqual(updated["surviving_families"],["C01"])
+            self.assertEqual(updated["families_excluded_by_K1"],[])
+            self.assertFalse(updated["structural_hypothesis_reduction_at_K1"])
+            self.assertTrue(updated["parametric_only_reduction_at_K1"])
+            self.assertEqual(updated["status"],"K1_PARAMETRIC_REDUCTION_ONLY")
+            self.assertEqual(updated["revision_type"],
+                "PARAMETRIC_RESTRICTION_WITHIN_EXISTING_FAMILY")
+
+    def test_M_structural_revision_requires_family_lost_since_K0(self):
+        p=policy()
+        mk0,dk0=joint.from_public_k0(1,5,p)
+        selected=joint.select(mk0,dk0,p)
+        self.assertTrue(all(mk0[f]["eligible"] for f in m.FAMILIES))
+        option=selected["proposed_measurement"]
+        self.assertIsNotNone(option)
+        cap=int(option["rate_per_minute"]*min(option["t_min"],20))
+        results=[
+            m.k1_revise(mk0,selected,{**option,"delivered":y},.75)
+            for y in range(cap+1)
+        ]
+        actual=[r for r in results if r["structural_hypothesis_reduction_at_K1"]]
+        self.assertTrue(actual,"Should distinguish family support reduction")
+        for updated in actual:
+            self.assertEqual(updated["families_before_K1"],["C00","C01"])
+            self.assertEqual(len(updated["families_excluded_by_K1"]),1)
+            self.assertEqual(updated["status"],"STRUCTURAL_REVISION_ONE_FAMILY_REMAINS")
+
     def test_rejects_changing_d_parent_or_m_parent(self):
         p=policy()
         mk0,dk0=joint.from_public_k0(3,8,p)
