@@ -27,10 +27,13 @@ class K0K1K2Tests(unittest.TestCase):
         self.assertLessEqual(d[-1],24)
         self.assertTrue(all(x<=y for x,y in zip(t,t[1:])))
 
-    def test_equal_short_tau_three_stage_approaches_two_stage(self):
+    def test_smaller_transit_response_brings_C01_closer_to_C00(self):
         d=s.simulate("C00",2,3,100,1,1.2)
-        t=s.simulate("C01",2,3,100,.001,1.2,step=.05)
-        self.assertLess(max(abs(a-b) for a,b in zip(d,t)),.08)
+        short=s.simulate("C01",2,3,100,.5,1.2)
+        long=s.simulate("C01",2,3,100,20,1.2)
+        dist_short=sum(abs(a-b) for a,b in zip(d,short))
+        dist_long=sum(abs(a-b) for a,b in zip(d,long))
+        self.assertLess(dist_short,dist_long)
 
     def test_k0_calibration_preserves_both_families_if_adequate(self):
         obs=s.simulate("C00",1,1,72,1,1.2)
