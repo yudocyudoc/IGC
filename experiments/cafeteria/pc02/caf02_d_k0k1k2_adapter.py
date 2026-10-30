@@ -285,8 +285,8 @@ def revise_k1(k0,common_selection,evidence,policy):
             predicted_y=predicted(row["stocks"],row["capacity_per_hour"],
                                   row["shared_response_time_minutes"],
                                   choice["rate_per_minute"],(choice["t_min"],))[0]
-            if abs(predicted_y-evidence["delivered"])<=
-                    d["K1_effective_tolerance_orders"]+1e-12:
+            if (abs(predicted_y-evidence["delivered"]) <=
+                    d["K1_effective_tolerance_orders"]+1e-12):
                 out[fam].append(row)
     remaining=sum(bool(v) for v in out.values())
     return {
