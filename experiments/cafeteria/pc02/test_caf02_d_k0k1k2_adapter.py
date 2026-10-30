@@ -8,6 +8,7 @@ from pathlib import Path
 import caf02_d_k0k1k2_adapter as d
 import caf02_k2_set_scoring as scoring
 import caf02_structural_k0k1k2 as m
+import caf02_joint_md_k1_design as joint
 from scripts.arena_d_v1_screen import integrate
 
 
@@ -120,7 +121,10 @@ class DCAF02AdapterTests(unittest.TestCase):
         self.assertTrue(any(r["id"]=="D2_C72_T3"
                             for r in k1["compatible"]["D2"]))
         self.assertEqual(k1["revision_kind"],
-                         "K0_HYPOTHESIS_SUPPORT_RESTRICTED_NOT_TOPOLOGY_GENERATION")
+                         "PARAMETRIC_RESTRICTION_NO_STRUCTURAL_EXCLUSION")
+        self.assertFalse(k1["structural_hypothesis_reduction_at_K1"])
+        self.assertTrue(k1["parametric_only_reduction_at_K1"])
+        self.assertEqual(k1["families_excluded_by_K1"],[])
         for family in ("D1","D2","D3"):
             prior={x["id"] for x in k0["compatible"][family]}
             revised={x["id"] for x in k1["compatible"][family]}
@@ -232,6 +236,33 @@ class DCAF02AdapterTests(unittest.TestCase):
         self.assertIsNotNone(report["set_loss_mean"])
         self.assertIn(report["status"],("POINT_ELIGIBLE",
                                         "SET_ONLY_POINT_ABSTENTION"))
+
+    def test_D_single_family_before_and_after_K1_is_not_structural_revision(self):
+        p=policy()
+        mk0,dk0=joint.from_public_k0(1,5,p)
+        # Unit-test D lineage on a K0 support subset. This is not a
+        # claim that the full D grid originally had one surviving family.
+        single=copy.deepcopy(dk0)
+        self.assertGreater(len(single["compatible"]["D2"]),1)
+        single["compatible"]["D1"]=[]
+        single["compatible"]["D3"]=[]
+        choice=joint.select(mk0,single,p)
+        option=choice["proposed_measurement"]
+        cap=int(option["rate_per_minute"]*min(option["t_min"],20))
+        revisions=[
+            d.revise_k1(single,choice,{**option,"delivered":y},p)
+            for y in range(cap+1)
+        ]
+        candidates=[r for r in revisions
+                    if 0<r["family_counts_after"]["D2"]<
+                            len(single["compatible"]["D2"])]
+        self.assertTrue(candidates)
+        for r in candidates:
+            self.assertEqual(r["families_before_K1"],["D2"])
+            self.assertEqual(r["surviving_families"],["D2"])
+            self.assertFalse(r["structural_hypothesis_reduction_at_K1"])
+            self.assertTrue(r["parametric_only_reduction_at_K1"])
+            self.assertEqual(r["status"],"K1_D_PARAMETRIC_REDUCTION_ONLY")
 
     def test_no_K1_evidence_can_be_injected_when_M_abstains(self):
         p=policy()

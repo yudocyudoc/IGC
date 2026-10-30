@@ -313,20 +313,47 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
                 kept.append(m)
         updated[f]={"kept":kept,"count_before":len(old),
                     "count_after":len(kept)}
+    families_before=[f for f in FAMILIES if k0[f]["eligible"]]
     survivors=[f for f in FAMILIES if updated[f]["kept"]]
+    families_removed=[f for f in families_before if f not in survivors]
+    count_before=sum(row["count_before"] for row in updated.values())
+    count_after=sum(row["count_after"] for row in updated.values())
+    # A single family after K1 does NOT mean K1 removed a family: the
+    # same family may already have been the only adequate K0 hypothesis.
+    structural_reduction=bool(families_removed) and bool(survivors)
+    parametric_reduction=count_after<count_before and not families_removed
+    if not families_before:
+        status="K0_NO_ADEQUATE_M_FAMILY_K1_OBSERVED"
+        revision_type="K0_ALREADY_NO_ADEQUATE_HYPOTHESIS"
+    elif not survivors:
+        status="K1_NO_COMPATIBLE_FAMILY"
+        revision_type="K1_ALL_K0_HYPOTHESES_CONTRADICTED"
+    elif structural_reduction:
+        status="STRUCTURAL_REVISION_ONE_FAMILY_REMAINS"
+        revision_type="EPISTEMIC_RESTRICTION_OF_EXISTING_HYPOTHESES"
+    elif len(families_before)==1:
+        status=("K1_PARAMETRIC_REDUCTION_ONLY" if parametric_reduction
+                else "K1_SINGLE_FAMILY_UNCHANGED")
+        revision_type=("PARAMETRIC_RESTRICTION_WITHIN_EXISTING_FAMILY"
+                       if parametric_reduction else "NO_HYPOTHESIS_REDUCTION")
+    else:
+        status="K1_BOTH_FAMILIES_REMAIN"
+        revision_type=("PARAMETRIC_RESTRICTION_NO_STRUCTURAL_EXCLUSION"
+                       if parametric_reduction else "NO_HYPOTHESIS_REDUCTION")
     return {
-        "status":("STRUCTURAL_REVISION_ONE_FAMILY_REMAINS"
-                  if len(survivors)==1
-                  else "K1_BOTH_FAMILIES_REMAIN"
-                  if len(survivors)==2
-                  else "K1_NO_COMPATIBLE_FAMILY"),
+        "status":status,
         "updated":updated,
         "K1_observation":evidence,
         "used_exact_precommitted_policy":policy,
         "effective_residual_tolerance_orders":effective_tolerance,
+        "families_before_K1":families_before,
         "surviving_families":survivors,
-        "revision_type":("EPISTEMIC_RESTRICTION_OF_EXISTING_HYPOTHESES"
-                         if len(survivors)<2 else "NO_STRUCTURAL_EXCLUSION"),
+        "families_excluded_by_K1":families_removed,
+        "structural_hypothesis_reduction_at_K1":structural_reduction,
+        "candidate_count_before_K1":count_before,
+        "candidate_count_after_K1":count_after,
+        "parametric_only_reduction_at_K1":parametric_reduction,
+        "revision_type":revision_type,
         "new_architecture_created":False,
     }
 
