@@ -60,6 +60,16 @@ class ProposedIndependentScoringTests(unittest.TestCase):
         self.assertIsNone(r["K0"]["set_loss_mean"])
         self.assertEqual(r["REF_CAF"]["set_loss_mean"],0)
 
+    def test_reference_abstention_is_not_scored_as_zero_error(self):
+        truth=[1,2,3,4,5,6]
+        report=k.adjudicate(family(truth),family(truth),
+                            None,truth,truth)
+        self.assertEqual(report["REF_CAF"]["status"],
+                         "ABSTAIN_NO_CANDIDATE")
+        self.assertIsNone(report["REF_CAF"]["set_loss_mean"])
+        self.assertEqual(report["REF_SCALE"]["set_loss_mean"],0)
+        self.assertFalse(report["revision_predictive_improvement_pass"])
+
     def test_revision_gain_paired_and_references_separate(self):
         y=[1,2,3,4,5,6]
         old=[2,3,4,5,6,7]
