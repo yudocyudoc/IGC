@@ -101,6 +101,13 @@ class K0K1K2Tests(unittest.TestCase):
             s.k1_revise(k0,selected,
                 {"rate_per_minute":1.2,"t_min":40,"delivered":10},.1)
 
+    def test_k1_rejects_physically_impossible_delivery_count(self):
+        k0=rival_members()
+        option={"rate_per_minute":1.2,"t_min":20}
+        selected=s.select_k1_measurement(k0,[option],.1)
+        with self.assertRaises(s.Blocked):
+            s.k1_revise(k0,selected,{**option,"delivered":25.0},.1)
+
     def test_k2_both_versions_present_without_future_truth(self):
         k0=rival_members()
         selected=s.select_k1_measurement(k0,
