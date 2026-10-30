@@ -98,11 +98,13 @@ class JointK1Tests(unittest.TestCase):
         evidence={**opt,"delivered":int(opt["rate_per_minute"]*
                                           min(opt["t_min"],20)/2)}
         m0altered=copy.deepcopy(mk0)
-        m0altered["C00"]["eligible"].pop()
+        fam=next(f for f in m.FAMILIES if mk0[f]["eligible"])
+        m0altered[fam]["eligible"].pop()
         with self.assertRaises(m.Blocked):
             m.k1_revise(m0altered,choice,evidence,.75)
         d0altered=copy.deepcopy(dk0)
-        d0altered["compatible"]["D1"].clear()
+        fam=next(f for f in ("D1","D2","D3") if dk0["compatible"][f])
+        d0altered["compatible"][fam].pop()
         with self.assertRaises(d.DBlocked):
             d.revise_k1(d0altered,choice,evidence,p)
 
