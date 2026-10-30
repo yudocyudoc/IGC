@@ -46,7 +46,7 @@ Los valores proceden como propuesta del dominio sintético explorado en PR #101;
 | K0 cercanía al mejor ajuste por familia | MAE ≤ mejor familiar +0.4 |
 | K1 tolerancia residual | ±0.75 pedidos |
 | K1 margen numérico **provisional** | 0.02 pedidos; total ±0.77 |
-| K1 separación exigida | distancia positiva entre intervalos ampliados ≥0.05 pedidos |
+| K1 brecha de separación estructural garantizada **(solo diagnóstico, NO requisito para ejecutar K1)** | distancia positiva entre intervalos ampliados ≥0.05 pedidos |
 | K2 entrada | pulso 1.35 pedidos/min, 20 min; reinicio vacío |
 | K2 puntuación | entregados acumulados t=5,10,15,20,30,40 |
 
@@ -70,7 +70,7 @@ El criterio anterior exigía que los **intervalos familiares completos**, amplia
 
 **Activación:** si al menos un candidato adecuado de M o D sobrevive K0, se selecciona una única opción K1 del menú y se compromete antes de recibir el conteo. Incluso si el índice predice reducción nula, se ejecuta la primera opción por desempate para **comprobar adecuación**, registrando `K1_PRECOMMITTED_NO_MODELLED_REDUCTION_ADEQUACY_TEST`, sin prometer discriminación. Si **ninguno de los dos brazos** conserva candidatos adecuados, K1 no se ejecuta y se documenta `K1_NO_ADEQUATE_HYPOTHESIS_NO_TRIAL`. Así, ausencia de estructura rival en un brazo **no impide** evaluar el otro, pero ese brazo no podrá reclamar una identificación estructural que K0 ya había resuelto.
 
-En K1, conservar en cada brazo **solo** candidatos compatibles con K0 que cumplan `abs(predicción_K1 - observado) ≤0.77`; no ampliar rejillas, regenerar hipótesis ni seleccionar otro pulso después de ver el resultado. El resultado podrá: reducir candidatos sin eliminar familias; dejar una familia; conservar toda la ambigüedad; o eliminar todos los candidatos. **Ninguno** de esos casos se redefine retrospectivamente como éxito.
+En K1, conservar en cada brazo **solo** candidatos compatibles con K0 que cumplan `abs(predicción_K1 - observado) ≤0.77`; no ampliar rejillas, regenerar hipótesis ni seleccionar otro pulso después de ver el resultado. **Clasificar la revisión comparando las familias presentes en K0 con las presentes después de K1:** una familia única que **ya era única en K0** y pierde configuraciones es **reducción paramétrica**, no revisión estructural. Solo si K1 excluye una o más familias previamente compatibles y queda al menos una se declara **reducción del soporte estructural**. Si K1 elimina todas, reportar contradicción total; si no elimina candidatos, registrar ausencia de revisión. Publicar para M y D familias antes/después, identificadores excluidos, candidatos antes/después y tipo de cambio. El resultado podrá: reducir candidatos sin eliminar familias; dejar una familia; conservar toda la ambigüedad; o eliminar todos los candidatos. **Ninguno** de esos casos se redefine retrospectivamente como éxito.
 
 Los pronósticos K2 de ambos métodos se preparan en versiones separadas K0/K1 y se sellan con G4a/G4b. D podrá publicar una preferencia propia como diagnóstico, pero la regla de adquisición **conjunta** decide el único K1 que consume el mundo. La regla del estudio interno PR #101 de separación garantizada sigue siendo válida para su pregunta anterior; el cambio aquí corresponde **a un objetivo experimental distinto** (revisión de hipótesis sin exigir identificación completa).
 
@@ -98,7 +98,7 @@ La pérdida propuesta se implementa en caf02_k2_set_scoring.py, función pura si
 
 ## 6. Presupuesto y realidad de ejecución
 
-**Fuente DES común para M/D/B elegibles:** K0 máximo 1; K1 máximo 1 si existe al menos una hipótesis adecuada en M o D, K2 máximo 1 tras autorización, total máximo **3 corridas** compartidas por todos los brazos, sin reintentos. D no abre un mundo ni una K1 propios. D no abre un mundo ni una K1 propios. Un intento que falla consume presupuesto y se registra.
+**Fuente DES común para M/D/B elegibles:** K0 máximo 1; K1 máximo 1 si existe al menos una hipótesis adecuada en M o D, K2 máximo 1 tras autorización, total máximo **3 corridas** compartidas por todos los brazos, sin reintentos. D no abre un mundo ni una K1 propios. Un intento que falla consume presupuesto y se registra.
 
 **Cálculos de candidatos (cota nominal sin deduplicación):** 128 curvas matemáticas K0 (32+96); hasta 384 proyecciones K1 para cubrir **las tres opciones del menú** con todos los supervivientes; y hasta 256 pronósticos K2 (128 para K0 más 128 para K1), total máximo **768 trayectorias calculadas** antes de reutilización de caché, excluyendo el preflight numérico independiente. Registrar denominadores y CPU. **NO** describirlas como 128 ejecuciones Modelica. Propuesta de máximo 12 verificaciones nativas G2 elegidas mediante regla anterior, sin extrapolar validez nativa de los modelos no examinados. Una divergencia nativa relevante limita la afirmación del brazo M. D y Buffalo solo podrán entrar con contratos nativos y costes independientes previamente autorizados; Buffalo máximo 1 inferencia propuesta, **cero invocaciones aquí**. Un fallo nativo es un resultado explícito, no habilita reparaciones retrospectivas.
 
