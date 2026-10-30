@@ -147,7 +147,16 @@
       "FALSE_STRUCTURAL_EXCLUSION",
       "ABSTENTION",
       "RUN_COUNTS"
-    ]
+    ],
+    "reference_version_contract": {
+      "REF_CAF": "REF_CAF_K0_1WINDOW_2026-10-30",
+      "REF_CAF_rule": "mu=(D10-D5)/5; only when ideal design backlog exceeds one order at both 5 and 10; K2 D_hat(t)=min(A_K2(t),mu*t); otherwise ABSTAIN",
+      "REF_SCALE": "REF_SCALE_K0_PIECEWISE_EXTRAPOLATION_2026-10-30",
+      "REF_SCALE_rule": "piecewise construct D_K0(0)=0,D5,D10; extrapolate linearly beyond 10 using (D10-D5)/5, cap by A_K0; scale by K2/K0 input rate, cap by A_K2",
+      "common_K0_information": "t=5_and_t=10_delivered_only_NO_ACTUAL_PRIVATE_ARRIVALS",
+      "earlier_CAF01_versions_reused": false,
+      "baseline_unchanged_from_K0_to_K1": true
+    }
   },
   "resource_ceiling": {
     "world_DES": {
