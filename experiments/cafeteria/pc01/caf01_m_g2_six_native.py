@@ -108,30 +108,69 @@ def prepare(out):
     (out/"M_G2_PREFLIGHT.json").write_bytes(canonical(result))
     return result
 
-def audit_csv(path):
+def audit_csv(path, structure):
+    """Physical balance from ORIGINAL E1 material Level stocks, not 'inTransit'.
+
+    inTransit is only a transit-chain report (zero for C00), and does not
+    include the preparation and dispatch material stocks. Its use as total
+    pending silently and wrongly rejects otherwise conserving native curves.
+    Material stock columns are fixed by the nine published native E1 models.
+    """
+    need(structure in CLASSES,"M_G2_STRUCTURE_NOT_PREDECLARED")
+    n_transit=CLASSES.index(structure)
+    columns=[
+        "preparation0.stock.level",
+        "dispatch0.stock.level",
+        *[f"transit{i}.stock.level" for i in range(n_transit)]
+    ]
     with path.open(encoding="utf-8",newline="") as fp:
         rows=list(csv.DictReader(fp))
-    need(len(rows)>=81 and {"time","inTransit","deliveredTotal"}.issubset(rows[0]),
-         "M_G2_NATIVE_REQUIRED_COLUMNS_MISSING")
+    need(len(rows)>=81,"M_G2_NATIVE_TOO_FEW_ROWS")
+    header=set(rows[0])
+    expected={"time","inTransit","deliveredTotal","receipt0.deliveries.level",
+              *columns}
+    need(expected.issubset(header),"M_G2_NATIVE_REQUIRED_PHYSICAL_COLUMNS_MISSING")
+    physical_found={c for c in header
+                    if c.endswith(".stock.level") and
+                    (c.startswith("preparation") or c.startswith("dispatch")
+                     or c.startswith("transit"))}
+    need(physical_found==set(columns),"M_G2_NATIVE_MATERIAL_STOCK_TOPOLOGY_CHANGED")
     max_mass=0.
+    max_transit_alias=0.
+    max_delivery_alias=0.
     prev_t=-math.inf
     prev_delivery=-math.inf
     for row in rows:
         t=float(row["time"])
-        pending=float(row["inTransit"])
-        d=float(row["deliveredTotal"])
-        need(all(math.isfinite(v) for v in (t,pending,d)),
+        stocks=[float(row[c]) for c in columns]
+        delivered=float(row["deliveredTotal"])
+        delivered_stock=float(row["receipt0.deliveries.level"])
+        transit_alias=float(row["inTransit"])
+        need(all(math.isfinite(v) for v in [t,delivered,delivered_stock,
+                                            transit_alias,*stocks]),
              "M_G2_NATIVE_NONFINITE")
-        need(t>=prev_t-1e-9 and d>=prev_delivery-1e-7 and
-             pending>=-BOUND_MASS and d>=-BOUND_MASS and
+        need(t>=prev_t-1e-9 and
+             delivered>=prev_delivery-1e-7 and
+             min(stocks+[delivered,delivered_stock])>=-BOUND_MASS and
              t>=-1e-8 and t<=HORIZON_HOURS+1e-7,
              "M_G2_NATIVE_UNPHYSICAL_STATE")
-        arrived=SOURCE_RATE*min(max(t,0),DURATION_HOURS)
-        max_mass=max(max_mass,abs(pending+d-arrived))
+        arrival=SOURCE_RATE*min(max(t,0),DURATION_HOURS)
+        # One completed item exists in the terminal delivery counter, and
+        # every outstanding item exists in precisely ONE material Level.
+        # Do not count display/reporting filters, aliases, or flows as stocks.
+        max_mass=max(max_mass,abs(sum(stocks)+delivered-arrival))
+        max_transit_alias=max(max_transit_alias,
+                              abs(transit_alias-sum(stocks[2:])))
+        max_delivery_alias=max(max_delivery_alias,
+                               abs(delivered-delivered_stock))
         prev_t=t
-        prev_delivery=d
-    need(abs(float(rows[0]["time"]))<1e-8 and abs(prev_t-HORIZON_HOURS)<1e-6,
+        prev_delivery=delivered
+    need(abs(float(rows[0]["time"]))<1e-8 and
+         abs(prev_t-HORIZON_HOURS)<1e-6,
          "M_G2_NATIVE_TIME_GRID_WRONG")
+    need(max_transit_alias<=BOUND_MASS and
+         max_delivery_alias<=BOUND_MASS,
+         "M_G2_NATIVE_REPORT_ALIAS_INCONSISTENT")
     need(max_mass<=BOUND_MASS,"M_G2_NATIVE_MASS_BALANCE_FAILED")
     points=[]
     for minute in (0,5,10,15,20,30,40):
@@ -139,8 +178,16 @@ def audit_csv(path):
                  if abs(float(z["time"])-minute/60)<1e-6]
         need(len(matches)>=1,"M_G2_NATIVE_OBSERVATION_TIME_MISSING")
         points.append(matches[0])
-    return {"status":"PASS","balance_max_abs":max_mass,
-            "native_csv_rows":len(rows),"construction_delivered":points}
+    return {
+        "status":"PASS",
+        "balance_max_abs":max_mass,
+        "transit_report_max_abs_delta":max_transit_alias,
+        "delivery_counter_max_abs_delta":max_delivery_alias,
+        "native_material_stock_columns":columns,
+        "native_csv_rows":len(rows),
+        "construction_delivered":points
+    }
+
 
 def optional_sha(file):
     try: return SHA(file.read_bytes()) if file.is_file() else None
@@ -183,7 +230,7 @@ def verify(folder):
                  and "Simulation Failed" not in log,
                  "M_G2_NATIVE_SOLVER_LOG_ERRORS")
             need(csvfile.is_file(),"M_G2_NATIVE_CSV_MISSING")
-            result.update(audit_csv(csvfile))
+            result.update(audit_csv(csvfile,row["structure"]))
         except Exception as exc:
             msg=str(exc)
             result["reason_code"]=msg if msg.startswith("M_G2_") and len(msg)<90 else "M_G2_NATIVE_VERIFICATION_ERROR"
