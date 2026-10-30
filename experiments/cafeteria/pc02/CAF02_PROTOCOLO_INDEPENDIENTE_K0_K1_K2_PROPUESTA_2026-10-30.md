@@ -10,7 +10,7 @@ Hipótesis A, **revisión de mecanismos**: con datos de K0, el brazo M conserva 
 
 Hipótesis B, **valor predictivo**: las predicciones de K2 emitidas antes de K1 y después de K1 se comparan contra **la misma evaluación nueva** y contra REF-CAF/REF-SCALE. Mejorar únicamente el ajuste K1 no es éxito predictivo.
 
-La primaria estudia M/C00/C01 porque esa ruta tiene implementado el contraste. D y Buffalo recibirán la misma evidencia cuando sean ejecutables bajo presupuestos y contratos nativos, pero **no** debe afirmarse éxito D/B/M desde un ensayo solo de M. La revisión de hipótesis entre dos grafos existentes no equivale a modificar arquitectura; cambiar solamente tiempos/capacidades es revisión paramétrica. No hay ninguna justificación para editar E1.
+**Los métodos principales propuestos son M y D en paralelo**, sobre la misma evidencia K0, la misma única medición K1 seleccionada y la misma evaluación K2. M utiliza C00/C01; D usa su repertorio existente de cadenas D1/D2/D3 y tiempo de respuesta común entre etapas. La gramática distinta se conserva y se declara. **La elección K1 queda a cargo de M como diseñador experimental designado**, y D puede emitir una recomendación propia solo como diagnóstico: no podrá alterar el menú ni generar un ensayo extra. La adaptación de D se especifica en [CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md](CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md). **La activación de D sigue condicionada a su ruta nativa, contrato de custodia y ledger ATMS no verificados en el nuevo dominio.** Buffalo queda condicionado a la ruta nativa y a su presupuesto; no debe afirmarse éxito D/B/M desde un ensayo sin B. La revisión de hipótesis entre grafos existentes no equivale a modificar arquitectura; cambiar solamente tiempos/capacidades es revisión paramétrica. No hay justificación para editar E1.
 
 Una corrida de simulación independiente sigue sin acreditar utilidad operativa sobre cafeterías reales ni generalización estadística.
 
@@ -93,9 +93,11 @@ La pérdida propuesta se implementa en caf02_k2_set_scoring.py, función pura si
 
 ## 6. Presupuesto y realidad de ejecución
 
-**Fuente DES:** K0 máximo 1; K1 máximo 1 solo si se elige, K2 máximo 1 tras autorización, total máximo **3 corridas**, sin reintentos. Un intento que falla consume presupuesto y se registra.
+**Fuente DES común para M/D/B elegibles:** K0 máximo 1; K1 máximo 1 solo si se elige, K2 máximo 1 tras autorización, total máximo **3 corridas** compartidas por todos los brazos, sin reintentos. D no abre un mundo ni una K1 propios. Un intento que falla consume presupuesto y se registra.
 
 **Cálculos de candidatos (cota nominal sin deduplicación):** 128 curvas matemáticas K0 (32+96); hasta 384 proyecciones K1 para cubrir **las tres opciones del menú** con todos los supervivientes; y hasta 256 pronósticos K2 (128 para K0 más 128 para K1), total máximo **768 trayectorias calculadas** antes de reutilización de caché, excluyendo el preflight numérico independiente. Registrar denominadores y CPU. **NO** describirlas como 128 ejecuciones Modelica. Propuesta de máximo 12 verificaciones nativas G2 elegidas mediante regla anterior, sin extrapolar validez nativa de los modelos no examinados. Una divergencia nativa relevante limita la afirmación del brazo M. D y Buffalo solo podrán entrar con contratos nativos y costes independientes previamente autorizados; Buffalo máximo 1 inferencia propuesta, **cero invocaciones aquí**. Un fallo nativo es un resultado explícito, no habilita reparaciones retrospectivas.
+
+**Brazo D adicional:** su presupuesto propuesto no se mezcla con el de M: 54 curvas matemáticas K0 + 162 exploraciones de menú K1 + 54 proyecciones de la opción común + 108 curvas K2 de ambas versiones = 378 llamadas RK4 nominales como máximo, menos si hay caché/abstención. No son llamadas nativas. G2 D nuevo y persistencia ATMS todavía sin certificar.
 
 Un DES de eventos discretos entrega conteos enteros; el modelo continuo no tiene por qué reproducirlos dentro de ±0.77 solo por compartir el mecanismo. Ese riesgo debe figurar en resultados y NO resolverse reparametrizando después de la verdad.
 
