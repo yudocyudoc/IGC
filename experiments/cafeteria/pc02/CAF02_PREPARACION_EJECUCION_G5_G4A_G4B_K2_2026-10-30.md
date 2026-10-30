@@ -5,6 +5,8 @@
 
 ## 1. Qué se ha conectado realmente
 
+La validación de K2 reservado se ubica en un **módulo de adjudicación posterior a la revelación** (`caf02_k2_adjudicator_boundary.py`), que no debe instalarse ni invocarse en los procesos G4a/G4b. Valida solo formato/contabilidad de un K2 **ya liberado por un custodio independiente**, y su función de autorización permanece bloqueada. **La separación de archivos no sustituye aislamiento de procesos ni permisos del sistema operativo.**
+
 El código fuente de CAF-02 dispone de un **adaptador del lado del evaluador** (`caf02_private_source_boundary.py`) que acepta instantáneas del motor de eventos discretos y devuelve paquetes mínimos. **No ejecuta DES** y debe operar en un proceso separado del productor de hipótesis, que **no importa ni lee** ese módulo ni el archivo privado del mundo.
 
 | Corte | Interno al evaluador (NO se revela) | Paquete permitido fuera del evaluador |
