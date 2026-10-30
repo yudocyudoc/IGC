@@ -308,16 +308,44 @@ def revise_k1(k0,common_selection,evidence,policy):
             if (abs(predicted_y-evidence["delivered"]) <=
                     d["K1_effective_tolerance_orders"]+1e-12):
                 out[fam].append(row)
-    remaining=sum(bool(v) for v in out.values())
+    before=[f for f,rows in k0["compatible"].items() if rows]
+    after=[f for f,rows in out.items() if rows]
+    excluded=[f for f in before if f not in after]
+    n_before=sum(len(v) for v in k0["compatible"].values())
+    n_after=sum(len(v) for v in out.values())
+    structural_reduction=bool(excluded) and bool(after)
+    parametric_only=n_after<n_before and not excluded
+    if not after:
+        status="K1_NO_COMPATIBLE_D_FAMILY"
+        kind="K1_ALL_K0_HYPOTHESES_CONTRADICTED"
+    elif structural_reduction:
+        status=("K1_ONE_D_FAMILY_REMAINS" if len(after)==1
+                else "K1_D_STRUCTURAL_SUPPORT_REDUCED_MULTIPLE_REMAIN")
+        kind="STRUCTURAL_HYPOTHESIS_SUPPORT_REDUCED"
+    elif len(before)==1:
+        status=("K1_D_PARAMETRIC_REDUCTION_ONLY" if parametric_only
+                else "K1_D_SINGLE_FAMILY_UNCHANGED")
+        kind=("PARAMETRIC_RESTRICTION_WITHIN_EXISTING_FAMILY"
+              if parametric_only else "NO_HYPOTHESIS_REDUCTION")
+    else:
+        status="K1_MULTIPLE_D_FAMILIES_REMAIN"
+        kind=("PARAMETRIC_RESTRICTION_NO_STRUCTURAL_EXCLUSION"
+              if parametric_only else "NO_HYPOTHESIS_REDUCTION")
     return {
-        "status":("K1_NO_COMPATIBLE_D_FAMILY" if remaining==0
-                  else "K1_ONE_D_FAMILY_REMAINS" if remaining==1
-                  else "K1_MULTIPLE_D_FAMILIES_REMAIN"),
+        "status":status,
         "compatible":out,
         "family_counts_after":{f:len(v) for f,v in out.items()},
+        "families_before_K1":before,
+        "surviving_families":after,
+        "families_excluded_by_K1":excluded,
+        "structural_hypothesis_reduction_at_K1":structural_reduction,
+        "parametric_only_reduction_at_K1":parametric_only,
+        "candidate_count_before_K1":n_before,
+        "candidate_count_after_K1":n_after,
         "K1_evidence_used":True,
         "K1_evidence":evidence,
-        "revision_kind":"K0_HYPOTHESIS_SUPPORT_RESTRICTED_NOT_TOPOLOGY_GENERATION",
+        "revision_kind":kind,
+        "topology_generated":False,
         "source_preselected_measurement":choice,
         "ATMS_persisted":False,
         "ATMS_logical_support_proposed":[
