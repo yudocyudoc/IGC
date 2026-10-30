@@ -1,0 +1,101 @@
+name: CAF-01 G3 selection and G4 public references — original artifacts ONLY
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_g3_from_original_artifacts.py'
+      - '.github/workflows/caf01-g3-original-artifacts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  construction-only-no-solver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Get original D construction RK4 18-screen (not evaluation)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40974820126
+          name: caf01-d-rk4-CAF01-run-40974820126
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/D-SCREEN
+      - name: Get exact D post-only G2 receipts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40984572504
+          name: CAF01-D-G2-postonly-three-40984572504
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/D-G2
+      - name: Get exact M post-only physical G2 receipts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 41000243810
+          name: CAF01-M-G2-postonly-six-41000243810
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/M-G2
+      - name: Get real native Buffalo CAF01 plus historical adapter receipt
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40999646869
+          name: CAF01-B-original-native-once-40999646869
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/B-CAF01
+      - name: Get independent CAFN prompt audit and receipt (never G4 truth)
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 40999646869
+          name: CAF01-B-CAFN-masked-diagnostic-once-40999646869
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/B-CAFN
+      - name: Verify PINNED real source files and run unchanged G3/G4 rules
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc01/caf01_g3_from_original_artifacts.py \
+            --public experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json \
+            --d-screen "$RUNNER_TEMP/D-SCREEN/caf01-d-CAF01/D_RK4_SCREEN.json" \
+            --d-native "$RUNNER_TEMP/D-G2/D_G2_VERIFIED.json" \
+            --m-native "$RUNNER_TEMP/M-G2/M_G2_AGGREGATE.json" \
+            --b-original "$RUNNER_TEMP/B-CAF01/B-CAF01-native/native-output.json" \
+            --b-intake "$RUNNER_TEMP/B-CAF01/B-CAF01-adapter/B_NATIVE_INTAKE.json" \
+            --b-cafn "$RUNNER_TEMP/B-CAFN/CAFN-diagnostic/B_CAFN_RECEIPT.json" \
+            --b-prompt "$RUNNER_TEMP/B-CAFN/CAFN-diagnostic/B_CAFN_REQUEST_AUDIT.json" \
+            --out artifacts/CAF01-G3-G4-construction-ONLY
+      - name: Independent structural receipt and no-holdout assertions
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=Path("artifacts/CAF01-G3-G4-construction-ONLY")
+          rows=json.loads((r/"G3_COMPLETE_INVENTORY.json").read_bytes())
+          dec=json.loads((r/"G3_CONSTRUCTION_SELECTION.json").read_bytes())
+          refs=json.loads((r/"G4_PUBLIC_REFERENCE_FORECASTS_UNCUSTODIED.json").read_bytes())
+          audit=json.loads((r/"G3_G4_PROVENANCE_AND_LIMITATIONS.json").read_bytes())
+          assert len(rows)==25
+          assert len([x for x in rows if x["id"].startswith("D")])==18
+          assert len([x for x in rows if x["id"].startswith("M_")])==6
+          assert [x for x in rows if x["id"]=="B_NATIVE_1"][0]["gates"]["G1"]=="FAIL"
+          assert dec["decision"]["B"]["status"]=="NO_VALID_CANDIDATE"
+          assert dec["decision"]["D"]["winners_pending_g2"]==[]
+          assert refs["future_truth_seen"] is False
+          assert refs["independent_new_world_runs"]==0
+          assert audit["forecast_model_evaluation_simulations"]==0
+          assert audit["external_immutable_G3_G4_custody"]=="NOT_YET_ESTABLISHED"
+          assert audit["DES_evaluation_invocations"]==0
+          print("CAF01_G3_CONSTRUCTION_25_ROWS_B_G1_FAIL_G4_PUBLIC_REFERENCES_ONLY")
+          PY
+      - name: Upload selection and reference evidence WITHOUT model forecast lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF01-G3-G4-original-public-construction-${{ github.run_id }}
+          path: artifacts/CAF01-G3-G4-construction-ONLY/
+          retention-days: 90
+          if-no-files-found: error
