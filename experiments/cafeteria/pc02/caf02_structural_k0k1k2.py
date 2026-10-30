@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from functools import lru_cache
 from pathlib import Path
 
 from caf02_class_predictor import Blocked, need, number, canonical
@@ -98,10 +99,16 @@ def params(family,p,d,c,transit):
             "tau_transit_minutes":transit if family=="C01" else None}
 
 
+@lru_cache(maxsize=12000)
+def _cached_curve(structure,tp,td,cap,transit,rate):
+    return tuple(simulate(structure,tp,td,cap,transit or 1,rate))
+
+
 def curve(m,rate):
-    return simulate(m["structure"],m["tau_preparation_minutes"],
-                    m["tau_dispatch_minutes"],m["capacity_per_hour"],
-                    m["tau_transit_minutes"] or 1,rate)
+    """Cache repeated analytic-molecule numerical responses; never mutate."""
+    return _cached_curve(m["structure"],m["tau_preparation_minutes"],
+                         m["tau_dispatch_minutes"],m["capacity_per_hour"],
+                         m["tau_transit_minutes"],rate)
 
 
 def k0_calibrate(observed,rate,times_indices,parameter_grid,
@@ -167,21 +174,57 @@ def observable_envelope(rows,rate,t_index):
     return min(vals),max(vals)
 
 
-def select_k1_measurement(k0,menu,minimum_robust_gap):
-    """Design K1 from K0 CALIBRATED sets only; never use K1 truth to choose it.
+def expanded_interval_separation(a, b, residual_tolerance, numerical_guard):
+    """Disjointness of entire K0 family prediction intervals after K1 error.
 
-    Each common-menu option is a delivery count at a publicly declared time
-    under an independent reset pulse. Gap is worst-case non-overlap between
-    rival ranges, NOT best-vs-best cherry-picked separation.
+    Both families receive the same permitted absolute residual and numerical
+    allowance. A raw gap <= 2*(residual+numerical) cannot guarantee a unique
+    K1 classification. This is a conservative operational allowance, not an
+    independently certified global integration-error bound.
+    """
+    need(all(number(v) for v in (*a, *b, residual_tolerance, numerical_guard))
+         and a[0]<=a[1] and b[0]<=b[1]
+         and residual_tolerance>=0 and numerical_guard>=0,
+         "BAD_K1_EXPANDED_INTERVAL_INPUT")
+    error=residual_tolerance+numerical_guard
+    expanded_a=(a[0]-error,a[1]+error)
+    expanded_b=(b[0]-error,b[1]+error)
+    raw_gap=max(0.0,a[0]-b[1],b[0]-a[1])
+    expanded_gap=max(0.0,expanded_a[0]-expanded_b[1],
+                         expanded_b[0]-expanded_a[1])
+    return {"raw_gap_orders":raw_gap,
+            "expanded_gap_orders":expanded_gap,
+            "expanded_C00_interval":list(expanded_a),
+            "expanded_C01_interval":list(expanded_b),
+            "per_family_total_residual_tolerance_orders":error}
+
+
+def select_k1_measurement(k0, menu, minimum_robust_gap,
+                          absolute_residual_max, numerical_guard_orders):
+    """Precommit K1 menu and the EXACT tolerance used for its later revision.
+
+    Comparisons use *entire calibrated parameter sets* and expanded
+    intervals. No K1 measurement or result is read at selection time.
     """
     need(set(k0)==set(FAMILIES),"TWO_EXPLICIT_RIVALS_REQUIRED")
     need(type(menu) is list and 1<=len(menu)<=10
-         and number(minimum_robust_gap) and minimum_robust_gap>=0,
-         "INVALID_K1_MENU")
+         and all(number(v) and 0<=v<=10 for v in
+                 (minimum_robust_gap,absolute_residual_max,
+                  numerical_guard_orders)),
+         "INVALID_K1_TOLERANCE_OR_MENU")
     candidates=[]
+    policy={
+        "minimum_expanded_nonoverlap_gap_orders":minimum_robust_gap,
+        "absolute_residual_max_orders":absolute_residual_max,
+        "numerical_guard_orders":numerical_guard_orders,
+        "effective_revision_tolerance_orders":
+            absolute_residual_max+numerical_guard_orders,
+    }
     if any(not k0[f]["eligible"] for f in FAMILIES):
         return {"status":"K0_NO_TWO_ADEQUATE_STRUCTURES",
-                "proposed_measurement":None,"all_menu_scores":[]}
+                "proposed_measurement":None,"all_menu_scores":[],
+                "precommitted_policy":policy,
+                "evidence_result_read":False}
     for option in menu:
         need(type(option) is dict and
              set(option)=={"rate_per_minute","t_min"}
@@ -194,23 +237,25 @@ def select_k1_measurement(k0,menu,minimum_robust_gap):
         intervals={f:observable_envelope(
             k0[f]["eligible"],option["rate_per_minute"],i)
             for f in FAMILIES}
-        a,b=intervals["C00"],intervals["C01"]
-        gap=max(0.0,a[0]-b[1],b[0]-a[1])
+        a,bb=intervals["C00"],intervals["C01"]
+        separation=expanded_interval_separation(
+            a,bb,absolute_residual_max,numerical_guard_orders)
         candidates.append({
             "measurement":option,
             "k0_calibrated_C00_interval":list(a),
-            "k0_calibrated_C01_interval":list(b),
-            "robust_nonoverlap_gap_orders":gap,
+            "k0_calibrated_C01_interval":list(bb),
+            "raw_nonoverlap_gap_orders":separation["raw_gap_orders"],
+            "robust_nonoverlap_gap_orders":separation["expanded_gap_orders"],
+            "expanded_C00_interval":separation["expanded_C00_interval"],
+            "expanded_C01_interval":separation["expanded_C01_interval"],
         })
     selected=max(enumerate(candidates),
                  key=lambda item:(item[1]["robust_nonoverlap_gap_orders"],
                                   -item[0]))[1]
-    # If no robust separation, a single pooled measurement may NOT identify.
-    possible=selected["robust_nonoverlap_gap_orders"]>=minimum_robust_gap
-    # Require positive gap even with threshold=0, otherwise zero overlap
-    # is not robust evidence discrimination.
-    if selected["robust_nonoverlap_gap_orders"]<=0:
-        possible=False
+    # Boundary contact is ambiguity, even if minimum_robust_gap=0.
+    possible=(selected["robust_nonoverlap_gap_orders"]>0
+              and selected["robust_nonoverlap_gap_orders"]+1e-10>=
+                  minimum_robust_gap)
     return {
         "status":("K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION"
                   if possible else "K1_MENU_CANNOT_ROBUSTLY_DISCRIMINATE"),
@@ -218,13 +263,20 @@ def select_k1_measurement(k0,menu,minimum_robust_gap):
             selected["measurement"] if possible else None,
         "best_candidate_even_if_nonseparating":selected["measurement"],
         "all_menu_scores":candidates,
+        "precommitted_policy":policy,
         "evidence_result_read":False,
+        "only_this_single_observable_tested":True,
     }
 
 
 def k1_revise(k0,preselected,evidence,absolute_residual_max):
     """Revise after one PRESELECTED K1 result; no after-the-fact menu change."""
-    need(preselected["status"]=="K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION"
+    policy=preselected.get("precommitted_policy",{})
+    need(type(policy) is dict
+         and number(policy.get("absolute_residual_max_orders"))
+         and number(policy.get("numerical_guard_orders"))
+         and policy["absolute_residual_max_orders"]==absolute_residual_max
+         and preselected["status"]=="K1_DESIGN_HAS_PREDICTED_ROBUST_SEPARATION"
          and preselected["proposed_measurement"] is not None
          and set(evidence)=={"rate_per_minute","t_min","delivered"}
          and {k:evidence[k] for k in ("rate_per_minute","t_min")}
@@ -235,13 +287,16 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
          and number(absolute_residual_max) and absolute_residual_max>=0,
          "K1_NOT_PRECOMMITTED_OR_EVIDENCE_INVALID")
     i=T_VALUES.index(evidence["t_min"])
+    effective_tolerance=(
+        policy["absolute_residual_max_orders"]+
+        policy["numerical_guard_orders"])
     updated={}
     for f in FAMILIES:
         old=k0[f]["eligible"]
         kept=[]
         for m in old:
             pred=curve(m,evidence["rate_per_minute"])[i]
-            if abs(pred-evidence["delivered"])<=absolute_residual_max+1e-12:
+            if abs(pred-evidence["delivered"])<=effective_tolerance+1e-12:
                 kept.append(m)
         updated[f]={"kept":kept,"count_before":len(old),
                     "count_after":len(kept)}
@@ -254,6 +309,8 @@ def k1_revise(k0,preselected,evidence,absolute_residual_max):
                   else "K1_NO_COMPATIBLE_FAMILY"),
         "updated":updated,
         "K1_observation":evidence,
+        "used_exact_precommitted_policy":policy,
+        "effective_residual_tolerance_orders":effective_tolerance,
         "surviving_families":survivors,
         "revision_type":("EPISTEMIC_RESTRICTION_OF_EXISTING_HYPOTHESES"
                          if len(survivors)<2 else "NO_STRUCTURAL_EXCLUSION"),
