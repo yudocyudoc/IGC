@@ -33,7 +33,7 @@ class ProposedIndependentScoringTests(unittest.TestCase):
         self.assertEqual(report["point_MAE"],report["set_loss_mean"])
 
     def test_wide_interval_penalized_even_when_truth_covered(self):
-        truth=[2,4,6,8,10,12]
+        truth=[4,6,8,10,12,14]
         lower=[v-3 for v in truth]
         upper=[v+3 for v in truth]
         report=k.summarize_envelope(lower,upper,truth)
