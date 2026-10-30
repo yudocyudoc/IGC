@@ -164,6 +164,15 @@ def run():
         "K1_menu_not_discriminating":sum(
             r["k1_design_status"]=="K1_MENU_CANNOT_ROBUSTLY_DISCRIMINATE"
             for r in reports),
+        "K1_revises_to_single_family":sum(
+            r["k1_revision_status"]=="STRUCTURAL_REVISION_ONE_FAMILY_REMAINS"
+            for r in reports),
+        "K1_retains_both_families":sum(
+            r["k1_revision_status"]=="K1_BOTH_FAMILIES_REMAIN"
+            for r in reports),
+        "K1_rejects_both_families":sum(
+            r["k1_revision_status"]=="K1_NO_COMPATIBLE_FAMILY"
+            for r in reports),
         "K1_did_not_have_two_adequate_families":sum(
             r["k1_design_status"]=="K0_NO_TWO_ADEQUATE_STRUCTURES"
             for r in reports),
@@ -228,8 +237,8 @@ def markdown(report):
         "",
         "## Casos K0→K1 (K2 no observado)",
         "",
-        "| Caso | Rejilla | K0 | Sobreviven C00/C01 | Separación K1 ampliada | K1 | Familia real descartada injustamente tras K1* |",
-        "|---|---|---|---|---:|---|---|",
+        "| Caso | Rejilla | K0 | Sobreviven C00/C01 | Separación K1 ampliada | Decisión del menú | K1 supervivientes C00/C01 | Revisión K1 | ¿Exclusión indebida?* |",
+        "|---|---|---|---|---:|---|---|---|---|",
     ]
     for x in rows:
         gap=x["k1_best_expanded_robust_gap_orders"]
@@ -244,6 +253,10 @@ def markdown(report):
                  "Menú no separa").replace(
                  "K0_NO_TWO_ADEQUATE_STRUCTURES",
                  "Sin dos familias adecuadas")
+            +" | "+(str(x["k1_candidate_counts_after"]["C00"])+"/"
+                       +str(x["k1_candidate_counts_after"]["C01"])
+                       if x["k1_candidate_counts_after"] is not None else "—")
+            +" | "+x["k1_revision_status"]
             +" | "+str(x["truth_family_excluded_after_K1_despite_surviving_K0"])+" |")
     out.extend([
         "",
