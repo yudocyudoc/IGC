@@ -25,7 +25,7 @@ HORIZON=40.0
 STEP=.05
 FAMILIES=("C00","C01")
 HERE=Path(__file__).resolve().parent
-E1=HERE.parents[2]/"e1"/"registry.base.json"
+E1=HERE.parents[1]/"e1"/"registry.base.json"
 
 
 def verify_existing_repertoire():
