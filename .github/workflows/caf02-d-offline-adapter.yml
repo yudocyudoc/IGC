@@ -4,6 +4,9 @@ on:
     paths:
       - 'experiments/cafeteria/pc02/caf02_d_k0k1k2_adapter.py'
       - 'experiments/cafeteria/pc02/test_caf02_d_k0k1k2_adapter.py'
+      - 'experiments/cafeteria/pc02/caf02_joint_md_k1_design.py'
+      - 'experiments/cafeteria/pc02/test_caf02_joint_md_k1_design.py'
+      - 'experiments/cafeteria/pc02/caf02_structural_k0k1k2.py'
       - 'experiments/cafeteria/pc02/CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json'
       - 'experiments/cafeteria/pc02/CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md'
       - '.github/workflows/caf02-d-offline-adapter.yml'
@@ -25,5 +28,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_d_k0k1k2_adapter.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf02_joint_md_k1_design.py' -v
+          python experiments/cafeteria/pc02/caf02_joint_md_k1_design.py
+          echo 'CAF02_JOINT_MD_K1_POLICY_EXHAUSTIVE_70_K0_INPUTS'
           echo 'CAF02_D_OFFLINE_ONLY_K0_K1_K2_ENVELOPES_NOT_NATIVE_G2'
           echo 'NO_WORLD_DES_NO_OMC_NO_BUFFALO_NO_CAF01_HOLDOUT'
