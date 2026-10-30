@@ -237,6 +237,13 @@ def audit_admissible_integer_k0(policy):
         for b in range(a,13):
             mk0,dk0=from_public_k0(a,b,policy)
             decision=select(mk0,dk0,policy)
+            legacy=m.select_k1_measurement(
+                mk0,
+                [{"rate_per_minute":o["rate_per_minute"],
+                  "t_min":o["t_min"]} for o in policy["k1"]["menu"]],
+                policy["k1"]["minimum_positive_expanded_gap_orders"],
+                policy["k1"]["absolute_residual_tolerance_orders"],
+                policy["k1"]["numerical_allowance_orders"])
             results.append({
                 "K0_D5":a,"K0_D10":b,
                 "M_two_families":all(mk0[f]["eligible"] for f in m.FAMILIES),
@@ -244,6 +251,11 @@ def audit_admissible_integer_k0(policy):
                 "any_survivor":any(
                     sum(v.values())>0 for v in
                     decision["K0_candidate_counts"].values()),
+                "old_M_only_guaranteed_separation_K1_selected":
+                    legacy.get("proposed_measurement") is not None,
+                "old_M_only_max_raw_gap_orders":
+                    max((v["raw_nonoverlap_gap_orders"] for v in
+                         legacy.get("all_menu_scores",[])),default=None),
                 "K1_status":decision["status"],
                 "K1_chosen":decision["proposed_measurement"],
                 "K1_joint_expected_removed_fraction":
@@ -254,6 +266,13 @@ def audit_admissible_integer_k0(policy):
     summary={
         "admissible_pairs":len(results),
         "M_both_families":sum(x["M_two_families"] for x in results),
+        "prior_M_only_guaranteed_K1_selected":sum(
+            x["old_M_only_guaranteed_separation_K1_selected"]
+            for x in results),
+        "max_prior_raw_M_family_separation_orders":max(
+            (x["old_M_only_max_raw_gap_orders"]
+             for x in results
+             if x["old_M_only_max_raw_gap_orders"] is not None),default=None),
         "no_adequate_hypothesis_both_arms":sum(not x["any_survivor"]
                                                for x in results),
         "K1_precommitted":sum(x["K1_chosen"] is not None for x in results),
