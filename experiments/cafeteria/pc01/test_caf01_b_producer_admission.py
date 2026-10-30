@@ -27,13 +27,13 @@ class TestBIndependentInput(unittest.TestCase):
             self.assertFalse(row["isolation"]["prior_B_native_model_supplied"])
             self.assertFalse(row["isolation"]["evaluation_truth_supplied"])
             self.assertEqual(row["budget"]["automatic_retries_allowed"],0)
+            self.assertNotIn("D_RK4_SCREEN",json.dumps(row))
+            self.assertNotIn("M_PRODUCER_PACKET",json.dumps(row))
         self.assertEqual(a["task"]["required_native_solver_specs"]["stopTime"],2/3)
         self.assertEqual(a["native_adapter"]["native_G2"],"NOT_RUN")
         self.assertIsNone(b["task"]["required_native_solver_specs"])
         self.assertEqual(b["native_adapter"]["native_G2"],"NOT_APPLICABLE")
         self.assertIsNone(b["native_adapter"]["local_bridge"])
-            self.assertNotIn("D_RK4_SCREEN",json.dumps(row))
-            self.assertNotIn("M_PRODUCER_PACKET",json.dumps(row))
 
     def test_masked_negative_is_diagnostic_with_valid_explicit_abstention(self):
         a=build("CAF01",self.contract)
