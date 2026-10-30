@@ -97,8 +97,10 @@ def adjudicate(k0_by_family,k1_by_family,ref_caf,ref_scale,truth,
     """
     need(finite(min_improvement) and min_improvement>=0,
          "BAD_SUCCESS_MARGIN")
-    validate_curve(ref_caf)
-    validate_curve(ref_scale)
+    if ref_caf is not None:
+        validate_curve(ref_caf)
+    if ref_scale is not None:
+        validate_curve(ref_scale)
     validate_curve(truth)
     lo0,up0=combine_family_envelopes(k0_by_family)
     lo1,up1=combine_family_envelopes(k1_by_family)
