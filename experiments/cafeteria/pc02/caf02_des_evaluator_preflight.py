@@ -120,7 +120,12 @@ def synthetic_fixed_fixture_smoke():
     # These fixture values are PUBLIC TEST DATA, never candidate world settings.
     def make(rate,times):
         arrivals=engine.half_open_arrivals(rate,20)
-        return engine.run_toy_engine(config,arrivals,(0,*times))[1:]
+        # The underlying DES requires the LAST observation after every
+        # scheduled arrival. Append 40 for fixture computation only; it
+        # must not be included in the public K0/K1 mask.
+        schedule=(0,*times) if times[-1]==40 else (0,*times,40)
+        snaps=engine.run_toy_engine(config,arrivals,schedule)
+        return snaps[1:len(times)+1]
     g5="sha256:"+"a"*64
     k0=boundary.masked_k0(make("6/5",(5,10)),g5)
     k1=boundary.masked_k1(
