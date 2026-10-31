@@ -47,7 +47,10 @@ def local_g5_candidate(private_config,nonce,*,selection_declaration):
     contract=evaluator.check_source_contract()
     pins=contract["source_hashes"]
     need(set(pins)=={"des_engine","evaluator_contract",
-                     "public_mask","public_policy"},
+                     "public_mask","public_policy",
+                     "g5_local_precommit","external_witness_verifier",
+                     "public_cut_bridge","k2_adjudicator_boundary",
+                     "k2_set_scoring"},
          "G5_SOURCE_PIN_INCOMPLETE")
     seed=DOMAIN+nonce+b"\x00"+engine.canonical_private_bytes(
         private_config)+b"\x00"+canonical(pins)
