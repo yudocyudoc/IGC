@@ -1,0 +1,58 @@
+name: CAF-06 queue-growth diagnosis under changing capacity (new DES exploratory)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf06_colas_temporales_robustez.py'
+      - 'experiments/cafeteria/pc02/test_caf06_colas_temporales_robustez.py'
+      - 'experiments/cafeteria/pc02/CAF06_COLAS_TEMPORALES_CAPACIDAD.md'
+      - '.github/workflows/caf06-colas-capacidades.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare-frozen-multi-and-single-sensors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify no truth leakage, new physical worlds, abstention, immutable prior baseline
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf06_colas_temporales_robustez.py' -v
+      - name: Run 27 new DES observations and compare fixed rules
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf06_colas_temporales_robustez.py \
+            --out artifacts/caf06-colas-temporales | tee /tmp/caf06-log.json
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path("artifacts/caf06-colas-temporales")
+          r=json.loads((root/"01_RESULTADOS.json").read_bytes())
+          assert r["status"]=="CAF06_THREE_STAGE_QUEUES_CAPACITY_TRANSFER_EXECUTED"
+          assert r["DES_runs"]==27 and r["DES_confirmatory_runs"]==0
+          assert r["world_count"]==9 and len(r["observations"])==27
+          assert r["M_D_stage_stock_mapping_already_blocked"]
+          assert r["comparison_not_equal_information"]
+          assert set(r["comparisons"])=={"LOW","MATCHED","HIGH"}
+          m=json.loads((root/"04_MANIFIESTO.json").read_bytes())
+          assert m["pre_DES_plan_and_checkpoint_written"]
+          for fname,sha in m["files_sha256"].items():
+              assert "sha256:"+hashlib.sha256((root/fname).read_bytes()).hexdigest()==sha
+          print("CAF06_27_NEW_PUBLIC_DES_PROBES_AND_FROZEN_RULES_PASSED")
+          print((root/"03_INFORME.md").read_text())
+          PY
+      - name: Archive fixed plan, 27 DES observations, diagnoses and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF06-QUEUE-SENSOR-ROBUSTNESS-${{ github.run_id }}
+          path: artifacts/caf06-colas-temporales/
+          retention-days: 90
+          if-no-files-found: warn
