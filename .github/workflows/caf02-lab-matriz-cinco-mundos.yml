@@ -1,0 +1,62 @@
+name: CAF-02 DES exploratory five-world sensitivity matrix (NO formal G5)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf02_lab_exploratorio.py'
+      - 'experiments/cafeteria/pc02/caf02_lab_matriz_cinco_mundos.py'
+      - 'experiments/cafeteria/pc02/test_caf02_lab_matriz_cinco_mundos.py'
+      - 'experiments/cafeteria/pc02/CAF02_LAB_MATRIZ_CINCO_MUNDOS.md'
+      - '.github/workflows/caf02-lab-matriz-cinco-mundos.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixed-public-five-world-des-exploratory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source and pre-K2 regression tests with actual toy DES
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf02_lab_matriz_cinco_mundos.py' -v
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf02_lab_exploratorio.py' -v
+      - name: ACTUAL five DES worlds, M and D independent scoring per world
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_lab_matriz_cinco_mundos.py \
+            --out artifacts/caf02-five-worlds | tee /tmp/caf02-world-matrix-console.json
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path("artifacts/caf02-five-worlds")
+          report=json.loads((p/"01_RESULTADOS.json").read_bytes())
+          assert report["status"]=="FIVE_PUBLIC_DES_EXPLORATORY_WORLDS_EXECUTED"
+          assert report["world_count"]==5
+          assert report["DES_confirmatory_runs"]==0
+          assert report["new_OpenModelica_calls"]==0
+          assert report["provider_calls"]==0
+          assert not report["external_custody_verified"]
+          assert 10<=report["DES_lab_runs"]<=15
+          assert [row["id"] for row in report["worlds"]]==list("ABCDE")
+          file_map=json.loads((p/"04_ARCHIVOS_SHA256.json").read_bytes())["files"]
+          for name,digest in file_map.items():
+              assert "sha256:"+hashlib.sha256((p/name).read_bytes()).hexdigest()==digest
+          print("CAF02_FIVE_EXPLORATORY_WORLD_DES_ALL_REAL_OUTPUTS_PRESENT")
+          print((p/"03_INFORME.md").read_text())
+          PY
+      - name: Retain full pre-K2 forecasts, DES outputs, scoring and summary for five worlds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-DES-FIVE-PUBLIC-WORLDS-${{ github.run_id }}
+          path: artifacts/caf02-five-worlds/
+          retention-days: 90
+          if-no-files-found: warn
