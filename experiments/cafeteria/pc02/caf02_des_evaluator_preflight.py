@@ -62,6 +62,11 @@ def evaluator_source_pins():
         "evaluator_contract":HERE/"caf02_des_evaluator_preflight.py",
         "public_mask":HERE/"caf02_private_source_boundary.py",
         "public_policy":POLICY,
+        "g5_local_precommit":HERE/"caf02_g5_local_precommit.py",
+        "external_witness_verifier":HERE/"caf02_external_witness_verify.py",
+        "public_cut_bridge":HERE/"caf02_public_cut_bridge.py",
+        "k2_adjudicator_boundary":HERE/"caf02_k2_adjudicator_boundary.py",
+        "k2_set_scoring":HERE/"caf02_k2_set_scoring.py",
     }
     return {label:hash_bytes(path.read_bytes())
             for label,path in files.items()}
