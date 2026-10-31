@@ -1,0 +1,65 @@
+name: CAF-07A audit decision purity cost sensitivity and negative controls
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf07a_auditoria_decision.py'
+      - 'experiments/cafeteria/pc02/test_caf07a_auditoria_decision.py'
+      - 'experiments/cafeteria/pc02/CAF07A_CORRECCION_SELECTOR_DECISION.md'
+      - '.github/workflows/caf07a-auditoria-decision.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cost-purity-and-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test hash of original PR116, preference sensitivity, robust decision purity, model gap and 176-world plan
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf07a_auditoria_decision.py' -v
+      - name: Run immutable prior audit and 176-world deterministic physical stress matrix
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf07a_auditoria_decision.py \
+            --out artifacts/caf07a-auditoria | tee /tmp/caf07a.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('artifacts/caf07a-auditoria')
+          r=json.loads((p/'01_RESULTADOS.json').read_bytes())
+          assert r['status']=='CAF07A_METHOD_CORRECTION_AUDITED_AND_SWEEP_EXECUTED'
+          assert r['original_PR116_sha256_verified']
+          assert r['legacy_PR116_outputs_changed'] is False
+          assert r['new_world_count']==176
+          assert r['training_hypothesis_DES_runs_recomputed']==120
+          assert r['no_claim_of_independence']
+          assert r['no_probabilities_or_empirical_costs']
+          f=r['focus_K0_delivered_9']
+          winners={x['lambda']:x['chosen'] for x in f['lambda_sensitivity']['sweep']}
+          assert winners['1']=='prep_dispatch_18_t20'
+          assert winners['3/2']=='delivered_15_t20'
+          assert len(f['corrected_selector']['pareto'])>=1
+          assert r['summary']['four_stages_not_in_sensor_contract']['no_operator']==2
+          manifest=json.loads((p/'04_MANIFIESTO.json').read_bytes())
+          assert manifest['precommit_before_all_new_worlds']
+          for file,digest in manifest['files_sha256'].items():
+              assert 'sha256:'+hashlib.sha256((p/file).read_bytes()).hexdigest()==digest
+          print('CAF07A_CORRECTED_DECISION_AUDIT_AND_PRECOMMITTED_SWEEP_VALIDATED')
+          print((p/'03_INFORME.md').read_text())
+          PY
+      - name: Archive original PR116 proof, cost/frontier report, physical negative controls and hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF07A-CORRECTION-${{ github.run_id }}
+          path: artifacts/caf07a-auditoria/
+          retention-days: 90
+          if-no-files-found: warn
