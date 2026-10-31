@@ -1,0 +1,47 @@
+{
+  "status": "LOCAL_EXPLORATORY_NOT_GITHUB_NATIVE_VALIDATION",
+  "reference_commit": "5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "source": "prior local pilot used a transcribed DES core, not a verified GitHub checkout",
+  "original_local_full_results_sha256": "c303f0fbabf8657749085abccdae6cc35cc1e3bac0b03231d5fb3a4c1e753c20",
+  "note": "SHA hashes the previous locally produced full JSON, not this repository implementation's regenerated JSON",
+  "worlds": 11,
+  "observations_total": 44,
+  "within_arrival_pulse_observations": 33,
+  "zero_lag_within_pulse": {
+    "mae": 3.3586,
+    "max_abs": 6.3333,
+    "bias": -3.3586
+  },
+  "delayed_fluid_all_44": {
+    "mae": 0.2783,
+    "max_abs": 0.5833,
+    "bias": 0.1525
+  },
+  "by_structure": {
+    "single": {
+      "zero_lag": {"mae": 3.5185, "max_abs": 4.3333, "bias": -3.5185},
+      "lagged": {"mae": 0.2368, "max_abs": 0.4, "bias": 0.0839}
+    },
+    "double": {
+      "zero_lag": {"mae": 2.8056, "max_abs": 3.1667, "bias": -2.8056},
+      "lagged": {"mae": 0.3271, "max_abs": 0.5833, "bias": 0.2146}
+    },
+    "unknown-extra": {
+      "zero_lag": {"mae": 4.7778, "max_abs": 6.3333, "bias": -4.7778},
+      "lagged": {"mae": 0.1942, "max_abs": 0.4, "bias": 0.0692}
+    }
+  },
+  "passive_pair_des": {
+    "rates_per_hour": [72, 90, 108],
+    "observation_times_minutes": [10, 20, 20],
+    "delivered_single": [9, 22, 22],
+    "delivered_dual": [9, 22, 22]
+  },
+  "intervention": {
+    "change": "only prep nominal capacity 75/h to 105/h",
+    "at_minute_20": {"before_both": 22, "after_single": 26, "after_dual": 22, "dual_dispatch_waiting": 5},
+    "at_minute_40": {"after_single": 30, "after_dual": 30}
+  },
+  "scientifically_validated": false,
+  "deployment_validated": false
+}
