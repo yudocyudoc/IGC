@@ -46,7 +46,7 @@ La CI suministra el SHA exacto de **su propio checkout** mediante `--source-comm
 
 Antes del primer DES de evaluación se registran y escriben exclusivamente con `fsync` ambos bancos físicos, sus predicciones, los once escenarios, el umbral y el presupuesto. El segundo paso se escribe individualmente tras observar la primera respuesta y antes de ejecutar la segunda. Fallos del motor quedan visibles, sin reintentos y sin sobrescritura de resultados.
 
-**La CI verifica ejecución e integridad, no suficiencia científica.** El reporte incorpora `negative_controls_zero_false_single_expanded`, pero **nunca** marca `deployment_validated=true` por pasar tests o por superar estos controles.
+**La CI verifica ejecución e integridad, no suficiencia científica. **Se exige además cobertura diagnóstica mínima separada de la tasa de error: al menos un diagnóstico correcto por cada tipo de estructura (único y doble) para que la evaluación sea informativa. Si no hay cobertura, `promotion_gate=BLOCKED_NO_DIAGNOSTIC_COVERAGE` aunque los falsos positivos sean cero.**** El reporte incorpora `negative_controls_zero_false_single_expanded`, pero **nunca** marca `deployment_validated=true` por pasar tests o por superar estos controles.
 
 Este estudio no incluye incertidumbre estocástica calibrada, selección óptima de primera prueba, utilidades empresariales reales, validación independiente, topologías arbitrarias, mecanismos de feedback SD o el enlace con ATMS. No extrapolar su cobertura limitada a operaciones reales.
 
