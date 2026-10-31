@@ -1,0 +1,71 @@
+name: CAF-09 static review of existing 66 evaluations — NO DES
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/analysis/**'
+      - '.github/workflows/caf09-static-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit-canonical-evidence-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve CANONICAL historical CAF-09 evidence, no new simulations
+        uses: actions/download-artifact@v4
+        with:
+          name: caf09-policy-observability-full-audit
+          repository: yudocyudoc/IGC
+          run-id: 41246972768
+          github-token: ${{ github.token }}
+          path: artifacts/caf09-canonical
+      - name: Verify source exact checksums
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          base=Path("artifacts/caf09-canonical")
+          expected={
+            "00_PLAN_PRE_EVALUACION.json":"2529141f5a878c31ed0592ccde7baef6feda2e6c097fa59b9ce3b09d36c4d10d",
+            "02_RESULTADOS.json":"9c2d411ecbcad4abb4313aeb646d4f136e0b55a5b97da79266c31db2b0dd0d5b",
+            "03_INFORME.md":"dc980cf006edc3719b478b95bc0807e0b92fec89b430f258367b3c40e2954108",
+          }
+          for name,want in expected.items():
+              got=hashlib.sha256((base/name).read_bytes()).hexdigest()
+              assert got==want,(name,want,got)
+          print("CAF09_CANONICAL_ARTIFACT_BYTES_VERIFIED")
+          PY
+      - name: Test coverage and confusability WITHOUT importing simulator
+        env:
+          CAF09_CANONICAL_PLAN: artifacts/caf09-canonical/00_PLAN_PRE_EVALUACION.json
+          CAF09_CANONICAL_RESULTS: artifacts/caf09-canonical/02_RESULTADOS.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02/analysis -p 'test_caf09_posthoc_static.py' -v
+      - name: Produce reproducible static audit
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/analysis/caf09_posthoc_static.py \
+            --plan artifacts/caf09-canonical/00_PLAN_PRE_EVALUACION.json \
+            --results artifacts/caf09-canonical/02_RESULTADOS.json \
+            --out artifacts/caf09-posthoc-static/01_COBERTURA_Y_GRAFO.json \
+            --report artifacts/caf09-posthoc-static/02_INFORME_SIN_SIMULACIONES.md
+          cat artifacts/caf09-posthoc-static/02_INFORME_SIN_SIMULACIONES.md
+          echo "CAF09_NO_DES_SIMULATIONS_PERFORMED"
+      - name: Publish posthoc audit for AI reviewers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf09-static-posthoc-audit-no-des
+          path: artifacts/caf09-posthoc-static/
+          if-no-files-found: warn
+          retention-days: 90
