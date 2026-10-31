@@ -223,7 +223,9 @@ def structural_observability(rows, predictions, baseline, first):
     survivors = b.eligible(
         rows, predictions, {b.FIRST_ACTION_ID: first}, survivors0)
     labels = b.classes(rows, survivors)
-    candidates = candidate_scores(rows, predictions, survivors)
+    # CAF-07B does not offer a second probe after MODEL_GAP or single class.
+    candidates = (candidate_scores(rows, predictions, survivors)
+                  if len(labels) > 1 else [])
     strict_candidates = [x for x in candidates if x["all_classes_meet_minimum"]]
     partial = [x for x in candidates if x["guaranteed_count"] > 0]
     pairwise = [x for x in candidates if x["separated_cross_class_pairs"] > 0]
