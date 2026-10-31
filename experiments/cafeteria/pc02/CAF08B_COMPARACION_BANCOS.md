@@ -64,3 +64,36 @@ CI adjunta captura checkout SHA, plan con predicciones DES y fluidas **antes de 
 6. ¿La alternativa de timestamps sería menos costosa que intervenir? **No probada aquí**: no hay timestamps como canal de CAF-07B.
 
 **Regla:** resultado negativo se conserva sin ajustar a posteriori tolerancia, catálogo, cuantización o mundos. Si la nueva política falla, eso **es** el hallazgo. CAF-08B no cambia D/M/Buffalo ni ATMS; no añade sensores ni simula operación real.
+
+
+## Resultado ejecutado: GitHub Actions (31-oct-2026)
+
+**Ejecución reproducida con DES nativo:** [run 41245798310](https://github.com/yudocyudoc/IGC/actions/runs/41245798310), código evaluado `58ffd5b3870f46b03ff6f1490a1341b46606602c`. **5/5 pruebas PASS**; `CAF08B_TECHNICAL_PASS_SCIENTIFIC_NOT_PROMOTED`. [Artefacto con 48 archivos](https://github.com/yudocyudoc/IGC/actions/runs/41245798310/artifacts/13058732715) (44 decisiones escritas antes de segunda observación, plan, resultados, informe y manifiesto). Artifacts caducan; script y tests permiten regenerarlos.
+
+### ¿Cuánto difieren las curvas predictivas?
+
+| Banco | Canales predichos cotejados | Diferencias no nulas DES vs fluido cuantizado | Diferencia máxima | Exceden ±1 |
+|---|---:|---:|---:|---:|
+| 12 hipótesis (cuello único) | 156 | 3 | 1 pedido | 0 |
+| 24 hipótesis (único + doble) | 312 | 6 | 1 pedido | 0 |
+
+El **promedio absoluto** entre predicciones *enteras* es **0.01923 pedidos/canal** para ambos bancos. Esto NO es el MAE de los 44 mundos y tampoco mide precisión de sensores; es distancia entre bancos predictivos para las mismas hipótesis y pruebas. La pequeña diferencia **no prueba** equivalencia general entre simuladores.
+
+### Veredictos: resultado del comparador
+
+Los dos motores predictivos obtuvieron **exactamente los mismos veredictos, decisiones de segunda prueba, supervivientes y estados** en las 22 parejas mundo×banco.
+
+| Banco evaluado | Correctos / 11 | Falsos cuellos únicos / 11 | Abstenciones / 11 | MODEL_GAP / 11 | Segundas mediciones / 11 |
+|---|---:|---:|---:|---:|---:|
+| DES, 12 hipótesis | 1 | 3 | 6 | 1 | 4 |
+| Fluido retardado, 12 hipótesis | 1 | 3 | 6 | 1 | 4 |
+| DES, 24 hipótesis | **0** | 0 | **10** | 1 | **0** |
+| Fluido retardado, 24 hipótesis | **0** | 0 | **10** | 1 | **0** |
+
+**Veredicto técnico/científico:** cambio de motor **sin beneficio diagnóstico demostrado**. En banco ampliado, cero falsos positivos se obtiene porque el sistema esencialmente no diagnostica: 10 abstenciones y una brecha. El programa permanece en `BLOCKED_RETROSPECTIVE_NOT_BLINDED`. No ajustar ±1 ni reescribir mundos para crear una mejora aparente.
+
+### Implicación para la siguiente prueba
+
+La hipótesis más útil pasa de “otro banco numérico arreglará al selector” a “**el espacio de observación es insuficiente para sus decisiones**”. Una siguiente prueba (no realizada en este PR) debe incorporar tiempos de inicio/fin de etapa, con trazas por pedido y resolución explícita, sin revelar la configuración privada por el sensor. El par A/B de #119 sugiere tránsito mínimo sin espera de 2.8 vs 2.6 min; queda pendiente comprobar que las trazas operativas realmente distingan modelos bajo las condiciones de llegada ensayadas.
+
+**Límite:** no demostrar discriminabilidad mediante datos de configuración, no confundir resolución nominal con precisión instrumental ni inferir utilidad económica de una intervención simulada.
