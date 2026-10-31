@@ -4,6 +4,7 @@
 
 ## Entregables y correspondencia
 
+- Cada script `.mos` ejecuta explícitamente `cd(<carpeta de artefactos>)` antes de simular, para que **los CSV se escriban dentro del mismo lote auditable**, no en la raíz del repositorio.
 - `caf02_g2_native_modelica_sources.py`: sintetiza de forma determinista **12 modelos M** (6 C00 de dos etapas, 6 C01 de tres etapas) y **3 modelos D** (D1/D2/D3 con 1/2/3 stocks), usando las filas exactas de `caf02_g2_native_correspondence_plan.plan(policy)`. Para cada caso genera `CAF02_<ID>.mo`, `CAF02_<ID>.mos` y un registro SHA-256 en `G2_SOURCE_MANIFEST.json`.
 - `caf02_g2_native_executor.py`: **verificación posterior a la ejecución** que NO invoca OpenModelica; exige `.attempt` escrito antes de ejecutar, `.exit_code=0`, log real, CSV, hashes del modelo y script intactos, stocks y conservación de material. Compara la entrega nativa en t=[5,10,15,20,30,40] con la curva Heun de M o RK4 de D **para el mismo pulso y configuración**, máximo error absoluto ≤**0.05 pedidos**. Genera un recibo por modelo y resumen de quince aunque haya fallos.
 - `test_caf02_g2_native_modelica_executor.py`: verifica unidades y topologías, rechazo de CSV sintético sin marcador/solver y falsos datos, controles de capacidad y manifest inalterado.
