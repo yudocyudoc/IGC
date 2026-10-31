@@ -1,0 +1,42 @@
+{
+  "schema": "igc-caf05-frozen-known-world-sensor-reference/0.1",
+  "source": {
+    "workflow": "https://github.com/yudocyudoc/IGC/actions/runs/41162881478",
+    "artifact_id": 13028087089,
+    "artifact_filename": "02_DIAGNOSTICO_SENSORES.json",
+    "source_file_sha256": "sha256:d8a2cee6fbeb1e1a88cf4abe7a343a0b8a20ee8a38d89e4aa3e638384549902c",
+    "classification": "PUBLIC_PRIOR_KNOWN_WORLD_DATA_FROM_CAF04_NOT_NEW_WORLD"
+  },
+  "training_observation": {
+    "arrival_rate_per_minute": "3/2",
+    "minute": 10,
+    "known_worlds": ["B", "C", "D"],
+    "known_bottleneck_stage": {
+      "B": "preparacion",
+      "C": "despacho",
+      "D": "entrega"
+    },
+    "delivered": {"B": 7, "C": 7, "D": 7},
+    "waiting": {
+      "B": [5, 0, 0],
+      "C": [0, 5, 0],
+      "D": [0, 0, 4]
+    },
+    "in_service": {
+      "B": [1, 1, 1],
+      "C": [1, 1, 1],
+      "D": [1, 2, 1]
+    },
+    "stage_stock": {
+      "B": [6, 1, 1],
+      "C": [1, 6, 1],
+      "D": [1, 2, 5]
+    }
+  },
+  "allowed_sensor_fields": ["waiting", "in_service", "stage_stock"],
+  "stages": ["preparacion", "despacho", "entrega"],
+  "sensor_selection": "MIN_CHANNEL_COUNT_BCD_UNIQUE_SIGNATURE_THEN_LEXICAL_TIEBREAK",
+  "frozen_classifier": "NEAREST_SINGLE_SENSOR_KNOWN_BCD_PROTOTYPE_ABSOLUTE_DIFFERENCE_TIE_ABSTAIN",
+  "external_validation": false,
+  "future_world_outcomes_seen_by_reference": false
+}
