@@ -461,6 +461,13 @@ def markdown(result):
         "los controles negativos siguen produciendo falsos cuellos únicos.",
         f"Controles negativos sin falsos cuellos únicos en banco aumentado: "
         f"{result['negative_controls_zero_false_single_expanded']}.",
+        f"Diagnósticos correctos del banco ampliado por tipo: "
+        f"{result['expanded_correct_diagnoses_by_structure']}.",
+        f"**Puerta de promoción:** {result['promotion_gate']}.",
+        "Cero falsos positivos por abstención universal NO equivale",
+        "a capacidad de identificar estructura; se exige al menos",
+        "una decisión correcta por tipo para la mínima cobertura",
+        "experimental, sin considerarla validación independiente.",
         "",
     ]
     return "\n".join(lines)
@@ -514,6 +521,18 @@ def run(out,source_commit):
     summary=summarize(outputs)
     negative_clean=all(summary["single_plus_dual"][typ][
         "false_single"]==0 for typ in ("double","unknown-extra"))
+    expanded_diagnoses_by_structure={
+        typ:summary["single_plus_dual"][typ]["verdicts"].get(
+            "CORRECT_WITHIN_SIMULATED_WORLD",0)
+        for typ in ("single","double")
+    }
+    expanded_has_minimum_diagnostic_coverage=all(
+        n>=1 for n in expanded_diagnoses_by_structure.values())
+    promotion_gate=(
+        "BLOCKED_NO_DIAGNOSTIC_COVERAGE"
+        if not expanded_has_minimum_diagnostic_coverage else
+        "BLOCKED_NOT_INDEPENDENTLY_VALIDATED"
+    )
     final={
         "schema":SCHEMA,
         "status":"CAF07B_DECISION_THRESHOLD_AND_CONDITIONAL_SECOND_EXECUTED",
@@ -531,6 +550,12 @@ def run(out,source_commit):
         "hidden_extra_stage_rejected_using_known_topology":False,
         "M_D_observation_operators_modified":False,
         "negative_controls_zero_false_single_expanded":negative_clean,
+        "expanded_correct_diagnoses_by_structure":
+            expanded_diagnoses_by_structure,
+        "expanded_has_minimum_diagnostic_coverage":
+            expanded_has_minimum_diagnostic_coverage,
+        "promotion_gate":promotion_gate,
+        "zero_false_singles_can_be_vacuous_when_no_diagnoses":True,
         "deployment_validated":False,
         "summary":summary,"evaluations":outputs,
     }
