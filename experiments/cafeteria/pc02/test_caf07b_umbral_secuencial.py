@@ -140,6 +140,11 @@ class CorrectedPolicyTests(unittest.TestCase):
             self.assertEqual(result["n_evaluations"],22)
             self.assertEqual(result["n_scenarios"],11)
             self.assertFalse(result["deployment_validated"])
+            self.assertTrue(result["zero_false_singles_can_be_vacuous_when_no_diagnoses"])
+            self.assertEqual(result["expanded_correct_diagnoses_by_structure"],{
+                "single":0,"double":0})
+            self.assertFalse(result["expanded_has_minimum_diagnostic_coverage"])
+            self.assertEqual(result["promotion_gate"],"BLOCKED_NO_DIAGNOSTIC_COVERAGE")
             self.assertFalse(result["evaluator_truth_used_in_policy"])
             self.assertFalse(result[
                 "hidden_extra_stage_rejected_using_known_topology"])
