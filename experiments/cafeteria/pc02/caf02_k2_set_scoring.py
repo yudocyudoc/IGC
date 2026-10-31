@@ -67,11 +67,20 @@ def summarize_envelope(lower,upper,truth,point_max_width=2.0):
     }
 
 
-def combine_family_envelopes(family_envelopes):
-    """Unite ALL eligible structural families without picking a winner."""
+FAMILIES_BY_ARM={"M":frozenset(("C00","C01")),
+                 "D":frozenset(("D1","D2","D3"))}
+
+
+def combine_family_envelopes(family_envelopes,*,arm="M"):
+    """Union of all compatible existing families of one declared arm.
+
+    M C00/C01 and D D1/D2/D3 are DIFFERENT repertoires. Do not silently
+    mix both arms, drop one family, or invent a default winning topology.
+    """
+    need(arm in FAMILIES_BY_ARM,"UNKNOWN_K2_ARM")
     need(type(family_envelopes) is dict
-         and set(family_envelopes)=={"C00","C01"},
-         "MISSING_C00_C01_FAMILY_ENVELOPES")
+         and set(family_envelopes)==FAMILIES_BY_ARM[arm],
+         "MISSING_OR_UNEXPECTED_"+arm+"_FAMILY_ENVELOPES")
     active=[x for x in family_envelopes.values() if x is not None]
     if not active:
         return None,None
@@ -89,7 +98,7 @@ def combine_family_envelopes(family_envelopes):
 
 
 def adjudicate(k0_by_family,k1_by_family,ref_caf,ref_scale,truth,
-              min_improvement=.25,point_max_width=2.0):
+              min_improvement=.25,point_max_width=2.0,*,arm="M"):
     """One K2 truth for ALL methods, with paired nonempty K0/K1 comparison.
 
     This function takes arrays only and performs no GitHub/data fetching.
@@ -102,8 +111,8 @@ def adjudicate(k0_by_family,k1_by_family,ref_caf,ref_scale,truth,
     if ref_scale is not None:
         validate_curve(ref_scale)
     validate_curve(truth)
-    lo0,up0=combine_family_envelopes(k0_by_family)
-    lo1,up1=combine_family_envelopes(k1_by_family)
+    lo0,up0=combine_family_envelopes(k0_by_family,arm=arm)
+    lo1,up1=combine_family_envelopes(k1_by_family,arm=arm)
     k0=summarize_envelope(lo0,up0,truth,point_max_width)
     k1=summarize_envelope(lo1,up1,truth,point_max_width)
     ref0=summarize_envelope(ref_caf,ref_caf,truth,point_max_width)
@@ -112,6 +121,7 @@ def adjudicate(k0_by_family,k1_by_family,ref_caf,ref_scale,truth,
             k1["set_loss_mean"] is not None)
     gain=(k0["set_loss_mean"]-k1["set_loss_mean"]) if paired else None
     return {
+        "arm":arm,
         "status":"PAIRED" if paired else "NOT_PAIRED_ABSTENTION",
         "K0":k0,"K1":k1,"REF_CAF":ref0,"REF_SCALE":ref1,
         "paired_set_loss_gain_orders":gain,
@@ -120,4 +130,6 @@ def adjudicate(k0_by_family,k1_by_family,ref_caf,ref_scale,truth,
         "descriptive_gain_margin_orders":min_improvement,
         "do_not_infer_structural_identification_from_score":True,
         "do_not_count_abstention_as_zero_error":True,
+        "reference_information_scope":"K0_ONLY_REFERENCE_NOT_UPDATED_AT_K1",
+        "equal_information_method_advantage_claim_allowed":False,
     }
