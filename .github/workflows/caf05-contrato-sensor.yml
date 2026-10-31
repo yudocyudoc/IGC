@@ -1,0 +1,61 @@
+name: CAF-05 frozen observation contract and sensor transfer to new 75h worlds
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf05_contrato_y_sensor.py'
+      - 'experiments/cafeteria/pc02/test_caf05_contrato_y_sensor.py'
+      - 'experiments/cafeteria/pc02/caf05_referencia_caf04_congelada.json'
+      - 'experiments/cafeteria/pc02/CAF05_CONTRATO_STOCK_Y_TRANSFERENCIA_SENSOR.md'
+      - '.github/workflows/caf05-contrato-sensor.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  new-world-sensor-transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify that unvalidated M/D stage mappings cannot be scored and all probes follow locked plan
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf05_contrato_y_sensor.py' -v
+      - name: Run six actual DES probes with one frozen prior-world sensor
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf05_contrato_y_sensor.py \
+            --out artifacts/caf05-contrato-y-transferencia | tee /tmp/caf05-summary.json
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path("artifacts/caf05-contrato-y-transferencia")
+          r=json.loads((p/"02_RESULTADOS.json").read_bytes())
+          assert r["status"]=="CAF05_OBSERVATION_CONTRACT_AND_SENSOR_TRANSFER_EXECUTED"
+          assert r["DES_runs"]==6 and r["DES_confirmatory_runs"]==0
+          assert r["selector"]["measurement"]["stage"]=="despacho"
+          assert r["selector"]["measurement"]["field"]=="stage_stock"
+          assert r["contract_cannot_score_M_D_with_DES_stage_stocks"]
+          assert not r["external_custody"]
+          assert not r["M_D_policy_or_grammar_modified"]
+          assert r["summary"]["low_out_of_domain"]["classifier_run"] is False
+          m=json.loads((p/"05_MANIFIESTO.json").read_bytes())
+          assert m["sensor_chosen_before_first_new_DES"]
+          for fname,sha in m["files_sha256"].items():
+              assert "sha256:"+hashlib.sha256((p/fname).read_bytes()).hexdigest()==sha
+          print("CAF05_NEW_DES_PROBES_AND_CONTRACT_VALIDATED")
+          print((p/"04_INFORME.md").read_text())
+          PY
+      - name: Archive pre-DES sensor, physical contract, new-world observations and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF05-NEW-WORLDS-SENSOR-${{ github.run_id }}
+          path: artifacts/caf05-contrato-y-transferencia/
+          retention-days: 90
+          if-no-files-found: warn
