@@ -406,7 +406,8 @@ def run(out,*,before_k1_hook=None,before_k2_hook=None):
     root=Path(out).resolve()
     need(not root.exists(),"CAF03_OUTPUT_ALREADY_EXISTS")
     configured=specs()
-    original=policy_guard()
+    policy_guard()
+    policy_bytes_before=d.POLICY.read_bytes()
     root.mkdir(parents=True,exist_ok=False)
     lab.write_new(root,"00_PLAN_PREDECLARADO.json",{
         "schema":SCHEMA,"classification":"PUBLIC_EXPLORATORY_NOT_CONFIRMATORY",
@@ -428,9 +429,7 @@ def run(out,*,before_k1_hook=None,before_k2_hook=None):
     for item in configured:
         rows.append(do_world(root,item,before_k1_hook=before_k1_hook,
                              before_k2_hook=before_k2_hook))
-    need(lab.sha(d.POLICY.read_bytes())==
-         lab.sha(lab.canonical(original)).replace(
-             lab.sha(lab.canonical(original)),lab.sha(d.POLICY.read_bytes())),
+    need(d.POLICY.read_bytes()==policy_bytes_before,
          "CAF03_OFFICIAL_POLICY_CHANGED")
     # Each core DES call was performed exactly once per K0,K1,K2.
     report=aggregate(rows)
