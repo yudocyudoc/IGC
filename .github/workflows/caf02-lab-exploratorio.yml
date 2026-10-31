@@ -1,0 +1,62 @@
+name: CAF-02 exploratory LAB - real public DES results, never formal campaign
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf02_lab_exploratorio.py'
+      - 'experiments/cafeteria/pc02/test_caf02_lab_exploratorio.py'
+      - 'experiments/cafeteria/pc02/CAF02_LABORATORIO_EXPLORATORIO_PRIMER_MUNDO.md'
+      - '.github/workflows/caf02-lab-exploratorio.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: caf02-exploratory-public-lab-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  first-public-des-experiment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Guard K2 is not computed before G4b forecasts written
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf02_lab_exploratorio.py' -v
+      - name: One actual complete EXPLORATORY public-world run, 2 or 3 DES cuts
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_lab_exploratorio.py \
+            --out artifacts/caf02-exploratory-first-world \
+            | tee /tmp/caf02-lab-outcome.json
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path("artifacts/caf02-exploratory-first-world")
+          result=json.loads((root/"08_RESUMEN_RESULTADOS.json").read_text())
+          manifest=json.loads((root/"11_MANIFIESTO.json").read_text())
+          assert result["status"]=="EXPLORATORY_RESULTS_NOT_CONFIRMATORY"
+          assert result["exploratory_DES_runs"] in (2,3)
+          assert result["confirmatory_DES_runs"]==0
+          assert manifest["DES_lab_runs"]==result["exploratory_DES_runs"]
+          assert not manifest["external_custody_verified"]
+          assert manifest["K2_priors_written_before_K2"]
+          for fn,expected in manifest["files_sha256"].items():
+              actual="sha256:"+hashlib.sha256((root/fn).read_bytes()).hexdigest()
+              assert actual==expected,(fn,"hash changed")
+          print("CAF02_REAL_EXPLORATORY_DES_K0_K1_K2_M_D_COMPLETE")
+          print((root/"10_INFORME.md").read_text())
+          PY
+      - name: Preserve actual public DES world, predictions before K2, results and table
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-EXPLORATORY-PUBLIC-DES-LAB-${{ github.run_id }}
+          path: artifacts/caf02-exploratory-first-world/
+          if-no-files-found: warn
+          retention-days: 90
