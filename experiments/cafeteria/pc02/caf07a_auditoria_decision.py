@@ -261,7 +261,7 @@ def fixed_two_measurement_audit(bank,predictions,ids,singles):
 
 
 def baseline_decision_gap(bank,predictions,baseline):
-    ids=legacy.surviving(bank,predictions,{"baseline":[baseline]})
+    ids=legacy.surviving(bank,predictions,{"baseline":baseline})
     return ids,corrected_decision(bank,predictions,ids)
 
 
