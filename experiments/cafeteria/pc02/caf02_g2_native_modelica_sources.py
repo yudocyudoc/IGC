@@ -132,6 +132,8 @@ def mos_source(case,absolute_folder):
         'setCommandLineOptions("--std=3.4");',
         f'loadFile("{mo}");',
         'print(getErrorString());',
+        f'cd("{folder}");',
+        'print(getErrorString());',
         f'checkModel({cls});',
         'print(getErrorString());',
         f'simulate({cls},startTime=0,stopTime={fmt(STOP_HOURS)},'
