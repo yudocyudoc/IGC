@@ -100,19 +100,29 @@ def snapshot_run(config,rate,times):
     return snapshots[1:len(times)+1]
 
 
-def public_world():
-    stages=des.validate_private_config(WORLD)
-    need(len(stages)==3 and stages==((2,des.Fraction(3,2)),
-                                    (1,des.Fraction(3,4)),
-                                    (2,des.Fraction(3,2))),
-         "LAB_PUBLIC_WORLD_CHANGED")
+def public_world(world_config=None,world_version=None):
+    # The original A default is unchanged. Other PUBLIC scenarios are supplied
+    # by an explicit versioned matrix, never selected by model performance.
+    config=WORLD if world_config is None else world_config
+    version=VERSION if world_version is None else world_version
+    stages=des.validate_private_config(config)
+    need(len(stages)==3
+         and type(version) is str
+         and version.startswith("CAF02_LAB_WORLD_")
+         and len(version)<=80,
+         "LAB_PUBLIC_WORLD_UNSUPPORTED")
+    if world_config is None and world_version is None:
+        need(stages==((2,des.Fraction(3,2)),
+                      (1,des.Fraction(3,4)),
+                      (2,des.Fraction(3,2))),
+             "LAB_ORIGINAL_PUBLIC_WORLD_CHANGED")
     world_ref=sha(b"CAF02-EXPLORATORY-PUBLIC-WORLD-V1\n"+
-                  canonical({"world":WORLD,"version":VERSION}))
+                  canonical({"world":config,"version":version}))
     return {
-        "schema":SCHEMA,"label":LABEL,"world_name":VERSION,
+        "schema":SCHEMA,"label":LABEL,"world_name":version,
         "world_precommitment_ref":world_ref,
         "world_parameters_are_public_not_secret":True,
-        "world_parameters":WORLD,
+        "world_parameters":config,
         "source_engine":"experiments/cafeteria/pc01/caf01_des_engine.py",
         "source_engine_sha256":sha((ROOT/"experiments/cafeteria/pc01/caf01_des_engine.py").read_bytes()),
         "policy_source":d.POLICY.name,
@@ -163,8 +173,10 @@ def report_md(result):
         "# CAF-02 · Primera ejecución exploratoria completa",
         "",
         "**Clasificación:** laboratorio DES público, no ensayo confirmatorio.",
-        f"**Mundo:** {VERSION}, preparación 2×1.5 min; despacho 1×0.75 min; entrega 2×1.5 min.",
-        "**Límite nominal:** 4/3 pedidos/minuto (80/h); sin cancelaciones, stocks vacíos por corte.",
+        f"**Mundo:** {result['world_name']}. Tres etapas DES con parámetros públicos: "
+        +str(result['world_parameters']['stages'])+".",
+        f"**Cuello de botella nominal:** {result['nominal_bottleneck_orders_per_hour']:.1f} "
+        +"pedidos/hora; sin cancelaciones, stocks vacíos por corte.",
         "**Mecanismo:** simulador discreto de servidores y colas; no son observaciones de una cafetería real.",
         "**Integridad:** pronósticos y hashes guardados antes de simular K2; sin testigo externo.",
         "",
@@ -213,18 +225,19 @@ def report_md(result):
         f"- REF_CAF: {mean_text(scores['M']['REF_CAF']['set_loss_mean'])}; "+
           f"REF_SCALE: {mean_text(scores['M']['REF_SCALE']['set_loss_mean'])}.",
         "- Las referencias usan **solo K0**, así que no establecen ventajas a igualdad de información frente a un método actualizado con K1.",
-        ("- **Hallazgo incómodo:** REF_SCALE solo-K0 tiene pérdida "
-         +f"{scores['M']['REF_SCALE']['set_loss_mean']:.5f} frente a "
-         +f"M post-K1 {mean_text(scores['M']['K1']['set_loss_mean'])} y "
-         +f"D post-K1 {mean_text(scores['D']['K1']['set_loss_mean'])}; "
-         +"mejorar respecto al propio K0 no implica superar referencias sencillas."
+        ("- **Comparación REF_SCALE solo-K0:** pérdida "
+         +f"{scores['M']['REF_SCALE']['set_loss_mean']:.5f}; "
+         +f"M post-K1 {mean_text(scores['M']['K1']['set_loss_mean'])}; "
+         +f"D post-K1 {mean_text(scores['D']['K1']['set_loss_mean'])}. "
+         +"Revisión positiva frente a K0 no garantiza superar la referencia."
          if scores["M"]["REF_SCALE"]["set_loss_mean"] is not None
          else "- REF_SCALE abstuvo; no hay comparación numérica."),
-        ("- **Tensión estructural:** el mundo DES público tiene tres etapas; "
-         +"K1 eliminó las familias análogas de tres stocks/etapas C01 y D3. "
-         +"El DES discreto no pertenece literalmente a ninguna familia de "
-         +"ODE continuas; esto es exclusión de aproximaciones del catálogo, "
-         +"no identificación ni falsación de la estructura generadora."),
+        ("- **Comparación estructural:** DES tiene tres estaciones; tras K1 "
+         +("M-C01 fue excluida" if not b['M']['C01'] else "M-C01 conserva candidatos")
+         +"; "
+         +("D-D3 fue excluida" if not b['D']['D3'] else "D-D3 conserva candidatos")
+         +". La correspondencia de número de etapas no implica equivalencia "
+         +"con un mecanismo DES discreto ni garantiza identificación."),
 
         "- No se identifica la estructura verdadera por un ajuste de rejilla; son candidatos compatibles.",
         "- Un solo mundo DES diseñado y visible **no** demuestra generalización ni separación causal.",
@@ -266,8 +279,9 @@ def csv_table(result):
     return buf.getvalue()
 
 
-def run_lab(out,*,after_checkpoint_hook=None):
-    """One public toy world only; no search/automated retry or G5 bypass.
+def run_lab(out,*,after_checkpoint_hook=None,
+            world_config=None,world_version=None):
+    """One explicit public toy world; no search/automated retry or G5 bypass.
 
     Hook is for software tests to verify ordering and fail-before-K2.
     A crashed run is left incomplete. Use a NEW output directory to repeat,
@@ -279,15 +293,15 @@ def run_lab(out,*,after_checkpoint_hook=None):
     need(policy["status"]=="DRAFT_FOR_REVIEW_NOT_FROZEN_NOT_AUTHORIZED"
          and policy["no_world_runs_authorized"] is True,
          "LAB_MUST_NOT_OVERWRITE_FORMAL_POLICY")
-    des.validate_private_config(WORLD)
-    world=public_world()
+    world=public_world(world_config,world_version)
+    config=world["world_parameters"]
     folder.mkdir(parents=True,exist_ok=False)
     hashes={}
     runs=0
     hashes["00_MUNDO_PUBLICO.json"]=write_new(folder,"00_MUNDO_PUBLICO.json",world)
 
     k0=masks.masked_k0(
-        snapshot_run(WORLD,RATES["K0"],(5,10)),
+        snapshot_run(config,RATES["K0"],(5,10)),
         world["world_precommitment_ref"])
     runs+=1
     hashes["01_K0_PUBLICO.json"]=write_new(folder,"01_K0_PUBLICO.json",k0)
@@ -298,7 +312,7 @@ def run_lab(out,*,after_checkpoint_hook=None):
     k1=None
     if selection is not None:
         rate=str(selection["rate_per_minute"])
-        snaps=snapshot_run(WORLD,rate,(selection["t_min"],))
+        snaps=snapshot_run(config,rate,(selection["t_min"],))
         runs+=1
         k1=masks.masked_k1(
             snaps[0],selection,world["world_precommitment_ref"])
@@ -328,7 +342,7 @@ def run_lab(out,*,after_checkpoint_hook=None):
         after_checkpoint_hook(folder,checkpoint)  # test-only injection, before K2
     # First and ONLY K2 DES call. All forecasts are already durable on disk.
     k2=masks.reserved_k2_inside_evaluator(
-        snapshot_run(WORLD,RATES["K2"],tuple(bridge.TIMES)),
+        snapshot_run(config,RATES["K2"],tuple(bridge.TIMES)),
         world["world_precommitment_ref"])
     runs+=1
     hashes["06_K2_OBSERVADO.json"]=write_new(folder,"06_K2_OBSERVADO.json",k2)
@@ -341,6 +355,11 @@ def run_lab(out,*,after_checkpoint_hook=None):
 
     result={
         "schema":SCHEMA,"status":"EXPLORATORY_RESULTS_NOT_CONFIRMATORY",
+        "world_name":world["world_name"],
+        "world_parameters":config,
+        "nominal_bottleneck_orders_per_hour":float(
+            min(des.Fraction(x["servers"],1)/des.quantity(x["service_minutes"])
+                for x in config["stages"])*60),
         "G4a_summary":{
             arm:counts(g4a["K2_prior_"+arm+"_by_family"])
             for arm in ("M","D")},
