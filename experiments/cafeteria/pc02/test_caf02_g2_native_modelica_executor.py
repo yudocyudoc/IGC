@@ -45,6 +45,8 @@ class ModelicaSources(unittest.TestCase):
                 self.assertEqual(mos.count("simulate("),1)
                 self.assertEqual(mos.count("checkModel("),1)
                 self.assertEqual(mos.count("loadFile("),1)
+                self.assertEqual(mos.count("cd("),1)
+                self.assertIn(str(root),mos)
                 self.assertNotIn("K2_truth",src)
                 self.assertNotIn("private_des",src)
                 self.assertIn('outputFormat="csv"',mos)
