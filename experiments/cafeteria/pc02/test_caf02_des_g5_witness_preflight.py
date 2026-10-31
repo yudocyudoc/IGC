@@ -106,7 +106,10 @@ class DESAndWitnessTest(unittest.TestCase):
         self.assertNotIn(NONCE,serialized)
         self.assertEqual(set(receipt["pinned_exact_source_sha256"]),
                          {"des_engine","evaluator_contract",
-                          "public_mask","public_policy"})
+                          "public_mask","public_policy",
+                          "g5_local_precommit","external_witness_verifier",
+                          "public_cut_bridge","k2_adjudicator_boundary",
+                          "k2_set_scoring"})
         other=g5.local_g5_candidate(CONFIG,b"x"*32,
                                     selection_declaration=DECLARATION)
         self.assertNotEqual(receipt["world_precommitment_ref"],
