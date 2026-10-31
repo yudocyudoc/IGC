@@ -1,0 +1,65 @@
+name: CAF-07B decision threshold cumulative probe and hidden-structure controls
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf07b_umbral_secuencial.py'
+      - 'experiments/cafeteria/pc02/test_caf07b_umbral_secuencial.py'
+      - 'experiments/cafeteria/pc02/CAF07B_UMBRAL_ESTRUCTURAS_OCULTAS.md'
+      - '.github/workflows/caf07b-umbral-secuencial.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-policy-and-negative-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit and integration tests with actual three/four stage DES and masked selector
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf07b_umbral_secuencial.py' -v
+      - name: Run fixed first conditional second with bank expansion and unknown physical structure
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf07b_umbral_secuencial.py \
+            --out artifacts/caf07b-evidencia --source-commit "$GITHUB_SHA" | tee /tmp/caf07b.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path('artifacts/caf07b-evidencia')
+          r=json.loads((p/'01_RESULTADOS.json').read_bytes())
+          assert r['status']=='CAF07B_DECISION_THRESHOLD_AND_CONDITIONAL_SECOND_EXECUTED'
+          assert r['source_commit']==os.environ['GITHUB_SHA']
+          assert r['n_scenarios']==11 and r['n_evaluations']==22
+          assert r['bank_DES_runs']==324
+          assert r['budget_is_cumulative']
+          assert r['quality_threshold_per_class']==1
+          assert not r['evaluator_truth_used_in_policy']
+          assert not r['hidden_extra_stage_rejected_using_known_topology']
+          assert not r['deployment_validated']
+          assert all(x['cost_spent']<=8 for x in r['evaluations'])
+          assert sum(sum(v['verdicts'].values())
+                     for cohort in r['summary'].values()
+                     for v in cohort.values())==22
+          m=json.loads((p/'03_MANIFIESTO.json').read_bytes())
+          assert m['source_commit']==os.environ['GITHUB_SHA']
+          for file,digest in m['files_sha256'].items():
+              assert 'sha256:'+hashlib.sha256((p/file).read_bytes()).hexdigest()==digest
+          print('CAF07B_SCIENTIFIC_RESULTS_RECORDED_NOT_VALIDATED_FOR_DEPLOYMENT')
+          print((p/'02_INFORME.md').read_text())
+          PY
+      - name: Upload masked negative-control diagnostics and source commit provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF07B-THRESHOLD-HIDDEN-STRUCTURE-${{ github.run_id }}
+          path: artifacts/caf07b-evidencia/
+          retention-days: 90
+          if-no-files-found: warn
