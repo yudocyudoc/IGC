@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CAF-08: independent fluid references against the repository's CAF-01 DES.
+"""CAF-08: fluid numerical consistency cross-check with native CAF-01 DES.
 
 Exploratory cross-check only; no new dependencies, inferred ground truth,
 production recommendation, or modification of CAF-07B's selector.
@@ -71,7 +71,7 @@ def simple_fluid(config, arrival_rate, minute):
 
 
 def delayed_fluid(config, arrival_rate, times=(10, 20, 40), pulse=20, dt=0.005):
-    """Independent discretized continuous-mass reference with fixed residence.
+    """Separate numerical fluid approximation with DES-matched residence times.
 
     Fluid work starts at capped capacity and completes after declared service
     time, including a fractional-grid completion interpolation. The source
@@ -193,24 +193,32 @@ def run():
                     observed["delivered"] - simple["delivered"])
             rows.append(row)
     zero = [x for x in rows if "zero_lag_fluid" in x]
+    after_pulse = [x for x in rows if x["minute"] > 20]
     summary = {
         "n_worlds": 11, "n_observation_rows": len(rows),
+        "n_during_pulse": len(zero), "n_after_pulse": len(after_pulse),
+        "signed_error_convention": "DES_MINUS_FLUID",
         "zero_lag": errors(zero, "difference_delivered_des_minus_zero_lag"),
         "lagged": errors(rows, "difference_delivered_des_minus_lagged"),
+        "lagged_during_pulse": errors(zero, "difference_delivered_des_minus_lagged"),
+        "lagged_after_pulse": errors(after_pulse, "difference_delivered_des_minus_lagged"),
         "by_structure": {},
     }
     for name in ("single", "double", "unknown-extra"):
         block = [x for x in rows if x["kind"] == name]
+        block_pulse = [x for x in block if x["minute"] <= 20]
         summary["by_structure"][name] = {
-            "zero_lag": errors([x for x in block if "zero_lag_fluid" in x],
+            "zero_lag": errors(block_pulse,
                                "difference_delivered_des_minus_zero_lag"),
             "lagged": errors(block, "difference_delivered_des_minus_lagged"),
+            "lagged_during_pulse": errors(block_pulse,
+                               "difference_delivered_des_minus_lagged"),
         }
     return {"schema": "igc-caf08-fluid-des-review/0.1",
             "base_commit_reference": BASE_COMMIT,
             "experimental_only": True, "truth_only_in_evaluator": False,
             "source_des": "experiments.cafeteria.pc01.caf01_des_engine",
-            "method_note": "known physical configs to BOTH simulators; not a blind inference test",
+            "method_note": "known physical configs and DES-matched service times in BOTH implementations; consistency check ONLY, not physical independence or a blind inference test",
             "summary": summary, "comparisons": rows,
             "identifiability_pair": pair_experiment()}
 
