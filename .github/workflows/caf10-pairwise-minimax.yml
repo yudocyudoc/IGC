@@ -1,0 +1,66 @@
+name: CAF-10 frozen acquisition minimax vs pairwise on 195 synthetic worlds
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf10_pairwise_minimax.py'
+      - 'experiments/cafeteria/pc02/test_caf10_pairwise_minimax.py'
+      - 'experiments/cafeteria/pc02/CAF10_PROTOCOLO_PRECOMPROMISO.md'
+      - 'experiments/cafeteria/pc02/caf07b_umbral_secuencial.py'
+      - 'experiments/cafeteria/pc02/caf09_policy_observability.py'
+      - '.github/workflows/caf10-pairwise-minimax.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-195-world-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit and integration tests; verify unchanged CAF-07B and CAF-09
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf10_pairwise_minimax.py' -v
+      - name: Run 195 fixed worlds, all three policies
+        env:
+          CAF10_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf10_pairwise_minimax.py \
+            --out artifacts/caf10-full-audit \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF10_HEAD_SHA" | tee /tmp/caf10-out.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path('artifacts/caf10-full-audit')
+          result=json.loads((p/'02_RESULTADOS.json').read_text())
+          assert result['checkout_sha']==os.environ['GITHUB_SHA']
+          assert result['pr_head_sha']==os.environ['CAF10_HEAD_SHA']
+          assert (result['n_worlds'], result['n_evaluations'],
+                  result['n_presaved_choices'])==(195,585,585)
+          assert len(list(p.glob('01_CHOICE_*.json')))==585
+          assert result['promotion_gate']=='BLOCKED_SYNTHETIC_SAME_PHYSICS_NO_EXTERNAL_VALIDATION'
+          assert not result['external_validity_proven']
+          assert result['certification_bank_always_expanded']
+          assert all(x['cost_spent']<=8 for x in result['evaluations'])
+          manifest=json.loads((p/'04_MANIFIESTO.json').read_text())
+          for filename, digest in manifest['files_sha256'].items():
+              assert 'sha256:'+hashlib.sha256((p/filename).read_bytes()).hexdigest()==digest
+          print('CAF10_ENGINEERING_PASS_NO_SCIENTIFIC_PROMOTION')
+          print((p/'03_INFORME.md').read_text())
+          PY
+      - name: Publish full 195-world, 585-decision external AI review archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf10-frozen-worlds-full-preK2-audit
+          path: artifacts/caf10-full-audit/
+          if-no-files-found: warn
+          retention-days: 90
