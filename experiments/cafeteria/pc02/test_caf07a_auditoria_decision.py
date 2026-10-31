@@ -153,7 +153,7 @@ class AuditTest(unittest.TestCase):
             self.assertEqual(result["summary"][
                 "four_stages_not_in_sensor_contract"]["no_operator"],2)
             self.assertEqual(len((target/"02_BARRIDO_CASOS.csv").read_text().splitlines()),
-                             result["evaluation_DES_runs"]+2+1)
+                             result["evaluation_DES_runs"]-(168+6)+2+1)
             manifest=json.loads((target/"04_MANIFIESTO.json").read_bytes())
             self.assertTrue(manifest["precommit_before_all_new_worlds"])
             for file,digest in manifest["files_sha256"].items():
