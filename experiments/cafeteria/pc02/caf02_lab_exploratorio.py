@@ -213,6 +213,19 @@ def report_md(result):
         f"- REF_CAF: {mean_text(scores['M']['REF_CAF']['set_loss_mean'])}; "+
           f"REF_SCALE: {mean_text(scores['M']['REF_SCALE']['set_loss_mean'])}.",
         "- Las referencias usan **solo K0**, así que no establecen ventajas a igualdad de información frente a un método actualizado con K1.",
+        ("- **Hallazgo incómodo:** REF_SCALE solo-K0 tiene pérdida "
+         +f"{scores['M']['REF_SCALE']['set_loss_mean']:.5f} frente a "
+         +f"M post-K1 {mean_text(scores['M']['K1']['set_loss_mean'])} y "
+         +f"D post-K1 {mean_text(scores['D']['K1']['set_loss_mean'])}; "
+         +"mejorar respecto al propio K0 no implica superar referencias sencillas."
+         if scores["M"]["REF_SCALE"]["set_loss_mean"] is not None
+         else "- REF_SCALE abstuvo; no hay comparación numérica."),
+        ("- **Tensión estructural:** el mundo DES público tiene tres etapas; "
+         +"K1 eliminó las familias análogas de tres stocks/etapas C01 y D3. "
+         +"El DES discreto no pertenece literalmente a ninguna familia de "
+         +"ODE continuas; esto es exclusión de aproximaciones del catálogo, "
+         +"no identificación ni falsación de la estructura generadora."),
+
         "- No se identifica la estructura verdadera por un ajuste de rejilla; son candidatos compatibles.",
         "- Un solo mundo DES diseñado y visible **no** demuestra generalización ni separación causal.",
         "- Los parámetros y el K2 ya se conocen tras esta ejecución; **no reutilizar esta misma corrida como confirmación ciega**.",
@@ -221,10 +234,10 @@ def report_md(result):
         "",
         "## Huellas locales de orden",
         "",
-        f"- G4a: \`{result['g4a_sha256']}\`.",
-        f"- G4b: \`{result['g4b_sha256']}\`.",
-        f"- Archivo de pronósticos pre-K2: \`{result['predictions_file_sha256']}\`.",
-        f"- Checkpoint pre-K2: \`{result['checkpoint_sha256']}\`.",
+        f"- G4a: `{result['g4a_sha256']}`.",
+        f"- G4b: `{result['g4b_sha256']}`.",
+        f"- Archivo de pronósticos pre-K2: `{result['predictions_file_sha256']}`.",
+        f"- Checkpoint pre-K2: `{result['checkpoint_sha256']}`.",
         "",
         "*Estas huellas son reproducibles, no firmas independientes ni garantías frente a reescritura maliciosa.*",
         "",
