@@ -190,9 +190,8 @@ def select_from_previous_only(reference):
         },
         "prior_CAF04_training_signatures":{
             w:observations[one["field"]][w][i]
-            for w in KNOWN_WORLD_LABELS,
-        } if False else {w:observations[one["field"]][w][i]
-                         for w in KNOWN_WORLD_LABELS},
+            for w in KNOWN_WORLD_LABELS
+        },
         "selected_from_known_worlds_only":True,
         "predeclared_before_new_DES":True,
         "previous_minimal_sensor_count":choice["minimal_sensor_count"],
