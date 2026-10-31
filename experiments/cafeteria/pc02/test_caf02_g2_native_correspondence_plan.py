@@ -114,7 +114,7 @@ class G2PlanTest(unittest.TestCase):
             g2.plan(p2)
         p2=copy.deepcopy(p)
         p2["d_method"]["budget"]["OpenModelica_candidate_calls_max_proposed"]=99
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             g2.plan(p2)
 
 if __name__=="__main__":
