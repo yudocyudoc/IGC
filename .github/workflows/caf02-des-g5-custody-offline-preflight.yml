@@ -1,0 +1,54 @@
+name: CAF-02 evaluator DES source and G5 external witness offline preflight
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf02_des_evaluator_preflight.py'
+      - 'experiments/cafeteria/pc02/caf02_g5_local_precommit.py'
+      - 'experiments/cafeteria/pc02/caf02_external_witness_verify.py'
+      - 'experiments/cafeteria/pc02/test_caf02_des_g5_witness_preflight.py'
+      - 'experiments/cafeteria/pc02/CAF02_DES_G5_CUSTODIA_FUENTE_PREPARATORIA_2026-10-30.md'
+      - '.github/workflows/caf02-des-g5-custody-offline-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  offline-code-and-signature-fixtures-no-campaign:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Ed25519 verifier dependency (no external signing service)
+        run: |
+          python -m pip install --disable-pip-version-check cryptography==46.0.4
+      - name: Validate source hash and fixed toy DES masks, not real world
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf02_des_g5_witness_preflight.py' -v
+          python -m experiments.cafeteria.pc02.caf02_des_evaluator_preflight \
+            > /tmp/caf02-des-preflight-public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("/tmp/caf02-des-preflight-public.json").read_text())
+          assert report["world_runs_consumed"]==0
+          assert report["independent_source_G5_selected"] is False
+          assert report["external_G5_witness_verified"] is False
+          assert report["arrival_counts"]["K2"]==27
+          print("CAF02_DES_GENERIC_SOURCE_FIXTURE_NO_WORLD_NO_G5_WITNESS")
+          PY
+      - name: Prohibit execution, signer, or secret fixtures in the preflight workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path(".github/workflows/caf02-des-g5-custody-offline-preflight.yml").read_text()
+          assert "workflow_dispatch:" not in s and "push:" not in s
+          assert "secret" not in s.lower()
+          for forbidden in ("authorize_world_execution(","authorize_K2_reveal("):
+              assert forbidden not in s
+          print("CAF02_OFFLINE_PREFLIGHT_NOT_REAL_CAMPAIGN")
+          PY
