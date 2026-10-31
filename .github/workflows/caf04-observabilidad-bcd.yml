@@ -1,0 +1,58 @@
+name: CAF-04 BCD physical bottleneck observability under demand pressure (exploratory)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf04_observabilidad_bcd.py'
+      - 'experiments/cafeteria/pc02/test_caf04_observabilidad_bcd.py'
+      - 'experiments/cafeteria/pc02/CAF04_OBSERVABILIDAD_CUELLOS_BCD.md'
+      - '.github/workflows/caf04-observabilidad-bcd.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repeated-known-worlds-physical-sensors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test DES conservation, sensor identifiability and local plan-before-run
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf04_observabilidad_bcd.py' -v
+      - name: Run actual 18 world-pressure combinations and calculate minimal sensors
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf04_observabilidad_bcd.py \
+            --out artifacts/caf04-observabilidad-bcd | tee /tmp/caf04-result.json
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          d=Path("artifacts/caf04-observabilidad-bcd")
+          r=json.loads((d/"02_DIAGNOSTICO_SENSORES.json").read_bytes())
+          assert r["status"]=="CAF04_BCD_OBSERVABILITY_EXPLORATORY_COMPLETE"
+          assert r["DES_runs"]==18 and r["DES_confirmatory_runs"]==0
+          assert len(r["cases"])==36
+          assert r["worlds"]==["B","C","D"]
+          assert r["known_worlds_not_independent"]
+          assert r["M_D_not_updated_for_new_sensors"]
+          assert r["sensor_minima_computed_posthoc"]
+          h=json.loads((d/"06_HASHES.json").read_bytes())
+          for p,expected in h["files_sha256"].items():
+              assert "sha256:"+hashlib.sha256((d/p).read_bytes()).hexdigest()==expected
+          print("CAF04_BCD_REAL_DES_SWEEP_AND_SENSORS_COMPLETE")
+          print((d/"05_INFORME.md").read_text())
+          PY
+      - name: Preserve actual waiting, occupancy, stage stocks and minimal sensor comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF04-OBSERVABILITY-B-C-D-${{ github.run_id }}
+          path: artifacts/caf04-observabilidad-bcd/
+          retention-days: 90
+          if-no-files-found: warn
