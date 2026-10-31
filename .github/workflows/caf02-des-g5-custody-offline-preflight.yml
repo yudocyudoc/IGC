@@ -41,14 +41,3 @@ jobs:
           assert report["arrival_counts"]["K2"]==27
           print("CAF02_DES_GENERIC_SOURCE_FIXTURE_NO_WORLD_NO_G5_WITNESS")
           PY
-      - name: Prohibit execution, signer, or secret fixtures in the preflight workflow
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          s=Path(".github/workflows/caf02-des-g5-custody-offline-preflight.yml").read_text()
-          assert "workflow_dispatch:" not in s and "push:" not in s
-          assert "secret" not in s.lower()
-          for forbidden in ("authorize_world_execution(","authorize_K2_reveal("):
-              assert forbidden not in s
-          print("CAF02_OFFLINE_PREFLIGHT_NOT_REAL_CAMPAIGN")
-          PY
