@@ -1,0 +1,40 @@
+name: CAF-02 posthoc K0 pruning A-E (existing observations NO DES)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf02_k0_poda_posthoc.py'
+      - 'experiments/cafeteria/pc02/test_caf02_k0_poda_posthoc.py'
+      - '.github/workflows/caf02-k0-poda-posthoc.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pruning-diagnostic-no-new-des:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No DES / policy drift + recreate original losses and Astra candidate
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf02_k0_poda_posthoc.py' -v
+      - name: Compare original versus absolute-only K0 on EXISTING five observations
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_k0_poda_posthoc.py \
+            --out artifacts/caf02-posthoc-k0-pruning
+          cat artifacts/caf02-posthoc-k0-pruning/POSTHOC_03_INFORME.md
+      - name: Archive retrospective CSV, JSON, report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-POSTHOC-K0-PRUNING-${{ github.run_id }}
+          path: artifacts/caf02-posthoc-k0-pruning/
+          if-no-files-found: warn
+          retention-days: 90
