@@ -1,0 +1,63 @@
+name: CAF-03 FGH exploratory DES four K0 pruning policies (no G5)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf03_laboratorio_politicas.py'
+      - 'experiments/cafeteria/pc02/test_caf03_laboratorio_politicas.py'
+      - 'experiments/cafeteria/pc02/CAF03_FGH_PODA_ORIGINAL_VS_ABSOLUTA.md'
+      - '.github/workflows/caf03-fgh-poda-k0.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fgh-frozen-design-and-actual-des:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify K1/K2 cannot begin before original and absolute-only forecasts were saved
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf03_laboratorio_politicas.py' -v
+      - name: Execute FGH once each and report four M/D pruning variants per world
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf03_laboratorio_politicas.py \
+            --out artifacts/caf03-fgh-four-policies | tee /tmp/caf03-fgh.json
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('artifacts/caf03-fgh-four-policies')
+          result=json.loads((root/'01_RESULTADOS.json').read_bytes())
+          assert result['status']=='CAF03_FGH_EXPLORATORY_COMPLETE_NOT_CONFIRMATORY'
+          assert result['DES_exploratory_runs']==9
+          assert result['DES_confirmatory_runs']==0
+          assert result['new_OpenModelica_runs']==0
+          assert not result['external_custody']
+          assert [r['world'] for r in result['worlds']]==list('FGH')
+          for r in result['worlds']:
+              assert r['K2'][-1]==27
+              assert set(r['variant_results'])=={'M','D'}
+              for arm in ('M','D'):
+                  assert set(r['variant_results'][arm])=={
+                      'original','absolute_only'}
+          for name,sha in json.loads((root/'04_HASHES.json').read_bytes())[
+                  'files_sha256'].items():
+              assert 'sha256:'+hashlib.sha256((root/name).read_bytes()).hexdigest()==sha
+          print('CAF03_FGH_ACTUAL_DES_9_RUNS_4_VARIANTS_AND_PRE_K2_SUCCESS')
+          print((root/'03_INFORME.md').read_text())
+          PY
+      - name: Keep full FGH candidate inventories and pre-K2 forecasts plus results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF03-FGH-FOUR-POLICIES-${{ github.run_id }}
+          path: artifacts/caf03-fgh-four-policies/
+          retention-days: 90
+          if-no-files-found: warn
