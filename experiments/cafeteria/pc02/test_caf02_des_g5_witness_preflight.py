@@ -23,7 +23,7 @@ from experiments.cafeteria.pc02 import caf02_public_cut_bridge as bridge
 CONFIG={"schema":engine.SCHEMA,"tie_policy":engine.TIE_POLICY,
         "stages":[{"servers":1,"service_minutes":"3/2"},
                   {"servers":2,"service_minutes":"1"}]}
-NONCE=b"secret-nonce-not-for-world-trial!!"
+NONCE=bytes(range(32))
 assert len(NONCE)==32
 DECLARATION=("Externally selected hypothetical toy configuration; "
              "not an actual independent evaluator nor an external G5.")
