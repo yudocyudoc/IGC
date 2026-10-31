@@ -74,6 +74,22 @@ class FluidDESReviewTests(unittest.TestCase):
                     self.assertLess(abs(coarse[minute]["delivered"] -
                                         fine[minute]["delivered"]), 0.03)
 
+    def test_error_denominators_and_sign_are_explicit(self):
+        data = run()
+        summary = data["summary"]
+        self.assertEqual(summary["signed_error_convention"], "DES_MINUS_FLUID")
+        self.assertEqual(summary["n_during_pulse"], 33)
+        self.assertEqual(summary["n_after_pulse"], 11)
+        self.assertAlmostEqual(summary["lagged_during_pulse"]["mae"], 0.3711, places=4)
+        self.assertAlmostEqual(summary["lagged"]["mae"], 0.2783, places=4)
+        self.assertEqual(summary["lagged_after_pulse"]["mae"], 0.0)
+        self.assertEqual(summary["zero_lag"]["bias"], -3.3586)
+        self.assertEqual(summary["lagged_during_pulse"]["max_abs"], 0.5833)
+        for row in data["comparisons"]:
+            if row["minute"] == 40:
+                self.assertAlmostEqual(
+                    row["difference_delivered_des_minus_lagged"], 0.0, places=6)
+
     def test_local_baseline_is_reproduced_not_claimed_validated(self):
         data = run()
         self.assertEqual(data["summary"]["n_worlds"], 11)
