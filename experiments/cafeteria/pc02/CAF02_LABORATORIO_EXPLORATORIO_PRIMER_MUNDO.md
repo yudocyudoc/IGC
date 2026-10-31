@@ -56,3 +56,20 @@ El informe es **un resultado de simulación sintética en un mundo público conc
 La política confirmatoria `CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json` sigue declarada **no autorizada**. Este laboratorio se habilita solo para un escenario **público y explícito**, mediante una función nueva. No abre `execute_private_trial()`, `authorize_K2_reveal()` ni `authorize_world_execution()`. No hace afirmaciones de ATMS persistida.
 
 **Después de este informe** tendrá sentido decidir entre explorar dos o tres mundos con distintas capacidades o formular una validación externa; no anticiparlo con nuevas ceremonias.
+
+
+## Primera observación producida por el laboratorio (mundo A, no confirmatoria)
+
+La ejecución sintética completa inicial quedó registrada en [GitHub Actions 41156368098](https://github.com/yudocyudoc/IGC/actions/runs/41156368098), con cuatro tests, secuencia K0→G4a→K1→G4b→K2 y un informe descargable. Este registro es un **resultado exploratorio de simulación**, no evidencia de la campaña independiente prevista.
+
+- **K0:** entregas D5=2, D10=8.
+- **K1 conjunta:** 1.5 pedidos/minuto, lectura en t20; entrega observada 22.
+- **K2:** entregas acumuladas [2, 8, 15, 22, 27, 27].
+- **M:** 48 candidatos K0 (C00=20, C01=28), tras K1 **1** (C00=1, C01=0). Pérdida `L_set` K0 **0.90676**, K1 **0.54629**, ganancia **0.36046** pedidos.
+- **D:** 16 candidatos K0 (D1=8, D2=4, D3=4), tras K1 **2** (D1=2). Pérdida K0 **1.81917**, K1 **1.00639**, ganancia **0.81278** pedidos.
+- **REF_SCALE solo-K0:** pérdida **0.41667**, mejor que **ambos** conjuntos revisados M/D. REF_CAF solo-K0 **2.16667**.
+
+**Interpretación central:** K1 permitió una reducción intensa de candidatos y mejoró ambos errores **dentro del mismo brazo**, pero un benchmark barato que consumía menos información obtuvo mejor pérdida. Además, el DES construido tiene tres estaciones y los dos métodos terminaron excluyendo sus **familias análogas de tres etapas** (M/C01 y D/D3). Esto no significa que un modelo continuo de tres etapas fuera la verdad —el mecanismo generador es discreto y está fuera del catálogo exacto—, sino que **precisión predictiva y semejanza de arquitectura no necesariamente avanzan juntas**.
+
+No usar el resultado conocido para retocar silenciosamente tolerancias, catálogo o política y luego alegar validación ciega del mismo mundo. Para estudiar robustez corresponde otro mundo declarado como nuevo experimento exploratorio.
+
