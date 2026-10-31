@@ -282,6 +282,19 @@ def run(out, source_commit):
         "La ÚNICA diferencia del selector son curvas del banco (DES / fluido cuantizado).",
         "Fluido continuo: cuantización predeclarada half-up; no se calibra con los mundos.",
         "",
+        "## Distancia entre predicciones (tras cuantización, antes de observar mundos)",
+        "",
+        "| Banco | Canales comparados | MAE de diferencia entera | Diferencia máxima | Diferencias > ±1 |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for bank_name, diff in mismatch.items():
+        lines.append("| " + " | ".join(map(str, (
+            bank_name, diff["channel_comparisons"],
+            diff["mean_absolute_integer_difference"],
+            diff["max_absolute_integer_difference"],
+            diff["num_greater_than_tolerance_1"]))) + " |")
+    lines += [
+        "",
         "## Veredictos por tipo",
         "",
         "| Banco | Motor predictivo | Tipo real | Correctos | Falsos únicos | Brechas | Abstenciones | Diagnósticos | Segundas pruebas |",
@@ -341,6 +354,12 @@ def main():
         "n_comparisons": result["n_comparisons"],
         "paired_changed_verdicts": sum(x["verdict_changed"]
                                         for x in result["paired_differences"]),
+        "prediction_mismatch_by_bank": {
+            name: {key: value for key, value in distance.items()
+                   if key != "by_action"}
+            for name, distance in
+            result["predictions_DES_minus_quantized_fluid"].items()
+        },
         "summary": result["summary"],
         "promotion_gate": result["promotion_gate"],
     }, sort_keys=True))
