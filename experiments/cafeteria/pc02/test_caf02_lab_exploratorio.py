@@ -77,7 +77,7 @@ class LabTest(unittest.TestCase):
             self.assertTrue(manifest[
                 "avoid_using_this_world_as_blind_confirmatory_sample"])
             self.assertEqual(manifest["G2_native_calls_in_this_run"],0)
-            self.assertEqual(len(list(out.glob("*.json"))),10)
+            self.assertEqual(len(list(out.glob("*.json"))),11)
             self.assertTrue((out/"10_INFORME.md").is_file())
             self.assertTrue((out/"09_TABLA_K2.csv").is_file())
             for name,digest in manifest["files_sha256"].items():
