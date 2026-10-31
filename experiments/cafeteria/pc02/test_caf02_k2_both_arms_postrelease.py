@@ -88,7 +88,8 @@ class BothArmsScoringTest(unittest.TestCase):
             self.assertEqual(result[arm]["status"],"PAIRED")
             self.assertIsNotNone(result[arm]["paired_set_loss_gain_orders"])
             self.assertEqual(result[arm]["K1"]["n_scored_times"],6)
-            self.assertIsNone(result[arm]["REF_CAF"]["set_loss_mean"])
+            self.assertEqual(result[arm]["REF_CAF"]["status"],
+                             "POINT_ELIGIBLE")
             self.assertEqual(result[arm]["REF_SCALE"]["status"],
                              "POINT_ELIGIBLE")
             self.assertFalse(
