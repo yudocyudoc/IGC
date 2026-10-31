@@ -1,0 +1,61 @@
+name: CAF-07 deterministic hypothesis evidence selector and new-world DES evaluation
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/caf07_selector_evidencia.py'
+      - 'experiments/cafeteria/pc02/test_caf07_selector_evidencia.py'
+      - 'experiments/cafeteria/pc02/CAF07_SELECTOR_EVIDENCIA_PROTOCOLO.md'
+      - '.github/workflows/caf07-selector-evidencia.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deterministic-selector-new-world-evaluation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test decisions, fail-closed observation semantics, premeasurement hashes and no resimulation
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf07_selector_evidencia.py' -v
+      - name: Run physical hypothesis bank and new off-grid bottleneck DES worlds
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf07_selector_evidencia.py \
+            --out artifacts/caf07-evidence-selector | tee /tmp/caf07-console.json
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('artifacts/caf07-evidence-selector')
+          r=json.loads((p/'01_RESULTADOS.json').read_bytes())
+          assert r['status']=='CAF07_EVIDENCE_SELECTOR_EXPLORATORY_EXECUTED'
+          assert r['hypotheses']==12 and r['new_worlds']==3
+          assert r['hypothesis_DES_runs']==120
+          assert 3<=r['DES_runs']<=6 and r['confirmatory_DES_runs']==0
+          assert r['measurement_costs_are_illustrative']
+          assert not r['probability_or_expected_VOI_estimated']
+          assert r['M_D_stage_observation_models_untouched']
+          assert r['evaluator_truth_not_used_in_selection']
+          assert sum(r['summary'][k] for k in ('correct','wrong','abstain'))==3
+          m=json.loads((p/'04_MANIFIESTO.json').read_bytes())
+          assert m['all_three_actions_chosen_before_respective_followup_DES']
+          for f,sha in m['files_sha256'].items():
+              assert 'sha256:'+hashlib.sha256((p/f).read_bytes()).hexdigest()==sha
+          print('CAF07_EXPLICIT_HYPOTHESIS_EVIDENCE_SELECTION_COMPLETED')
+          print((p/'03_INFORME.md').read_text())
+          PY
+      - name: Archive plan, 120 physical candidate forecasts, per-world selected actions, responses, report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF07-SELECTOR-EVIDENCE-${{ github.run_id }}
+          path: artifacts/caf07-evidence-selector/
+          retention-days: 90
+          if-no-files-found: warn
