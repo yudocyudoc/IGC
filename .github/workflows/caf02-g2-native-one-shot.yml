@@ -1,0 +1,123 @@
+name: CAF-02 G2 native M D - ONCE on main (NO DES)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/caf02-g2-native-one-shot.yml'
+permissions:
+  contents: read
+concurrency:
+  group: caf02-g2-native-15-once
+  cancel-in-progress: false
+jobs:
+  G2-first-and-only-native-batch:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.event_name == 'push' && github.run_number == 1 && github.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Construct locked public-plan Modelica sources (NO DES)
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf02_g2_native_modelica_sources.py prepare \
+            --out artifacts/caf02-g2-native
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/caf02-g2-native")
+          d=json.loads((p/"G2_SOURCE_MANIFEST.json").read_bytes())
+          assert d["M_cases"]==12 and d["D_cases"]==3
+          assert len(d["source_rows"])==15 and d["OMC_attempts_executed"]==0
+          assert d["K2_truth_seen"] is False
+          lines=[]
+          for c in d["source_rows"]:
+              script=(p/c["mos_file"]).read_text()
+              assert script.count("simulate(")==1 and script.count("checkModel(")==1
+              lines += [line for line in script.splitlines()
+                        if not line.startswith("simulate(")]
+          only="\n".join(lines)+"\n"
+          assert only.count("checkModel(")==15 and "simulate(" not in only
+          (p/"G2_CHECK_ONLY.mos").write_text(only)
+          print("CAF02_15_SOURCES_FIXED_BEFORE_NATIVE_BUDGET")
+          PY
+      - name: Fetch OpenModelica versioned image, record local image identity
+        run: |
+          set -euo pipefail
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          docker image inspect --format '{{.Id}}' \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            > artifacts/caf02-g2-native/IMAGE_DIGEST.txt
+      - name: Native checkModel for ALL 15 BEFORE any simulation budget
+        run: |
+          set -euo pipefail
+          docker run --rm --network none -v "$PWD:$PWD" -w "$PWD" \
+            openmodelica/openmodelica:v1.26.5-minimal \
+            omc "$PWD/artifacts/caf02-g2-native/G2_CHECK_ONLY.mos" \
+            2>&1 | tee artifacts/caf02-g2-native/G2_CHECK_ONLY.console.txt
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Error occurred' \
+            artifacts/caf02-g2-native/G2_CHECK_ONLY.console.txt; then
+            echo 'CAF02_G2_NATIVE_CHECKMODEL_FAIL_NO_SCIENTIFIC_SIMULATIONS' >&2
+            exit 1
+          fi
+          test "$(grep -Ec 'Check of CAF02_.* completed successfully' artifacts/caf02-g2-native/G2_CHECK_ONLY.console.txt)" -eq 15
+          echo 'CAF02_G2_NATIVE_CHECKMODEL_15_PASS'
+      - name: Spend ONLY 12 M and 3 D native calls, no retry or substitution
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/caf02-g2-native")
+          rows=json.loads((p/"G2_SOURCE_MANIFEST.json").read_bytes())["source_rows"]
+          with (p/"G2_CASES.order").open("w") as f:
+              for row in rows:
+                  f.write(row["modelica_class"]+"\n")
+          assert len(rows)==15
+          PY
+          while IFS= read -r cls; do
+            # Budget marker is durable BEFORE the only OMC invocation.
+            printf 'INVOCATION_STARTED\n' > "artifacts/caf02-g2-native/${cls}.attempt"
+            echo "CAF02_NATIVE_G2_STARTED=${cls}" \
+              > "artifacts/caf02-g2-native/${cls}.console.txt"
+            # No set -e abort: a failed case is retained and subsequent
+            # PREDECLARED models are still each attempted once.
+            if docker run --rm --network none -v "$PWD:$PWD" -w "$PWD" \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$PWD/artifacts/caf02-g2-native/${cls}.mos" \
+              >> "artifacts/caf02-g2-native/${cls}.console.txt" 2>&1; then
+              rc=0
+            else
+              rc=$?
+            fi
+            printf '%s\n' "$rc" > "artifacts/caf02-g2-native/${cls}.exit_code"
+            echo "CAF02_NATIVE_G2_EXIT=${cls} rc=$rc"
+          done < artifacts/caf02-g2-native/G2_CASES.order
+      - name: Chown all Docker-owned outputs before verification
+        if: always()
+        run: |
+          if [ -d artifacts/caf02-g2-native ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/caf02-g2-native
+          fi
+      - name: Verify native source bytes, solver outputs, mass, sample parity
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -f artifacts/caf02-g2-native/G2_SOURCE_MANIFEST.json ]; then
+            echo 'CAF02_G2_PREPARATION_FAILED_ZERO_NATIVE_RESULTS' >&2
+            exit 1
+          fi
+          python experiments/cafeteria/pc02/caf02_g2_native_executor.py verify \
+            --out artifacts/caf02-g2-native
+      - name: Archive 15 actual MO/MOS/CSV/attempt/exit/console and receipts EVEN FAILURE
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CAF02-G2-FIRST-15-NATIVE-${{ github.run_id }}
+          path: artifacts/caf02-g2-native/
+          retention-days: 90
+          if-no-files-found: warn
