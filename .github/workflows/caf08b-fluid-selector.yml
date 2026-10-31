@@ -1,0 +1,64 @@
+name: CAF-08B same selector with delayed fluid vs DES bank
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc02/caf07b_umbral_secuencial.py'
+      - 'experiments/cafeteria/pc02/caf08_fluid_des_pilot.py'
+      - 'experiments/cafeteria/pc02/caf08b_selector_fluid_bank.py'
+      - 'experiments/cafeteria/pc02/test_caf08b_selector_fluid_bank.py'
+      - 'experiments/cafeteria/pc02/CAF08B_COMPARACION_BANCOS.md'
+      - '.github/workflows/caf08b-fluid-selector.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cross-model-comparator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests and paired scenario audit
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf08b_selector_fluid_bank.py' -v
+      - name: Reproduce both prediction banks with original CAF-07B selector
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf08b_selector_fluid_bank.py \
+            --out artifacts/caf08b-comparison --source-commit "$GITHUB_SHA" \
+            | tee /tmp/caf08b-console.json
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          p=Path("artifacts/caf08b-comparison")
+          r=json.loads((p/"01_RESULTADOS.json").read_bytes())
+          assert r["checkout_sha"]==os.environ["GITHUB_SHA"]
+          assert r["n_comparisons"]==44
+          assert r["n_paired_comparisons"]==22
+          assert r["same_world_observations_for_paired_banks"]
+          assert not r["selector_implementation_changed"]
+          assert not r["sensor_or_tolerance_changed"]
+          assert not r["deployment_validated"]
+          assert r["promotion_gate"]=="BLOCKED_RETROSPECTIVE_NOT_BLINDED"
+          assert all(x["cost_spent"]<=8 for x in r["evaluations"])
+          manifest=json.loads((p/"03_MANIFIESTO.json").read_bytes())
+          for n,d in manifest["files"].items():
+              assert d=="sha256:"+hashlib.sha256((p/n).read_bytes()).hexdigest()
+          print("CAF08B_TECHNICAL_PASS_SCIENTIFIC_NOT_PROMOTED")
+          print((p/"02_INFORME.md").read_text())
+          PY
+      - name: Publish all per-case premeasure decisions and paired outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf08b-both-banks-full-audit
+          path: artifacts/caf08b-comparison/
+          if-no-files-found: warn
+          retention-days: 90
