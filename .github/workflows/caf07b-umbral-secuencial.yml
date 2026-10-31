@@ -44,6 +44,9 @@ jobs:
           assert not r['evaluator_truth_used_in_policy']
           assert not r['hidden_extra_stage_rejected_using_known_topology']
           assert not r['deployment_validated']
+          assert r['promotion_gate']=='BLOCKED_NO_DIAGNOSTIC_COVERAGE'
+          assert r['expanded_correct_diagnoses_by_structure']=={'single':0,'double':0}
+          assert not r['expanded_has_minimum_diagnostic_coverage']
           assert all(x['cost_spent']<=8 for x in r['evaluations'])
           assert sum(sum(v['verdicts'].values())
                      for cohort in r['summary'].values()
