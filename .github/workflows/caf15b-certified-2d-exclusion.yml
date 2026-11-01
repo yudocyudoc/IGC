@@ -1,0 +1,78 @@
+name: CAF-15B certified 2D exclusion with independently replayed rational proof trees
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf15b-certified-2d-exclusion.yml'
+      - 'experiments/cafeteria/pc02/CAF15B_PROTOCOLO_CERTIFICACION_2D.md'
+      - 'experiments/cafeteria/pc02/caf15b_certified_2d_exclusion.py'
+      - 'experiments/cafeteria/pc02/test_caf15b_certified_2d_exclusion.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  certified-global-exclusion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify native DES, interval soundness and invalid-proof rejection
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf15b_certified_2d_exclusion.py' -v
+      - name: Solve all frozen 30 structural pairs with three-valued verdict
+        env:
+          CAF15B_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf15b_certified_2d_exclusion.py \
+            --out artifacts/caf15b-certified-two-dimensional \
+            --checkout-sha "$GITHUB_SHA" --head-sha "$CAF15B_HEAD_SHA" \
+            | tee /tmp/caf15b-results.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json,os
+          p=Path('artifacts/caf15b-certified-two-dimensional')
+          data=json.loads((p/'01_RESULTADOS.json').read_text())
+          plan=json.loads((p/'00_PLAN_BEFORE_SOLVER.json').read_text())
+          assert data['checkout_sha']==os.environ['GITHUB_SHA']
+          assert data['pr_head_sha']==os.environ['CAF15B_HEAD_SHA']
+          assert data['n_pairs']==30
+          assert plan['box_nodes_budget_per_pair']==5000
+          assert plan['box_depth_limit']==32
+          assert plan['all_pairs_frozen_before_solver']
+          assert data['no_grid_based_negative_certification']
+          assert data['same_physics_no_external_validation']
+          assert data['scientific_promotion_gate']=='BLOCKED_DETERMINISTIC_SAME_DES_UNCALIBRATED_SENSOR_NO_EXTERNAL_VALIDATION'
+          for row in data['results']:
+              assert row['verdict'] in (
+                  'CONFUSABLE_WITNESS_CERTIFIED',
+                  'SEPARABLE_EXHAUSTIVE_BOX_CERTIFIED',
+                  'UNRESOLVED_NOT_CERTIFIED')
+              if row['verdict']=='SEPARABLE_EXHAUSTIVE_BOX_CERTIFIED':
+                  assert row['independent_tree_verification']
+                  assert 'certificate_tree' in row
+              if row['verdict']=='CONFUSABLE_WITNESS_CERTIFIED':
+                  assert row['witness'] and 'common_reading' in row['witness']
+              if row['verdict']=='UNRESOLVED_NOT_CERTIFIED':
+                  assert 'certificate_tree' not in row
+          manifest=json.loads((p/'03_MANIFIESTO.json').read_text())
+          for name,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/name).read_bytes()).hexdigest()
+          print('CAF15B_ENGINEERING_PASS_WITH_THREE_VALUED_CERTIFICATION')
+          print((p/'02_INFORME.md').read_text()[:12500])
+          PY
+      - name: Preserve frozen plan, exact witnesses and every separation proof tree
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf15b-rational-exclusion-full-audit
+          path: artifacts/caf15b-certified-two-dimensional/
+          retention-days: 90
+          if-no-files-found: warn
