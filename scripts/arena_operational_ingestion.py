@@ -84,8 +84,8 @@ def validate_secret(secret):
 
 def pseudonym(secret,*parts):
     validate_secret(secret)
-    msg=b"IGC_EV02_PSEUDONYM\x00"+secret+b"\x00"+
-        b"\x00".join(str(x).encode("utf-8") for x in parts)
+    msg=(b"IGC_EV02_PSEUDONYM\\x00"+secret+b"\\x00"
+         +b"\\x00".join(str(x).encode("utf-8") for x in parts))
     return "p_"+sha256(msg).hexdigest()[:32]
 
 
