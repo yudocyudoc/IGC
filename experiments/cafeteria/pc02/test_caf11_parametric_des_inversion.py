@@ -179,7 +179,7 @@ class CAF11ExactInverseTests(unittest.TestCase):
                 self.assertEqual(dig,"sha256:"+sha256(
                     (out/name).read_bytes()).hexdigest())
             for row in r["evaluations"]:
-                if row["truth_class_EVALUATOR_ONLY"] is None:
+                if row["true_class_EVALUATOR_ONLY"] is None:
                     self.assertIsNone(row["continuous_true_class_covered"])
                     self.assertIsNone(row[
                         "true_capacity_contained_in_true_family_EVALUATOR_ONLY"])
