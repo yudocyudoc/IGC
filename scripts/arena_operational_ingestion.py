@@ -90,7 +90,7 @@ def pseudonym(secret,*parts):
 
 
 def parse_timestamp(raw):
-    need(isinstance(raw,str) and "T" in raw and len(raw)>=20,
+    need(isinstance(raw,str) and "T" in raw and len(raw)>=19,
          "EV02_TIMESTAMP_NOT_EXPLICIT_ISO")
     # Python fromisoformat will validate calendar dates, offsets and seconds.
     try:
