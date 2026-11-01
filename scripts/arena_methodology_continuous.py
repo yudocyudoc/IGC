@@ -115,8 +115,7 @@ def point_samples(box):
 
 
 def midpoint_split(box):
-    widths=[(b-a)/(family_length if family_length else 1)
-            for a,b in box for family_length in (1,)]
+    widths=[b-a for a,b in box]
     index=max(range(len(widths)),key=lambda i:(widths[i],-i))
     a,b=box[index]
     mid=(a+b)/2
