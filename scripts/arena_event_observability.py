@@ -103,13 +103,30 @@ def analyze_view(events,view,ordered_stages=("caja","preparacion","despacho","tr
     require(view in VIEWS,"EV01_UNKNOWN_VIEW")
     require(all("resource_id" not in x for x in events) if view!="FULL"
             else True,"EV01_RESOURCE_LEAK")
-    if view=="POS":
-        require(all(x["event_type"] in POS_TYPES for x in events),
-                "EV01_POS_INTERNAL_EVENT_LEAK")
-    if view=="POS_KDS":
-        require(all(x["event_type"] in POS_TYPES or
-                    (x["event_type"] in KDS_TYPES and x.get("stage")==KDS_STAGE)
-                    for x in events),"EV01_KDS_INTERNAL_EVENT_LEAK")
+    base_fields={"case_id","event_seq","activity","event_type",
+                 "t_minutes_exact","source"}
+    for row in events:
+        if row["event_type"] in POS_TYPES:
+            require(set(row)==base_fields and row["source"]=="pos",
+                    "EV01_POS_INTERNAL_EVENT_LEAK" if view=="POS"
+                    else "EV01_KDS_INTERNAL_EVENT_LEAK")
+        elif view=="POS":
+            raise ValueError("EV01_POS_INTERNAL_EVENT_LEAK")
+        elif view=="POS_KDS":
+            require(set(row)==base_fields|{"stage"} and
+                    row["event_type"] in KDS_TYPES and
+                    row.get("stage")==KDS_STAGE and
+                    row["source"]=="kds_idealizado",
+                    "EV01_KDS_INTERNAL_EVENT_LEAK")
+        else:
+            expected=base_fields|{"stage"}
+            if row["event_type"] in KDS_TYPES:
+                expected|={"resource_id"}
+            require(set(row)==expected and
+                    row["event_type"] in FULL_TYPES and
+                    row.get("stage") in ordered_stages and
+                    row["source"]=="instrumentacion_fisica",
+                    "EV01_FULL_EVENT_SCHEMA_INVALID")
     by_case=group_by_case(events)
     metrics=[]
     for case,rows in sorted(by_case.items()):
@@ -188,6 +205,31 @@ def analyze_view(events,view,ordered_stages=("caja","preparacion","despacho","tr
                 "observed_stage_count_not_total_stage_count":len(stages),
             })
         metrics.append(result)
+    if view=="FULL":
+        intervals=defaultdict(list)
+        for case,rows in by_case.items():
+            for stage in ordered_stages:
+                starts=[r for r in rows if r["event_type"]=="servicio_inicio"
+                        and r.get("stage")==stage]
+                ends=[r for r in rows if r["event_type"]=="servicio_fin"
+                      and r.get("stage")==stage]
+                require(len(starts)==len(ends)==1,
+                        "EV01_RESOURCE_INTERVAL_MISSING")
+                a,z=starts[0],ends[0]
+                resource=a["resource_id"]
+                require(type(resource) is str and
+                        resource.startswith(stage+"-r") and
+                        z["resource_id"]==resource,
+                        "EV01_RESOURCE_ID_CHANGED")
+                intervals[resource].append((
+                    exact(a["t_minutes_exact"]),
+                    exact(z["t_minutes_exact"]),case))
+        for resource,times in intervals.items():
+            times.sort()
+            require(all(previous_end<=next_start
+                        for (_,previous_end,_),(next_start,_,_)
+                        in zip(times,times[1:])),
+                    "EV01_RESOURCE_OVERLAP")
     return {
         "view":view,
         "n_cases":len(metrics),
