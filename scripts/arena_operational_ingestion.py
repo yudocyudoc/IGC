@@ -52,6 +52,12 @@ class SourceSpec:
 
     def __post_init__(self):
         need(self.profile in ACTION_MAP,"EV02_UNKNOWN_SOURCE_PROFILE")
+        expected_namespace=("crm:" if self.profile=="crm_export_v1"
+                            else "orders:")
+        need(isinstance(self.case_namespace,str) and
+             self.case_namespace.startswith(expected_namespace) and
+             len(self.case_namespace)>len(expected_namespace),
+             "EV02_SOURCE_PROFILE_NAMESPACE_MISMATCH")
         need(all(isinstance(x,str) and x and len(x)<=160 for x in (
             self.source_system,self.case_namespace,self.clock_id,
             self.evidence_ref)),"EV02_SOURCE_PROVENANCE_REQUIRED")
