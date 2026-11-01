@@ -1,0 +1,73 @@
+name: CAF-16 stochastic-service robustness with independent event engine
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf16-stochastic-robustness.yml'
+      - 'experiments/cafeteria/pc02/CAF16_PROTOCOLO_ROBUSTEZ_ESTOCASTICA.md'
+      - 'experiments/cafeteria/pc02/caf16_stochastic_robustness.py'
+      - 'experiments/cafeteria/pc02/test_caf16_stochastic_robustness.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stochastic-service-robustness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify physical parity, conservation, noise separation and frozen analyst
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf16_stochastic_robustness.py' -v
+      - name: Reproduce fixed 4320 synthetic stochastic sensor observations
+        env:
+          CAF16_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf16_stochastic_robustness.py \
+            --out artifacts/caf16-stochastic-robustness \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF16_HEAD_SHA" > /tmp/caf16-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import os,json
+          p=Path('artifacts/caf16-stochastic-robustness')
+          result=json.loads((p/'01_RESULTADOS.json').read_text())
+          plan=json.loads((p/'00_PLAN_PRE_EVALUACION.json').read_text())
+          assert result['checkout_sha']==os.environ['GITHUB_SHA']
+          assert result['pr_head_sha']==os.environ['CAF16_HEAD_SHA']
+          assert (result['n_worlds'],result['n_readings'],
+                  result['n_replicates'],result['n_deterministic_candidates'])==(30,4320,12,720)
+          assert plan['no_stochastic_world_generated_before_plan']
+          assert plan['catalog_sha256']=='sha256:'+sha256(
+              (p/'00B_CATALOGO_PRE_EVALUACION.json').read_bytes()).hexdigest()
+          for program in ('HIGH_T20','SHAPED_T14_T20'):
+              for cv in ('CV0','CV25','CV50'):
+                  for e in ('E0','E1'):
+                      s=result['summary'][program][cv][e]
+                      assert (s['n_known'],s['n_unknown'])==(324,36)
+              assert result['summary'][program]['CV0']['E0']['known_true_class_covered']==324
+          assert result['promotion_gate']=='BLOCKED_SYNTHETIC_STOCHASTIC_SERVICE_UNCALIBRATED_SENSORS_NO_EXTERNAL_VALIDATION'
+          assert result['stochastic_generator_independent_of_legacy_DES']
+          assert result['no_external_calibrated_service_or_sensor']
+          manifest=json.loads((p/'03_MANIFIESTO.json').read_text())
+          for name,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/name).read_bytes()).hexdigest()
+          print('CAF16_ENGINEERING_PASS_NOT_EXTERNAL_VALIDATION')
+          print((p/'02_INFORME.md').read_text())
+          PY
+      - name: Preserve full frozen protocol evidence, raw readings and integrity hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf16-stochastic-service-full-audit
+          path: artifacts/caf16-stochastic-robustness/
+          retention-days: 90
+          if-no-files-found: warn
