@@ -1,0 +1,75 @@
+name: CAF-14 excitation and temporal observation windows — exact DES
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf14-excitation-temporal-windows.yml'
+      - 'experiments/cafeteria/pc02/CAF14_PROTOCOLO_EXCITACION_VENTANAS.md'
+      - 'experiments/cafeteria/pc02/caf14_excitation_temporal_windows.py'
+      - 'experiments/cafeteria/pc02/test_caf14_excitation_temporal_windows.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  excitation-and-windows:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test factorial, event-prefix semantics, symbolic parity and provenance
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf14_excitation_temporal_windows.py' -v
+      - name: Run frozen 32-world, 18-program, 6-family experiment
+        env:
+          CAF14_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf14_excitation_temporal_windows.py \
+            --out artifacts/caf14-excitation-temporal \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF14_HEAD_SHA" > /tmp/caf14-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import os,json
+          root=Path('artifacts/caf14-excitation-temporal')
+          x=json.loads((root/'01_RESULTADOS.json').read_text())
+          p=json.loads((root/'00_PLAN_BEFORE_EVAL.json').read_text())
+          assert x['checkout_sha']==os.environ['GITHUB_SHA']
+          assert x['pr_head_sha']==os.environ['CAF14_HEAD_SHA']
+          assert (x['n_programs'],x['n_worlds'],
+                  x['n_global_pair_comparisons'],
+                  x['n_structural_parameter_filters'],
+                  x['n_exact_family_program_catalogs'])==(18,32,270,3456,108)
+          assert p['n_frozen_inversions']==3456
+          assert p['new_world_DES_calls_before_plan']==0
+          assert p['catalog_sha256']=='sha256:'+sha256(
+              (root/'00B_EXACT_SIGNATURES_BEFORE_EVAL.json').read_bytes()).hexdigest()
+          assert x['truth_never_passed_to_inverse']
+          assert x['no_external_validation']
+          assert x['promotion_gate']==(
+              'BLOCKED_SAME_DES_PHYSICS_UNCALIBRATED_TOLERANCE_NO_EXTERNAL_VALIDATION')
+          for prog,row in x['summary'].items():
+              assert (row['n_within'],row['n_unknown_extra'])==(27,5)
+              assert (row['true_class_coverage'],row['true_parameter_coverage'])==(27,27)
+              assert row['global_confusable_pairs']+row['global_separable_pairs']==15
+          manifest=json.loads((root/'03_MANIFIESTO.json').read_text())
+          for filename,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((root/filename).read_bytes()).hexdigest()
+          print('CAF14_ENGINEERING_PASS_NO_EXTERNAL_VALIDATION')
+          print((root/'02_INFORME.md').read_text()[:14000])
+          PY
+      - name: Preserve exact catalog, graphs, worlds and signed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf14-excitation-temporal-full-audit
+          path: artifacts/caf14-excitation-temporal/
+          if-no-files-found: warn
+          retention-days: 90
