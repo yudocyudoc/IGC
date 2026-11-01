@@ -1,0 +1,83 @@
+name: CAF-13 exact global structural distinguishability
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf13-global-distinguishability.yml'
+      - 'experiments/cafeteria/pc02/caf13_structural_distinguishability.py'
+      - 'experiments/cafeteria/pc02/test_caf13_structural_distinguishability.py'
+      - 'experiments/cafeteria/pc02/CAF13_PROTOCOLO_DISTINGUIBILIDAD_ESTRUCTURAL.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rational-global-distinguishability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify interval partition, independent witnesses, and native DES parity
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf13_structural_distinguishability.py' -v
+      - name: Reproduce eight fixed-program structural graphs and 32 worlds
+        env:
+          CAF13_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf13_structural_distinguishability.py \
+            --out artifacts/caf13-global-distinguishability \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF13_HEAD_SHA" > /tmp/caf13-results.json
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import json,os
+          root=Path('artifacts/caf13-global-distinguishability')
+          a=json.loads((root/'01_RESULTADOS.json').read_text())
+          plan=json.loads((root/'00_PLAN_ANTES_MUNDOS.json').read_text())
+          assert a['checkout_sha']==os.environ['GITHUB_SHA']
+          assert a['pr_head_sha']==os.environ['CAF13_HEAD_SHA']
+          assert (a['n_worlds'],a['n_programs'],a['n_pair_comparisons'],
+                  a['n_family_world_program_filters'])==(32,8,120,1536)
+          assert plan['true_world_DES_calls_before_plan']==0
+          assert plan['catalog_sha256']=='sha256:'+sha256(
+              (root/'00B_CATALOGO_FIRMAS_ANTES_MUNDOS.json').read_bytes()).hexdigest()
+          assert a['promotion_gate']=='BLOCKED_SAME_DES_PHYSICS_UNCALIBRATED_TOLERANCE_NO_EXTERNAL_VALIDATION'
+          assert a['not_real_world_validated']
+          assert a['truth_never_given_to_inference']
+          for p,v in a['global_graph'].items():
+              assert v['n_pairs']==15
+              assert v['n_existentially_confusable']+v['n_robustly_separable_global']==15
+              for pair in v['pairs']:
+                  w=pair['witness']
+                  if w:
+                      assert all(abs(x-y)<=2 for x,y in zip(
+                          w['first_signature'],w['second_signature']))
+                      assert all(abs(x-z)<=1 and abs(y-z)<=1
+                          for x,y,z in zip(
+                              w['first_signature'],w['second_signature'],
+                              w['common_integer_observation_example']))
+          for p,v in a['summary'].items():
+              assert v['n_in_family']==27
+              assert v['n_unknown']==5
+              assert v['in_family_covered']==27
+          manifest=json.loads((root/'03_MANIFIESTO.json').read_text())
+          for filename,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((root/filename).read_bytes()).hexdigest()
+          print('CAF13_ENGINEERING_PASS_NOT_REAL_WORLD_VALIDATION')
+          print((root/'02_INFORME.md').read_text()[:12000])
+          PY
+      - name: Upload all exact signatures, global pair graph, and evaluation cases
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf13-exact-global-family-distinguishability-audit
+          path: artifacts/caf13-global-distinguishability/
+          retention-days: 90
+          if-no-files-found: warn
