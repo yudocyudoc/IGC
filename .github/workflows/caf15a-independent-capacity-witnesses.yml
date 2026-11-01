@@ -1,0 +1,72 @@
+name: CAF-15A independent dual capacities — positive witnesses only
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf15a-independent-capacity-witnesses.yml'
+      - 'experiments/cafeteria/pc02/CAF15A_PROTOCOLO_DOS_CAPACIDADES_TESTIGOS.md'
+      - 'experiments/cafeteria/pc02/CAF15A_ENMIENDA_CONSTRUCTOR_EXTRA_PRECODIGO.md'
+      - 'experiments/cafeteria/pc02/caf15a_two_capacity_witnesses.py'
+      - 'experiments/cafeteria/pc02/test_caf15a_two_capacity_witnesses.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  two-capacity-lattice-positive-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify independent exact physical durations, sensor parity and witness semantics
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf15a_two_capacity_witnesses.py' -v
+      - name: Evaluate frozen lattice witnesses and 24 unequal-capacity, 5 extra worlds
+        env:
+          CAF15A_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf15a_two_capacity_witnesses.py \
+            --out artifacts/caf15a-dual-capacity \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF15A_HEAD_SHA" > /tmp/caf15a-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import os,json
+          p=Path("artifacts/caf15a-dual-capacity")
+          r=json.loads((p/"01_RESULTADOS.json").read_text())
+          plan=json.loads((p/"00_PLAN_PRE_MUNDOS.json").read_text())
+          assert r["checkout_sha"]==os.environ["GITHUB_SHA"]
+          assert r["pr_head_sha"]==os.environ["CAF15A_HEAD_SHA"]
+          assert (r["n_hypothesis_rows"],r["n_worlds"],r["n_world_program_evaluations"],r["n_global_lattice_pair_comparisons"])==(720,29,116,60)
+          assert plan["n_diagonal_rows"]==90
+          assert plan["n_off_diagonal_rows"]==630
+          assert plan["no_world_evaluator_called_before_bank_and_plan"]
+          assert plan["catalog_sha256"]=="sha256:"+sha256((p/"00B_CATALOGO_TESTIGOS_PRE_MUNDOS.json").read_bytes()).hexdigest()
+          assert r["all_24_true_two_capacities_recovered_on_lattice"]
+          assert r["no_global_2d_certificate"] and r["no_external_validation"]
+          assert r["promotion_gate"]=="BLOCKED_LATTICE_WITNESSES_ONLY_NO_2D_GLOBAL_CERTIFICATION_NO_EXTERNAL_VALIDATION"
+          for pid,s in r["summary"].items():
+              assert (s["offdiag_worlds"],s["extra_worlds"])==(24,5)
+              assert s["offdiag_true_class_covered_2D_grid"]==24
+              assert s["diag_witness_edges"]<=s["expanded_witness_edges"]
+          manifest=json.loads((p/"03_MANIFIESTO.json").read_text())
+          for name,digest in manifest["sha256"].items():
+              assert digest=="sha256:"+sha256((p/name).read_bytes()).hexdigest()
+          print("CAF15A_ENGINEERING_PASS_POSITIVE_WITNESS_ONLY")
+          print((p/"02_INFORME.md").read_text()[:12500])
+          PY
+      - name: Upload exact lattice, frozen plan, witnesses and all-world audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf15a-independent-capacity-positive-witness-audit
+          path: artifacts/caf15a-dual-capacity/
+          if-no-files-found: warn
+          retention-days: 90
