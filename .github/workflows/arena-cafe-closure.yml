@@ -1,0 +1,67 @@
+name: ARENA Cafe — operational queue diagnosis and counterfactuals
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arena-cafe-closure.yml'
+      - 'experiments/cafeteria/pc02/arena_cafeteria_operational_closure.py'
+      - 'experiments/cafeteria/pc02/test_arena_cafeteria_operational_closure.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cafe-operational-diagnosis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test measured queue pressure, timing integrity, partial views and CAF-01 counterfactual
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_arena_cafeteria_operational_closure.py' -v
+      - name: Generate actual cafe operational diagnosis
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+          CAFE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/arena_cafeteria_operational_closure.py \
+            --out artifacts/cafe-operational-closure \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAFE_HEAD_SHA"
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import os,json
+          p=Path('artifacts/cafe-operational-closure')
+          r=json.loads((p/'01_RESULT.json').read_text())
+          d=r['full_operational_diagnosis']
+          assert r['checkout_sha']==os.environ['GITHUB_SHA']
+          assert r['pr_head_sha']==os.environ['CAFE_HEAD_SHA']
+          assert d['n_orders']==15 and d['cycle_balances_passed']==15
+          assert d['top_waiting_stage']=='preparacion'
+          assert d['n_stages_actually_instrumented']==4
+          assert r['counterfactuals']['model']=='CAF01_DETERMINISTIC_DES'
+          assert not r['real_business_validated']
+          assert r['physical_feasibility_and_cost_not_verified']
+          m=json.loads((p/'03_MANIFEST.json').read_text())
+          for filename,digest in m['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/filename).read_bytes()).hexdigest()
+          print('CAFE_OPERATIONAL_DIAGNOSIS_PASS')
+          print((p/'02_DIAGNOSTICO.md').read_text())
+          PY
+      - name: Preserve cafe physical measurements and scenario comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cafe-operational-queues-and-interventions
+          path: artifacts/cafe-operational-closure/
+          if-no-files-found: warn
+          retention-days: 90
