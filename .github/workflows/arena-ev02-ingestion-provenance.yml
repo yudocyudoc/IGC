@@ -1,0 +1,77 @@
+name: ARENA EV02 — operational CSV ingest, provenance and clock semantics
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arena-ev02-ingestion-provenance.yml'
+      - 'docs/ARENA_EV02_PROTOCOLO_INGESTION_Y_SEMANTICA_2026-11-01.md'
+      - 'scripts/arena_operational_ingestion.py'
+      - 'experiments/cafeteria/pc02/arena_ev02_ingestion_probe.py'
+      - 'experiments/cafeteria/pc02/test_arena_ev02_ingestion.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ingest-quality-and-observability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests of fail-closed ingestion, administrative timestamps and clock blockers
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_arena_ev02_ingestion.py' -v
+      - name: Three synthetic external-looking CSV formats and exact integrity checks
+        env:
+          EV02_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/arena_ev02_ingestion_probe.py \
+            --out artifacts/arena-ev02-operational-ingestion \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$EV02_HEAD_SHA"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from hashlib import sha256
+          p=Path('artifacts/arena-ev02-operational-ingestion')
+          plan=json.loads((p/'00_PLAN_BEFORE_EVAL.json').read_text())
+          r=json.loads((p/'01_RESULTS.json').read_text())
+          assert plan['protocol_first_commit']=='b836e46138aad231a5595a1b429ea69407e786f8'
+          assert r['checkout_sha']==os.environ['GITHUB_SHA']
+          assert r['pr_head_sha']==os.environ['EV02_HEAD_SHA']
+          assert r['n_physical_worlds']==1 and r['n_synthetic_orders']==15
+          assert r['normal_ingest']['pos_accepted']==45
+          assert r['normal_ingest']['kds_accepted']==30
+          assert r['normal_ingest']['n_administrative_cycles']==15
+          assert r['normal_ingest']['n_kds_admin_intervals']==15
+          assert r['unverified_clock']['n_cross_source_intervals_blocked']==15
+          assert r['adversarial_quality']['quarantined']==4
+          assert r['adversarial_quality']['pii_extra_column_rejected_entire_file']
+          assert r['crm_separate_namespace']['n_leads']==2
+          assert r['crm_separate_namespace']['physical_service_claims']==0
+          assert r['n_unknown_topologies_detected']==0
+          assert r['no_external_data_used'] and r['no_physical_service_or_wait_claims']
+          assert r['promotion_gate']=='BLOCKED_SYNTHETIC_EXTERNAL_FORMAT_NO_REAL_POS_KDS_CRM_DATA_OR_CLOCK_VALIDATION'
+          manifest=json.loads((p/'03_MANIFEST.json').read_text())
+          for name,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/name).read_bytes()).hexdigest()
+          print('ARENA_EV02_ENGINEERING_PASS_SYNTHETIC_FORMAT_ONLY')
+          print((p/'02_REPORT.md').read_text()[:11000])
+          PY
+      - name: Preserve synthetic normalized counts, provenance and quality results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-ev02-operational-ingestion-audit
+          path: artifacts/arena-ev02-operational-ingestion/
+          if-no-files-found: warn
+          retention-days: 90
