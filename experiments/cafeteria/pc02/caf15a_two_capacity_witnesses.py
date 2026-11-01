@@ -214,17 +214,6 @@ def worlds():
          "CAF15A_WRONG_FROZEN_WORLDSET")
     return result
 
-def compatible_classes(observed,pid,bank,only_diagonal):
-    # Truth-free read interface; a selector has no access to world configs.
-    available=sorted({
-        r["class"] for r in bank
-        if (r["diagonal"] or not only_diagonal)
-        and candidate_with_witness(observed,r["signatures"][pid]) is not None
-        # This candidate overlap is ±1 on BOTH sides (<=2) and is NOT the
-        # same as comparing a fixed observation to predicted +/-1.
-    })
-    return available
-
 def compatible_with_fixed_reading(observed,predicted):
     """Actual observed fixed integer y, candidate x compatible iff |y-x|<=1."""
     need(len(observed)==len(predicted),"CAF15A_FIXED_READING_MISMATCH")
