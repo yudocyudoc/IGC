@@ -1,0 +1,76 @@
+name: CAF-12 exact continuous observability — queues vs stocks
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/caf12-continuous-observability.yml'
+      - 'experiments/cafeteria/pc02/CAF12_PROTOCOLO_OBSERVABILIDAD_CONTINUA.md'
+      - 'experiments/cafeteria/pc02/caf12_continuous_observability.py'
+      - 'experiments/cafeteria/pc02/test_caf12_continuous_observability.py'
+      - 'experiments/cafeteria/pc02/caf11_parametric_des_inversion.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-queue-stock-observability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact queue and stock parity, event ties, CAF-11 baseline tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf12_continuous_observability.py' -v
+      - name: Execute 32 frozen worlds, eight schemes, six continuous families
+        env:
+          CAF12_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf12_continuous_observability.py \
+            --out artifacts/caf12-observability-audit \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF12_HEAD_SHA" | tee /tmp/caf12-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json,os
+          p=Path('artifacts/caf12-observability-audit')
+          result=json.loads((p/'01_RESULTADOS.json').read_text())
+          plan=json.loads((p/'00_PLAN_PRE_EVALUACION.json').read_text())
+          assert result['checkout_sha']==os.environ['GITHUB_SHA']
+          assert result['pr_head_sha']==os.environ['CAF12_HEAD_SHA']
+          assert (result['n_worlds'],result['n_scheme_evaluations'],
+                  result['n_inversions'])==(32,256,1536)
+          assert result['n_precomputed_family_scheme_regimes']==48
+          assert plan['new_evaluation_world_DES_calls_before_plan']==0
+          assert result['all_in_family_truth_capacity_covered']
+          assert result['truth_never_passed_to_inverse']
+          assert result['no_policy_selection']
+          assert result['no_external_validity_proven']
+          assert result['promotion_gate']==(
+              'BLOCKED_SAME_DES_PHYSICS_UNCALIBRATED_TOLERANCE_NO_EXTERNAL_VALIDATION')
+          assert plan['regimes_sha256']=='sha256:'+sha256(
+              (p/'00B_EXACT_REGIMES_PRE_EVALUACION.json').read_bytes()).hexdigest()
+          manifest=json.loads((p/'03_MANIFIESTO.json').read_text())
+          for name,digest in manifest['file_sha256'].items():
+              assert digest=='sha256:'+sha256((p/name).read_bytes()).hexdigest()
+          for scheme,metric in result['summary'].items():
+              assert (metric['in_family'],metric['unknown_extra'])==(27,5)
+              assert (metric['class_coverage'],metric['parameter_coverage'])==(27,27)
+              assert metric['cost_units']<=8
+          print('CAF12_ENGINEERING_PASS_NO_SCIENTIFIC_PROMOTION')
+          print((p/'02_INFORME.md').read_text()[:12000])
+          PY
+      - name: Preserve complete exact predictions and per-world inversion artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf12-exact-observability-full-audit
+          path: artifacts/caf12-observability-audit/
+          if-no-files-found: warn
+          retention-days: 90
