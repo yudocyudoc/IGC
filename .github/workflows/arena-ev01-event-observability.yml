@@ -1,0 +1,83 @@
+name: ARENA EV01 — event observability POS KDS FULL with PM4Py
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arena-ev01-event-observability.yml'
+      - 'docs/ARENA_EV01_PROTOCOLO_EVENTOS_TRES_VISTAS_2026-11-01.md'
+      - 'scripts/arena_event_observability.py'
+      - 'experiments/cafeteria/pc02/arena_ev01_event_views.py'
+      - 'experiments/cafeteria/pc02/test_arena_ev01_event_views.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-world-three-views:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Use existing process-mining library (AGPL research dependency only)
+        run: |
+          python -m pip install 'pm4py==2.7.23.11'
+      - name: Validate independent event engine, observable projections, and real PM4Py DFG
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_arena_ev01_event_views.py' -v
+      - name: Audit one 15-order world under three visibility levels
+        env:
+          EV01_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/arena_ev01_event_views.py \
+            --out artifacts/arena-ev01-three-views \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$EV01_HEAD_SHA"
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import csv,json,os
+          p=Path('artifacts/arena-ev01-three-views')
+          result=json.loads((p/'02_RESULTS.json').read_text())
+          plan=json.loads((p/'00_PLAN_BEFORE_TRACE.json').read_text())
+          assert result['checkout_sha']==os.environ['GITHUB_SHA']
+          assert result['pr_head_sha']==os.environ['EV01_HEAD_SHA']
+          assert plan['precommit']=='6bd6c224578fa90af6e9a2ce348981839bfd7f5e'
+          assert plan['n_order_entities']==15 and plan['no_parameter_grid']
+          assert result['same_world_three_views'] and result['no_grid_or_catalog']
+          assert result['n_event_rows_by_view']=={'POS':45,'POS_KDS':75,'FULL':225}
+          assert result['parity']['n_checkpoints']==9
+          assert result['visibility_audit']['full_15_of_15_cycle_balances']
+          assert not result['analyses']['POS']['unknown_stage_inferred']
+          assert not result['analyses']['POS_KDS']['unknown_stage_inferred']
+          assert 'transferencia_final' not in str(result['pm4py_discovery']['POS_KDS'])
+          assert 'transferencia_final' in str(result['pm4py_discovery']['FULL'])
+          assert result['promotion_gate']=='BLOCKED_SYNTHETIC_EVENT_LOG_NO_EMPIRICAL_SENSOR_SEMANTICS_OR_EXTERNAL_VALIDATION'
+          for name in ('POS','POS_KDS'):
+              with (p/f'01_{name}_PUBLIC_EVENTS.csv').open() as fh:
+                  rows=list(csv.DictReader(fh))
+                  assert 'transferencia_final' not in str(rows)
+                  assert all('resource_id' not in row for row in rows)
+                  assert [int(row['event_seq']) for row in rows]==list(range(len(rows)))
+          manifest=json.loads((p/'04_MANIFEST.json').read_text())
+          for filename,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/filename).read_bytes()).hexdigest()
+          print('ARENA_EV01_ENGINEERING_PASS_NO_HIDDEN_STAGE_CLAIM_NO_EXTERNAL_VALIDATION')
+          print((p/'03_REPORT.md').read_text()[:16000])
+          PY
+      - name: Preserve evaluator-only trace and redacted views separately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-ev01-pos-kds-full-evidence
+          path: artifacts/arena-ev01-three-views/
+          if-no-files-found: warn
+          retention-days: 90
