@@ -1,0 +1,106 @@
+name: ARENA EV03 — audit an actual published public operational event log (XES)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arena-ev03-public-xes.yml'
+      - 'docs/ARENA_EV03_PROTOCOLO_LOG_PUBLICO_REAL_2026-11-01.md'
+      - 'scripts/arena_public_eventlog_intake.py'
+      - 'experiments/cafeteria/pc02/arena_ev03_public_log_probe.py'
+      - 'experiments/cafeteria/pc02/test_arena_ev03_public_log.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stream-parser-and-readiness-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned XML hardening library
+        run: python -m pip install 'defusedxml==0.7.1'
+      - name: Prove schema safety, timezone, malformed event and no-claims gates
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_arena_ev03_public_log.py' -v
+  public-bpi12-real-data-audit:
+    needs: stream-parser-and-readiness-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned safe streaming parser dependency
+        run: python -m pip install 'defusedxml==0.7.1'
+      - name: Download official BPI Challenge 2012 real-life XES from exact published 4TU version
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --connect-timeout 20 --max-time 240 --retry 2 \
+            --output /tmp/ARENA_BPI2012.xes.gz \
+            https://data.4tu.nl/file/533f66a4-8911-4ac7-8612-1235d65d1f37/3276db7f-8bee-4f2b-88ee-92dbffb5a893
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/ARENA_BPI2012.xes.gz')
+          assert 0<p.stat().st_size<=64*1024*1024, 'EV03_COMPRESSED_BYTE_LIMIT'
+          assert p.open('rb').read(2)==b'\x1f\x8b', 'EV03_NOT_OFFICIAL_XES_GZIP'
+          print('BPI12_DOWNLOADED_SOURCE_BYTES',p.stat().st_size)
+          PY
+      - name: Parse real public log, output ONLY aggregates and provenance
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
+          EV03_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/arena_ev03_public_log_probe.py \
+            --out artifacts/arena-ev03-public-real-eventlog \
+            --input-xes /tmp/ARENA_BPI2012.xes.gz \
+            --source-kind PUBLIC_REAL_BPI12 \
+            --source-url https://data.4tu.nl/file/533f66a4-8911-4ac7-8612-1235d65d1f37/3276db7f-8bee-4f2b-88ee-92dbffb5a893 \
+            --checkout-sha "$GITHUB_SHA" --head-sha "$EV03_HEAD_SHA"
+          python - <<'PY'
+          import os,json
+          from hashlib import sha256
+          from pathlib import Path
+          path=Path('artifacts/arena-ev03-public-real-eventlog')
+          p=json.loads((path/'00_PLAN_BEFORE_PARSE.json').read_text())
+          r=json.loads((path/'01_RESULTS.json').read_text())
+          data=r['external_audit']
+          assert r['checkout_sha']==os.environ['GITHUB_SHA']
+          assert r['pr_head_sha']==os.environ['EV03_HEAD_SHA']
+          assert p['first_protocol_commit']=='70707877e0a010270833600f972594447a5f914c'
+          assert r['source_kind']=='PUBLIC_REAL_BPI12'
+          assert data['status']=='PUBLIC_OPERATIONAL_EVENTLOG_SCHEMA_AUDITED_NOT_PHYSICAL_VALIDATED'
+          assert data['summary']['n_traces']>0 and data['summary']['n_events']>0
+          assert not data['can_infer_hidden_stages']
+          assert not data['can_estimate_cafe_capacity']
+          assert data['source_integrity_level']=='SOURCE_VERSION_PINNED_BYTES_NOT_PRECOMMITTED'
+          assert r['scientific_gate']=='BLOCKED_REAL_BUSINESS_INSTRUMENTATION_AND_PHYSICAL_SEMANTICS_NOT_VALIDATED'
+          manifest=json.loads((path/'03_MANIFEST.json').read_text())
+          for filename,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((path/filename).read_bytes()).hexdigest()
+          print('ARENA_EV03_PUBLIC_REAL_EVENTLOG_AUDIT_PASS_NOT_PHYSICAL_SERVICE')
+          print((path/'02_REPORT.md').read_text()[:9000])
+          PY
+      - name: Remove downloaded third-party rows from runner
+        if: always()
+        run: rm -f /tmp/ARENA_BPI2012.xes.gz
+      - name: Publish aggregate audit only, never raw third-party event logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-ev03-public-xes-aggregate-audit
+          path: artifacts/arena-ev03-public-real-eventlog/
+          retention-days: 90
+          if-no-files-found: warn
