@@ -1,0 +1,63 @@
+name: CAF-11 exact rational DES inverse — continuous capacity laboratory
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc02/CAF11_PROTOCOLO_INVERSION_PARAMETRICA.md'
+      - 'experiments/cafeteria/pc02/caf11_parametric_des_inversion.py'
+      - 'experiments/cafeteria/pc02/test_caf11_parametric_des_inversion.py'
+      - '.github/workflows/caf11-parametric-inversion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-rational-one-param-inverse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify native DES parity, event ties and exact rational domains
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf11_parametric_des_inversion.py' -v
+      - name: Run frozen 20-world, 6-family parametric inverse
+        env:
+          CAF11_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf11_parametric_des_inversion.py \
+            --out artifacts/caf11-exact-parametric \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$CAF11_HEAD_SHA" | tee /tmp/caf11-output.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path('artifacts/caf11-exact-parametric')
+          a=json.loads((p/'01_RESULTADOS.json').read_text())
+          assert (a['n_worlds'],a['n_models'],a['n_model_world_inversions'])==(20,6,120)
+          assert a['checkout_sha']==os.environ['GITHUB_SHA']
+          assert a['pr_head_sha']==os.environ['CAF11_HEAD_SHA']
+          assert a['summary']['continuous_true_parameter_coverage']==18
+          assert a['summary']['in_family_worlds']==18
+          assert a['summary']['out_of_family_controls']==2
+          assert a['promotion_gate']=='BLOCKED_SAME_DES_PHYSICS_UNCALIBRATED_TOLERANCE'
+          assert not a['deployment_validated']
+          manifest=json.loads((p/'03_MANIFIESTO.json').read_text())
+          for name,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+hashlib.sha256((p/name).read_bytes()).hexdigest()
+          print('CAF11_ENGINEERING_PASS_NO_EXTERNAL_VALIDATION')
+          print((p/'02_INFORME.md').read_text())
+          PY
+      - name: Upload plan, exact regions, results and hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf11-exact-rational-parametric-inverse-audit
+          path: artifacts/caf11-exact-parametric/
+          if-no-files-found: warn
+          retention-days: 90
