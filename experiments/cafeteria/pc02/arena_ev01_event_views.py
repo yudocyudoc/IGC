@@ -319,7 +319,9 @@ def run(root,checkout_sha,head_sha):
         "",
         "Gate: "+GATE,
     ])
-    write_json(root,"03_REPORT.md","\n".join(lines))
+    report_file=root/"03_REPORT.md"
+    need(not report_file.exists(),"EV01_REFUSE_OVERWRITE_REPORT")
+    report_file.write_text("\n".join(lines)+"\n",encoding="utf-8")
     manifest={p.name:"sha256:"+sha256(p.read_bytes()).hexdigest()
               for p in sorted(root.iterdir()) if p.is_file()}
     write_json(root,"04_MANIFEST.json",{
