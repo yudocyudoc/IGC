@@ -122,6 +122,22 @@ class ArenaEV01EventViewsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"EV01_INVALID_PHYSICAL_STAGE_CHAIN"):
             o.analyze_view(bad,"FULL")
 
+    def test_full_rejects_fake_resource_assignment_and_overlap(self):
+        changed=[dict(x) for x in self.views["FULL"]]
+        at=next(i for i,x in enumerate(changed) if
+                x["event_type"]=="servicio_fin" and x["stage"]=="preparacion")
+        changed[at]["resource_id"]="invented-resource"
+        with self.assertRaisesRegex(ValueError,"EV01_RESOURCE_ID_CHANGED"):
+            o.analyze_view(changed,"FULL",e.STAGES)
+        changed=[dict(x) for x in self.views["FULL"]]
+        # Make both caja servers appear as one resource, while their
+        # concurrent activity is unchanged. A timing-only reader must reject.
+        for item in changed:
+            if item.get("resource_id")=="caja-r2":
+                item["resource_id"]="caja-r1"
+        with self.assertRaisesRegex(ValueError,"EV01_RESOURCE_OVERLAP"):
+            o.analyze_view(changed,"FULL",e.STAGES)
+
     def test_pm4py_dfg_only_mines_visible_activities_not_causality(self):
         dfg={v:o.pm4py_dfg(self.views[v]) for v in o.VIEWS}
         for v,d in dfg.items():
