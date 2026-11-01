@@ -1,0 +1,81 @@
+name: ARENA MC-01 — four-layer continuous set-membership without grid
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arena-mc01-continuous-methodology.yml'
+      - 'docs/ARENA_MC01_PROTOCOLO_NUCLEO_CONTINUO_SIN_REJILLA_2026-11-01.md'
+      - 'scripts/arena_methodology_continuous.py'
+      - 'experiments/cafeteria/pc02/arena_mc01_caf_adapter.py'
+      - 'experiments/cafeteria/pc02/test_arena_mc01_continuous.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  continuous-four-layer-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify grid-free set-membership, certified covers and native DES parity
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_arena_mc01_continuous.py' -v
+      - name: Execute four-layer continuous architecture regression without point-hypothesis bank
+        env:
+          MC01_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/arena_mc01_caf_adapter.py \
+            --out artifacts/arena-mc01-continuous \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$MC01_HEAD_SHA" > /tmp/mc01-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import json,os
+          p=Path('artifacts/arena-mc01-continuous')
+          r=json.loads((p/'01_RESULTADOS.json').read_text())
+          plan=json.loads((p/'00_PLAN_BEFORE_EVAL.json').read_text())
+          assert r['checkout_sha']==os.environ['GITHUB_SHA']
+          assert r['pr_head_sha']==os.environ['MC01_HEAD_SHA']
+          assert r['n_structural_families']==6
+          assert r['n_finite_parameter_grid_points']==0
+          assert plan['not_parameter_grid'] and plan['no_24_or_720_point_hypotheses']
+          assert plan['max_box_nodes']==256 and plan['max_depth']==14
+          assert len(r['evaluations'])==2
+          for result in r['evaluations']:
+              assert len(result['inference']['per_family'])==6
+              for f in result['inference']['per_family']:
+                  assert f['certificate_verified']
+                  assert f['status'] in (
+                      'CERTIFIED_EMPTY',
+                      'WITNESS_FEASIBLE_WITH_OUTER_COVER',
+                      'UNRESOLVED_WITH_OUTER_COVER')
+                  assert f['outer_cover_is_not_exact_feasible_region']
+          for pid,pairs in r['a_priori'].items():
+              assert len(pairs)==15
+              assert sum(x['verdict']=='SEPARABLE_EXHAUSTIVE_BOX_CERTIFIED' for x in pairs)==11
+              assert sum(x['verdict']=='CONFUSABLE_WITNESS_CERTIFIED' for x in pairs)==4
+          assert r['design_experimental']['ranking'] is None
+          assert r['design_experimental']['autonomous_action'] is None
+          assert r['gate']=='BLOCKED_METHOD_CONTRACT_SYNTHETIC_DES_UNCALIBRATED_ERROR_NO_REAL_DATA'
+          manifest=json.loads((p/'03_MANIFIESTO.json').read_text())
+          for filename,digest in manifest['files_sha256'].items():
+              assert digest=='sha256:'+sha256((p/filename).read_bytes()).hexdigest()
+          print('ARENA_MC01_GRID_FREE_INTEGRATION_PASS_NONCLINICAL_NONEMPIRICAL')
+          print((p/'02_INFORME.md').read_text()[:16000])
+          PY
+      - name: Upload continuous proofs, outer box covers and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-mc01-continuous-methodology-full-audit
+          path: artifacts/arena-mc01-continuous/
+          if-no-files-found: warn
+          retention-days: 90
