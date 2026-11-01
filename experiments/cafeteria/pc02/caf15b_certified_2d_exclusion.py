@@ -338,6 +338,10 @@ def physical_signature(stages,ds,pid):
     observed=[]
     for p in probe_def(pid):
         arrivals=des.half_open_arrivals(p["rate"],20)
+        # Native DES disallows future arrivals past the requested horizon.
+        # Prefix restriction changes NO physics at observation t<20.
+        if p["minute"]<20:
+            arrivals=tuple(t for t in arrivals if t<=p["minute"])
         snap=des.run_toy_engine(config,arrivals,
                                (Q(0),Q(p["minute"])))[-1]
         stock=[a+f for a,f in zip(snap.stage_waiting,snap.stage_in_service)]
