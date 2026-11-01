@@ -29,6 +29,7 @@ jobs:
       - name: Execute four-layer continuous architecture regression without point-hypothesis bank
         env:
           MC01_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/experiments/cafeteria/pc02
         run: |
           set -euo pipefail
           python experiments/cafeteria/pc02/arena_mc01_caf_adapter.py \
