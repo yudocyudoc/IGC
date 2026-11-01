@@ -70,8 +70,10 @@ def project_events(truth,view):
             "EV01_INVALID_TIMESTAMPS")
     rows=[public_event(x,view) for x in truth]
     rows=[x for x in rows if x is not None]
-    require(len({r["event_seq"] for r in rows})==len(rows),
-            "EV01_DUPLICATE_EVENT_ID")
+    # CRITICAL: the raw event ordinal has holes for hidden stages.
+    # Exposing it would leak the number/location of redacted events.
+    for index,row in enumerate(rows):
+        row["event_seq"]=index
     return rows
 
 
