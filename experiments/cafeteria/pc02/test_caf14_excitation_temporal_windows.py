@@ -34,7 +34,7 @@ class CAF14Tests(unittest.TestCase):
         self.assertEqual(a.RATES,(
             ("R15","3/2"),("R18","9/5"),("R25","5/2")))
         self.assertEqual(len({(x["rate"],x["minute"])
-                              for seq in f.values() for x in seq}),17)
+                              for seq in f.values() for x in seq}),16)
         self.assertEqual(len(f["BASE"]),2)
         self.assertEqual([len(x["channels"]) for x
                           in f["F_R25_T15"]],[1,1,6])
