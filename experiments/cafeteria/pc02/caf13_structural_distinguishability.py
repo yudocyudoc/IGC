@@ -153,7 +153,7 @@ def sign_pair_witness(rows_a,rows_b):
                             "first_capacity":str(a["witness_c"]),
                             "second_capacity":str(z["witness_c"]),
                             "common_integer_observation_example":[
-                                max(u-TOLERANCE,v-TOLERANCE)
+                                max(0,u-TOLERANCE,v-TOLERANCE)
                                 for u,v in zip(sa,z["signature"])
                             ],
                         }
@@ -323,7 +323,7 @@ def run(out,checkout_sha,head_sha):
             if truth is not None:
                 m=next(x for x in v11.models() if x["label"]==truth)
                 d=Fraction(60,world["capacity"])
-                predicted=family_signatures(m["stages"],pid)
+                predicted=cat[(pid,m["id"])]
                 true_sig=flattened(observed,program_probes(pid))
                 need(any(
                     row["signature"]==true_sig and
