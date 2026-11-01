@@ -81,13 +81,13 @@ class CAF13Tests(unittest.TestCase):
             self.assertEqual(
                 len({tuple(z["signature"]) for z in obj["signatures"]}),
                 len(obj["signatures"]))
+            p=d.program_probes(program)
+            calendars={
+                rate:v12.build_parametric_calendar(model["stages"],rate)
+                for rate in {a["rate"] for a in p}
+            }
             for row in obj["signatures"]:
-                p=d.program_probes(program)
                 dval=row["witness_d"]
-                calendars={
-                    rate:v12.build_parametric_calendar(model["stages"],rate)
-                    for rate in {a["rate"] for a in p}
-                }
                 expected={
                     a["id"]:v12.predict_channels(
                         calendars[a["rate"]],a["channels"],a["minute"],dval)
