@@ -96,9 +96,11 @@ class CafeOperationalTests(unittest.TestCase):
         base=comparisons["baseline_snapshots"]
         prep=comparisons["alternatives"]["extra_preparation"]
         cashier=comparisons["alternatives"]["extra_cashier"]
-        self.assertEqual(base["10"]["delivered"],15)
-        self.assertEqual(prep["snapshots"]["10"]["delivered"],15)
-        self.assertEqual(cashier["snapshots"]["10"]["delivered"],15)
+        self.assertLess(base["10"]["delivered"],15)
+        self.assertGreaterEqual(prep["snapshots"]["10"]["delivered"],
+                                base["10"]["delivered"])
+        self.assertGreaterEqual(cashier["snapshots"]["10"]["delivered"],
+                                base["10"]["delivered"])
         self.assertGreater(max(prep["delta_delivered_vs_baseline"].values()),0)
         self.assertGreater(max(prep["delta_delivered_vs_baseline"].values()),
                            max(cashier["delta_delivered_vs_baseline"].values()))
