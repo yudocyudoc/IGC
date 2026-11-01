@@ -55,6 +55,16 @@ class IngestionContractsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"EV02_PRIVATE_PSEUDONYM_SECRET_REQUIRED"):
             op.ingest_csv(self.pos,self.pos_spec,b"bad")
 
+    def test_never_merge_lead_and_order_identifiers_across_entity_types(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "EV02_SOURCE_PROFILE_NAMESPACE_MISMATCH"):
+            op.SourceSpec("crm_export_v1","CRM_EXAMPLE","orders:synthetic",
+                          "CRM_CLOCK","unverified",None,"example")
+        with self.assertRaisesRegex(ValueError,
+                                    "EV02_SOURCE_PROFILE_NAMESPACE_MISMATCH"):
+            op.SourceSpec("pos_export_v1","POS_EXAMPLE","crm:synthetic",
+                          "POS_CLOCK","verified_utc_sync",1,"example")
+
     def test_utc_offset_normalization_without_claiming_clock_sync(self):
         self.assertEqual(
             op.utc_iso(op.parse_timestamp("2026-01-01T10:00:00-06:00")),
