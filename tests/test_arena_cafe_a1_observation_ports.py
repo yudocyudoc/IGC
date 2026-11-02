@@ -77,6 +77,9 @@ class ObservationPortTests(unittest.TestCase):
         prep = o1["observation_operators"][2]
         self.assertEqual(("preparation", "completed", "FLOW<ReadyOrder>"),
             (prep["target"]["role"], prep["target"]["port"], prep["target"]["type"]))
+        self.assertEqual("FLOW<U>", prep["target"]["catalog_declared_type"])
+        self.assertEqual({"T": "Order", "U": "ReadyOrder"},
+                         prep["target"]["role_type_bindings"])
         self.assertEqual("CANDIDATE_ROLE_ASSOCIATION_FROM_DISCLOSED_STAGE_NOT_IDENTIFIED",
                          prep["status"])
         self.assertEqual(
@@ -101,6 +104,11 @@ class ObservationPortTests(unittest.TestCase):
         with patch.object(ports, "_get_registry", return_value=(path, cfg, bad_classes, catalog)):
             with self.assertRaisesRegex(ArenaContractError, "A1_M_PORT_TYPE_MISMATCH"):
                 ports.m_port(self.source["views"]["O0"], "O0", REGISTRY)
+        wrong_binding = deepcopy(classes)
+        wrong_binding["bounded-queue"]["role_bindings"]["preparation"]["U"] = "Shipment"
+        with patch.object(ports, "_get_registry", return_value=(path, cfg, wrong_binding, catalog)):
+            with self.assertRaisesRegex(ArenaContractError, "A1_M_PORT_TYPE_MISMATCH"):
+                ports.m_port(self.source["views"]["O1"], "O1", REGISTRY)
         bad_cfg = deepcopy(cfg)
         del bad_cfg["roles"]["source"]
         with patch.object(ports, "_get_registry", return_value=(path, bad_cfg, classes, catalog)):
