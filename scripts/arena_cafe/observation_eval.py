@@ -88,17 +88,26 @@ def _numeric_samples(records, arm, cutoff, roles):
              "A1_TRACE_NEGATIVE_MATERIAL")
         point={"t_minutes":t,"delivered":delivered,
                "source_per_minute":source_rate,"prep_per_minute":preparation_rate,
-               "source_left":source_rate,"prep_left":preparation_rate}
+               "source_left":source_rate,"prep_left":preparation_rate,
+               "source_history":[source_rate],
+               "prep_history":[preparation_rate] if arm=="M" else []}
         if parsed and abs(parsed[-1]["t_minutes"]-t)<=1e-9:
-            # Native event rows may report left and right rates at the same
-            # instant; material stocks, unlike rates, MUST remain continuous.
-            need(abs(parsed[-1]["delivered"]-delivered)<=1e-6,
+            # OMC can emit pre-event, repeated pre-event and post-event
+            # at one instant. Stocks must be continuous while flows may jump.
+            prior=parsed[-1]
+            need(abs(prior["delivered"]-delivered)<=1e-6,
                  "A1_TRACE_CONFLICTING_DUPLICATE_EVENT")
-            need(len(parsed[-1].get("event_sides", []))==0,
-                 "A1_TRACE_TOO_MANY_EVENT_SIDES")
-            point["source_left"]=parsed[-1]["source_left"]
-            point["prep_left"]=parsed[-1]["prep_left"]
-            point["event_sides"]=["left","right"]
+            sh=prior["source_history"]+[source_rate]
+            ph=prior["prep_history"]+([preparation_rate] if arm=="M" else [])
+            def changes(values):
+                return sum(abs(x-y)>1e-6 for x,y in zip(values,values[1:]))
+            need(len(sh)<=4 and changes(sh)<=1 and
+                 (arm=="D" or changes(ph)<=1),
+                 "A1_TRACE_UNRESOLVED_MULTI_EVENT_RATE")
+            point["source_left"]=prior["source_left"]
+            point["prep_left"]=prior["prep_left"]
+            point["source_history"]=sh
+            point["prep_history"]=ph
             parsed[-1]=point
         else:
             need(not parsed or t>parsed[-1]["t_minutes"],"A1_TRACE_TIME_BACKWARDS")
