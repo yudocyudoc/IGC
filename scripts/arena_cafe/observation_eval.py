@@ -52,8 +52,12 @@ def _candidate_roles(candidate, registry):
     digest_expected="sha256:"+composer.canonical(graph)
     need(candidate.get("canonical_sha256")==digest_expected,
          "A1_M_CANDIDATE_HASH_MISMATCH")
-    allowed={key for key,ast in composer.enumerate_graphs(cfg,classes)}
-    need(composer.canonical(graph) in allowed,"A1_M_CANDIDATE_NOT_ORIGINAL_E1")
+    originals = {key: ast for key, ast in composer.enumerate_graphs(cfg,classes)}
+    need(composer.canonical(graph) in originals,"A1_M_CANDIDATE_NOT_ORIGINAL_E1")
+    # The E1 canonical key deliberately omits numerical parameters. Equality
+    # with the full frozen AST is needed when NO calibration protocol exists.
+    need(graph == originals[composer.canonical(graph)],
+         "A1_M_CANDIDATE_PARAMETERS_NOT_FROZEN")
     roles={}
     for instance in graph["instances"]:
         roles.setdefault(instance["role"],[]).append(instance["id"])
@@ -83,14 +87,18 @@ def _numeric_samples(records, arm, cutoff, roles):
              (preparation_rate is None or preparation_rate>=-1e-7),
              "A1_TRACE_NEGATIVE_MATERIAL")
         point={"t_minutes":t,"delivered":delivered,
-               "source_per_minute":source_rate,"prep_per_minute":preparation_rate}
+               "source_per_minute":source_rate,"prep_per_minute":preparation_rate,
+               "source_left":source_rate,"prep_left":preparation_rate}
         if parsed and abs(parsed[-1]["t_minutes"]-t)<=1e-9:
-            # OpenModelica can duplicate event rows: accept only continuous observables.
-            need(all(abs(parsed[-1][field]-point[field])<=1e-6
-                     for field in ("delivered","source_per_minute")) and
-                 (arm=="D" or abs(parsed[-1]["prep_per_minute"]-
-                                  point["prep_per_minute"])<=1e-6),
+            # Native event rows may report left and right rates at the same
+            # instant; material stocks, unlike rates, MUST remain continuous.
+            need(abs(parsed[-1]["delivered"]-delivered)<=1e-6,
                  "A1_TRACE_CONFLICTING_DUPLICATE_EVENT")
+            need(len(parsed[-1].get("event_sides", []))==0,
+                 "A1_TRACE_TOO_MANY_EVENT_SIDES")
+            point["source_left"]=parsed[-1]["source_left"]
+            point["prep_left"]=parsed[-1]["prep_left"]
+            point["event_sides"]=["left","right"]
             parsed[-1]=point
         else:
             need(not parsed or t>parsed[-1]["t_minutes"],"A1_TRACE_TIME_BACKWARDS")
@@ -110,7 +118,10 @@ def _integrate(samples, field):
     for a,b in zip(samples,samples[1:]):
         delta=b["t_minutes"]-a["t_minutes"]
         need(delta>0,"A1_TRACE_NONINCREASING_GRID")
-        cumulative.append(cumulative[-1]+delta*(a[field]+b[field])/2)
+        # Right-hand value at interval start and left-hand value at end.
+        # Never interpolate across a legitimate instantaneous rate jump.
+        left = b[field.replace("_per_minute","_left")]
+        cumulative.append(cumulative[-1]+delta*(a[field]+left)/2)
     return cumulative
 
 
