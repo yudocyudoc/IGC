@@ -1,0 +1,38 @@
+name: F0-HIST — archive integrity and promoted DES
+on:
+  pull_request:
+    paths:
+      - 'historico/**'
+      - 'scripts/arena_physical/**'
+      - 'tests/test_arena_physical_clone.py'
+      - '.github/workflows/f0-historico-archive.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Exact promoted DES blob and conservation fixture
+        run: python -m unittest discover -s tests -p 'test_arena_physical_clone.py' -v
+      - name: Archived Git blobs and retired paths
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path('historico/manifest_cafeteria_2026-11-02.json').read_text())
+          assert len(m['files']) == 179
+          assert m['original_files'] == 137 and m['workflows'] == 42
+          for item in m['files']:
+              target=Path(item['to'])
+              assert target.is_file(), item['to']
+              assert not Path(item['from']).exists(), item['from']
+              sha=subprocess.check_output(['git', 'hash-object', str(target)], text=True).strip()
+              assert sha == item['blob'], (item['to'], sha, item['blob'])
+          print('HIST_ARCHIVE_ALL_179_BLOBS_IDENTICAL_AND_ORIGINAL_PATHS_REMOVED')
+          PY
