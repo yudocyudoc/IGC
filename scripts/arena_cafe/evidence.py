@@ -227,3 +227,61 @@ def build(pos_projected: list[dict[str, Any]],
                    "INTERFACE-01": "PARTIAL_NO_NATIVE_CONSUMPTION",
                    "A1": "PARTIAL", "A3": "NOT_RUN"},
     }
+
+def load_public_csv(path, view):
+    """Read EV-01 exported public CSV, reject unknown columns and truth fields."""
+    import csv
+    from pathlib import Path
+    require(view in ("POS", "FULL"), "CAFE_UNSUPPORTED_CSV_VIEW")
+    expected = ["case_id", "event_seq", "activity", "event_type",
+                "t_minutes_exact", "source"]
+    if view == "FULL":
+        expected += ["stage", "resource_id"]
+    with Path(path).open(newline="", encoding="utf-8") as stream:
+        reader = csv.DictReader(stream)
+        require(reader.fieldnames == expected, "CAFE_CSV_COLUMN_MISMATCH")
+        rows = []
+        for row in reader:
+            require(row.get("event_seq", "").isdigit(), "CAFE_BAD_EVENT_SEQ")
+            converted = {key: value for key, value in row.items()
+                         if key in expected and (key not in ("stage", "resource_id") or value)}
+            converted["event_seq"] = int(converted["event_seq"])
+            rows.append(converted)
+    _validate_visible_rows(rows, view)
+    return rows
+
+
+def cli() -> None:
+    """Evaluator-only filesystem exporter; never opens a raw private trace."""
+    import argparse
+    from pathlib import Path
+    from scripts.arena_v0_contract import canonical
+    parser = argparse.ArgumentParser(description="A1 public cafe evidence projection")
+    parser.add_argument("--pos", required=True, type=Path)
+    parser.add_argument("--full", required=True, type=Path)
+    parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--cutoff", default="10")
+    parser.add_argument("--world-public-id", default="w001")
+    args = parser.parse_args()
+    pos = load_public_csv(args.pos, "POS")
+    full = load_public_csv(args.full, "FULL")
+    result = build(pos, full, cutoff_minutes_exact=args.cutoff,
+                   world_public_id=args.world_public_id)
+    args.out.mkdir(parents=True, exist_ok=False)
+    for condition in CONDITIONS:
+        (args.out / (condition + "_VISIBLE.json")).write_bytes(
+            canonical(result["views"][condition]) + b"\n")
+    (args.out / "INTERFACE01.json").write_bytes(canonical(result["interface"]) + b"\n")
+    (args.out / "EVIDENCE01.json").write_bytes(canonical({
+        "schema": result["schema"],
+        "cutoff_minutes_exact": result["cutoff_minutes_exact"],
+        "world_public_id": result["world_public_id"],
+        "claims": result["claims"],
+        "public_source_hashes": {
+            c: result["views"][c]["source_snapshot_hash"] for c in CONDITIONS},
+        "no_evaluator_truth_exported": True,
+    }) + b"\n")
+
+
+if __name__ == "__main__":
+    cli()
