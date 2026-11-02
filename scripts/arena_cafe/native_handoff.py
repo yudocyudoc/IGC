@@ -40,6 +40,7 @@ def validate_a1_visible(payload, condition):
     """
     need(condition in ALLOWED, "A1_BAD_CONDITION")
     validate_visible_input(payload)
+    need(payload["question"] == evidence.QUESTION, "A1_QUESTION_UNAUTHORIZED")
     c, o = payload["construction"], payload["observability"]
     need(set(o) == {"condition_id", "world_public_id", "cutoff_minutes_exact",
                     "window", "sample_rule", "published_source"},
