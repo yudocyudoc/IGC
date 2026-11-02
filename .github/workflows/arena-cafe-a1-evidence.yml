@@ -3,7 +3,11 @@ on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/evidence.py'
+      - 'scripts/arena_cafe/observation_ports.py'
+      - 'scripts/arena_cafe/native_handoff.py'
       - 'tests/test_arena_cafe_a1_evidence.py'
+      - 'tests/test_arena_cafe_a1_observation_ports.py'
+      - 'tests/test_arena_cafe_a1_handoff.py'
       - 'docs/arena_cafe/a1/**'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
   workflow_dispatch:
@@ -24,6 +28,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_evidence.py' -v
       - name: One-arm one-condition scope, negative binding and original D incompatibility
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_handoff.py' -v
+      - name: Validate typed observational D and original E1 ports; no invented pulse
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_ports.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
@@ -88,6 +94,8 @@ jobs:
             scripts/arena_event_observability.py
             scripts/arena_cafe/evidence.py
             scripts/arena_cafe/native_handoff.py
+            scripts/arena_cafe/observation_ports.py
+            scripts/arena_d_v01.py
             scripts/arena_b_native_runner.mjs
             scripts/arena_m_short_e1.py
             experiments/e0/catalog.json
@@ -117,6 +125,37 @@ jobs:
             --input "artifacts/public/${CONDITION}_VISIBLE.json" \
             --condition "$CONDITION" --arm "$ARM" --out artifacts/scoped
           test "$(find artifacts/public -type f | wc -l)" = 1
+      - name: Derive observational constraints without fabricating native parameters
+        if: matrix.arm != 'B'
+        env:
+          CONDITION: ${{ matrix.condition }}
+          ARM: ${{ matrix.arm }}
+        run: |
+          set -euo pipefail
+          if [ "$ARM" = "M" ]; then
+            python -m scripts.arena_cafe.observation_ports \
+              --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+              --condition "$CONDITION" --arm M \
+              --registry experiments/e1/registry.base.json \
+              --out artifacts/observation-port.json
+          else
+            python -m scripts.arena_cafe.observation_ports \
+              --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+              --condition "$CONDITION" --arm D \
+              --out artifacts/observation-port.json
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_d_v01 import DError, validate_case
+          source=next(Path("artifacts/public").glob("*.json"))
+          try:
+              validate_case(json.loads(source.read_text()))
+          except DError:
+              print("A1_ORIGINAL_D_REJECTS_OBSERVED_COUNTS_NO_INVENTED_PULSE")
+          else:
+              raise SystemExit("UNEXPECTED_D_ACCEPTED_EVENT_EVIDENCE")
+          PY
+          fi
       - uses: actions/setup-node@v4
         if: matrix.arm == 'B'
         with:
@@ -172,6 +211,24 @@ jobs:
              "worker_input_count":1,
              "private_generator_present":False,
              "provider_calls":0,"scientific_use_proven":False}
+          if arm in ("D","M"):
+              port=json.loads((root/"observation-port.json").read_text())
+              assert port["arm_id"]==arm and port["condition_id"]==condition
+              assert port["source_snapshot_hash"]==h["source_snapshot_hash"]
+              assert port["visible_input_hash"]==h["visible_input_hash"]
+              assert port["native_engine_executed_from_port"] is False
+              assert port["native_inference_or_selection"]=="NOT_RUN"
+              assert port["no_instantaneous_rate_imputed"]
+              assert port["no_latent_stage_imputed"]
+              r["observation_port_validated"]=True
+              r["observation_operator_count"]=len(port["observation_operators"])
+              r["observation_port_engine_used"]=False
+              if arm=="M":
+                  assert port["candidate_selection"]=="UNRESOLVED"
+                  assert len(port["unmapped_measurements"])==(2 if condition=="O1" else 0)
+              else:
+                  assert port["native_input_valid"] is False
+                  assert len(port["blocked_requirements"])==3
           if arm=="D":
               assert not (root/"scoped/visible.json").exists()
               r["status"]="BLOCKED_NOMINAL_PULSE_MISSING"
@@ -243,6 +300,11 @@ jobs:
                   assert x["provider_calls"]==0 and x["scientific_use_proven"] is False
                   data[(cond,arm)]=x
           assert len({x["scope_hash"] for x in data.values()})==6
+          for cond in ("O0","O1"):
+              for arm in ("D","M"):
+                  x=data[(cond,arm)]
+                  assert x["observation_port_validated"] and x["observation_port_engine_used"] is False
+                  assert x["observation_operator_count"]==(3 if arm=="M" and cond=="O1" else 2)
           for c in ("O0","O1"):
               assert len({data[(c,a)]["source_snapshot_hash"] for a in ("D","B","M")})==1
           assert data[("O0","B")]["user_prompt_hashes"]!=data[("O1","B")]["user_prompt_hashes"]
@@ -255,6 +317,8 @@ jobs:
               "D":"BLOCKED_BY_ORIGINAL_CONTRACT",
               "B":"ORIGINAL_ENGINE_PROMPT_DIFFERS_BUT_OFFLINE_MODEL_OUTPUT_FIXED",
               "M":"ORIGINAL_E1_OUTPUT_STRUCTURES_EQUAL_WITHOUT_OBSERVATION_SELECTION",
+              "D_observation_port":"INTERVAL_CENSORED_ORDERS_NO_PULSE_OR_PARAMETERS",
+              "M_observation_port":"E1_TYPED_PORTS_WITH_AGGREGATE_PREPARATION_NOT_SELECTED",
               "job_isolation":"SEPARATE_RUNNER_PER_ARM_AND_CONDITION;ONE_PUBLIC_INPUT_PER_JOB;EVALUATOR_GENERATOR_EXCLUDED",
               "security_limits":"NOT_FORMAL_ACL_OR_PROOF_AGAINST_ARTIFACT_API_ACCESS",
               "INTERFACE-01":"PARTIAL","CONDITION-01":"PARTIAL",
