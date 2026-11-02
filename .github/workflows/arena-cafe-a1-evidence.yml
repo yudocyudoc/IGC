@@ -22,6 +22,8 @@ jobs:
           python-version: '3.12'
       - name: A1 evaluator projection, cutoff, contract and privacy regression
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_evidence.py' -v
+      - name: One-arm one-condition scope, negative binding and original D incompatibility
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_handoff.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
@@ -56,4 +58,131 @@ jobs:
         with:
           name: a1-cafe-public-evidence
           path: artifacts/a1/*.json
+          if-no-files-found: error
+  native-methods-offline:
+    needs: evidence-offline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          path: artifacts/a1-public
+      - name: Materialize six condition-scoped handoffs; D stays blocked
+        run: |
+          set -euo pipefail
+          for condition in O0 O1; do
+            for arm in D B M; do
+              python -m scripts.arena_cafe.native_handoff \
+                --input "artifacts/a1-public/${condition}_VISIBLE.json" \
+                --condition "$condition" --arm "$arm" \
+                --out "artifacts/a1-scoped/${condition}-${arm}"
+            done
+          done
+      - name: Fetch original Buffalo source at pinned SHA and install safely
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          grep -q "MIT License" LICENSE
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Invoke original Buffalo quantitative Engine.generate with zero provider calls
+        run: |
+          set -euo pipefail
+          for condition in O0 O1; do
+            SDAI_ROOT="$GITHUB_WORKSPACE/upstream/sd-ai" \
+            BUFFALO_VISIBLE_INPUT="$GITHUB_WORKSPACE/artifacts/a1-scoped/${condition}-B/visible.json" \
+            BUFFALO_OUTPUT="$GITHUB_WORKSPACE/artifacts/a1-b-native-${condition}" \
+            BUFFALO_MODE=mock \
+            node scripts/arena_b_native_runner.mjs
+          done
+      - name: Invoke original Short E1 molecular composer for each condition
+        run: |
+          set -euo pipefail
+          for condition in O0 O1; do
+            python -m scripts.arena_m_short_e1 \
+              --input "artifacts/a1-scoped/${condition}-M/visible.json" \
+              --registry experiments/e1/registry.base.json \
+              --out "artifacts/a1-m-native-${condition}.json"
+          done
+      - name: Audit native paths and produce honest non-inference receipt
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_v0_contract import canonical, digest
+          root = Path("artifacts")
+          report = {
+            "schema": "igc-arena-cafe-native-path-audit/0.1",
+            "mode": "OFFLINE_ONLY_ORIGINAL_ENGINES",
+            "provider_calls": 0,
+            "D": {"native_method_run": False, "status": "BLOCKED_INPUT_INCOMPATIBLE"},
+            "B": {"native_method_run": True, "native_evidence_use_proven": False},
+            "M": {"native_method_run": True, "native_evidence_use_proven": False},
+            "conditions": ["O0","O1"],
+            "condition_acl": "NOT_ESTABLISHED_SCOPED_PATHS_ONLY",
+          }
+          prompt_hashes = []
+          structures = []
+          for condition in ("O0", "O1"):
+            for arm in ("D", "B", "M"):
+              h = json.loads((root/"a1-scoped"/(condition+"-"+arm)/"handoff.json").read_text())
+              assert h["arm_id"] == arm and h["condition_id"] == condition
+              assert h["native_evidence_use_proven"] is False
+            d_path = root/"a1-scoped"/(condition+"-D")/"visible.json"
+            assert not d_path.exists()
+            visible_b = json.loads((root/"a1-scoped"/(condition+"-B")/"visible.json").read_text())
+            visible_m = json.loads((root/"a1-scoped"/(condition+"-M")/"visible.json").read_text())
+            assert visible_b == visible_m
+            breceipt = json.loads((root/("a1-b-native-"+condition)/"receipt.json").read_text())
+            request = json.loads((root/("a1-b-native-"+condition)/"request-metadata.json").read_text())
+            assert breceipt["status"] == "ORIGINAL_ENGINE_OFFLINE_PATH_PASS", breceipt
+            assert breceipt["provider_calls"] == 0 and breceipt["proxy_requests"] == 1
+            assert breceipt["quant_schema_seen"] and breceipt["model_returned"]
+            user_hashes = [r["sha256"] for r in request["prompt_hashes"] if r["role"] == "user"]
+            assert user_hashes, "ORIGINAL_BUFFALO_USER_PROMPT_MISSING"
+            prompt_hashes.append(user_hashes)
+            m = json.loads((root/("a1-m-native-"+condition+".json")).read_text())
+            assert m["native"]["evidence_input_hash"] == digest(visible_m)
+            assert m["native"]["candidate_selection"] == "UNRESOLVED"
+            assert m["submission"]["status"] == "PARTIAL"
+            assert not m["submission"]["hypothesis_ids"]
+            structures.append(m["native"]["candidate_graphs"])
+          assert prompt_hashes[0] != prompt_hashes[1], "BUFFALO_PROMPT_DID_NOT_RESPOND_TO_CONDITION"
+          assert structures[0] == structures[1], "E1_ENGINEERING_GRAPHS_SHOULD_NOT_INFER_OBSERVATIONS"
+          report["B"].update({
+            "condition_sensitive_user_prompt_hashes": True,
+            "provider_model_response": "OFFLINE_FIXED_STUB",
+            "proof": "Original Engine+LLMWrapper constructed distinct user prompts for O0 and O1",
+            "scientific_read_or_use": "NOT_VERIFIED_FROM_MODEL_BEHAVIOR",
+          })
+          report["M"].update({
+            "source_hash_read": True,
+            "native_candidate_structures_identical_between_conditions": True,
+            "scientific_read_or_use": "NOT_VERIFIED_E1_ENUMERATION_INDEPENDENT_OF_OBSERVATIONS",
+          })
+          (root/"A1_NATIVE_PATH_AUDIT.json").write_bytes(canonical(report)+b"\n")
+          print("A1_NATIVE_OFFLINE_B_PROMPT_VARIES_M_STRUCTURES_UNCHANGED_D_BLOCKED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a1-cafe-native-path-audit
+          path: artifacts/A1_NATIVE_PATH_AUDIT.json
           if-no-files-found: error
