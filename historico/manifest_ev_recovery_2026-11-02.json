@@ -41,19 +41,19 @@
       "original": "experiments/cafeteria/pc02/test_arena_ev01_event_views.py",
       "promoted": "experiments/arena_cafe/test_ev01.py",
       "original_blob_sha": "b5ddbfa37a4bd7b7fed116a560cb6c432e698ddc",
-      "change_type": "original blob copied"
+      "change_type": "relocation+minimal import rewiring"
     },
     {
       "original": "experiments/cafeteria/pc02/test_arena_cafeteria_operational_closure.py",
       "promoted": "experiments/arena_cafe/test_diagnosis.py",
       "original_blob_sha": "119a9812a1c42bc316a44db27dac64315b107dc1",
-      "change_type": "original blob copied"
+      "change_type": "relocation+minimal import rewiring"
     },
     {
       "original": "experiments/cafeteria/pc02/test_arena_ev02_ingestion.py",
       "promoted": "experiments/arena_cafe/test_ev02.py",
       "original_blob_sha": "64c0ab76d68efd0e290786374115c6419304a1a8",
-      "change_type": "original blob copied"
+      "change_type": "relocation+minimal import rewiring"
     }
   ],
   "dependency_lift": {
