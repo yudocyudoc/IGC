@@ -5,10 +5,13 @@ on:
       - 'scripts/arena_cafe/evidence.py'
       - 'scripts/arena_cafe/observation_ports.py'
       - 'scripts/arena_cafe/observation_eval.py'
+      - 'scripts/arena_cafe/native_pos_scenario.py'
+      - 'scripts/arena_cafe/native_pos_verify.py'
       - 'scripts/arena_cafe/native_handoff.py'
       - 'tests/test_arena_cafe_a1_evidence.py'
       - 'tests/test_arena_cafe_a1_observation_ports.py'
       - 'tests/test_arena_cafe_a1_observation_eval.py'
+      - 'tests/test_arena_cafe_a1_native_pos.py'
       - 'tests/test_arena_cafe_a1_handoff.py'
       - 'docs/arena_cafe/a1/**'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
@@ -34,6 +37,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_ports.py' -v
       - name: Execute read-only H_j operators on controlled fixtures, assert native-trace abstention
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_eval.py' -v
+      - name: Test timestamp-retaining public D/E1 native stimulus emission
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_native_pos.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
@@ -356,3 +361,161 @@ jobs:
           name: a1-cafe-native-six-worker-audit
           path: artifacts/a1-six-worker-audit.json
           if-no-files-found: error
+
+  native-pos-omc:
+    needs: evidence-offline
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+        arm: [D, M]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.26.5-minimal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/arena_v0_contract.py
+            scripts/arena_event_observability.py
+            scripts/arena_cafe/evidence.py
+            scripts/arena_cafe/native_handoff.py
+            scripts/arena_cafe/observation_ports.py
+            scripts/arena_cafe/observation_eval.py
+            scripts/arena_cafe/native_pos_scenario.py
+            scripts/arena_cafe/native_pos_verify.py
+            scripts/arena_d_v01.py
+            scripts/arena_m_short_e1.py
+            scripts/arena_m_visible_pulse.py
+            experiments/e0/catalog.json
+            experiments/e1/composer.py
+            experiments/e1/backend.py
+            experiments/e1/registry.base.json
+            src/modelica/IGCMolecules.mo
+            src/modelica/IGCInformationMolecules.mo
+      - name: Assert evaluator secret and other condition are absent
+        run: |
+          test ! -e scripts/arena_cafe/ev01.py
+          test ! -e scripts/arena_physical/des_engine.py
+          test ! -e historico/
+          test ! -e historical/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-${{ matrix.condition }}
+          path: artifacts/public
+      - name: Generate original D2/E1 native model using permitted POS timestamps
+        env:
+          ARM: ${{ matrix.arm }}
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          test "$(find artifacts/public -type f | wc -l)" = 1
+          python -m scripts.arena_cafe.native_pos_scenario \
+             --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+             --arm "$ARM" --condition "$CONDITION" --out artifacts/native
+          if [ "$ARM" = D ]; then
+            python -m scripts.arena_cafe.observation_ports \
+               --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+               --arm D --condition "$CONDITION" --out artifacts/port.json
+          fi
+      - name: Build original-model observation port for M
+        if: matrix.arm == 'M'
+        env:
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          python -m scripts.arena_cafe.observation_ports \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --arm M --condition "$CONDITION" \
+            --registry experiments/e1/registry.base.json --out artifacts/m-port.json
+      - name: Fetch pinned Modelica libraries for M without changing E1
+        if: matrix.arm == 'M'
+        run: |
+          mkdir -p "$RUNNER_TEMP/omc-home" "$RUNNER_TEMP/omc-libs"
+          git clone -q --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/omc-libs/msl"
+          git clone -q --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/omc-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/omc-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/omc-libs/systemdynamics/LICENSE"
+      - name: Run native OpenModelica, one attempted solver invocation per job
+        run: |
+          set -euo pipefail
+          docker pull "$OMC_IMAGE"
+          docker image inspect "$OMC_IMAGE" --format '{{json .RepoDigests}}' | tee artifacts/native/image-digests.json
+          mkdir -p "$RUNNER_TEMP/omc-home" "$RUNNER_TEMP/omc-libs"
+          printf 'INVOCATION_STARTED\n' > artifacts/native/INVOCATION_STARTED
+          set +e
+          docker run --rm -v "$PWD:/repo" -w /repo/artifacts/native \
+            -v "$RUNNER_TEMP/omc-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/omc-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            "$OMC_IMAGE" omc simulate.mos > artifacts/native/omc.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > artifacts/native/exit_code.txt
+          sudo chown -R "$(id -u):$(id -g)" artifacts/native
+          test "$code" -eq 0
+          if grep -Eq 'Error:|Failed to build model|Simulation execution failed|Failed to load' artifacts/native/omc.log; then
+            cat artifacts/native/omc.log
+            exit 1
+          fi
+          test -s artifacts/native/native_res.csv
+      - name: Independently audit physical balance and H_j, no fitting
+        env:
+          ARM: ${{ matrix.arm }}
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.native_pos_verify \
+            --visible "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --native-dir artifacts/native --out artifacts/native/g2-report.json
+          if [ "$ARM" = M ]; then
+            python - <<'PY'
+          from pathlib import Path
+          import json
+          from scripts.arena_v0_contract import canonical
+          native=json.loads(Path("artifacts/native/manifest.json").read_text())
+          Path("artifacts/native/candidate.json").write_bytes(canonical(native["candidate"])+b"\n")
+          PY
+            python -m scripts.arena_cafe.observation_eval \
+              --visible "artifacts/public/${CONDITION}_VISIBLE.json" \
+              --port artifacts/m-port.json \
+              --csv artifacts/native/native_res.csv \
+              --candidate artifacts/native/candidate.json \
+              --registry experiments/e1/registry.base.json \
+              --out artifacts/native/hj.json
+          else
+            python -m scripts.arena_cafe.observation_eval \
+              --visible "artifacts/public/${CONDITION}_VISIBLE.json" \
+              --port artifacts/port.json \
+              --csv artifacts/native/native_res.csv \
+              --out artifacts/native/hj.json
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path("artifacts/native")
+          h=json.loads((root/"hj.json").read_text())
+          g=json.loads((root/"g2-report.json").read_text())
+          assert g["status"]=="NATIVE_G2_MATERIAL_BALANCE_PASS_ENGINEERING_ONLY"
+          assert h["status"]=="DESCRIPTIVE_HJ_PROBE_ONLY_UNVERIFIED_TRACE"
+          assert h["scientific_status"]=="NOT_ESTABLISHED"
+          assert len(h["comparisons"])>=12
+          assert h["condition_id"]==g["condition_id"] and h["arm_id"]==g["arm_id"]
+          assert g["nominal_parameters_are_assumptions"]
+          print("A1_NATIVE_POS_D_M_REAL_SOLVER_HJ_ENGINEERING_ONLY",g["arm_id"],g["condition_id"])
+          PY
+      - name: Make native artifacts readable even when the solver fails
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" artifacts/native || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a1-cafe-omc-${{ matrix.condition }}-${{ matrix.arm }}
+          path: artifacts/native/
+          if-no-files-found: warn
+          retention-days: 60
