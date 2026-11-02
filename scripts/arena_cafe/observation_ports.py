@@ -23,8 +23,9 @@ NATIVE_STATUS = "TYPED_OBSERVATION_PORT_ONLY_NOT_NATIVE_INFERENCE"
 def _grid(payload: dict) -> tuple[list[dict], list[dict]]:
     """Counts are cumulative at strict-before-t sample instants.
 
-    Differences describe the whole half-open interval [t0,t1); a positive
-    count does not identify an event instant or an instantaneous arrival rate.
+    Differences describe each half-open interval [t0,t1). Exact arrival
+    timestamps remain separately available in pos_arrival_events; this legacy
+    aggregate-only port deliberately does not consume those times.
     """
     points = payload["construction"]["observation_series"]
     bins = []
@@ -41,7 +42,7 @@ def _grid(payload: dict) -> tuple[list[dict], list[dict]]:
             "end_minutes_exact": str(end),
             "arrivals_observed_count": arrived,
             "deliveries_observed_count": delivered,
-            "time_within_bin": "UNKNOWN_NOT_A_PULSE",
+            "time_within_bin": "EXACT_POS_EVENTS_SEPARATELY_AVAILABLE_NOT_A_PULSE",
         })
     return points, bins
 
