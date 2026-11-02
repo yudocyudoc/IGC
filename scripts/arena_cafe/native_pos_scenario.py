@@ -158,6 +158,7 @@ def build(visible,arm,condition):
         "evaluator_private_truth_read":False,
         "B_calls":0,
         "modelica_sha256":"sha256:"+hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        "mos_sha256":"sha256:"+hashlib.sha256(("\\n".join(prep)+"\\n").encode("utf-8")).hexdigest(),
         "reconstruction_bins":bins,
     }
     return source,"\n".join(prep)+"\n",manifest
