@@ -116,6 +116,52 @@ class ObservationEvaluationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ArenaContractError,code):
                     observation_eval.evaluate(visible,port,trace_csv=file)
 
+    def test_legitimate_rate_discontinuity_uses_left_and_right_event_sides(self):
+        visible=self.views["O0"]
+        port=observation_ports.d_port(visible,"O0")
+        # Stock is continuous through t=5; inputRate legitimately jumps 1→0.
+        rows=[
+          {"time":"0","inputRate":"1","delivered":"0"},
+          {"time":"2","inputRate":"1","delivered":"1"},
+          {"time":"4","inputRate":"1","delivered":"2"},
+          {"time":"5","inputRate":"1","delivered":"2.5"},
+          {"time":"5","inputRate":"0","delivered":"2.5"},
+          {"time":"6","inputRate":"0","delivered":"3"},
+          {"time":"8","inputRate":"0","delivered":"4"},
+          {"time":"10","inputRate":"0","delivered":"5"},
+        ]
+        with TemporaryDirectory() as temp:
+            csvpath=Path(temp)/"event.csv";write_csv(csvpath,rows)
+            report=observation_eval.evaluate(visible,port,trace_csv=csvpath)
+            self.assertEqual("DESCRIPTIVE_HJ_PROBE_ONLY_UNVERIFIED_TRACE",report["status"])
+            result=[r for r in report["comparisons"] if
+                    r["observable"]=="orders_created_cumulative"]
+            self.assertAlmostEqual(5.0,result[-1]["native_prediction"],places=9)
+            # Same-time discontinuity in a *stock* is forbidden.
+            changed=deepcopy(rows);changed[4]["delivered"]="3"
+            write_csv(csvpath,changed)
+            with self.assertRaisesRegex(ArenaContractError,"A1_TRACE_CONFLICTING_DUPLICATE_EVENT"):
+                observation_eval.evaluate(visible,port,trace_csv=csvpath)
+
+    def test_e1_structure_sha_does_not_allow_undeclared_parameter_change(self):
+        o1=self.views["O1"]
+        p=observation_ports.m_port(o1,"O1",REGISTRY)
+        with TemporaryDirectory() as temp:
+            trace=Path(temp)/"m.csv";write_csv(trace,self._m_rows())
+            tampered=deepcopy(self.candidate)
+            for inst in tampered["ast"]["instances"]:
+                if inst["role"]=="preparation":
+                    inst["parameters"]["maxThroughput"]=21
+                    break
+            # Canonical STRUCTURAL digest remains the same in native E1.
+            composer=get_composer()
+            self.assertEqual(tampered["canonical_sha256"],
+                             "sha256:"+composer.canonical(tampered["ast"]))
+            with self.assertRaisesRegex(ArenaContractError,
+                                         "A1_M_CANDIDATE_PARAMETERS_NOT_FROZEN"):
+                observation_eval.evaluate(o1,p,trace_csv=trace,
+                                          candidate=tampered,registry=REGISTRY)
+
     def test_reject_swapped_port_or_untrusted_M_candidate(self):
         o0=self.views["O0"];o1=self.views["O1"]
         d=observation_ports.d_port(o0,"O0")
