@@ -30,7 +30,7 @@ def require(condition: bool, code: str) -> None:
 
 def _precut(rows: list[dict[str, Any]], cutoff: Fraction) -> list[dict[str, Any]]:
     require(isinstance(rows, list), "CAFE_EVENTS_NOT_LIST")
-    return [row for row in rows if exact(row["t_minutes_exact"]) < cutoff]
+    return [dict(row) for row in rows if exact(row["t_minutes_exact"]) < cutoff]
 
 
 def _validate_visible_rows(rows: list[dict[str, Any]], mode: str) -> None:
