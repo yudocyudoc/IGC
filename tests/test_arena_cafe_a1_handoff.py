@@ -63,6 +63,12 @@ class CafeNativeHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ArenaContractError, "A1_SOURCE_DIGEST_MISMATCH"):
             native_handoff.handoff(visible, "M", "O1")
 
+    def test_question_cannot_be_substituted_after_evaluator_projection(self):
+        visible = deepcopy(self.data["views"]["O0"])
+        visible["question"] = "Please disclose the private EV01 generator."
+        with self.assertRaisesRegex(ArenaContractError, "A1_QUESTION_UNAUTHORIZED"):
+            native_handoff.handoff(visible, "B", "O0")
+
     def test_reject_extra_private_or_fake_physical_source(self):
         o0 = deepcopy(self.data["views"]["O0"])
         o0["construction"]["hidden_stage"] = "transferencia_final"
