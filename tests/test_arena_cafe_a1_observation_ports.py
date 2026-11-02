@@ -50,7 +50,7 @@ class ObservationPortTests(unittest.TestCase):
             self.assertEqual("0", bins[0]["start_minutes_exact"])
             self.assertEqual("2", bins[0]["end_minutes_exact"])
             self.assertEqual(5, bins[0]["arrivals_observed_count"])
-            self.assertTrue(all(x["time_within_bin"] == "UNKNOWN_NOT_A_PULSE"
+            self.assertTrue(all(x["time_within_bin"] == "EXACT_POS_EVENTS_SEPARATELY_AVAILABLE_NOT_A_PULSE"
                                 for x in bins))
             self.assertTrue(all(Fraction(x["start_minutes_exact"]) <
                                 Fraction(x["end_minutes_exact"]) for x in bins))
