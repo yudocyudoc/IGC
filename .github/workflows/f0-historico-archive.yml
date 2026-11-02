@@ -5,6 +5,7 @@ on:
       - 'historico/**'
       - 'scripts/arena_physical/**'
       - 'tests/test_arena_physical_clone.py'
+      - 'tests/test_f0_historico_active_boundary.py'
       - '.github/workflows/f0-historico-archive.yml'
   workflow_dispatch:
 permissions:
@@ -20,6 +21,8 @@ jobs:
         with: {python-version: '3.12'}
       - name: Exact promoted DES blob and conservation fixture
         run: python -m unittest discover -s tests -p 'test_arena_physical_clone.py' -v
+      - name: Guard active code against archived CAF paths and imports
+        run: python -m unittest discover -s tests -p 'test_f0_historico_active_boundary.py' -v
       - name: Archived Git blobs and retired paths
         run: |
           python - <<'PY'
