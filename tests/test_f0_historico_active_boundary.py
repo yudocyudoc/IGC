@@ -37,7 +37,7 @@ class F0HistoricoBoundaryTests(unittest.TestCase):
             target = ROOT / item["promoted"]
             self.assertTrue(target.is_file(), item["promoted"])
             payload = target.read_bytes()
-            header = f"blob {len(payload)}".encode("ascii") + b"\\x00"
+            header = f"blob {len(payload)}".encode("ascii") + bytes([0])
             blob = hashlib.sha1(header + payload).hexdigest()
             source_blob = item["original_blob_sha"]
             with self.subTest(path=item["promoted"], claim=item["change_type"]):
