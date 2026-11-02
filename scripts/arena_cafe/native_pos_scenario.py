@@ -119,13 +119,9 @@ def build(visible,arm,condition):
     horizon=float(cutoff/(Q(60) if arm=="M" else Q(1)))
     name=model["name"]
     package="ArenaCafeM." if arm=="M" else ""
-    prep=[
-        "getVersion();",
-        'loadModel(Modelica, {"4.0.0"});',
-    ]
+    prep=["getVersion();"]
     if arm=="M":
         prep += [
-            'loadModel(SystemDynamics, {"2.1.2"});',
             'loadFile("/repo/src/modelica/IGCMolecules.mo");',
             'loadFile("/repo/src/modelica/IGCInformationMolecules.mo");']
     prep += [
