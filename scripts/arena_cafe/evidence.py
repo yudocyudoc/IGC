@@ -15,7 +15,7 @@ from scripts.arena_v0_contract import (
     arm_view, digest, validate_visible_input,
 )
 
-SCHEMA = "igc-arena-cafe-o0-o1-projection/0.1"
+SCHEMA = "igc-arena-cafe-o0-o1-projection/0.2"
 INTERFACE_SCHEMA = "igc-arena-cafe-interface-audit/0.1"
 CONDITIONS = ("O0", "O1")
 PREP = "preparacion"
