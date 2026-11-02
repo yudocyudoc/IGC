@@ -3,6 +3,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 from fractions import Fraction
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import json
 import unittest
 
@@ -110,6 +114,32 @@ class EvidenceA1Tests(unittest.TestCase):
             evidence.build(self.pos, self.full, sample_times=("0", "2", "12"))
         with self.assertRaisesRegex(ArenaContractError, "INVALID_CUTOFF"):
             evidence.build(self.pos, self.full, sample_times=("0", "10", "10"))
+
+    def test_cli_exports_only_public_views_and_no_truth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            ev01.write_csv(folder, "POS.csv", self.pos, "POS")
+            ev01.write_csv(folder, "FULL.csv", self.full, "FULL")
+            self.assertEqual(self.pos, evidence.load_public_csv(folder / "POS.csv", "POS"))
+            self.assertEqual(self.full, evidence.load_public_csv(folder / "FULL.csv", "FULL"))
+            output = folder / "result"
+            proc = subprocess.run(
+                [sys.executable, "-m", "scripts.arena_cafe.evidence",
+                 "--pos", str(folder / "POS.csv"), "--full", str(folder / "FULL.csv"),
+                 "--out", str(output), "--cutoff", "10"],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            self.assertEqual({"O0_VISIBLE.json", "O1_VISIBLE.json",
+                              "INTERFACE01.json", "EVIDENCE01.json"},
+                             {x.name for x in output.iterdir()})
+            for condition in ("O0", "O1"):
+                payload = json.loads((output / (condition + "_VISIBLE.json")).read_text())
+                validate_visible_input(payload)
+                self.assertNotIn("transferencia_final", json.dumps(payload))
+            receipt = json.loads((output / "EVIDENCE01.json").read_text())
+            self.assertTrue(receipt["no_evaluator_truth_exported"])
+            self.assertEqual("PARTIAL", receipt["claims"]["A1"])
 
     def test_non_event_data_not_falsely_accepted_by_legacy_common(self):
         from scripts.arena_v0_common_evidence import common, SOURCE_SCHEMA
