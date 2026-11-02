@@ -1,5 +1,6 @@
 """A1 full native model emission: no DES/private spec or empirical parameter fitting."""
 import unittest
+import hashlib
 from copy import deepcopy
 from fractions import Fraction
 from scripts.arena_cafe import ev01,evidence,native_pos_scenario as native
@@ -36,6 +37,10 @@ class NativePOSScenarioTest(unittest.TestCase):
             emitted=[]
             for arm in ("D","M"):
                 mo,mos,meta=native.build(visible,arm,condition)
+                self.assertEqual("sha256:"+hashlib.sha256(mo.encode()).hexdigest(),
+                                 meta["modelica_sha256"])
+                self.assertEqual("sha256:"+hashlib.sha256(mos.encode()).hexdigest(),
+                                 meta["mos_sha256"])
                 self.assertEqual(15,meta["total_reconstructed_orders"])
                 self.assertEqual("UNIFORM_MASS_PER_HALF_MINUTE_BIN_NOT_OBSERVED_RATE",
                                  meta["stimulus_semantics"])
