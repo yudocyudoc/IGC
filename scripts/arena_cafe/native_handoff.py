@@ -18,8 +18,8 @@ from scripts.arena_v0_contract import (
 SCHEMA = "igc-arena-cafe-native-handoff/0.1"
 ARMS = ("D", "B", "M")
 ALLOWED = {
-    "O0": {"observation_series", "units", "observation_window", "data_origin"},
-    "O1": {"observation_series", "units", "observation_window",
+    "O0": {"observation_series", "pos_arrival_events", "units", "observation_window", "data_origin"},
+    "O1": {"observation_series", "pos_arrival_events", "units", "observation_window",
            "data_origin", "physical_observation"},
 }
 PREP = {"stage_disclosed", "source_semantics", "n_completed_stage_services",
@@ -69,6 +69,21 @@ def validate_a1_visible(payload, condition):
     cutoff = Fraction(o["cutoff_minutes_exact"])
     need(cutoff > 0 and grid[0] == 0 and grid[-1] == cutoff and
          all(a < b for a,b in zip(grid, grid[1:])), "A1_TIME_GRID")
+    arrivals = c["pos_arrival_events"]
+    need(isinstance(arrivals,list) and all(
+        type(event) is dict and set(event)=={"case_id","t_minutes_exact"}
+        and type(event["case_id"]) is str and
+        re.fullmatch(r"O[0-9]{3,6}",event["case_id"]) is not None
+        for event in arrivals), "A1_POS_ARRIVALS_SCHEMA")
+    arrival_times = [Fraction(row["t_minutes_exact"]) for row in arrivals]
+    need(all(0 <= t < cutoff for t in arrival_times)
+         and arrival_times == sorted(arrival_times)
+         and len({row["case_id"] for row in arrivals})==len(arrivals),
+         "A1_POS_ARRIVALS_TIME_OR_ID")
+    need(all(row["orders_created_cumulative"] ==
+             sum(t < Fraction(row["t_minutes_exact"]) for t in arrival_times)
+             for row in c["observation_series"]),
+         "A1_POS_ARRIVALS_COUNT_PARITY")
     prev_creations, prev_delivered = 0, 0
     for r in c["observation_series"]:
         created, delivered = r["orders_created_cumulative"], r["delivered_cumulative"]
