@@ -5,7 +5,7 @@ Este directorio conserva las campañas y pruebas retiradas del árbol operativo.
 ## Primer corte archivado
 
 - `campanas/cafeteria/pc01/` y `campanas/cafeteria/pc02/`: 137 archivos del `main` en `5e2b5505a9224effe1b5242a3af61663b53aaa5d`.
-- `workflows/cafeteria/`: 42 definiciones de GitHub Actions correspondientes, retiradas de `.github/workflows/` para evitar ejecuciones históricas por defecto.
+- `workflows/cafeteria/`: 50 definiciones de GitHub Actions correspondientes, retiradas de `.github/workflows/` para evitar ejecuciones históricas por defecto.
 - Los PR Draft CAF-11–16, MC-01, EV-01 y EV-02 **no están fusionados** ni se incorporaron a este archivo. Se conservan como ramas/PR originales, sin fingir que pertenecen a `main`.
 
 ## Reproducción y límites

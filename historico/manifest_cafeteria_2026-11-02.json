@@ -6,7 +6,7 @@
   "copy_policy": "IDENTICAL_GIT_BLOB_SHA",
   "replay": "git checkout 5e2b5505a9224effe1b5242a3af61663b53aaa5d",
   "original_files": 137,
-  "workflows": 42,
+  "workflows": 50,
   "active_promotions": [
     {
       "from": "experiments/cafeteria/pc01/caf01_des_engine.py",
@@ -909,6 +909,46 @@
       "from": "experiments/cafeteria/pc02/test_caf07b_umbral_secuencial.py",
       "to": "historico/campanas/cafeteria/pc02/test_caf07b_umbral_secuencial.py",
       "blob": "95bf1ba3e150e9ddc6d4d02981dbbba2e167cee2"
+    },
+    {
+      "from": ".github/workflows/arena-cafeteria-pc01-static.yml",
+      "to": "historico/workflows/cafeteria/arena-cafeteria-pc01-static.yml",
+      "blob": "15be347ce0118e9cada361485c65cdb704ee219e"
+    },
+    {
+      "from": ".github/workflows/caf03-fgh-poda-k0.yml",
+      "to": "historico/workflows/cafeteria/caf03-fgh-poda-k0.yml",
+      "blob": "79259769d18bc997a2a1a693219eda158eae2a82"
+    },
+    {
+      "from": ".github/workflows/caf04-observabilidad-bcd.yml",
+      "to": "historico/workflows/cafeteria/caf04-observabilidad-bcd.yml",
+      "blob": "f8b0667addde79610225079b2b76d9d683a0788c"
+    },
+    {
+      "from": ".github/workflows/caf05-contrato-sensor.yml",
+      "to": "historico/workflows/cafeteria/caf05-contrato-sensor.yml",
+      "blob": "f7449065a9d20553b469642f235acf24dc5326e4"
+    },
+    {
+      "from": ".github/workflows/caf06-colas-capacidades.yml",
+      "to": "historico/workflows/cafeteria/caf06-colas-capacidades.yml",
+      "blob": "ad6a5045ef62545b63d00cdf6aafbd4b398a1dff"
+    },
+    {
+      "from": ".github/workflows/caf07-selector-evidencia.yml",
+      "to": "historico/workflows/cafeteria/caf07-selector-evidencia.yml",
+      "blob": "b75f40849bcc4f7f7906dd2f804ea5ff942d8679"
+    },
+    {
+      "from": ".github/workflows/caf07a-auditoria-decision.yml",
+      "to": "historico/workflows/cafeteria/caf07a-auditoria-decision.yml",
+      "blob": "ae998af9c2c2c9e0ef39028c2677a9af86468fc3"
+    },
+    {
+      "from": ".github/workflows/caf07b-umbral-secuencial.yml",
+      "to": "historico/workflows/cafeteria/caf07b-umbral-secuencial.yml",
+      "blob": "9c88eff2de90ac4f1a9ccacd8eb6a939ba94cea6"
     }
   ]
 }
