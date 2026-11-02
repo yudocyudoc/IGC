@@ -20,7 +20,7 @@ class NativePOSScenarioTest(unittest.TestCase):
             v=self.views[condition]
             events=v["construction"]["pos_arrival_events"]
             self.assertEqual(15,len(events))
-            self.assertEqual(Fraction(0),Fraction(events[0]["t_minutes_exact"]))
+            self.assertEqual(Fraction(1,5),Fraction(events[0]["t_minutes_exact"]))
             self.assertTrue(all(Fraction(x["t_minutes_exact"])<10 for x in events))
             self.assertTrue(all(set(x)=={"case_id","t_minutes_exact"} for x in events))
             self.assertNotIn("resource_id",str(events))
@@ -47,7 +47,7 @@ class NativePOSScenarioTest(unittest.TestCase):
                 self.assertNotIn("SPEC",mo)
                 self.assertIn("numberOfIntervals=1000",mos)
                 self.assertIn("native.mo",mos)
-                self.assertIn("native);",mos)
+                self.assertIn('fileNamePrefix="native"',mos)
                 self.assertIn("inputRate =",mo) if arm=="D" else self.assertIn("connect(stimulus.y,",mo)
                 if arm=="D":
                     self.assertEqual("minute",meta["time_unit"])
