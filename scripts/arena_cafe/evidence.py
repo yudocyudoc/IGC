@@ -153,7 +153,13 @@ def build(pos_projected: list[dict[str, Any]],
     payloads: dict[str, Any] = {}
     matrices: list[dict[str, Any]] = []
     for condition in CONDITIONS:
+        arrival_events = [
+            {"case_id": row["case_id"], "t_minutes_exact": str(exact(row["t_minutes_exact"]))}
+            for row in pos if row["event_type"] == "pedido_creado"
+        ]
+        arrival_events.sort(key=lambda row: (exact(row["t_minutes_exact"]), row["case_id"]))
         construction = {
+            "pos_arrival_events": arrival_events,
             "observation_series": counts,
             "units": {"time": "minutes", "counts": "orders"},
             "observation_window": "[0,cutoff)",
