@@ -126,11 +126,20 @@ def _verified_port(cfg: dict, classes: dict, role: str, name: str,
     matches = [p for p in cl["ports"] if p["name"] == name]
     need(len(matches) == 1, "A1_M_MISSING_PORT")
     port = matches[0]
-    need(port["direction"] == direction and port["type"] == kind and
+    declared = port["type"]
+    bindings = cl.get("role_bindings", {}).get(role, {})
+    resolved = declared
+    for variable, target in sorted(bindings.items()):
+        need(variable in ("T", "U") and isinstance(target, str),
+             "A1_M_ROLE_BINDING_INVALID")
+        resolved = resolved.replace("<" + variable + ">", "<" + target + ">")
+    need(port["direction"] == direction and resolved == kind and
          port["unit"] == unit, "A1_M_PORT_TYPE_MISMATCH")
     return {
         "role": role, "class_id": role_cfg["class_id"],
-        "port": name, "direction": direction, "type": kind,
+        "port": name, "direction": direction, "type": resolved,
+        "catalog_declared_type": declared,
+        "role_type_bindings": {k: bindings[k] for k in sorted(bindings)},
         "native_unit": unit,
     }
 
