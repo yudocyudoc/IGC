@@ -41,11 +41,13 @@ def validate_a1_visible(payload, condition):
     need(condition in ALLOWED, "A1_BAD_CONDITION")
     validate_visible_input(payload)
     c, o = payload["construction"], payload["observability"]
-    need(set(c) == ALLOWED[condition], "A1_CONSTRUCTION_SHAPE")
     need(set(o) == {"condition_id", "world_public_id", "cutoff_minutes_exact",
                     "window", "sample_rule", "published_source"},
          "A1_OBSERVABILITY_SHAPE")
     need(o["condition_id"] == condition, "A1_CROSS_CONDITION")
+    need(payload["round_id"] == "a1-" + condition.lower() + "-known",
+         "A1_ROUND_CONDITION_MISMATCH")
+    need(set(c) == ALLOWED[condition], "A1_CONSTRUCTION_SHAPE")
     need(o["window"] == "[0,cutoff)" and
          c["observation_window"] == "[0,cutoff)" and
          o["sample_rule"] == "each_count_uses_events_strictly_before_sample_t",
@@ -54,8 +56,6 @@ def validate_a1_visible(payload, condition):
           else "POS+authorized_prep_aggregate"), "A1_SOURCE_MISMATCH")
     need(re.fullmatch(r"[A-Za-z0-9_-]{1,80}", o["world_public_id"]) is not None,
          "A1_WORLD_ID_INVALID")
-    need(payload["round_id"] == "a1-" + condition.lower() + "-known",
-         "A1_ROUND_CONDITION_MISMATCH")
     need(c["units"] == {"time": "minutes", "counts": "orders"} and
          c["data_origin"] == "synthetic_event_projection_not_real_POS",
          "A1_MEASUREMENT_SEMANTICS")
