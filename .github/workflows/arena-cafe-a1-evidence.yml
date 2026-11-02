@@ -26,3 +26,34 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
           python -m unittest discover -s tests -p 'test_arena_v0_contract.py' -v
+      - name: Export evaluator-known public evidence, without PM or provider calls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_cafe import ev01
+          from scripts import arena_event_observability as obs
+          raw, checkpoints = ev01.trace_generator()
+          ev01.verify_des_parity(checkpoints)
+          tmp = Path("/tmp/a1-cafe-evaluator")
+          tmp.mkdir(exist_ok=False)
+          ev01.write_csv(tmp, "POS.csv", obs.project_events(raw, "POS"), "POS")
+          ev01.write_csv(tmp, "FULL.csv", obs.project_events(raw, "FULL"), "FULL")
+          PY
+          python -m scripts.arena_cafe.evidence --pos /tmp/a1-cafe-evaluator/POS.csv --full /tmp/a1-cafe-evaluator/FULL.csv --cutoff 10 --out artifacts/a1
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          out = Path("artifacts/a1")
+          assert {p.name for p in out.iterdir()} == {"O0_VISIBLE.json", "O1_VISIBLE.json", "INTERFACE01.json", "EVIDENCE01.json"}
+          entry = json.loads((out / "EVIDENCE01.json").read_text())
+          assert entry["claims"]["A1"] == "PARTIAL"
+          for p in out.glob("*.json"):
+              s = p.read_text()
+              assert "transferencia_final" not in s and "resource_id" not in s and "generator_parameters" not in s
+          print("A1_CAFE_PUBLIC_ARTIFACTS_ONLY_NO_PRIVATE_TRUTH")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          path: artifacts/a1/*.json
+          if-no-files-found: error
