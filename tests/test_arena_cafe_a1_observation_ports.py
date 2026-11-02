@@ -128,7 +128,7 @@ class ObservationPortTests(unittest.TestCase):
             ports.port(self.source["views"]["O0"], "D", "O0", registry=REGISTRY)
         changed = deepcopy(self.source["views"]["O0"])
         changed["construction"]["observation_series"][1]["orders_created_cumulative"] += 1
-        with self.assertRaisesRegex(ArenaContractError, "A1_SOURCE_DIGEST_MISMATCH"):
+        with self.assertRaisesRegex(ArenaContractError, "A1_POS_ARRIVALS_COUNT_PARITY"):
             ports.port(changed, "D", "O0")
 
     def test_cli_creates_one_sidecar_without_native_model(self):
