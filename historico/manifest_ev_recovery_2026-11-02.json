@@ -1,0 +1,76 @@
+{
+  "schema": "igc-f0-hist-ev-recovery/0.1",
+  "recovered_at": "2026-11-02",
+  "origin_branch": "experiment/arena-ev02-ingestion-provenance-20261101",
+  "origin_commit": "c534203f99405044dc79cae38e6102520f4ae2eb",
+  "base_branch": "chore/f0-historico-cafeteria-promote-des-20261102",
+  "base_commit": "6c76978175aab45e590fe95db644c349f89f969a",
+  "scope": "EV-01 EV-02 operational instrumentation and retrospective synthetic diagnosis only. Not D/B/M model inference.",
+  "files": [
+    {
+      "original": "scripts/arena_event_observability.py",
+      "promoted": "scripts/arena_event_observability.py",
+      "original_blob_sha": "b5cf7b5d4b9684b230298c2014a3a08b075780fd",
+      "change_type": "original blob copied"
+    },
+    {
+      "original": "scripts/arena_operational_ingestion.py",
+      "promoted": "scripts/arena_operational_ingestion.py",
+      "original_blob_sha": "9cab8de34528e33ee1d1af60f867639560669203",
+      "change_type": "original blob copied"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/arena_ev01_event_views.py",
+      "promoted": "scripts/arena_cafe/ev01.py",
+      "original_blob_sha": "0f9a6df9d8bb6d160198101d88b6f7c1dbdd5409",
+      "change_type": "relocation+minimal import rewiring"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/arena_cafeteria_operational_closure.py",
+      "promoted": "scripts/arena_cafe/diagnosis.py",
+      "original_blob_sha": "a3b900db0993af8246e6f64a5f7e05833b50bc46",
+      "change_type": "relocation+minimal import rewiring"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/arena_ev02_ingestion_probe.py",
+      "promoted": "scripts/arena_cafe/ev02_probe.py",
+      "original_blob_sha": "98dbf279dcd78a27ce530dc6a599564cd12c6be2",
+      "change_type": "relocation+minimal import rewiring"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/test_arena_ev01_event_views.py",
+      "promoted": "tests/test_arena_cafe_ev01.py",
+      "original_blob_sha": "b5ddbfa37a4bd7b7fed116a560cb6c432e698ddc",
+      "change_type": "original blob copied"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/test_arena_cafeteria_operational_closure.py",
+      "promoted": "tests/test_arena_cafe_diagnosis.py",
+      "original_blob_sha": "119a9812a1c42bc316a44db27dac64315b107dc1",
+      "change_type": "original blob copied"
+    },
+    {
+      "original": "experiments/cafeteria/pc02/test_arena_ev02_ingestion.py",
+      "promoted": "tests/test_arena_cafe_ev02.py",
+      "original_blob_sha": "64c0ab76d68efd0e290786374115c6419304a1a8",
+      "change_type": "original blob copied"
+    }
+  ],
+  "dependency_lift": {
+    "retained_physical_des": "scripts/arena_physical/des_engine.py",
+    "no_historical_imports": true,
+    "replace_caf07b_with": "scripts/arena_cafe/artifacts.py; hex SHA validation and exclusive canonical write",
+    "pm4py": "2.7.23.11 optional runtime for DFG; synthetic only"
+  },
+  "not_promoted": [
+    "CAF-07B selector and capacity banks",
+    "CAF-01/02 historical G4/G5",
+    "original EV-01/EV-02 PR branches or workflows"
+  ],
+  "forbidden_claims": [
+    "not a blind scientific reserve",
+    "no authentic new B inference",
+    "no native D/B/M O1 consumption implemented",
+    "no real POS/KDS/CRM source"
+  ]
+}
