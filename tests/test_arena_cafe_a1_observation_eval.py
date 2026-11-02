@@ -119,7 +119,7 @@ class ObservationEvaluationTests(unittest.TestCase):
     def test_reject_swapped_port_or_untrusted_M_candidate(self):
         o0=self.views["O0"];o1=self.views["O1"]
         d=observation_ports.d_port(o0,"O0")
-        with self.assertRaisesRegex(ArenaContractError,"A1_HJ_PORT_NOT_BOUND"):
+        with self.assertRaisesRegex(ArenaContractError,"A1_CROSS_CONDITION"):
             observation_eval.evaluate(o1,d)
         m=observation_ports.m_port(o1,"O1",REGISTRY)
         with TemporaryDirectory() as temp:
