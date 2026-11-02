@@ -73,7 +73,7 @@ def validate_a1_visible(payload, condition):
     need(isinstance(arrivals,list) and all(
         type(event) is dict and set(event)=={"case_id","t_minutes_exact"}
         and type(event["case_id"]) is str and
-        re.fullmatch(r"O[0-9]{3,6}",event["case_id"]) is not None
+        re.fullmatch(r"[A-Za-z0-9_-]{1,80}",event["case_id"]) is not None
         for event in arrivals), "A1_POS_ARRIVALS_SCHEMA")
     arrival_times = [Fraction(row["t_minutes_exact"]) for row in arrivals]
     need(all(0 <= t < cutoff for t in arrival_times)
