@@ -1,0 +1,193 @@
+{
+  "schema": "igc-arena-cafe-a1-baseline-manifest/0.1",
+  "baseline_date": "2026-11-02",
+  "reference_main_sha": "5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "historical_recovery_pr": 134,
+  "historical_recovery_pr_head_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+  "current_pr_head_is_mutable": true,
+  "source_of_truth": "git tree blobs and GitHub Actions run metadata; no inferred checkout SHA",
+  "results": [
+    {
+      "name": "F0-HIST — archive integrity and promoted DES",
+      "kind": "ENGINEERING_ARCHIVE",
+      "source_ref": "https://github.com/yudocyudoc/IGC/pull/134",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_sha_at_run": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_current_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+      "ci_checkout_sha": "NOT_VERIFIED",
+      "run_id": 41533062612,
+      "artifact_id": "NOT_VERIFIED",
+      "report_or_log_path": "https://github.com/yudocyudoc/IGC/actions/runs/41533062612",
+      "verified_status": "COMPLETED_SUCCESS",
+      "science_validation": "NOT_CLAIMED"
+    },
+    {
+      "name": "F0-HIST — recovered EV01/EV02 + unchanged native engines",
+      "kind": "ENGINEERING_EV_RECOVERY",
+      "source_ref": "https://github.com/yudocyudoc/IGC/pull/134",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_sha_at_run": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_current_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+      "ci_checkout_sha": "NOT_VERIFIED",
+      "run_id": 41533062609,
+      "artifact_id": "NOT_VERIFIED",
+      "report_or_log_path": "https://github.com/yudocyudoc/IGC/actions/runs/41533062609",
+      "verified_status": "COMPLETED_SUCCESS",
+      "science_validation": "NOT_CLAIMED"
+    },
+    {
+      "name": "R2 Buffalo input preflight",
+      "kind": "OFFLINE_B_NATIVE_PREFLIGHT",
+      "source_ref": "https://github.com/yudocyudoc/IGC/pull/134",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_sha_at_run": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_current_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+      "ci_checkout_sha": "NOT_VERIFIED",
+      "run_id": 41533062568,
+      "artifact_id": "NOT_VERIFIED",
+      "report_or_log_path": "https://github.com/yudocyudoc/IGC/actions/runs/41533062568",
+      "verified_status": "COMPLETED_SUCCESS",
+      "science_validation": "NOT_CLAIMED"
+    },
+    {
+      "name": "Arena recovered capabilities - no provider calls",
+      "kind": "ENGINEERING_CAPABILITIES",
+      "source_ref": "https://github.com/yudocyudoc/IGC/pull/134",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_sha_at_run": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_current_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+      "ci_checkout_sha": "NOT_VERIFIED",
+      "run_id": 41533062726,
+      "artifact_id": "NOT_VERIFIED",
+      "report_or_log_path": "https://github.com/yudocyudoc/IGC/actions/runs/41533062726",
+      "verified_status": "COMPLETED_SUCCESS",
+      "science_validation": "NOT_CLAIMED"
+    },
+    {
+      "name": "F0 synthetic spike",
+      "kind": "ENGINEERING_F0",
+      "source_ref": "https://github.com/yudocyudoc/IGC/pull/134",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_sha_at_run": "9465b669027df6aae06db05b1261a02adff18472",
+      "pr_head_current_at_baseline": "9465b669027df6aae06db05b1261a02adff18472",
+      "ci_checkout_sha": "NOT_VERIFIED",
+      "run_id": 41533062803,
+      "artifact_id": "NOT_VERIFIED",
+      "report_or_log_path": "https://github.com/yudocyudoc/IGC/actions/runs/41533062803",
+      "verified_status": "COMPLETED_SUCCESS",
+      "science_validation": "NOT_CLAIMED"
+    }
+  ],
+  "selected_sources": [
+    {
+      "path": "scripts/arena_physical/des_engine.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "8cadbc1f9489c3e1cd7eecd020009978873822ba",
+      "role": "evaluator_only_DES"
+    },
+    {
+      "path": "scripts/arena_cafe/ev01.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "b1b5d065d77f04bd0681f34aab59aa6d86f41e1a",
+      "role": "evaluator_synthetic_public_views"
+    },
+    {
+      "path": "scripts/arena_event_observability.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "b5cf7b5d4b9684b230298c2014a3a08b075780fd",
+      "role": "public_allowlisted_event_projection"
+    },
+    {
+      "path": "scripts/arena_operational_ingestion.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "9cab8de34528e33ee1d1af60f867639560669203",
+      "role": "synthetic_POS_KDS_CRM_examples"
+    },
+    {
+      "path": "scripts/arena_v0_contract.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "031a0c47c7f09135191d1689e55b010910de3c48",
+      "role": "common_input_envelope_not_acl"
+    },
+    {
+      "path": "scripts/arena_v0_common_evidence.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "2e86b2d2bacac9c3d9d6f2534afd95c4c5920f85",
+      "role": "legacy_pulse_only_adapter"
+    },
+    {
+      "path": "scripts/arena_d_v01.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "9dcab2bf1ee3a3c7430595385f381d89ba023a6d",
+      "role": "D_original_pulse_and_nominal_grammar"
+    },
+    {
+      "path": "scripts/arena_b_native_runner.mjs",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "572656687ae2e6b6fce0031b7eb02dbab5868990",
+      "role": "Buffalo_original_native_runner_no_live_call"
+    },
+    {
+      "path": "scripts/arena_m_short_e1.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "d7a3345f8ee0169445369e573658a1e004fd8146",
+      "role": "M_original_E1_port"
+    },
+    {
+      "path": "experiments/e1/composer.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "27d9fe2e65db924f204423f9660a576e723bfd9b",
+      "role": "Short_E1_original_composer"
+    },
+    {
+      "path": "scripts/ledger.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "a49332d8c956022bc839295be01a102740aba68c",
+      "role": "canonical_ledger_later_F1_instrumentation"
+    },
+    {
+      "path": "scripts/arena_atms.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "9e247b614f1bc372afe6d6d21b4376c029e1aa82",
+      "role": "ATMS_existing_with_lane_filter"
+    },
+    {
+      "path": "scripts/arena_memory.py",
+      "code_commit_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "git_blob_sha": "cd83254f1e06c7705227423d9669cf0deb8cadc2",
+      "role": "retrieval_existing_not_condition_acl"
+    }
+  ],
+  "workflow_environments": [
+    {
+      "workflow": "f0-historico-archive.yml",
+      "python": "3.12",
+      "evidence": "workflow config and success run 41533062612"
+    },
+    {
+      "workflow": "f0-cafe-recovery.yml",
+      "python": "3.12",
+      "pm4py": "2.7.23.11",
+      "evidence": "workflow config and success run 41533062609"
+    },
+    {
+      "workflow": "f0-ci.yml",
+      "python": "3.13.16",
+      "omc_docker_tag": "openmodelica/openmodelica:v1.27.1-minimal",
+      "evidence": "workflow config and success run 41533062803"
+    },
+    {
+      "workflow": "arena-cafe-a1-evidence.yml",
+      "python": "3.12",
+      "evidence": "A1 workflow declared; CI recorded separately"
+    }
+  ],
+  "not_verified": [
+    "ci_checkout_sha for each run (possibly synthetic PR merge checkout)",
+    "historical workflow artifact ids for uninspected runs",
+    "live Buffalo consumption of any O0/O1",
+    "OpenModelica or Node versions installed locally",
+    "ACL/process/cache/ledger isolation between conditions"
+  ],
+  "scientific_scope": "BASELINE_AND_EVIDENCE_PREPARATION_ONLY_NOT_F3"
+}
