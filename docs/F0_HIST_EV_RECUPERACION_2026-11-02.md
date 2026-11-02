@@ -8,7 +8,7 @@
 - `scripts/arena_cafe/diagnosis.py`: diagnóstico retrospectivo solo FULL; comparaciones DES auxiliares no son una inferencia causal real.
 - `scripts/arena_cafe/ev02_probe.py`: ejemplos sintéticos POS/KDS/CRM y errores de semántica/relojes.
 - `scripts/arena_event_observability.py` y `scripts/arena_operational_ingestion.py`: **blobs originales idénticos**, independientes del banco CAF-07B.
-- Pruebas originales migradas a `tests/test_arena_cafe_*.py`, más prueba de identidad y ruta nativa `tests/test_arena_native_provenance.py`.
+- Pruebas originales migradas a `experiments/arena_cafe/test_*.py` para mantener PM4Py opcional fuera de la suite general, más prueba de identidad y ruta nativa `tests/test_arena_native_provenance.py`.
 
 ## Cambio intencional, acotado y explicado
 
