@@ -6,6 +6,8 @@ Historical documents and manifests intentionally retain provenance links.
 from __future__ import annotations
 
 import ast
+import hashlib
+import json
 from pathlib import Path
 import unittest
 
@@ -21,6 +23,29 @@ SOURCE_SUFFIXES = {".py", ".mjs", ".js", ".ts", ".sh", ".yml", ".yaml"}
 
 
 class F0HistoricoBoundaryTests(unittest.TestCase):
+    def test_ev_recovery_manifest_matches_copy_and_rewire_claims(self):
+        manifest = json.loads(
+            (ROOT / "historico" / "manifest_ev_recovery_2026-11-02.json")
+            .read_text(encoding="utf-8")
+        )
+        files = manifest["files"]
+        self.assertEqual(8, len(files))
+        self.assertEqual(len(files), len({item["promoted"] for item in files}))
+        allowed = {"original blob copied", "relocation+minimal import rewiring"}
+        for item in files:
+            self.assertIn(item["change_type"], allowed)
+            target = ROOT / item["promoted"]
+            self.assertTrue(target.is_file(), item["promoted"])
+            payload = target.read_bytes()
+            header = f"blob {len(payload)}".encode("ascii") + b"\\x00"
+            blob = hashlib.sha1(header + payload).hexdigest()
+            source_blob = item["original_blob_sha"]
+            with self.subTest(path=item["promoted"], claim=item["change_type"]):
+                if item["change_type"] == "original blob copied":
+                    self.assertEqual(source_blob, blob)
+                else:
+                    self.assertNotEqual(source_blob, blob)
+
     def test_no_active_code_refers_to_retired_cafe_paths(self):
         # Build fragments to keep this test from matching its own fixture text.
         retired_slash = tuple("experiments/cafeteria/pc0" + n for n in ("1", "2"))
