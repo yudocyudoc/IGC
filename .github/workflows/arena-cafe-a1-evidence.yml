@@ -12,6 +12,8 @@ on:
       - 'tests/test_arena_cafe_a1_observation_ports.py'
       - 'tests/test_arena_cafe_a1_observation_eval.py'
       - 'tests/test_arena_cafe_a1_native_pos.py'
+      - 'tests/test_arena_cafe_a1_scoped_memory.py'
+      - 'scripts/arena_cafe/scoped_memory.py'
       - 'tests/test_arena_cafe_a1_handoff.py'
       - 'docs/arena_cafe/a1/**'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
