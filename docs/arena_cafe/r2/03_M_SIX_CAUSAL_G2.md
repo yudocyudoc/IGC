@@ -25,15 +25,21 @@ Esto es una **conversión de unidad**, no una hipótesis distinta. Ambos expedie
 
 ## 3. Balance y señales de información
 
-El compositor original expone `inTransit` como suma de stocks materiales `STATE<Shipment>`; `deliveredTotal` como total material entregado. Para cada fila de cada CSV:
+El compositor original expone `inTransit` únicamente como suma de stocks **`STATE<Shipment>`**, no como WIP material total. **No incluye las colas originales de preparación (`STATE<Order>`) ni despacho (`STATE<ReadyOrder>`)**, cuyo inventario material se expone por sus puertos tipados `waiting`. Para cada fila de cada CSV el nuevo auditor resuelve **todos los `waiting` de clase `bounded-queue` desde el AST original** y compara la suma con entregas:
 
-    inTransit(t) + deliveredTotal(t) = integral_0^t u_causal(s) ds
+    sum(waiting_ports_typed[preparation,dispatch,transit...](t)) + deliveredTotal(t) = integral_0^t u_causal(s) ds
 
-El lado derecho es la integral exacta de eventos (con fracción precorte y cola diferida), convertida correctamente desde horas de Modelica a minutos para la verificación. Se comprueba no negatividad, monotonía de entregas, tiempo 0–10 min, al menos 1000 muestras por modelo y **residuo máximo <= 0.08 pedidos** predeclarado en A1/D.
+El lado derecho es la integral exacta de eventos (con fracción precorte y cola diferida), convertida correctamente desde horas de Modelica a minutos para la verificación. Se comprueba que `inTransit` es solo un **substock de envío**, no el balance global; además no negatividad, monotonía de entregas, tiempo 0–10 min, al menos 1000 muestras por modelo y **residuo máximo <= 0.08 pedidos** predeclarado en A1/D.
 
-Los módulos `report` y `reportedDeliveryRate` son **información**, no stocks materiales ni entregas. Para cada pareja de grafos con misma proyección material, el test de ingeniería compara los estados físicos finales (`inTransit`, `deliveredTotal`) con tolerancia predeclarada de **0.05 pedidos**; **esa comprobación puntual no prueba equivalencia dinámica universal**.
+Los módulos `report` y `reportedDeliveryRate` son **información**, no stocks materiales ni entregas. Para cada pareja de grafos con misma proyección material, el test de ingeniería compara los estados físicos finales (`suma de todos los waiting tipados`, `deliveredTotal`) con tolerancia predeclarada de **0.05 pedidos**; **esa comprobación puntual no prueba equivalencia dinámica universal**.
 
 Se ejecuta una instancia real de OpenModelica v1.26.5-minimal sobre seis modelos en un paquete `ArenaR2M`; con ModelicaStandardLibrary 4.0.0 y SystemDynamics 2.1.2 originales según el workflow previo A1. Se conservan los CSV de cada modelo, hashes, logs e identificador de imagen.
+
+### Incidente detectado en la primera ejecución de CI
+
+La [primera corrida RF-02M #41591373557](https://github.com/yudocyudoc/IGC/actions/runs/41591373557) compiló y simuló los **seis modelos**, pero el auditor inicial usaba `inTransit + deliveredTotal` como si `inTransit` fuera todo el material. La prueba de masa falló. La inspección del catálogo E0 original confirmó que **las colas de preparación y despacho tienen stocks con tipos distintos de `Shipment`**. Fue un **error de operador observacional**, no motivo para cambiar las ecuaciones, los parámetros o la tolerancia.
+
+La corrección se limita a reconstruir los puertos `waiting` de **todas las instancias de colas acotadas que aparecen en cada AST** (preparación, despacho y tránsito opcional). El verificador ahora aplica la ecuación de balance completa. Se añadió prueba que obliga a incluir 2, 3 o 4 stocks según composición, y que rechaza considerar `inTransit` como WIP global. Se conserva la primera ejecución fallida como diagnóstico.
 
 ## 4. Qué demuestra y qué no
 
