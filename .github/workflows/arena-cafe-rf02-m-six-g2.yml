@@ -1,0 +1,139 @@
+name: RF-02M — six Short E1 molecular graphs causal G2 engineering
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/r2_m_six_causal_g2.py'
+      - 'tests/test_arena_cafe_rf02_m_six_causal_g2.py'
+      - 'docs/arena_cafe/r2/03_M_SIX_CAUSAL_G2.md'
+      - '.github/workflows/arena-cafe-rf02-m-six-g2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  m-six-real-omc-engineering:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.26.5-minimal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse original frozen A1 public creation timestamps (O0/O1)
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Reuse authentic D engineering G2 input manifest, never recompute peer score
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/d_reference
+      - name: Test all original E1 ASTs, source-only adaptation and false-G2 guards
+        env:
+          RF02_PUBLIC_DIR: artifacts/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_m_six_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Prepare six original E1 graphs in one Modelica package, no selection
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_m_six_causal_g2 prepare \
+            --visible artifacts/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/m6
+          test "$(grep -c 'simulate(' artifacts/m6/simulate.mos)" -eq 6
+          test ! -e artifacts/m6/INVOCATION_STARTED
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("artifacts/d_reference/manifest.json").read_text())
+          m=json.loads(Path("artifacts/m6/manifest.json").read_text())
+          assert d["source_snapshot_hash"]==m["source_snapshot_hash"]
+          assert d["signal_sha256"]==m["causal_stimulus"]["event_rate_signal_sha256"]
+          assert m["candidate_count"]==6 and m["candidate_selection_owner"]=="NONE"
+          assert m["G2"]=="NOT_RUN_UNTIL_REAL_CSV" and m["G3"]=="NOT_RUN"
+          assert m["time_unit"]=="hour" and m["rate_unit"]=="orders/hour"
+          print("RF02M_SAME_EXACT_PUBLIC_EVENT_SIGNAL_AS_D_NO_G2_YET")
+          PY
+      - name: Fetch pinned E1 Modelica dependencies without modifying native packages
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/omc-home" "$RUNNER_TEMP/omc-libs"
+          git clone -q --depth 1 --branch v4.0.0 \
+            https://github.com/modelica/ModelicaStandardLibrary.git \
+            "$RUNNER_TEMP/omc-libs/msl"
+          git clone -q --depth 1 --branch v2.1.2 \
+            https://github.com/modelica-3rdparty/SystemDynamics.git \
+            "$RUNNER_TEMP/omc-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/omc-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/omc-libs/systemdynamics/LICENSE"
+      - name: One real OpenModelica process; six complete E1 native compositions
+        run: |
+          set -euo pipefail
+          docker pull "$OMC_IMAGE"
+          docker image inspect "$OMC_IMAGE" --format '{{json .RepoDigests}}' | tee artifacts/m6/image-digests.json
+          printf 'INVOCATION_STARTED\n' > artifacts/m6/INVOCATION_STARTED
+          set +e
+          docker run --rm -v "$PWD:/repo" -w /repo/artifacts/m6 \
+            -v "$RUNNER_TEMP/omc-home:/omhome" -e HOME=/omhome \
+            -v "$RUNNER_TEMP/omc-libs:/thirdparty:ro" \
+            -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+            "$OMC_IMAGE" omc simulate.mos > artifacts/m6/omc.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > artifacts/m6/exit_code.txt
+          sudo chown -R "$(id -u):$(id -g)" artifacts/m6
+          if [ "$code" -ne 0 ] || grep -Eq 'Error:|Failed to build model|Simulation execution failed|Failed to load' artifacts/m6/omc.log; then
+            cat artifacts/m6/omc.log
+            exit 1
+          fi
+          test "$(find artifacts/m6 -maxdepth 1 -name 'm??_res.csv' | wc -l)" -eq 6
+      - name: Audit six real CSV mass balances and information branch end states
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_m_six_causal_g2 verify \
+            --visible artifacts/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/m6 --out artifacts/m6/g2-report.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          d=json.loads(Path("artifacts/d_reference/manifest.json").read_text())
+          m=json.loads(Path("artifacts/m6/g2-report.json").read_text())
+          assert m["G2"]=="PASS_REAL_OMC_ENGINEERING_ONLY"
+          assert m["candidate_count"]==6 and m["selection_owner"]=="NONE"
+          assert m["G3"]==m["G4"]==m["G5"]=="NOT_RUN" and m["A3"]=="PARTIAL"
+          assert m["scientific_adequacy"]=="NOT_ESTABLISHED"
+          assert m["same_causal_signal_hash_as_D"]==d["signal_sha256"]
+          assert m["no_comparison_with_observed_deliveries"]
+          assert m["no_empirical_parameter_estimation"]
+          assert len(m["material_group_endstate_checks"])==3
+          assert all(row["G2"]=="PASS_ENGINEERING_MASS_CONSERVATION" and
+                     row["max_material_residual_orders"]<=m[
+                       "balance_tolerance_orders_predeclared"]
+                     for row in m["candidates"])
+          print("RF02M_SIX_ORIGINAL_E1_MODELS_REAL_OMC_G2_ENGINEERING_NO_G3")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          path: |
+            artifacts/m6/native.mo
+            artifacts/m6/simulate.mos
+            artifacts/m6/manifest.json
+            artifacts/m6/m??_res.csv
+            artifacts/m6/omc.log
+            artifacts/m6/image-digests.json
+            artifacts/m6/INVOCATION_STARTED
+            artifacts/m6/exit_code.txt
+            artifacts/m6/g2-report.json
+          if-no-files-found: error
+          retention-days: 90
