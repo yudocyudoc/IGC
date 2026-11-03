@@ -1,0 +1,72 @@
+name: F5 pilot instrumentation ingestion — synthetic engineering smoke only
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/pilot_event_capture.py'
+      - 'tests/test_arena_cafe_pilot_event_capture.py'
+      - 'docs/arena_cafe/f5/00_PILOTO_CAPTURA_INSTRUMENTAL.md'
+      - '.github/workflows/arena-cafe-f5-pilot-capture.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluator-only-pilot-ingest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Physical event ingestion, censoring, cross-clock and resource tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_pilot_event_capture.py' -v
+      - name: Write known-synthetic EV01 public FULL evaluator fixture
+        env:
+          PYTHONPATH: "tests:."
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/f5-pilot-capture artifacts/f5-pilot
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          from scripts.arena_cafe import pilot_event_capture as pilot
+          from test_arena_cafe_pilot_event_capture import known_synthetic_events
+          p=Path('/tmp/f5-pilot-capture/SYNTHETIC_FULL_BEFORE_T10.csv')
+          with p.open('w',newline='',encoding='utf-8') as f:
+              w=csv.DictWriter(f,fieldnames=pilot.EVENT_FIELDS)
+              w.writeheader()
+              w.writerows(known_synthetic_events())
+          print("KNOWN_SYNTHETIC_EVALUATOR_ONLY",len(known_synthetic_events()))
+          PY
+          python -m scripts.arena_cafe.pilot_event_capture \
+            --events /tmp/f5-pilot-capture/SYNTHETIC_FULL_BEFORE_T10.csv \
+            --cutoff 10 --source-context synthetic_fixture \
+            --out artifacts/f5-pilot/PILOT_INGEST_SYNTHETIC_ENGINEERING_ONLY.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/f5-pilot/PILOT_INGEST_SYNTHETIC_ENGINEERING_ONLY.json').read_text())
+          p=x['stage_completed_only_descriptives']['preparacion']
+          assert p['completed_services_pre_cutoff']==9
+          assert p['mean_service_minutes_exact']=='15/17'
+          assert p['mean_wait_of_completed_minutes_exact']=='1204/765'
+          assert x['n_cases_created']==15
+          assert x['observed_entry_route_variants']['n_variants']==1
+          assert x['F5_pilot_capture_status']=='ENGINEERING_INGEST_ONLY_NOT_CALIBRATION'
+          assert x['instrumental_error_calibrated'] is False
+          assert x['empirical_compatibility_tolerance'] is None
+          assert x['A3']=='PARTIAL' and x['G4']==x['G5']=='NOT_RUN'
+          assert x['PM_incremental_beyond_B1_B2']=='NOT_ASSESSED'
+          print('F5_PILOT_CAPTURE_PARITY_PASS_NO_EMPIRICAL_SENSOR_CALIBRATION')
+          PY
+      - name: Only release aggregated synthetic engineering report
+        uses: actions/upload-artifact@v4
+        with:
+          name: f5-pilot-capture-synthetic-contract-smoke
+          path: artifacts/f5-pilot/PILOT_INGEST_SYNTHETIC_ENGINEERING_ONLY.json
+          if-no-files-found: error
+          retention-days: 90
