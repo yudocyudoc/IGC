@@ -26,7 +26,7 @@ MIGRATION = ROOT / "migrations/0001_ledger.sql"
 ENTITIES = ("evidence", "assumption", "support", "knowledge")
 STATES = {
     "worker": {
-        "D": {"BLOCKED_ORIGINAL_D_CONTRACT"},
+        "D": {"BLOCKED_NOMINAL_PULSE_MISSING"},
         "B": {"ORIGINAL_ENGINE_OFFLINE_MOCK"},
         "M": {"ORIGINAL_E1_ENUMERATOR_ENGINEERING_ONLY"},
     },
