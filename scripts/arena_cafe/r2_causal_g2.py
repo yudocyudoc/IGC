@@ -150,6 +150,8 @@ def verify(visible,root):
          m["signal_sha256"]==observed["signal"]["event_rate_signal_sha256"],
          "RF02G_INPUT_RECONSTRUCTION_CHANGED")
     need(sha_file(root/"simulate.mos")==m["solver_script_sha256"] and
+         (root/"INVOCATION_STARTED").is_file() and
+         (root/"exit_code.txt").is_file() and
          (root/"INVOCATION_STARTED").read_text().strip()=="INVOCATION_STARTED" and
          (root/"exit_code.txt").read_text().strip()=="0",
          "RF02G_NO_REAL_SOLVER_SUCCESS")
