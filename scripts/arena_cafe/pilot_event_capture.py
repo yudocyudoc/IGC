@@ -201,11 +201,20 @@ def build(events,*,cutoff_minutes_exact,source_context,pairs=()):
         start=events_by_kind["etapa_entrada"]
         paths[case].append(
             (exact(start["t_minutes_exact"]),visit_id,start["stage"]))
+    # A right-censored *prefix* is not a genuine process variant. Even
+    # among delivered cases, only OBSERVED entrances are reported: a source
+    # without coverage proof cannot establish a complete causal path.
     # Route succession across different clocks is NOT a valid timeline.
     # A source's self-declaration of clock ID is NOT a metrological certificate.
     path_counts=(Counter(
         tuple(stage for _,_,stage in sorted(path))
-        for path in paths.values()
+        for case,path in paths.items()
+        if "pedido_entregado" in cases[case]
+    ) if same_clock else Counter())
+    censored_prefixes=(Counter(
+        tuple(stage for _,_,stage in sorted(path))
+        for case,path in paths.items()
+        if "pedido_entregado" not in cases[case]
     ) if same_clock else Counter())
     if same_clock:
         stages=sorted({r["stage"] for r in
@@ -254,11 +263,18 @@ def build(events,*,cutoff_minutes_exact,source_context,pairs=()):
             "WITHHELD_NO_SHARED_CLOCK_OR_PHYSICAL_EVENTS",
         "stage_completed_only_descriptives":measures,
         "observed_entry_route_variants":{
-            "status":"OBSERVED_ENTRY_SUCCESSION_SAME_DECLARED_CLOCK_ONLY"
+            "status":"TERMINALLY_DELIVERED_CASE_ENTRIES_SAME_DECLARED_CLOCK"
                 if same_clock else "WITHHELD_CLOCK_ALIGNMENT_UNPROVEN",
             "n_variants":len(path_counts) if same_clock else None,
             "counts":[{"observed_route":list(path),"cases":count}
                       for path,count in sorted(path_counts.items())],
+            "right_censored_case_prefixes":[
+                {"observed_prefix":list(path),"cases":count}
+                for path,count in sorted(censored_prefixes.items())],
+            "n_right_censored_cases_with_observed_stage_entries":
+                sum(censored_prefixes.values()) if same_clock else None,
+            "censored_prefixes_not_counted_as_process_variants":True,
+            "observed_stage_logging_completeness_proven":False,
             "not_a_process_causal_discovery":True,
         },
         "paired_observation_status":(
