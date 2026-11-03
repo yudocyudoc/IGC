@@ -105,6 +105,19 @@ class G3ConstructionO0(unittest.TestCase):
             g.d_external_grid(self.visible,width=F(1,3),
                               capacities=(1,),responses=(1,),losses=(1,))
 
+    def test_15_all_declared_widths_same_six_and_no_best_width(self):
+        s=g.width_sensitivity(self.visible,capacities=(1.,2.),
+                              responses=(0.5,1.4),losses=(2.,))
+        self.assertEqual(["1/4","1/2","1"],
+                         s["kernel_widths_minutes_exact"])
+        self.assertEqual([6,6,6],
+                         [x["candidate_count"] for x in s["panels"]])
+        self.assertTrue(all(x["best_width_selected"] is False
+                            for x in s["panels"]))
+        self.assertFalse(s["width_optimized_on_O0"])
+        self.assertTrue(s["no_scientific_PASS"])
+
+
 
 @unittest.skipUnless(os.environ.get("G3_PUBLIC_DIR") and
                      os.environ.get("G3_D_G2_DIR"),
