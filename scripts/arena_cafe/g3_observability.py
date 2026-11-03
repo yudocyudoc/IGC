@@ -252,6 +252,24 @@ def build(visible, frozen_g3):
          "G3D_FROZEN_G3_SCOPE_UNTRUSTWORTHY")
     families,source=_fit_models(visible,frozen_g3["D"])
     pairwise,opportunities=_pairwise_representational_gaps(families)
+    def is_separated(pair, measurement):
+        return any(x["measurement"]==measurement and
+                   x["gap_between_near_best_envelopes"]>0
+                   for x in pair["possible_discrimination_by_measure"])
+    cross_loss=[p for p in pairwise if p["a_loss"]!=p["b_loss"]]
+    within_loss=[p for p in pairwise if p["a_loss"]==p["b_loss"]]
+    need(len(cross_loss)==9 and len(within_loss)==6,
+         "G3D_WRONG_LOSS_SUBFAMILY_PAIR_COUNT")
+    for item in opportunities:
+        key=f'{item["measure"]}@{item["time_minutes"]}'
+        item["separated_cross_loss_pairs"]=sum(
+            is_separated(p,key) for p in cross_loss)
+        item["separated_within_loss_group_pairs"]=sum(
+            is_separated(p,key) for p in within_loss)
+        need(item["separated_cross_loss_pairs"]+
+             item["separated_within_loss_group_pairs"]==
+             item["separated_family_pairs"],
+             "G3D_PAIR_GROUP_CLASSIFICATION_DRIFT")
     return {
         "schema":SCHEMA,"source_snapshot_hash":visible["source_snapshot_hash"],
         "parent_G3_sha256":digest(frozen_g3),
@@ -280,6 +298,13 @@ def build(visible, frozen_g3):
         "families":families,
         "pairwise_near_best_parameter_envelope_gaps":pairwise,
         "measurement_opportunities":opportunities,
+        "subfamily_diagnosis":{
+            "pairs_with_different_loss_assumption":len(cross_loss),
+            "pairs_with_same_loss_assumption_but_different_stock_count":len(within_loss),
+            "new_measurements_may_separate_loss_subfamilies_not_stock_count":True,
+            "known_O0_does_not_identify_true_stock_count":True,
+            "separation_is_conditional_on_near_best_grid_and_stop_scenario":True,
+        },
         "measurement_classes_to_consider":[
             "RECORD_CUMULATIVE_DELIVERIES_DURING_KNOWN_ARRIVAL_PAUSE",
             "DIRECTLY_COUNT_TOTAL_ORDERS_PHYSICALLY_IN_PROCESS",
