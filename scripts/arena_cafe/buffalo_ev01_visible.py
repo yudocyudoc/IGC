@@ -22,8 +22,8 @@ MODEL="@cf/zai-org/glm-5.3-flash"
 ORIGINAL_ENGINE="UB-IAD/sd-ai@5199f7b45f3a7ae4a773cb0dd8542940aabe9edc"
 MAX_PROVIDER_CALLS=1
 MAX_MODEL_PROPOSALS=1
-# Existing, unchanged bridge cap when not R1/R2: 3500 tokens; may truncate.
-MAX_COMPLETION_TOKENS=3500
+# Separately scoped EV01 transport budget; historical R1/R2 remain unchanged.
+MAX_COMPLETION_TOKENS=7000
 
 
 def stage(visible,condition):
