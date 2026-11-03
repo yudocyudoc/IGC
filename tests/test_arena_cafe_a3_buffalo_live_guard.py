@@ -30,9 +30,8 @@ class BuffaloEV01OneShotGuardTests(unittest.TestCase):
         self.assertIn("a3-b-ev01-O1-public-only",w)
         self.assertIn("a3-b-ev01-${{ matrix.condition }}-public-only",w)
         self.assertIn('test "$(find artifacts/reference-public -type f | wc -l)" = 1',w)
-        self.assertIn("BUFFALO_EV01_INITIAL: EV01_ONE_SHOT",w)
         self.assertIn("BUFFALO_CF_MODE: live",w)
-        self.assertIn("BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_EV01",w)
+        self.assertIn("BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL",w)
         self.assertIn("original Buffalo",w)
         self.assertNotIn("retries:",w)
         self.assertNotIn("actions: write",w)
@@ -47,8 +46,7 @@ class BuffaloEV01OneShotGuardTests(unittest.TestCase):
                 env.pop(k,None)
             env.update({
                 "BUFFALO_CF_MODE":"live",
-                "BUFFALO_EV01_INITIAL":"EV01_ONE_SHOT",
-                "BUFFALO_CF_AUTH":"RUN_SINGLE_CF_AI_EV01",
+                "BUFFALO_CF_AUTH":"RUN_SINGLE_CF_AI_MODEL",
                 "BUFFALO_OUTPUT":str(out),
             })
             result=subprocess.run(
@@ -57,7 +55,7 @@ class BuffaloEV01OneShotGuardTests(unittest.TestCase):
             self.assertNotEqual(0,result.returncode)
             receipt=json.loads((out/"receipt.json").read_text())
             self.assertEqual("OPENROUTER_CF_BRIDGE_FAILURE",receipt["status"])
-            self.assertEqual("EV01_LIVE_NEW_EXPLICIT_FIRST_DISPATCH_REQUIRED",
+            self.assertEqual("CLOUDFLARE_LIVE_NOT_AUTHORIZED",
                              receipt["error_message"])
             self.assertEqual(0,receipt["live_provider_calls"])
             self.assertEqual(0,receipt["intercepted_http_calls"])
