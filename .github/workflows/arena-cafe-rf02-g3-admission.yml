@@ -1,0 +1,101 @@
+name: RF-02P — Prospective G3 admission and arm-specific abstention (read-only)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/r2_g3_admission_policy.py'
+      - 'tests/test_arena_cafe_rf02_g3_admission_policy.py'
+      - 'docs/arena_cafe/r2/05_G3_ADMISSION_ABSTENTION_PROTOCOL.md'
+      - '.github/workflows/arena-cafe-rf02-g3-admission.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  prereg-abstention:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch only frozen A1 public O0 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Fetch approved RF-02H engineering-only H_j evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02h-twelve-hj-parameter-g3-readiness-blocker
+          run-id: 41593266438
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/hj
+      - name: Fetch six frozen D engineering G2 traces without OMC
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/d_g2
+      - name: Fetch six frozen M engineering G2 traces without OMC
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          run-id: 41591727790
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/m_g2
+      - name: Independently re-audit original CSVs and adversarial admission controls
+        env:
+          RF02_PUBLIC_DIR: artifacts/public
+          RF02_HJ_REPORT: artifacts/hj/HJ_PARAMETER_GATE.json
+          RF02_D_G2_DIR: artifacts/d_g2
+          RF02_M_G2_DIR: artifacts/m_g2
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_g3_admission_policy.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Publish only method-specific abstention and future protocol draft
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_g3_admission_policy \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --hj-report artifacts/hj/HJ_PARAMETER_GATE.json \
+            --out artifacts/RF02P_ADMISSION_ABSTENTION.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("artifacts/RF02P_ADMISSION_ABSTENTION.json").read_text())
+          assert x["result"]=="ABSTAIN_G3_WITH_ARM_SPECIFIC_REASONS"
+          assert x["G3"]==x["G4"]==x["G5"]=="NOT_RUN"
+          assert x["A3"]=="PARTIAL"
+          assert x["R2"]=="PARTIAL_CONTRACTS_ENGINEERING_ONLY"
+          assert x["scientific_measurement_equivalence"]=="NOT_ESTABLISHED"
+          assert x["scientific_parameter_admission"]=="NOT_ESTABLISHED"
+          assert {a:x["arms"][a]["candidate_count"] for a in ("D","M","B")}=={
+              "D":6,"M":6,"B":0}
+          assert x["arms"]["M"]["native_component_state"]==(
+              "ORIGINAL_E1_BASE_SIX_FULL_AST_ENUMERATED")
+          assert x["arms"]["M"]["method_native_parameter_fit"]==(
+              "NOT_REQUIRED_BY_SHORT_E1_ENUMERATOR")
+          assert x["arms"]["D"]["method_native_parameter_fit"]==(
+              "DOES_NOT_EXIST_IN_ORIGINAL_D")
+          assert x["preregistration_candidate"]["development_O0_is_a_blind_holdout"] is False
+          assert x["preregistration_candidate"]["task"]==(
+              "OFFLINE_CONDITIONAL_REPLAY_WITH_EXOGENOUS_ARRIVALS_KNOWN")
+          assert x["prospective_evidence_metadata"] is None
+          assert x["unregistered_g3_actions_permitted"]==[]
+          assert x["no_scores"] and x["no_parameter_fits"] and x["no_private_data_access"]
+          assert x["provider_calls"]==x["omc_invocations"]==0
+          print("RF02P_G3_FAIL_CLOSED_NATIVE_D_M_ABSTAIN_B_NOT_RUN_NEW_WORLD_REQUIRED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf02p-arm-specific-g3-abstention-and-future-prereg
+          path: artifacts/RF02P_ADMISSION_ABSTENTION.json
+          if-no-files-found: error
+          retention-days: 90
