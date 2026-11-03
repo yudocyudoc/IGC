@@ -24,6 +24,7 @@ event_id,case_id,visit_id,event_type,stage,resource_id,t_minutes_exact,source,cl
 - Todo registro tiene que estar en **[0,cutoff)**. No se incorporan eventos posteriores para completar trayectorias de servicio. A la izquierda y hasta el corte, entrada sin inicio indica espera censurada; inicio sin fin indica servicio censurado; fin sin inicio es inconsistente y se rechaza.
 - La herramienta no impone cuatro estaciones, tasas, capacidades, servidores, rutas únicas ni tiempos de servicio fijos. Sí verifica recursos que no pueden atender dos servicios simultáneos bajo un reloj compartido, y que una visita completa tenga entrada→inicio→fin consistentes.
 - Con **un único reloj declarado** calcula, por etapa observada, servicios completados antes del corte y medias de espera y servicio **solo de servicios completados**. No llama «tiempo medio de todos los pedidos» a esa media censurada.
+- La enumeración de secuencias de entradas físicas **separa los casos con entrega terminal observada de los pedidos todavía pendientes al corte**: estos últimos tienen prefijos censurados que **no son variantes de proceso**. Incluso una secuencia de un pedido entregado prueba solo las actividades **registradas**, no cobertura completa de todas las etapas ocultas. Ninguna de estas cifras constituye por sí sola descubrimiento causal ni ganancia atribuible a PM.
 - Con **múltiples relojes sin calibración externa**, retiene la señal de falta de sincronía y **no publica medias por etapa ni orden temporal entre etapas** que mezclen esos relojes. Las rutas observadas con un solo reloj siguen siendo sucesiones registradas, no topología causal demostrada.
 
 ## Contraste voluntario entre dos instrumentos
@@ -58,7 +59,7 @@ La CI invoca el generador original de eventos EV-01 solo en el **job del evaluad
 - 9 preparaciones completadas antes del corte;
 - media exacta de duración `15/17` minutos;
 - media exacta de espera (solo las nueve terminadas) `1204/765` minutos;
-- una ruta observada, sin variantes para este control;
+- una secuencia observada entre los **8 pedidos ya entregados** al corte, con los prefijos truncados de pedidos pendientes etiquetados como **censurados y no como variantes**;
 - ausencia de dato suficiente para calibrar error físico, aunque los eventos sintéticos sean exactos.
 
 Las pruebas adversariales cubren falta de un inicio físico, campos KDS disfrazados, eventos futuros, servicio solapado por un mismo recurso, visitas repetidas legítimas y mezcla de relojes. Los reportes sintéticos son **evaluador-only**; la CI publica solo el resumen agregado, no el log completo ni la física privada al productor.
