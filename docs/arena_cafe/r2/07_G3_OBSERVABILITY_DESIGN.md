@@ -28,14 +28,22 @@ La CI RF-03D reconstituyó las 450 combinaciones previas para 6 estructuras y en
 
 | Magnitud / tiempo | Pares con envolventes que no se intersectan (de 15) | Interpretación limitada |
 |---|---:|---|
-| Entregas adicionales t=3,5,7,9,12,15 | **0/15** en cada tiempo | Solo densificar entregas hasta 15 min no distingue ninguna pareja bajo esta malla |
-| Entregas en t=20 con pausa de nuevas llegadas | **9/15** | Distingue únicamente estructuras con pérdidas de aquellas sin pérdidas |
+| Entregas adicionales t=3,5,7,9,12,15 | **0/15** en cada tiempo | Ninguna medición **escalar** examinada certifica separación de envolventes; la secuencia conjunta no se ha evaluado aquí |
+| Entregas en t=20 con pausa de nuevas llegadas | **9/15** | Separa envolventes escalares de 9 parejas con/sin pérdida **dentro de la malla de `lossTime ≤ 20`**, sin garantía fuera de ella |
 | Pérdidas acumuladas modeladas en t=10 | **9/15** | Separación algebraica de las 9 parejas con/sin sumidero, si realmente pudiera observarse la magnitud |
-| Inventario total en proceso t=15 | **8/15** | Separa 8 de las 9 parejas con/sin sumidero, sin separar distinto número de stocks dentro de un mismo grupo |
+| Inventario total en proceso t=15 | **8/15** | Separa intervalos escalares en 8 parejas con/sin sumidero; un solapamiento escalar no descarta separación conjunta |
 
-Las 15 comparaciones consisten en **9 parejas entre estructuras con/sin pérdida** (tres por lado), y **6 parejas entre estructuras con igual condición de pérdida pero diferente número de stocks**. Bajo estas envolventes, **ninguna de las mediciones examinadas distingue esas seis parejas del segundo grupo**. Por tanto, no hemos identificado el número verdadero de stocks.
+Las 15 comparaciones consisten en **9 parejas entre estructuras con/sin pérdida** (tres por lado), y **6 parejas entre estructuras con igual condición de pérdida pero diferente número de stocks**. Bajo estas envolventes, **ninguna medición escalar examinada certificó separación de las seis parejas del segundo grupo**. Esto **no permite concluir** que una secuencia de mediciones no pueda distinguirlas. El número verdadero de stocks tampoco está identificado.
 
-La evaluación es condicional al supuesto de interrupción de nuevas llegadas, al kernel medio minuto, a los parámetros de la malla y al criterio exploratorio de proximidad al mínimo. No equivale a una demostración general de no-identificabilidad estructural ni a potencia estadística.
+La evaluación es condicional al supuesto de interrupción de nuevas llegadas, al kernel de medio minuto, al catálogo de parámetros (en especial `lossTime ≤ 20 min`) y al criterio exploratorio relativo `MAE ≤ mínimo propio + 0.25`. Ese criterio **no demuestra compatibilidad observacional absoluta** frente a un margen de sensor común. No equivale a una demostración general de no-identificabilidad estructural ni a potencia estadística.
+
+## Enmienda tras revisión Astra · RF146-01/02/03
+
+La comparación RF-03D es **marginal**: compara `[min,max]` **por instante**. Intervalos solapados en cada instante **no prueban** que los vectores completos de varias mediciones se solapen. El contraejemplo del revisor usa los vectores A={(1,2),(2,3)} y B={(1,3),(2,2)}: mismas envolventes por columna y distancia conjunta mínima en norma máxima de **1 pedido**. Este contraejemplo no es un resultado experimental de D.
+
+La aparente separación de modelos con/sin pérdida depende del máximo original `lossTime=20`. La ecuación nativa `lossRate=s1/lossTime` permite pérdidas arbitrariamente pequeñas si `lossTime` puede crecer. Sin una cota operacional, los 9/15 no demuestran distinción robusta.
+
+Las envolventes relativas de `MAE ≤ mínimo propio +0.25` tampoco representan compatibilidad absoluta con observaciones: ninguna tolerancia empírica de sensor se ha establecido. RF-03E hace los cálculos de vectores conjuntos y sensibilidad paramétrica, sin rebautizar un margen hipotético como calibración real.
 
 ## Qué aportaría cada nuevo registro
 
@@ -61,4 +69,4 @@ python -m scripts.arena_cafe.g3_observability \
   --out artifacts/G3_OBSERVABILITY_DESIGN.json
 ```
 
-**Límites:** no se elige ganador D, M o B. No se inventan muestras nuevas. La evaluación de construcción G3 sigue exploratoria; G4 y G5 no se han ejecutado; A3 permanece parcial. Lo siguiente depende de resultados de esta evaluación: decidir **qué medición física mínima puede realmente reducir las alternativas**.
+**Límites:** no se elige ganador D, M o B. No se inventan muestras nuevas. La evaluación de construcción G3 sigue exploratoria; G4 y G5 no se han ejecutado; A3 permanece parcial. Antes de elegir sensores, el paso siguiente es **comparar vectores conjuntos de cada parametrización**, evaluar márgenes hipotéticos de medición y examinar la sensibilidad cuando se extiende `lossTime`. El incremento RF-03E aborda ese cálculo; sus resultados tampoco equivalen a una identificación experimental.
