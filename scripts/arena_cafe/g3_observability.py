@@ -115,7 +115,7 @@ def _gap(left, right):
                      right["min"] - left["max"]), 6)
 
 
-def _fit_models(visible, expected):
+def _fit_models(visible, expected, *, return_ensembles=False):
     """Enumerate full disclosed G3 search space and check previous G3 results."""
     y=g3.public_observations(visible)
     r2.original_source_checks()
@@ -130,6 +130,7 @@ def _fit_models(visible, expected):
     times=[F(x) for x in s["signal"]["event_times_minutes_exact"]]
     width=F(s["signal"]["width_minutes_exact"])
     outputs=[]
+    ensembles={}
     best_from_previous={
         x["native_structure_sha256"]:x for x in expected["candidates"]
     }
@@ -181,6 +182,12 @@ def _fit_models(visible, expected):
               if x["mae"] <= winner["mae"]+g3.NEAR_BEST_MAE_DELTA]
         need(len(near)==prior["near_best_grid_count"],
              "G3D_NEAR_BEST_SET_DRIFT")
+        if return_ensembles:
+            # Preserve temporal covariance: all values share ONE parameter vector.
+            # Never form a synthetic trajectory from independent per-time extrema.
+            ensembles[structure["structure_hash"]]={
+                "all":candidates,"near":near,
+            }
         outputs.append({
             "candidate_id":structure["id"],
             "native_structure_sha256":structure["structure_hash"],
@@ -199,6 +206,8 @@ def _fit_models(visible, expected):
             },
             "near_best_set_is_not_a_confidence_interval":True,
         })
+    if return_ensembles:
+        return outputs,s,ensembles
     return outputs,s
 
 
@@ -301,9 +310,13 @@ def build(visible, frozen_g3):
         "subfamily_diagnosis":{
             "pairs_with_different_loss_assumption":len(cross_loss),
             "pairs_with_same_loss_assumption_but_different_stock_count":len(within_loss),
-            "new_measurements_may_separate_loss_subfamilies_not_stock_count":True,
+            "scalar_projections_separate_some_loss_subfamilies_only":True,
+            "joint_sequence_separability_NOT_EVALUATED_IN_RF03D":True,
             "known_O0_does_not_identify_true_stock_count":True,
+            "no_scalar_gap_cannot_prove_joint_indistinguishability":True,
             "separation_is_conditional_on_near_best_grid_and_stop_scenario":True,
+            "loss_time_upper_bound_not_operationally_established":True,
+            "near_best_relative_MAE_is_not_absolute_observational_compatibility":True,
         },
         "measurement_classes_to_consider":[
             "RECORD_CUMULATIVE_DELIVERIES_DURING_KNOWN_ARRIVAL_PAUSE",
