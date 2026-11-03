@@ -54,8 +54,14 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: a3-b-ev01-O0-and-O1-public-only
-          path: artifacts/public/
+          name: a3-b-ev01-O0-public-only
+          path: artifacts/public/O0_VISIBLE.json
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-O1-public-only
+          path: artifacts/public/O1_VISIBLE.json
           if-no-files-found: error
           retention-days: 90
 
@@ -71,7 +77,6 @@ jobs:
     environment: a3-buffalo-cloudflare
     permissions:
       contents: read
-      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,7 +102,7 @@ jobs:
           test ! -e historico
       - uses: actions/download-artifact@v4
         with:
-          name: a3-b-ev01-O0-and-O1-public-only
+          name: a3-b-ev01-${{ matrix.condition }}-public-only
           path: artifacts/reference-public
       - uses: actions/setup-python@v5
         with:
@@ -105,6 +110,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify only one condition artifact is visible
+        run: test "$(find artifacts/reference-public -type f | wc -l)" = 1
       - name: Convert ONLY this condition's public evidence for original Buffalo
         env:
           CONDITION: ${{ matrix.condition }}
