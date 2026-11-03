@@ -24,6 +24,8 @@ on:
       - 'scripts/arena_b_openrouter_cloudflare.mjs'
       - 'tests/test_arena_b_cf_protocol_adapter.mjs'
       - 'tests/test_arena_cafe_a3_buffalo_ev01_visible.py'
+      - 'tests/test_arena_cafe_a3_buffalo_live_guard.py'
+      - '.github/workflows/arena-cafe-a3-b-cloudflare-one-shot.yml'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
   workflow_dispatch:
 permissions:
@@ -56,6 +58,8 @@ jobs:
           node-version: '22'
       - name: Test original Cloudflare transport and separate EV01 7K cap
         run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
+      - name: Verify live one-shot authorization blocks all unapproved calls
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_live_guard.py' -v
       - name: Adversarial B EV01 POS and stage-scope tests, no live provider
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_ev01_visible.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
