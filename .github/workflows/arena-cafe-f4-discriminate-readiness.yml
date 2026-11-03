@@ -1,0 +1,78 @@
+name: F4 DISCRIMINATE-01 — evidence obligations, not F5 or sensor calibration
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f4_discriminate_readiness.py'
+      - 'tests/test_arena_cafe_f4_discriminate_readiness.py'
+      - 'docs/arena_cafe/f4/02_DISCRIMINATE01_READINESS.md'
+      - '.github/workflows/arena-cafe-f4-discriminate-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  explicit-nonready-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Get original public O0/O1 — same physical EV01 world
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/a1
+      - name: Get original F4 constructive physical pair
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-known-o0-constructive-rival-mechanism-witness
+          run-id: 41731608453
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/f4
+      - name: Get exact O1 measurement-operator result; no replay
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-o1-preparation-measurement-operator
+          run-id: 41734201683
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/hj
+      - name: DISCRIMINATE-01 exact minimal allowances, adversarial tests
+        env:
+          DISC01_O0: artifacts/a1/O0_VISIBLE.json
+          DISC01_O1: artifacts/a1/O1_VISIBLE.json
+          DISC01_WITNESS: artifacts/f4/F4_RIVAL_BOTTLENECKS_DEVELOPMENT.json
+          DISC01_HJ: artifacts/hj/F4_O1_PREPARATION_OPERATOR.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f4_discriminate_readiness.py' -v
+          python -m scripts.arena_cafe.f4_discriminate_readiness \
+            --o0 "$DISC01_O0" --o1 "$DISC01_O1" \
+            --witness "$DISC01_WITNESS" --o1-operator "$DISC01_HJ" \
+            --out artifacts/DISCRIMINATE01_READINESS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/DISCRIMINATE01_READINESS.json').read_text())
+          assert x['F5_readiness']=='NOT_READY'
+          assert x['A3']=='PARTIAL' and x['G4']==x['G5']=='NOT_RUN'
+          assert x['no_empirical_allowance_chosen']
+          assert x['no_inferred_sensor_error_from_deterministic_residuals']
+          assert x['no_model_selection_no_parameter_grid_no_new_world']
+          assert x['no_DES_PM4Py_OMC_or_provider_calls']
+          assert x['coordinatewise_allowance_needed_to_avoid_excluding_BOTH_FIXED_hypotheses']['count_orders_exact']=='6'
+          assert x['coordinatewise_allowance_needed_to_avoid_excluding_BOTH_FIXED_hypotheses']['mean_service_minutes_exact']=='24/85'
+          assert x['PM_attribution_or_ablation']=='NOT_RUN'
+          print('DISCRIMINATE01_NONREADY_WITH_EXACT_THRESHOLD_OBLIGATIONS_NO_G5')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discriminate01-f4-readiness-known-evidence
+          path: artifacts/DISCRIMINATE01_READINESS.json
+          if-no-files-found: error
+          retention-days: 90
