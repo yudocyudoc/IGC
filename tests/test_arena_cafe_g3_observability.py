@@ -107,6 +107,25 @@ class IdentifiabilityO0(unittest.TestCase):
             self.assertAlmostEqual(15.,
                 f["best_trajectory"][20]["input_mass"],delta=1e-7)
 
+    def test_125_loss_distinction_does_not_identify_stock_count(self):
+        r=self.report
+        group=r["subfamily_diagnosis"]
+        self.assertEqual(9,group["pairs_with_different_loss_assumption"])
+        self.assertEqual(6,group[
+            "pairs_with_same_loss_assumption_but_different_stock_count"])
+        for measure,time,expected in (
+            ("lost_cumulative",10,9),
+            ("delivered_cumulative",20,9),
+            ("total_wip",15,8),
+            ("delivered_cumulative",15,0),
+        ):
+            panel=next(x for x in r["measurement_opportunities"]
+                       if x["measure"]==measure and
+                          x["time_minutes"]==time)
+            self.assertEqual(expected,panel["separated_cross_loss_pairs"])
+            self.assertEqual(0,panel["separated_within_loss_group_pairs"])
+        self.assertTrue(group["known_O0_does_not_identify_true_stock_count"])
+
     def test_13_tampered_previous_grid_is_rejected(self):
         bad=deepcopy(self.prior)
         bad["D"]["candidates"][0]["best_in_grid"]["mae"]+=0.5
