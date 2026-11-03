@@ -22,8 +22,8 @@ MODEL="@cf/zai-org/glm-5.3-flash"
 ORIGINAL_ENGINE="UB-IAD/sd-ai@5199f7b45f3a7ae4a773cb0dd8542940aabe9edc"
 MAX_PROVIDER_CALLS=1
 MAX_MODEL_PROPOSALS=1
-# Separately scoped EV01 transport budget; historical R1/R2 remain unchanged.
-MAX_COMPLETION_TOKENS=7000
+# Existing F0-pinned bridge permits 3500 tokens outside historical R1/R2.
+MAX_COMPLETION_TOKENS=3500
 
 
 def stage(visible,condition):
@@ -142,7 +142,7 @@ def stage(visible,condition):
         "buffalo_visible_hash":digest(result),
         "model":MODEL,"native_original_engine":ORIGINAL_ENGINE,
         "provider_calls":0,"possible_later_max_provider_calls":MAX_PROVIDER_CALLS,
-        "max_output_tokens_EV01_scoped_transport":MAX_COMPLETION_TOKENS,
+        "max_output_tokens_existing_frozen_bridge":MAX_COMPLETION_TOKENS,
         "original_engine_unchanged":True,
         "public_pos_orders":15,
         "input_reconstruction_is_declared_assumption":True,
