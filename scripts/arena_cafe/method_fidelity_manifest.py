@@ -5,7 +5,7 @@ Two tracks are disjoint:
   NATIVE_METHOD: D rejected input, M original E1 enumeration, B offline mock.
 
 Consumes unchanged original worker receipts, six actual scoped SQLite ledgers,
-four audited OpenModelica parity outputs and the frozen F0 source identity.
+the prior F3 report OF four OpenModelica parity outputs and frozen F0 identity.\nRF-01 does NOT re-open or re-hash original solver CSV files.
 Does not call solvers, providers, model generators or hidden DES.
 """
 from __future__ import annotations
@@ -14,13 +14,14 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 from scripts.arena_cafe import f3_adjudicate as f3
 from scripts.arena_cafe.native_handoff import validate_a1_visible, need
 from scripts.arena_v0_contract import canonical, digest
 
-SCHEMA="igc-arena-method-fidelity/1.0"
+SCHEMA="igc-arena-method-fidelity/1.1"
 REPORT="igc-arena-rf01-fidelity-classification/1.0"
 ARMS=("D","B","M")
 CONDITIONS=("O0","O1")
@@ -99,34 +100,64 @@ def verify_m_universe(receipt):
 
 
 def _fields(visible,condition,arm):
+    """Observed instrument access is NOT original-engine cognitive use.
+
+    These operations are source-attested STATIC CODE observations, not a runtime
+    proof of inner-model reasoning. The original worker receipt + baseline SHA
+    authenticates the particular path; status values cannot be freely edited.
+    """
     fields=list(FIELDS)
     if condition=="O1":
         fields.append("construction.physical_observation")
     if arm=="D":
+        adapter_read=["construction.observation_series"]
+        native_read=[]  # validate_case rejects schema before native data use.
+        routed=[]
         statuses={
-            "construction.pos_arrival_events":"D_NATIVE_INPUT_UNSUPPORTED",
-            "construction.observation_series":"OBSERVATION_PORT_CONSTRAINT_ONLY",
-            "construction.physical_observation":"UNMAPPED_TO_GENERIC_D_STOCKS",
+            "construction.pos_arrival_events":
+               ("ARENA_HANDOFF","POS_EVENT_VISIBLE_D_NATIVE_CONTRACT_REJECTED",
+                "A1_HANDOFF_VALIDATED_NOT_D_GENERATOR_USED"),
+            "construction.observation_series":
+               ("ARENA_OBSERVATION_PORT","OBSERVATION_CONSTRAINT_CONSTRUCTED",
+                "ADAPTER_READ_ONLY_NOT_D_NATIVE_READ"),
+            "construction.physical_observation":
+               ("ARENA_HANDOFF","VALIDATED_ONLY_NOT_MAPPED_TO_D_STOCKS",
+                "NO_D_NATIVE_PHYSICAL_PORT"),
         }
-        read=["construction.observation_series"]
         interface="UNSUPPORTED_DOCUMENTED"
     elif arm=="M":
+        adapter_read=["construction.observation_series"]
+        if condition=="O1":
+            adapter_read.append("construction.physical_observation")
+        native_read=[]  # E1 graph enumeration is registry-driven.
+        routed=[]
         statuses={
-            "construction.pos_arrival_events":"NOT_USED_IN_E1_GRAPH_ENUMERATION",
-            "construction.observation_series":"NOT_USED_IN_E1_GRAPH_ENUMERATION",
-            "construction.physical_observation":"UNMAPPED_TO_E1_PARAMETER_OR_G3",
+            "construction.pos_arrival_events":
+               ("ARENA_HANDOFF","POS_EVENT_VALIDATED_NOT_E1_GRAPH_GENERATOR_USED",
+                "E1_NO_DATA_DEPENDENT_GRAPH_SELECTION"),
+            "construction.observation_series":
+               ("ARENA_OBSERVATION_PORT","TYPED_SOURCE_RECEIPT_OPERATOR_BUILT",
+                "E1_GRAPH_ENUMERATOR_NOT_DATA_DRIVEN"),
+            "construction.physical_observation":
+               ("ARENA_OBSERVATION_PORT","PREPARATION_SERVICE_AGGREGATE_MAPPED",
+                "NO_EQUIVALENT_E1_SERVICE_TIME_PARAMETER_PROVEN"),
         }
-        read=[]
         interface="UNSUPPORTED_DOCUMENTED_FOR_OBSERVATION_DRIVEN_SELECTION"
     else:
+        adapter_read=[]
+        native_read=[] # Mock prompt was sent, no LLM cognitive-use proof.
+        routed=fields[:]
         statuses={
-            "construction.pos_arrival_events":"SENT_AS_MOCK_PROMPT_NO_LIVE_USE_PROOF",
-            "construction.observation_series":"SENT_AS_MOCK_PROMPT_NO_LIVE_USE_PROOF",
-            "construction.physical_observation":"SENT_AS_MOCK_PROMPT_NO_LIVE_USE_PROOF",
+            x:("BUFFALO_OFFLINE_TRANSPORT","MOCK_PROMPT_TRANSPORT_ONLY",
+               "NO_LIVE_PROVIDER_OR_COGNITIVE_FIELD_USE_PROOF")
+            for x in fields
         }
-        read=[]
         interface="TRANSPORT_ONLY_LLM_COGNITIVE_USE_NOT_VERIFIED"
-    return fields,read,[{"field":x,"status":statuses[x]} for x in fields],interface
+    operations=[{"field":x,"actor":statuses[x][0],
+                 "operation":statuses[x][1],"status":statuses[x][2],
+                 "evidence_level":"SOURCE_PATH_AND_RECEIPT_NOT_RUNTIME_COGNITIVE_TRACE"}
+                for x in fields]
+    return fields,adapter_read,native_read,routed,operations,interface
 
 
 def classify_worker(visible,arm,condition,receipt,verified,baseline):
@@ -181,7 +212,7 @@ def classify_worker(visible,arm,condition,receipt,verified,baseline):
         scope_out=["REAL_CLOUDFLARE_INFERENCE","NATIVE_PROPOSAL",
                    "REAL_FEEDBACK_REVISION","G0_G3_EV01"]
         abst="NOT_APPLICABLE_NO_LIVE_METHOD_ATTEMPT"
-    fields,read,operations,interface=_fields(visible,condition,arm)
+    fields,adapter_read,native_read,routed,operations,interface=_fields(visible,condition,arm)
     return {
         "schema":SCHEMA,"track":"NATIVE_METHOD",
         "arm_id":arm,"condition_id":condition,
@@ -192,7 +223,9 @@ def classify_worker(visible,arm,condition,receipt,verified,baseline):
         "source_snapshot_hash":visible["source_snapshot_hash"],
         "visible_input_sha":digest(visible),
         "input_fields_present":fields,
-        "input_fields_read":read,
+        "adapter_fields_read":adapter_read,
+        "native_fields_read":native_read,
+        "transport_fields_submitted":routed,
         "input_fields_used_or_rejected":operations,
         "interface_status":interface,
         "method_capabilities_in_scope":scope_in,
@@ -207,6 +240,8 @@ def classify_worker(visible,arm,condition,receipt,verified,baseline):
         "calibration_policy":"NOT_RUN",
         "abstention_origin":abst,
         "execution_state":state,
+        "native_component_execution_complete":arm=="M",
+        "arena_task_complete":False,
         "method_route_complete":False,
         "method_complete":False,
         "provider_calls":0,"omc_invocations":0,
@@ -248,6 +283,9 @@ def classify_parity(native,arm,condition,baseline):
         "arm_id":arm,"condition_id":condition,
         "native_model_sha256":native["native_model_sha256"],
         "trace_sha256":native["trace_sha256"],
+        "source_f3_run_id":"41575917332",
+        "source_f3_report_artifact_id":"13202639585",
+        "source_native_csv_rehashed_this_rf01_run":False,
         "model_id":native["native_model"],
         "source_snapshot_hash":native["source_snapshot_hash"],
         "full_candidate_hash":native["full_candidate_hash"],
@@ -261,6 +299,8 @@ def classify_parity(native,arm,condition,baseline):
             ["E1_PARAMETER_PRIOR_IN_D_PARITY"] if arm=="D" else []),
         "native_generation_component_executed":True,
         "real_omc_simulated":True,
+        "native_component_execution_complete":True,
+        "arena_task_complete":False,
         "method_route_complete":False,"method_complete":False,
         "calibration":"NOT_RUN","G0":"ENGINEERING_NATIVE_RENDER",
         "G1":"ENGINEERING_DECLARED_BALANCE",
