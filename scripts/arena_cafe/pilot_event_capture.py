@@ -159,14 +159,15 @@ def build(events,*,cutoff_minutes_exact,source_context,pairs=()):
     # service boundaries share a clock. No claims about unlogged availability.
     by_resource=defaultdict(list)
     for (case,visit_id),rows in visits.items():
-        if "servicio_fin" not in rows:
+        if "servicio_inicio" not in rows:
             continue
-        start,end=rows["servicio_inicio"],rows["servicio_fin"]
-        if start["clock_id"]!=end["clock_id"]:
+        start=rows["servicio_inicio"]
+        finish=rows.get("servicio_fin")
+        if finish and start["clock_id"]!=finish["clock_id"]:
             continue
+        end_time=exact(finish["t_minutes_exact"]) if finish else cutoff
         by_resource[(start["clock_id"],start["resource_id"])].append(
-            (exact(start["t_minutes_exact"]),
-             exact(end["t_minutes_exact"]),case,visit_id))
+            (exact(start["t_minutes_exact"]),end_time,case,visit_id))
     for intervals in by_resource.values():
         ordered=sorted(intervals)
         need(all(left[1]<=right[0] for left,right in
@@ -200,19 +201,18 @@ def build(events,*,cutoff_minutes_exact,source_context,pairs=()):
         start=events_by_kind["etapa_entrada"]
         paths[case].append(
             (exact(start["t_minutes_exact"]),visit_id,start["stage"]))
-    # A route is observed *entry-event succession*, not causal structure.
-    path_counts=Counter(
+    # Route succession across different clocks is NOT a valid timeline.
+    # A source's self-declaration of clock ID is NOT a metrological certificate.
+    path_counts=(Counter(
         tuple(stage for _,_,stage in sorted(path))
         for path in paths.values()
-    )
-    # All observations are in a common clock only in this branch.
-    # A source's self-declaration of clock ID is NOT a metrological certificate.
+    ) if same_clock else Counter())
     if same_clock:
         stages=sorted({r["stage"] for r in
                        events if r["event_type"] in PHYSICAL})
         for stage in stages:
-            stage_rows=[r for v in visits.values() for r in [v] if
-                        r["etapa_entrada"]["stage"]==stage]
+            stage_rows=[v for v in visits.values() if
+                        v["etapa_entrada"]["stage"]==stage]
             completed=[v for v in stage_rows if "servicio_fin" in v]
             starts=[v for v in stage_rows if "servicio_inicio" in v]
             service=[exact(v["servicio_fin"]["t_minutes_exact"])-
@@ -254,7 +254,9 @@ def build(events,*,cutoff_minutes_exact,source_context,pairs=()):
             "WITHHELD_NO_SHARED_CLOCK_OR_PHYSICAL_EVENTS",
         "stage_completed_only_descriptives":measures,
         "observed_entry_route_variants":{
-            "n_variants":len(path_counts),
+            "status":"OBSERVED_ENTRY_SUCCESSION_SAME_DECLARED_CLOCK_ONLY"
+                if same_clock else "WITHHELD_CLOCK_ALIGNMENT_UNPROVEN",
+            "n_variants":len(path_counts) if same_clock else None,
             "counts":[{"observed_route":list(path),"cases":count}
                       for path,count in sorted(path_counts.items())],
             "not_a_process_causal_discovery":True,
