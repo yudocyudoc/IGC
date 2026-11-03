@@ -64,13 +64,16 @@ def _assert_hj(h,visible):
          h.get("public_source_snapshot_hash")==visible["source_snapshot_hash"] and
          h.get("public_view_sha256")==digest(visible),
          "RF02P_HJ_SOURCE_NOT_AUTHENTIC")
+    rows=h.get("candidates")
+    need(type(rows) is list and len(rows)==12,
+         "RF02P_CANDIDATE_UNIVERSE_NOT_TWELVE")
     need(h.get("artifact_sources")=={
         "A1_public_run_id":hj.A1_ORIGIN_RUN,
         "D_G2_engineering_run_id":hj.D_ORIGIN_RUN,
         "M_G2_engineering_run_id":hj.M_ORIGIN_RUN,
     } and h.get("G2_source_audits_recomputed") is True and
          h.get("candidate_count")==12 and
-         h.get("common_signal_sha256")==h.get("candidates",[{}])[0].get(
+         h.get("common_signal_sha256")==rows[0].get(
              "input_signal_sha256") and
          _valid_hash(h.get("common_signal_sha256")),
          "RF02P_HJ_NOT_FROZEN_G2_12")
@@ -146,7 +149,7 @@ def _dataset(meta,part):
              "RF02P_EVALUATION_OUTCOMES_NOT_SEALED")
 
 
-def validate_prospective_metadata(spec,existing_hj):
+def validate_prospective_metadata(spec,existing_hj,existing_world_id):
     """Strict *metadata* sanity gate; never certifies scientific eligibility.
 
     This function does not contact source systems, authenticate independent
@@ -163,6 +166,7 @@ def validate_prospective_metadata(spec,existing_hj):
          spec["evaluation_outcomes_became_visible_before_registration"] is False and
          spec["any_candidate_or_parameter_selected_from_evaluation_outcomes"] is False,
          "RF02P_PROSPECTIVE_METADATA_SCOPE_INVALID")
+    need(_valid_id(existing_world_id),"RF02P_CURRENT_WORLD_ID_INVALID")
     construction=spec["construction"]; evaluation=spec["evaluation"]
     _dataset(construction,"construction")
     _dataset(evaluation,"evaluation")
@@ -172,7 +176,7 @@ def validate_prospective_metadata(spec,existing_hj):
          evaluation["snapshot_sha256"]!=existing_hj["public_source_snapshot_hash"] and
          evaluation["snapshot_sha256"]!=existing_hj["public_view_sha256"] and
          construction["snapshot_sha256"]!=evaluation["snapshot_sha256"] and
-         evaluation["world_id"]!=existing_hj.get("condition_id"),
+         evaluation["world_id"]!=existing_world_id,
          "RF02P_EVALUATION_IS_NOT_INDEPENDENT_WORLD")
     registration=spec["registration"]
     need(type(registration) is dict and set(registration)=={
@@ -274,7 +278,8 @@ def build(h,visible,prospective=None):
     # The full POS-delivery series is only read through source authentication.
     # We deliberately DO NOT use any delivered_cumulative values below.
     protocol=prereg_template(h)
-    future=(validate_prospective_metadata(prospective,h)
+    future=(validate_prospective_metadata(
+                prospective,h,visible["observability"]["world_public_id"])
             if prospective is not None else None)
     arm_ids={"D":[],"M":[]}
     for entry in h["candidates"]:
