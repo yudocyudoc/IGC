@@ -123,7 +123,7 @@ class RF01FidelityTests(unittest.TestCase):
                                     "RF01_NATIVE_METHOD_FALSE_GATES_OR_SELECTION"):
             rf.verify_manifest(fake)
         fake=deepcopy(b);fake["historical_B_live_not_this_EV01"]=False
-        with self.assertRaisesRegex(ArenaContractError,"RF01_B_MOCK_AS_LIVE"):
+        with self.assertRaisesRegex(ArenaContractError,"RF01_COMPONENT_OR_HISTORICAL_STATE_FALSE"):
             rf.verify_manifest(fake)
         raw,verified=self.source("B","O0")
         raw["status"]="REAL_CLOUDFLARE_WORKERS_AI"
@@ -132,9 +132,9 @@ class RF01FidelityTests(unittest.TestCase):
 
     def test_T07_O0_can_never_advertise_O1_physical_read(self):
         d=self.method("D","O0")
-        d["input_fields_read"].append("construction.physical_observation")
+        d["native_fields_read"].append("construction.physical_observation")
         with self.assertRaisesRegex(ArenaContractError,
-                                    "RF01_O0_O1_EVIDENCE_LEAK"):
+                                    "RF01_FIELD_ACTOR_OR_CONSUMPTION_FALSIFIED"):
             rf.verify_manifest(d)
 
     def test_T12_T16_CSV_G2_and_good_RMSE_do_not_grant_scientific_G3(self):
@@ -180,6 +180,96 @@ class RF01FidelityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ArenaContractError,
                                             "RF01_CROSS_ARM_PRIOR_HIDDEN"):
                     rf.verify_manifest(hidden)
+
+    def test_astra_six_pure_validator_reproductions_now_fail_individually(self):
+        base=self.method("M","O1")
+        def mutate(x, mode):
+            if mode=="entrypoint":
+                x["original_entrypoint"]="fake_pos_native_fit_and_select"
+            elif mode=="source_sha":
+                x["original_source_sha"]="gitblob:"+"f"*40
+            elif mode=="candidate_id_cropped":
+                x["native_candidate_ids"]=x["native_candidate_ids"][:1]
+            elif mode=="duplicate_six_candidate_hashes":
+                x["native_candidate_hashes"]=[x["native_candidate_hashes"][0]]*6
+            elif mode=="physical_consumption_promoted":
+                x["input_fields_used_or_rejected"][-1]["status"]="SUPPORTED_AND_CONSUMED"
+            elif mode=="entrypoint_deleted":
+                del x["original_entrypoint"]
+            else:
+                raise AssertionError(mode)
+        for mode in ("entrypoint","source_sha","candidate_id_cropped",
+                     "duplicate_six_candidate_hashes",
+                     "physical_consumption_promoted","entrypoint_deleted"):
+            with self.subTest(astra_probe=mode):
+                forged=deepcopy(base)
+                mutate(forged,mode)
+                with self.assertRaises(ArenaContractError):
+                    rf.verify_manifest(forged)
+
+    def test_strict_variant_rejects_undeclared_fields_or_false_consumption(self):
+        m=self.method("M","O0")
+        self.assertEqual("igc-arena-method-fidelity/1.1",m["schema"])
+        self.assertTrue(rf.verify_manifest(m))
+        self.assertTrue(m["native_component_execution_complete"])
+        self.assertFalse(m["arena_task_complete"])
+        self.assertEqual(["construction.observation_series"],
+                         m["adapter_fields_read"])
+        self.assertEqual([],m["native_fields_read"])
+        self.assertEqual([],m["transport_fields_submitted"])
+        self.assertFalse(any(x["status"]=="SUPPORTED_AND_CONSUMED"
+                             for x in m["input_fields_used_or_rejected"]))
+        for key,val in (
+            ("input_fields_used_or_rejected",[]),
+            ("native_fields_read",["construction.observation_series"]),
+            ("transport_fields_submitted",["construction.observation_series"]),
+            ("native_component_execution_complete",False),
+            ("method_capabilities_in_scope",["PREDICTIVE_CAFETERIA_MODEL"]),
+        ):
+            with self.subTest(edited_field=key):
+                forged=deepcopy(m)
+                forged[key]=val
+                with self.assertRaises(ArenaContractError):
+                    rf.verify_manifest(forged)
+        x=deepcopy(m);x["new_pass_field"]="METHOD_COMPLETE"
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "RF01_MANIFEST_REQUIRED_FIELDS_OR_EXTRA"):
+            rf.verify_manifest(x)
+
+    def test_original_D_rejects_before_native_read_but_adapter_reads_series(self):
+        d=self.method("D","O0")
+        self.assertEqual(["construction.observation_series"],
+                         d["adapter_fields_read"])
+        self.assertEqual([],d["native_fields_read"])
+        self.assertEqual([],d["transport_fields_submitted"])
+        self.assertTrue(all(x["actor"].startswith("ARENA_") for x in
+                            d["input_fields_used_or_rejected"]))
+        bad=deepcopy(d)
+        bad["input_fields_used_or_rejected"][1]["actor"]="D_GENERATE"
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "RF01_FIELD_ACTOR_OR_CONSUMPTION_FALSIFIED"):
+            rf.verify_manifest(bad)
+
+    def test_m_own_enumerator_complete_but_arena_task_not_complete(self):
+        m=self.method("M","O1")
+        self.assertTrue(m["native_component_execution_complete"])
+        self.assertFalse(m["arena_task_complete"])
+        self.assertFalse(m["method_complete"])
+        self.assertEqual("METHOD_ABSTAINED",m["execution_state"])
+        self.assertEqual("ARENA_M0_BRIDGE_UNRESOLVED_SELECTION",m["abstention_origin"])
+
+    def test_native_manifest_binds_to_raw_worker_receipt_and_view(self):
+        m=self.method("M","O1")
+        receipt,verified=self.source("M","O1")
+        self.assertTrue(rf.verify_manifest(
+            m,baseline=self.baseline,receipt=receipt,worker=verified,
+            visible=self.views["O1"]))
+        forged=deepcopy(m)
+        forged["worker_receipt_sha"]="sha256:"+"a"*64
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "RF01_NOT_BOUND_TO_ORIGINAL_RECEIPT"):
+            rf.verify_manifest(forged,baseline=self.baseline,receipt=receipt,
+                               worker=verified,visible=self.views["O1"])
 
     def test_malformed_public_scope_rejected_before_method(self):
         bad=deepcopy(self.views["O0"])
