@@ -109,6 +109,11 @@ jobs:
             scripts/arena_cafe/native_handoff.py
             scripts/arena_cafe/observation_ports.py
             scripts/arena_cafe/observation_eval.py
+            scripts/arena_cafe/scoped_memory.py
+            scripts/ledger.py
+            scripts/arena_atms.py
+            scripts/arena_memory.py
+            migrations/0001_ledger.sql
             scripts/arena_d_v01.py
             scripts/arena_b_native_runner.mjs
             scripts/arena_m_short_e1.py
