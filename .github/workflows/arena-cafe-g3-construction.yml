@@ -1,0 +1,78 @@
+name: G3 construction — analytical M bound and external D exploration (no provider)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/g3_construction.py'
+      - 'tests/test_arena_cafe_g3_construction.py'
+      - 'docs/arena_cafe/r2/06_G3_CONSTRUCTION_DECISION.md'
+      - '.github/workflows/arena-cafe-g3-construction.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  g3-known-construction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download original public O0 only (no new DES)
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Download original D six-model G2 traces (no OMC)
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/d_g2
+      - name: Run pure and original-trace adversarial tests
+        env:
+          G3_PUBLIC_DIR: artifacts/public
+          G3_D_G2_DIR: artifacts/d_g2
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_g3_construction.py' -v
+      - name: Emit G3 construction descriptive outputs (not a scientific PASS)
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.g3_construction \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --out artifacts/G3_CONSTRUCTION_ANALYTICAL.json
+          python -m scripts.arena_cafe.g3_construction \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --d-external-grid \
+            --out artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('artifacts/G3_CONSTRUCTION_ANALYTICAL.json').read_text())
+          d=json.loads(Path('artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json').read_text())
+          assert a["M"]["candidate_count"]==a["M"]["incompatible_count"]==6
+          assert d["M"]["candidate_count"]==d["M"]["incompatible_count"]==6
+          assert d["D"]["candidate_count"]==6
+          assert d["D"]["candidate_selection_owner"]=="NONE_ALL_SIX_RETAINED"
+          assert d["D"]["conformity_to_OMC"]=="PENDING_SEPARATE_CROSSCHECK"
+          assert d["gates"]["G4"]==d["gates"]["G5"]=="NOT_RUN"
+          assert d["gates"]["A3"]=="PARTIAL"
+          assert d["H_j"]["B"]=="NOT_AVAILABLE_NO_EV01_NATIVE_MODEL"
+          assert d["no_new_world"] and d["no_provider_calls"] and d["no_new_omc"]
+          print("G3_KNOWN_CONSTRUCTION_DESCRIPTIVE_D_EXTERNAL_M_FIXED_PRIOR_INCOMPATIBLE_NO_WINNER")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g3-known-construction-analytical-and-external-d-grid
+          path: |
+            artifacts/G3_CONSTRUCTION_ANALYTICAL.json
+            artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json
+          if-no-files-found: error
+          retention-days: 90
