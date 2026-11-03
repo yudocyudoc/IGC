@@ -125,7 +125,7 @@ jobs:
           from pathlib import Path
           import json
           p=json.loads(Path('artifacts/b-visible/staging-receipt.json').read_text())
-          assert p["provider_calls"]==0 and p["max_output_tokens_EV01_scoped_transport"]==7000
+          assert p["provider_calls"]==0 and p["max_output_tokens_existing_frozen_bridge"]==3500
           assert p["physical_available"] in ("NONE","PREPARATION_AGGREGATE_ONLY")
           assert p["truth_after_cutoff_supplied"] is False
           PY
@@ -146,8 +146,7 @@ jobs:
           BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
           BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-live
           BUFFALO_CF_MODE: live
-          BUFFALO_EV01_INITIAL: EV01_ONE_SHOT
-          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_EV01
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -159,12 +158,11 @@ jobs:
           from pathlib import Path
           r=json.loads(Path("artifacts/b-live/receipt.json").read_text())
           assert r["live_provider_calls"]==1
-          assert r["ev01_a3_initial"] is True
           assert r["real_model"]=="@cf/zai-org/glm-5.3-flash"
           assert r["inference_source"]=="REAL_CLOUDFLARE_WORKERS_AI"
           assert r["raw_cloudflare_preserved"] is True
           m=json.loads(Path("artifacts/b-live/cf-request-metadata.json").read_text())
-          assert m["parameter_overrides"]["max_completion_tokens"]==7000
+          assert m["parameter_overrides"]["max_completion_tokens"]==3500
           print("A3_EV01_AUTHENTIC_ORIGINAL_BUFFALO_RESPONSE_ARCHIVED_NOT_YET_G2")
           PY
       - name: Preserve original bytes, including truncated or failed runs
