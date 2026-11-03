@@ -48,6 +48,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_native_pos.py' -v
       - name: Real scoped ledger and ATMS checks, including cross-condition denial
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_scoped_memory.py' -v
+      - name: Adversarial B EV01 POS and stage-scope tests, no live provider
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_ev01_visible.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
@@ -679,7 +681,7 @@ jobs:
           retention-days: 60
 
   f3-known-control-adjudication:
-    needs: [evidence-offline, native-isolated, native-comparison, native-pos-omc]
+    needs: [evidence-offline, native-isolated, native-comparison, native-pos-omc, a3-b-cloudflare-offline-preflight]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
