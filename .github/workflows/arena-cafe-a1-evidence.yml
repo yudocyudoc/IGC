@@ -56,7 +56,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test original Cloudflare transport and separate EV01 7K cap
+      - name: Test F0-pinned original Cloudflare transport unchanged
         run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
       - name: Verify live one-shot authorization blocks all unapproved calls
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_live_guard.py' -v
@@ -660,7 +660,6 @@ jobs:
           BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
           BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-offline
           BUFFALO_CF_MODE: offline
-          BUFFALO_EV01_INITIAL: EV01_ONE_SHOT
         run: |
           set -euo pipefail
           node scripts/arena_b_openrouter_cloudflare.mjs
@@ -676,9 +675,7 @@ jobs:
           assert r["model_returned"] is True and r["native_error"] is None
           assert r["status"]=="OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS"
           assert meta["actual_model"]=="@cf/zai-org/glm-5.3-flash"
-          assert meta["parameter_overrides"]["max_completion_tokens"]==7000
-          assert r["ev01_a3_initial"] is True
-          assert r["ev01_public_source_hash"]==p["source_snapshot_hash"]
+          assert meta["parameter_overrides"]["max_completion_tokens"]==3500
           assert meta["source_prompts_unchanged"]
           assert p["provider_calls"]==0
           assert p["scientific_native_inference"]=="NOT_RUN"
