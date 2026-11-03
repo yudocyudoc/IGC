@@ -34,7 +34,40 @@ Como exploración de sensibilidad, se examinan los **450 puntos originales** fre
 
 Esto **no equivale a admisión estadística**: son supuestos de tolerancia ilustrativos, no una estimación de error instrumental ni una región continua de parámetros factibles. Se separa explícitamente este cribado absoluto común de los conjuntos relativos de RF-03C.
 
-## 5. Límites de alcance y reproducibilidad
+## 5. Resultados ejecutados (CI RF-03D+03E)
+
+**Fuente:** run `41718520386`, tres jobs PASS, 21 pruebas (10 RF-03D y 11 RF-03E). Artefacto `rf03e-joint-measurement-and-loss-domain-diagnostics` ID `13270443638`, SHA del código `4f8543ec`. Son diagnósticos **sobre la malla** y el escenario de parada, no validación independiente.
+
+| Plan de mediciones conjuntas | Parejas con distancia > 0 en la malla | Parejas con distancia > 0.15 pedidos (margen numérico ilustrativo, ε=0) |
+|---|---:|---:|
+| Entregas t=3,5 | 15/15 | 0/15 |
+| Entregas t=3,5,7,9 | 15/15 | 0/15 |
+| Entregas hasta t=15 | 15/15 | 0/15 |
+| Entregas hasta t=20 con pausa | 15/15 | 9/15 |
+| WIP total t=10,12,15,20 | 15/15 | 9/15 |
+| Pérdidas t=10,12,15,20 | 9/15 | 9/15 |
+| Entregas + WIP | 15/15 | 9/15 |
+
+**Lectura correcta:** los 15 pares pueden tener una distancia conjunta estrictamente positiva por la discretización del catálogo, pero ninguna secuencia de entregas hasta el minuto 15 alcanza 0.15 pedidos de separación mínima en esta malla. El hallazgo no autoriza decir que más mediciones siempre sean inútiles: demuestra que **el resultado depende de secuencia, resolución numérica y margen físico considerado**.
+
+### Compatibilidad absoluta hipotética común
+
+Con un error máximo por cada una de las cinco lecturas O0 de **0.25 o 0.5 pedidos**, ninguna de las seis familias conserva puntos de la malla que satisfagan simultáneamente el criterio. Con **1 pedido**, 5/6 familias conservan al menos un punto; con **2 pedidos**, 6/6. Estas cifras **no determinan precisión real de POS**; evidencian lo engañoso de comparar solo conjuntos relativos cercanos al mejor de cada familia.
+
+### Pérdida débil: misma capacidad y mismo tiempo de respuesta
+
+| lossTime (min) | Máx. distancia conjunta de entregas en 25 parejas idénticas de parámetros, 1 stock | Máx. pérdida acumulada modelada t=20 |
+|---|---:|---:|
+| 20 (límite del dominio anterior) | 3.1893 | 3.4949 |
+| 80 (extensión) | 1.0575 | 1.1564 |
+| 320 (extensión) | 0.2887 | 0.3151 |
+| 1,280 (extensión) | 0.0739 | 0.0806 |
+
+Con 2 y 3 stocks se observa la misma tendencia bajo pares del mismo `capacity`/`response_time`. Estos números prueban **sensibilidad del diagnóstico al dominio de pérdida**; no prueban si la cafetería pierde pedidos realmente. Sin una cota operacional superior para `lossTime`, las ramas con pérdida pueden aproximar las sin pérdida durante una ventana finita. Por tanto, el antiguo 9/15 permanece un resultado de la malla original, no una conclusión robusta.
+
+**Advertencia matemática:** una distancia positiva en una malla finita no establece un límite inferior positivo sobre el espacio continuo de parámetros. Los márgenes usados no son tolerancias instrumentales estimadas. La extensión de pérdidas no modifica ni reemplaza los parámetros del ensayo G3 original.
+
+## 6. Límites de alcance y reproducibilidad
 
 - Las salidas después de t=10 son **escenarios condicionales con cero pedidos nuevos**, no observaciones futuras ni forecast online.
 - Un inventario `total_wip` genérico o `lost` continuo solo puede tratarse como variable medible cuando exista una correspondencia operacional con el sistema físico; hoy son sondas de diseño.
