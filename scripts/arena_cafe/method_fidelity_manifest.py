@@ -315,59 +315,262 @@ def classify_parity(native,arm,condition,baseline):
     }
 
 
-def verify_manifest(m):
-    need(m.get("schema")==SCHEMA and
-         m.get("track") in ("PARITY","NATIVE_METHOD") and
-         m.get("arm_id") in ARMS and
-         m.get("condition_id") in CONDITIONS and
-         m.get("method_complete") is False and
-         m.get("method_route_complete") is False and
-         m.get("G4",m.get("g4"))=="NOT_RUN" and
-         m.get("G5",m.get("g5"))=="NOT_RUN",
-         "RF01_FALSE_METHOD_COMPLETION")
-    if m["track"]=="PARITY":
-        need(m["arm_id"] in ("D","M") and
-             m.get("classification")==PARITY_ID and
-             m.get("selection_decision_owner")=="ARENA_POLICY" and
-             m.get("competitive_evidence") is False and
-             m.get("independent_method_convergence") is False and
-             m.get("G3")=="DESCRIPTIVE_NOT_G3_ADMISSIBILITY",
-             "RF01_PARITY_LAUNDERED_AS_NATIVE_METHOD")
-        if m["arm_id"]=="D":
-            need(m["cross_arm_prior_imports"]==["E1_PARAMETER_PRIOR_IN_D_PARITY"],
-                 "RF01_CROSS_ARM_PRIOR_HIDDEN")
-    else:
-        need(m.get("execution_state") in ALLOWED_STATES and
-             m.get("execution_state")==WORKER_STATES[m["arm_id"]][1] and
-             m.get("selection_decision_owner")=="NONE" and
-             m.get("selection_policy_sha") is None and
-             m.get("method_use_proven") is False and
-             m.get("provider_calls")==m.get("omc_invocations")==0 and
-             m.get("cross_arm_prior_imports")==[] and
-             m.get("g0")==m.get("g1")==m.get("g2")==m.get("g3")==
-               "NOT_RUN_NATIVE_METHOD" and
-             not m.get("gates_by_candidate") and
-             m.get("calibration_policy")=="NOT_RUN",
-             "RF01_NATIVE_METHOD_FALSE_GATES_OR_SELECTION")
-        if m["arm_id"]=="M":
-            need(m["original_candidate_universe"]["count"]==6 and
-                 len(m["native_candidate_hashes"])==6 and
-                 m["abstention_origin"]=="ARENA_M0_BRIDGE_UNRESOLVED_SELECTION",
-                 "RF01_M_PARTIAL_WRONGFUL_SELECTION")
-        if m["arm_id"]=="B":
-            need(m["historical_B_live_not_this_EV01"] is True and
-                 m["execution_state"]=="BLOCKED_BEFORE_RUN",
-                 "RF01_B_MOCK_AS_LIVE")
-        if m["arm_id"]=="D":
-            need(m["original_candidate_universe"]["count"] is None and
-                 m["native_candidate_ids"]==[],
-                 "RF01_D2_FIXED_LAUNDERED_AS_GENERATION")
-        if m["condition_id"]=="O0":
-            need("construction.physical_observation" not in m["input_fields_present"]
-                 and "construction.physical_observation" not in m["input_fields_read"],
-                 "RF01_O0_O1_EVIDENCE_LEAK")
-    return True
+# Closed, versioned manifest variants. A key missing from either track is an
+# error even if the other flags happen to look sound. Schema v1.1 is append-only:
+# any new semantic claim requires a new schema and fresh adversarial tests.
+NATIVE_KEYS=frozenset("""
+schema track arm_id condition_id method_version original_entrypoint
+original_source_sha native_input_contract source_snapshot_hash visible_input_sha
+input_fields_present adapter_fields_read native_fields_read
+transport_fields_submitted input_fields_used_or_rejected interface_status
+method_capabilities_in_scope method_capabilities_out_of_scope
+original_candidate_universe native_candidate_ids native_candidate_hashes
+selection_decision_owner selection_policy_sha parameters_origin
+cross_arm_prior_imports calibration_policy abstention_origin execution_state
+native_component_execution_complete arena_task_complete method_route_complete
+method_complete provider_calls omc_invocations gates_by_candidate source_exposure
+unsupported_observables ledger_case_id worker_receipt_sha
+worker_executed_component method_use_proven historical_B_live_not_this_EV01
+g0 g1 g2 g3 g4 g5
+""".split())
+PARITY_KEYS=frozenset("""
+schema track classification arm_id condition_id native_model_sha256
+trace_sha256 source_f3_run_id source_f3_report_artifact_id
+source_native_csv_rehashed_this_rf01_run model_id source_snapshot_hash
+full_candidate_hash source_config_sha256 selection_decision_owner
+selection_rule parameters_origin cross_arm_prior_imports
+native_generation_component_executed real_omc_simulated
+native_component_execution_complete arena_task_complete method_route_complete
+method_complete calibration G0 G1 G2 G3 G4 G5
+construction_metrics_descriptive_only competitive_evidence
+independent_method_convergence input_reconstruction note
+""".split())
 
+
+def _m_native_graph_ids():
+    """Reference ASTs come only from original, pinned E1 grammar and base registry."""
+    from scripts.arena_m_short_e1 import E1,get_composer
+    c=get_composer()
+    cfg,classes,_=c.load_registry(E1/"registry.base.json")
+    return [key for key,_ in c.enumerate_graphs(cfg,classes)]
+
+
+def _source_baseline():
+    return read_json(Path(__file__).resolve().parents[2]/
+                     "docs/arena_cafe/fidelity/F0_FIDELITY_BASELINE.json")
+
+
+def _valid_sha(value):
+    return isinstance(value,str) and re.fullmatch(
+        r"sha256:[a-f0-9]{64}",value) is not None
+
+
+def verify_manifest(m, *, baseline=None, receipt=None, worker=None,
+                    visible=None, f3_native=None):
+    """Fail closed on ALL fidelity assertions, including those not used for CI totals.
+
+    Pure invocation validates against immutable catalogues/source paths and
+    frozen metadata. The build path additionally binds row claims to actual
+    original source receipts, scoped SQLite and earlier F3 report.
+    Neither form is cryptographic signing or runtime cognitive-use tracing.
+    """
+    need(type(m) is dict and m.get("schema")==SCHEMA and
+         m.get("track") in ("PARITY","NATIVE_METHOD") and
+         m.get("arm_id") in ARMS and m.get("condition_id") in CONDITIONS,
+         "RF01_MANIFEST_TYPE_OR_VERSION")
+    variant=m["track"]
+    need(set(m)==(NATIVE_KEYS if variant=="NATIVE_METHOD" else PARITY_KEYS),
+         "RF01_MANIFEST_REQUIRED_FIELDS_OR_EXTRA")
+    arm,condition=m["arm_id"],m["condition_id"]
+    baseline=_source_baseline() if baseline is None else baseline
+    need(baseline.get("schema")=="igc-arena-fidelity-baseline/1.0" and
+         baseline["source_head"]=="589a4b8604753b8ab5d0adf3f0606f6c30ae6e45",
+         "RF01_BASELINE_IDENTITY")
+    need(m["method_complete"] is False and
+         m["method_route_complete"] is False and
+         m["arena_task_complete"] is False and
+         m["g4" if variant=="NATIVE_METHOD" else "G4"]=="NOT_RUN" and
+         m["g5" if variant=="NATIVE_METHOD" else "G5"]=="NOT_RUN",
+         "RF01_FALSE_METHOD_COMPLETION")
+    need(_valid_sha(m["source_snapshot_hash"]),
+         "RF01_INVALID_EVIDENCE_SHA")
+
+    if variant=="PARITY":
+        need(arm in ("D","M") and
+             m["classification"]==PARITY_ID and
+             m["selection_decision_owner"]=="ARENA_POLICY" and
+             m["competitive_evidence"] is False and
+             m["independent_method_convergence"] is False and
+             m["G3"]=="DESCRIPTIVE_NOT_G3_ADMISSIBILITY",
+             "RF01_PARITY_LAUNDERED_AS_NATIVE_METHOD")
+        need(m["cross_arm_prior_imports"]==(
+              ["E1_PARAMETER_PRIOR_IN_D_PARITY"] if arm=="D" else []),
+             "RF01_CROSS_ARM_PRIOR_HIDDEN")
+        need(m["parameters_origin"]==(
+              ["E1_BASE_REGISTRY_PRIOR_IMPORTED_AS_D_NOMINAL"]
+              if arm=="D" else ["E1_BASE_REGISTRY_FIXED_PRIOR"])
+             and m["selection_rule"]=="D_TOPOLOGY_2_NO_LOSS_OR_M_MIN_INSTANCES_C00"
+             and m["source_config_sha256"]==
+                sha256_file("scripts/arena_cafe/native_pos_scenario.py")
+             and m["input_reconstruction"]==
+                "UNIFORM_MASS_PER_HALF_MINUTE_BIN_ASSUMPTION"
+             and m["calibration"]=="NOT_RUN"
+             and m["native_generation_component_executed"] is True
+             and m["real_omc_simulated"] is True
+             and m["native_component_execution_complete"] is True
+             and m["G0"]=="ENGINEERING_NATIVE_RENDER"
+             and m["G1"]=="ENGINEERING_DECLARED_BALANCE"
+             and m["G2"]=="PASS_REAL_OMC_ENGINEERING_ONLY"
+             and m["G4"]==m["G5"]=="NOT_RUN"
+             and m["source_f3_run_id"]=="41575917332"
+             and m["source_f3_report_artifact_id"]=="13202639585"
+             and m["source_native_csv_rehashed_this_rf01_run"] is False
+             and m["note"]==
+                "Original components with ARENA-PREFIXED candidates and matched priors.",
+             "RF01_PARITY_ORIGIN_OR_PROVENANCE_DRIFT")
+        need(all(_valid_sha(m[k]) for k in
+                 ("native_model_sha256","trace_sha256","full_candidate_hash",
+                  "source_config_sha256"))
+             and type(m["model_id"]) is str and bool(m["model_id"])
+             and type(m["construction_metrics_descriptive_only"]) is dict
+             and m["construction_metrics_descriptive_only"].get("comparison_semantics")==
+                 "SAME_PUBLIC_POS_DELIVERED_COUNTS_AND_HJ"
+             and type(m["construction_metrics_descriptive_only"].get(
+                 "delivery_rmse_orders")) in (float,int)
+             and m["construction_metrics_descriptive_only"]["delivery_rmse_orders"]>0,
+             "RF01_PARITY_IDENTITY_OR_METRICS_INVALID")
+        if f3_native is not None:
+            need(m["native_model_sha256"]==f3_native["native_model_sha256"] and
+                 m["trace_sha256"]==f3_native["trace_sha256"] and
+                 m["full_candidate_hash"]==f3_native["full_candidate_hash"] and
+                 m["model_id"]==f3_native["native_model"] and
+                 m["construction_metrics_descriptive_only"]==
+                    f3_native["metrics"],
+                 "RF01_PARITY_NOT_BOUND_TO_PRIOR_F3")
+        if visible is not None:
+            need(m["source_snapshot_hash"]==visible["source_snapshot_hash"],
+                 "RF01_PARITY_NOT_BOUND_TO_PUBLIC_SOURCE")
+        return True
+
+    # NATIVE_METHOD: all informational fields are either (a) original source
+    # identity/receipt, or (b) explicitly labeled STATIC source-path assessment.
+    need(m["method_version"]==VERSION[arm] and
+         m["original_entrypoint"]==ENTRY[arm] and
+         m["original_source_sha"]==
+            "gitblob:"+baseline["original_source_git_blobs"][SOURCE[arm]] and
+         m["native_input_contract"]=="igc-arena-visible-input/0.1" and
+         _valid_sha(m["visible_input_sha"]) and
+         _valid_sha(m["worker_receipt_sha"]),
+         "RF01_NATIVE_ENTRYPOINT_SOURCE_OR_CONTRACT_DRIFT")
+    fields,adapter_read,native_read,routed,operations,interface=_fields(
+        None,condition,arm)
+    need(m["input_fields_present"]==fields and
+         m["adapter_fields_read"]==adapter_read and
+         m["native_fields_read"]==native_read and
+         m["transport_fields_submitted"]==routed and
+         m["input_fields_used_or_rejected"]==operations and
+         m["interface_status"]==interface,
+         "RF01_FIELD_ACTOR_OR_CONSUMPTION_FALSIFIED")
+    need(m["execution_state"]==WORKER_STATES[arm][1] and
+         m["worker_executed_component"]==WORKER_STATES[arm][0] and
+         m["selection_decision_owner"]=="NONE" and
+         m["selection_policy_sha"] is None and
+         m["method_use_proven"] is False and
+         m["provider_calls"]==m["omc_invocations"]==0 and
+         m["cross_arm_prior_imports"]==[] and
+         m["g0"]==m["g1"]==m["g2"]==m["g3"]==
+           "NOT_RUN_NATIVE_METHOD" and
+         m["gates_by_candidate"]==[] and
+         m["calibration_policy"]=="NOT_RUN" and
+         m["source_exposure"]==[
+           "SINGLE_PUBLIC_"+condition+"_VIEW",
+           "NO_EVALUATOR_DES_OR_FULL",
+           "APPLICATION_LEVEL_SCOPE_NOT_VERIFIED_OS_ACL"] and
+         m["unsupported_observables"]==(
+           ["O1_PREPARATION_WAIT_SERVICE_NOT_EQUIVALENT_TO_E1_OR_D_NATIVE"]
+           if condition=="O1" else []),
+         "RF01_NATIVE_METHOD_FALSE_GATES_OR_SELECTION")
+    need(isinstance(m["ledger_case_id"],str) and
+         bool(m["ledger_case_id"]) and
+         m["historical_B_live_not_this_EV01"] is (arm=="B") and
+         m["native_component_execution_complete"] is (arm=="M"),
+         "RF01_COMPONENT_OR_HISTORICAL_STATE_FALSE")
+
+    if arm=="M":
+        expected=_m_native_graph_ids()
+        need(len(expected)==6 and len(set(expected))==6 and
+             m["native_candidate_ids"]==expected and
+             m["native_candidate_hashes"]==expected and
+             len(set(m["native_candidate_ids"]))==6,
+             "RF01_M_COMPLETE_CANDIDATE_IDENTITY_DRIFT")
+        need(m["original_candidate_universe"]=={
+               "count":6,"enumerable":True,
+               "source":"ORIGINAL_E1_BASE_REGISTRY_ENUMERATION",
+               "enumeration_only_not_evidence_selection":True}
+             and m["parameters_origin"]==[
+               {"parameter":"E1_BASE_REGISTRY_FIXED",
+                "owner":"SOURCE_REGISTRY_NOT_SENSOR",
+                "origin":"EXPLICIT_STRUCTURAL_PRIOR"}]
+             and m["method_capabilities_in_scope"]==[
+                 "ORIGINAL_TYPED_GRAPH_ENUMERATION"]
+             and m["method_capabilities_out_of_scope"]==[
+                 "OBSERVATION_DRIVEN_CHOICE","PARAMETER_FITTING",
+                 "G2_FOR_ALL_GRAPHS","G3_SELECTION"]
+             and m["abstention_origin"]==
+                 "ARENA_M0_BRIDGE_UNRESOLVED_SELECTION",
+             "RF01_M_PARTIAL_WRONGFUL_SELECTION")
+    elif arm=="D":
+        need(m["original_candidate_universe"]=={
+              "count":None,"enumerable":False,
+              "original_max_candidates_if_valid_pulse":6,
+              "reason":"PUBLIC_POS_IS_NOT_AN_ORIGINAL_D_PULSE_AND_HAS_NO_NATIVE_NOMINAL"}
+             and m["native_candidate_ids"]==m["native_candidate_hashes"]==[]
+             and m["parameters_origin"]==[]
+             and m["method_capabilities_in_scope"]==[
+                  "D_ORIGINAL_VALIDATE_CASE_REJECTED_EVENT_INPUT"]
+             and m["method_capabilities_out_of_scope"]==[
+                  "D_GENERATE_SIX_CANDIDATES","D_MODEL_SELECTION",
+                  "D_PARAMETER_INFERENCE","D_NATIVE_G2_G3"]
+             and m["abstention_origin"]==
+                  "NOT_APPLICABLE_BLOCKED_BEFORE_NATIVE_GENERATION",
+             "RF01_D2_FIXED_LAUNDERED_AS_GENERATION")
+    else:
+        need(m["original_candidate_universe"]=={
+                 "count":None,"enumerable":False,
+                 "reason":"MOCK_RESULT_NOT_REAL_GENERATED_MODEL"}
+             and m["native_candidate_ids"]==m["native_candidate_hashes"]==[]
+             and m["parameters_origin"]==[]
+             and m["method_capabilities_in_scope"]==[
+                   "ORIGINAL_QUANTITATIVE_ENGINE_TRANSPORT_OFFLINE_FIXTURE"]
+             and m["method_capabilities_out_of_scope"]==[
+                   "REAL_CLOUDFLARE_INFERENCE","NATIVE_PROPOSAL",
+                   "REAL_FEEDBACK_REVISION","G0_G3_EV01"]
+             and m["abstention_origin"]==
+                 "NOT_APPLICABLE_NO_LIVE_METHOD_ATTEMPT",
+             "RF01_B_MOCK_AS_LIVE")
+    if condition=="O0":
+        need("construction.physical_observation" not in
+             (m["input_fields_present"]+m["adapter_fields_read"]+
+              m["native_fields_read"]+m["transport_fields_submitted"]),
+             "RF01_O0_O1_EVIDENCE_LEAK")
+    if receipt is not None:
+        need(m["worker_receipt_sha"]==digest(receipt) and
+             receipt.get("arm")==arm and receipt.get("condition")==condition and
+             receipt.get("status")==m["worker_executed_component"] and
+             receipt.get("visible_input_hash")==m["visible_input_sha"] and
+             receipt.get("source_snapshot_hash")==m["source_snapshot_hash"] and
+             receipt.get("provider_calls")==0,
+             "RF01_NOT_BOUND_TO_ORIGINAL_RECEIPT")
+    if worker is not None:
+        need(m["ledger_case_id"]==worker["memory"]["case_id"] and
+             worker["status"]==m["worker_executed_component"] and
+             worker["memory"]["actual_SQLite_reconstruction"] is True,
+             "RF01_NOT_BOUND_TO_SCOPED_SQLITE")
+    if visible is not None:
+        need(m["visible_input_sha"]==digest(visible) and
+             m["source_snapshot_hash"]==visible["source_snapshot_hash"],
+             "RF01_NOT_BOUND_TO_PUBLIC_EVIDENCE")
+    return True
 
 def build(visible, worker_roots, parity, baseline):
     verify_original_sources(baseline)
@@ -394,14 +597,15 @@ def build(visible, worker_roots, parity, baseline):
                  own["memory"]["case_id"]==worker["memory"]["case_id"],
                  "RF01_A3_WORKER_LINEAGE_DRIFT")
             m=classify_worker(v,a,c,raw,worker,baseline)
-            verify_manifest(m)
+            verify_manifest(m,baseline=baseline,receipt=raw,
+                            worker=worker,visible=v)
             method_cases.append(m)
             if a in ("D","M"):
                 n=parity["arms"][c][a]["native"]
                 p=classify_parity(n,a,c,baseline)
                 need(p["source_snapshot_hash"]==v["source_snapshot_hash"],
                      "RF01_PARITY_CONDITION_SOURCE_MISMATCH")
-                verify_manifest(p)
+                verify_manifest(p,baseline=baseline,visible=v,f3_native=n)
                 parity_cases.append(p)
     need(len(method_cases)==6 and len(parity_cases)==4 and
          len(set((m["arm_id"],m["condition_id"]) for m in method_cases))==6 and
