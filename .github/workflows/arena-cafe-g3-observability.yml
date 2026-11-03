@@ -1,10 +1,13 @@
-name: RF-03D — G3 observational discrimination (known O0, no new engines)
+name: RF-03D+03E — G3 marginal vs joint observability and loss domain
 on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/g3_observability.py'
+      - 'scripts/arena_cafe/g3_joint_identification.py'
       - 'tests/test_arena_cafe_g3_observability.py'
+      - 'tests/test_arena_cafe_g3_joint_identification.py'
       - 'docs/arena_cafe/r2/07_G3_OBSERVABILITY_DESIGN.md'
+      - 'docs/arena_cafe/r2/08_G3_JOINT_LOSS_SENSITIVITY.md'
       - '.github/workflows/arena-cafe-g3-observability.yml'
   workflow_dispatch:
 permissions:
@@ -42,6 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_arena_cafe_g3_observability.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_g3_joint_identification.py' -v
       - name: Diagnose measurement gaps without new experimental data
         run: |
           set -euo pipefail
@@ -60,11 +64,36 @@ jobs:
           assert r["future_numbers_are_conditional_scenarios_not_forecasts"]
           assert r["G4"]==r["G5"]=="NOT_RUN" and r["A3"]=="PARTIAL"
           assert r["no_scientific_winner"] and r["no_new_DES_or_OMC_or_provider"]
-          print("RF03D_SIX_D_FAMILIES_FIFTEEN_PAIRWISE_COMPARISONS_NO_CAUSAL_WINNER")
+          assert r["subfamily_diagnosis"]["joint_sequence_separability_NOT_EVALUATED_IN_RF03D"]
+          assert r["subfamily_diagnosis"]["loss_time_upper_bound_not_operationally_established"]
+          print("RF03D_SCALAR_ONLY_NOT_JOINT_NO_CAUSAL_WINNER")
+          PY
+      - name: RF-03E — joint parameter vectors and extended loss-time stress
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.g3_joint_identification \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --previous-g3 artifacts/previous-g3/G3_CONSTRUCTION_D_EXTERNAL_GRID.json \
+            --out artifacts/G3_JOINT_LOSS_SENSITIVITY.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/G3_JOINT_LOSS_SENSITIVITY.json').read_text())
+          assert len(r['joint_pairwise'])==15
+          assert len(r['joint_plan_summaries'])==7
+          assert len(r['loss_domain_sensitivity']['results'])==21
+          assert r['no_parameter_identifiability_or_structural_recovery_claim']
+          assert r['no_operational_sensor_error_calibration']
+          assert r['numerical_margin_is_NOT_a_certified_error_bound']
+          assert r['A3']=='PARTIAL' and r['G4']==r['G5']=='NOT_RUN'
+          assert r['no_DES_OMC_or_provider_calls']
+          print('RF03E_JOINT_NOT_MARGINAL_LOSS_DOMAIN_AND_SENSOR_SCENARIOS_ONLY')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: rf03d-known-world-structural-observability-diagnostic
-          path: artifacts/G3_OBSERVABILITY_DESIGN.json
+          name: rf03e-joint-measurement-and-loss-domain-diagnostics
+          path: |
+            artifacts/G3_OBSERVABILITY_DESIGN.json
+            artifacts/G3_JOINT_LOSS_SENSITIVITY.json
           if-no-files-found: error
           retention-days: 90
