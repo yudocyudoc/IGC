@@ -48,7 +48,7 @@ D_GIT_BLOB="9dcab2bf1ee3a3c7430595385f381d89ba023a6d"
 
 def _blob(path):
     data=Path(path).read_bytes()
-    return hashlib.sha1(b"blob "+str(len(data)).encode()+b"\\x00"+data).hexdigest()
+    return hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest()
 
 
 def original_source_checks():
@@ -421,7 +421,7 @@ def main():
              if args.nominal_provenance else None)
     report=build(view,args.condition,resources,nominal)
     args.out.parent.mkdir(parents=True,exist_ok=True)
-    args.out.write_bytes(canonical(report)+b"\\n")
+    args.out.write_bytes(canonical(report)+bytes([10]))
     print(json.dumps({"R2":report["R2"],
                       "D_candidates":report["D"]["candidate_count"],
                       "M_candidates":report["M"]["graph_count"],
