@@ -5,9 +5,20 @@
 **Dependencias:** PR #137 (Draft) sobre #136 (A2/F2) sobre #135 (A1/F1) sobre #134 (F0-HIST), ninguno fusionado.  
 **CI efectiva de código:** [A1 + A3 Actions 41558277181](https://github.com/yudocyudoc/IGC/actions/runs/41558277181), commit `1f19656e202dc4b0526d43ba82b65cfaa72aeee9`, **13/13 PASS**. [Artefacto F3](https://github.com/yudocyudoc/IGC/actions/runs/41558277181/artifacts/13196005443). CI posterior de documentación se verifica por separado.
 
+## Corrección de alcance histórico — Buffalo Cloudflare sí ha tenido inferencias reales
+
+**Enmienda 2026-11-02.** Este cierre se refiere exclusivamente al **control EV-01 O0/O1 del PR #137**, no a la capacidad histórica del método. El proyecto ya ejecutó el motor original `UB-IAD/sd-ai@5199f7b45f3a7ae4a773cb0dd8542940aabe9edc` sobre Cloudflare Workers AI **`@cf/zai-org/glm-5.3-flash`**, por el transporte OpenRouter virtual existente:
+
+- [Inicial real #40255975864](https://github.com/yudocyudoc/IGC/actions/runs/40255975864): una solicitud HTTP 200, modelo nativo de 15 variables / 18 relaciones; G2 no demostrado.
+- [R1 real #40452596916](https://github.com/yudocyudoc/IGC/actions/runs/40452596916): 17 variables / 17 relaciones; traductor condicional y fallo real de construcción de OpenModelica por álgebra circular (no G2 PASS).
+- [R2 7K #40486060023](https://github.com/yudocyudoc/IGC/actions/runs/40486060023): una revisión real, truncada, sin modelo JSON válido.
+- [R2 16K #40490534985](https://github.com/yudocyudoc/IGC/actions/runs/40490534985): una revisión real posterior, nativo de 16 variables/16 relaciones y CSV OpenModelica auténtico, **pero estímulo de entrada diferente del contrato**, por lo que su G2 es condicional y G3 no comparable.
+
+**Por tanto «Buffalo carece de inferencia real» es falso.** Lo correcto es «Buffalo no ha realizado todavía una inferencia real **sobre los sobres O0/O1 de este EV-01**». Los resultados históricos no se puntúan como pronósticos de esta nueva fuente. No hay autorización en este PR para otra llamada facturable.
+
 ## 1. Decisión metodológica fundamental
 
-**A3=PARTIAL**, **MODEL-01=PARTIAL**, **CONDITION-01=PARTIAL**, **MEMORY-01=PARTIAL**. No hay trabajo autorizado de inferencia live de Buffalo; el motor original se invoca en modo **mock offline**, con cero llamadas a proveedor. Su ejecución de transporte no es predicción del brazo, ni `METHOD_ABSTAINED`: el estado es `BLOCKED_RESOURCE_OR_AUTHORIZATION` para inferencia auténtica. D y M sí tienen cuatro corridas nuevas de sus mecanismos reales OpenModelica, pero sobre **una sola configuración nominal declarada por brazo**, no seleccionada por el método a partir de O0/O1.
+**A3=PARTIAL**, **MODEL-01=PARTIAL**, **CONDITION-01=PARTIAL**, **MEMORY-01=PARTIAL**. En este control EV-01 no hay trabajo autorizado de inferencia live de Buffalo; el motor original se invoca en modo **mock offline**, con cero llamadas a proveedor. Su ejecución de transporte no es predicción del brazo, ni `METHOD_ABSTAINED`: el estado es `BLOCKED_RESOURCE_OR_AUTHORIZATION` para inferencia auténtica. D y M sí tienen cuatro corridas nuevas de sus mecanismos reales OpenModelica, pero sobre **una sola configuración nominal declarada por brazo**, no seleccionada por el método a partir de O0/O1.
 
 No permitir que un CI verde, un rechazo de contrato, o un resultado histórico sustituya un método nativo realmente ejecutado. En particular **no** convertir `G3` descriptivo en veredicto de compatibilidad o identificación.
 
@@ -59,9 +70,15 @@ Los valores de D/M son iguales entre O0 y O1 porque el generador de escenarios e
 
 ## 5. Buffalo, interfaz y ledger
 
-`scripts/arena_b_native_runner.mjs` sigue invocando el original `UB-IAD/sd-ai` al SHA fijado, con `BUFFALO_MODE=mock`. Los recibos O0/O1 prueban que existe una ruta de transporte y hashes de prompt **distintos** entre condiciones, pero el resultado del modelo no se usa como inferencia. No presentar `ORIGINAL_ENGINE_OFFLINE_MOCK` como `G3_FAIL` científico, selección, predicción ni abstención propia. **Ausencia de ejecución live deja A3 abierto** hasta que exista autorización y presupuesto explícitos.
+`scripts/arena_b_native_runner.mjs` sigue invocando el original `UB-IAD/sd-ai` al SHA fijado, con `BUFFALO_MODE=mock`. Los recibos O0/O1 prueban que existe una ruta de transporte y hashes de prompt **distintos** entre condiciones, pero el resultado del modelo no se usa como inferencia. No presentar `ORIGINAL_ENGINE_OFFLINE_MOCK` como `G3_FAIL` científico, selección, predicción ni abstención propia. **Ausencia de ejecución live para EV-01 O0/O1 deja A3 abierto** hasta que exista autorización y presupuesto explícitos.
 
 El evaluador verifica `scope = experiment × mundo público × réplica × brazo × condición × iteración × run_kind`; 10 IDs de caso únicos. Reabre las 10 SQLite, comprueba revisiones append-only, `source_snapshot_hash`, candidatos, (H_j), integridad de revisiones y lectura de ATMS filtrada antes de recuperación. No prueba control de token/API ni separación de cachés en un proveedor externo. `MEMORY-01` y `CONDITION-01` permanecen parciales.
+
+### Incremento Buffalo EV-01 sin gasto
+
+El código `scripts/arena_cafe/buffalo_ev01_visible.py` valida un único sobre público A1 O0 u O1, transforma tiempos POS y tasa reconstruida conservativa de medio minuto a unidades hora/pedidos/hora, conserva **15** pedidos integrados, distingue la medición adicional de preparación autorizada de O1 y produce un `igc-arena-visible-input/0.1` consumible por el motor original. Su pregunta cabe en el contrato compartido de 180 caracteres; las instrucciones detalladas viajan en `construction.modeling_task_instructions`, y el `backgroundKnowledge` **original Buffalo** contiene ambas. No hay parámetros de las cuatro estaciones privadas, candidatos D/M ni datos posteriores al cutoff.
+
+La CI `a3-b-cloudflare-offline-preflight` corre el motor original SD-AI con el transporte original `scripts/arena_b_openrouter_cloudflare.mjs` en modo **offline**, recibe una respuesta *fixture* claramente etiquetada, conserva hashes de prompts y demuestra una solicitud original por condición con **0 llamadas Cloudflare reales**. **No equivale a hipótesis propia Buffalo EV-01**, ni a G0/G1/G2/G3 de ella. El puente genérico actual tiene límite **3500 tokens de salida** fuera de los modos R1/R2 autorizados; el riesgo de truncamiento debe revisarse **antes** de aprobar llamadas EV-01. Además el traductor histórico `arena_b_native_to_modelica.py` fija un solver 0–8 horas y `dt=0.125h`, distinto de la ventana EV-01; cualquier adaptación física debe pasar un contrato G0 separado sin alterar ecuaciones Buffalo.
 
 ## 6. Entregables y compuertas
 
