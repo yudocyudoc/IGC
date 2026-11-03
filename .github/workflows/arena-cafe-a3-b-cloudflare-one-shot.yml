@@ -125,7 +125,7 @@ jobs:
           from pathlib import Path
           import json
           p=json.loads(Path('artifacts/b-visible/staging-receipt.json').read_text())
-          assert p["provider_calls"]==0 and p["max_output_tokens_unmodified_bridge"]==7000
+          assert p["provider_calls"]==0 and p["max_output_tokens_EV01_scoped_transport"]==7000
           assert p["physical_available"] in ("NONE","PREPARATION_AGGREGATE_ONLY")
           assert p["truth_after_cutoff_supplied"] is False
           PY
