@@ -22,6 +22,21 @@ Se calculan envolventes `[mínimo,máximo]` entre combinaciones con MAE de const
 
 Se calculan las 15 parejas entre las seis estructuras. Para cada tiempo/magnitud se indica cuántas parejas tienen envolventes que no se intersectan. Es una **evaluación de separabilidad bajo una malla hipotética**, no potencia estadística, ni evidencia observada, ni selección de un método ganador.
 
+## Hallazgos del ensayo sobre la malla exploratoria O0
+
+La CI RF-03D reconstituyó las 450 combinaciones previas para 6 estructuras y encontró:
+
+| Magnitud / tiempo | Pares con envolventes que no se intersectan (de 15) | Interpretación limitada |
+|---|---:|---|
+| Entregas adicionales t=3,5,7,9,12,15 | **0/15** en cada tiempo | Solo densificar entregas hasta 15 min no distingue ninguna pareja bajo esta malla |
+| Entregas en t=20 con pausa de nuevas llegadas | **9/15** | Distingue únicamente estructuras con pérdidas de aquellas sin pérdidas |
+| Pérdidas acumuladas modeladas en t=10 | **9/15** | Separación algebraica de las 9 parejas con/sin sumidero, si realmente pudiera observarse la magnitud |
+| Inventario total en proceso t=15 | **8/15** | Separa 8 de las 9 parejas con/sin sumidero, sin separar distinto número de stocks dentro de un mismo grupo |
+
+Las 15 comparaciones consisten en **9 parejas entre estructuras con/sin pérdida** (tres por lado), y **6 parejas entre estructuras con igual condición de pérdida pero diferente número de stocks**. Bajo estas envolventes, **ninguna de las mediciones examinadas distingue esas seis parejas del segundo grupo**. Por tanto, no hemos identificado el número verdadero de stocks.
+
+La evaluación es condicional al supuesto de interrupción de nuevas llegadas, al kernel medio minuto, a los parámetros de la malla y al criterio exploratorio de proximidad al mínimo. No equivale a una demostración general de no-identificabilidad estructural ni a potencia estadística.
+
 ## Qué aportaría cada nuevo registro
 
 - **Entregas durante una pausa de llegadas:** permiten observar la cola de salida; distintas cadenas, tiempos de respuesta y pérdidas pueden mostrar trayectorias distintas. El ensayo requiere anotar también si entraron pedidos nuevos. Una pausa planificada no es lo mismo que un día ordinario.
