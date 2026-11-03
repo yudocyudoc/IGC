@@ -1,0 +1,77 @@
+name: RF-02 R2 D-POS and molecular contracts — no simulations
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/r2_observational_contracts.py'
+      - 'tests/test_arena_cafe_rf02_observational_contracts.py'
+      - 'docs/arena_cafe/r2/**'
+      - '.github/workflows/arena-cafe-rf02-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  rf02-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read the two original frozen A1 public POS views
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/rf02/public
+      - name: Verify 36 original D legacy fixture variants and six E1 originals
+        env:
+          RF02_PUBLIC_DIR: artifacts/rf02/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_observational_contracts.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Produce two unselected, unsimulated D-B/M/Hj scope reports
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_observational_contracts \
+            --input artifacts/rf02/public/O0_VISIBLE.json --condition O0 \
+            --out artifacts/rf02/O0_CONTRACT.json
+          python -m scripts.arena_cafe.r2_observational_contracts \
+            --input artifacts/rf02/public/O1_VISIBLE.json --condition O1 \
+            --out artifacts/rf02/O1_CONTRACT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=[]
+          for c in ("O0","O1"):
+              x=json.loads(Path("artifacts/rf02/"+c+"_CONTRACT.json").read_text())
+              assert x["R2"]=="PARTIAL_CONTRACT_AND_GRAMMAR_NO_NUMERICAL_POLICY"
+              assert x["D"]["candidate_count"]==x["M"]["graph_count"]==6
+              assert x["M"]["material_projection_group_count"]==3
+              assert len(x["D"]["candidates"])==6
+              assert all(p["selection_owner"]=="NONE" for p in x["D"]["candidates"])
+              assert all(p["G2"]=="NOT_RUN" for p in x["D"]["candidates"])
+              assert x["D"]["observational_boundary"]["rate_conversion_policy"]==(
+                  "POLICY_NOT_SELECTED_NO_RATE_INFERRED")
+              assert x["D"]["nominal_parameters_state"]=="NO_PARAMETERS_DECLARED"
+              assert not x["D"]["simulation_authorized"]
+              assert x["provider_calls"]==x["solver_invocations"]==0
+              assert x["G4"]==x["G5"]=="NOT_RUN"
+              a.append(x["M"]["candidate_graphs"])
+          assert [x["full_ast_sha256"] for x in a[0]]==[
+              x["full_ast_sha256"] for x in a[1]]
+          print("RF02_D_B_SIX_AND_M_BASE_SIX_STAGED_NO_SIGNAL_NO_NOMINAL_NO_G2")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf02-observational-contracts-O0-O1-no-solvers
+          path: |
+            artifacts/rf02/O0_CONTRACT.json
+            artifacts/rf02/O1_CONTRACT.json
+          if-no-files-found: error
+          retention-days: 90
