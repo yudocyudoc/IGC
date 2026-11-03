@@ -111,6 +111,25 @@ def b1_physical(full,stage_servers):
             "ranked_waiting_is_not_causal_bottleneck":True}
 
 
+def aggregate_activity(available_ids,processing_ids,unknown_ids=()):
+    """Three-valued physical aggregation; never ALL true for empty available."""
+    available_ids=set(available_ids)
+    processing_ids=set(processing_ids)
+    unknown_ids=set(unknown_ids)
+    need(processing_ids.isdisjoint(unknown_ids),
+         "F2_RESOURCE_ACTIVE_AND_UNKNOWN_COLLISION")
+    if not available_ids and not unknown_ids:
+        need(not processing_ids,"F2_RESOURCE_ACTIVITY_WITHOUT_AVAILABILITY")
+        return "NO_AVAILABLE_RESOURCES","NO_AVAILABLE_RESOURCES"
+    need(processing_ids<=available_ids or
+         bool(unknown_ids),"F2_RESOURCE_PROCESSING_NOT_AVAILABLE")
+    if unknown_ids:
+        any_active=True if processing_ids else "UNKNOWN"
+        all_active=False if available_ids-processing_ids-unknown_ids else "UNKNOWN"
+        return any_active,all_active
+    return bool(processing_ids),len(processing_ids)==len(available_ids)
+
+
 def resource_periods(full,resources,horizon,*,available=None):
     """B2 continuous [0,horizon) physical periods from exact start/finish IDs.
 
@@ -153,6 +172,8 @@ def resource_periods(full,resources,horizon,*,available=None):
         need(stage in resources,"F2_RESOURCE_UNDECLARED_STAGE")
         t=_exact(row["t_minutes_exact"])
         need(t<=end,"F2_RESOURCE_EVENT_AFTER_HORIZON")
+        need(row.get("source")=="instrumentacion_fisica",
+             "F2_ADMINISTRATIVE_NOT_PHYSICAL_TELEMETRY")
         case=row["case_id"]
         counted[stage][kind]+=1
         if kind=="etapa_entrada":
@@ -236,13 +257,8 @@ def resource_periods(full,resources,horizon,*,available=None):
                             state="IDLE_AVAILABLE"
                 stage_states[rid]=state
                 per_resource[rid][state]+=duration
-            if not available_ids and available is not None:
-                any_state=all_state="NO_AVAILABLE_RESOURCES"
-            elif unknown_ids:
-                any_state=all_state="UNKNOWN"
-            else:
-                any_state=bool(processing)
-                all_state=len(processing)==len(available_ids)
+            any_state,all_state=aggregate_activity(
+                available_ids,processing,unknown_ids)
             status_durations[stage][str(all_state)]+=duration
             rows["by_stage"][stage]={
                 "waiting_orders":waiting,
