@@ -1,0 +1,91 @@
+name: RF-02H — H_j typed operators and parameter provenance (read-only)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/r2_hj_parameter_gate.py'
+      - 'tests/test_arena_cafe_rf02_hj_parameter_gate.py'
+      - 'docs/arena_cafe/r2/04_HJ_PARAMETER_ADMISSIBILITY.md'
+      - '.github/workflows/arena-cafe-rf02-hj-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  h-j-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Frozen public O0/O1 from original A1 — no new DES
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Frozen D six-solver engineering proof — no new OMC
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/d_g2
+      - name: Frozen M six-solver engineering proof — no new OMC
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          run-id: 41591727790
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/m_g2
+      - name: Re-authenticate all twelve CSVs and reject G3/parameter forgery
+        env:
+          RF02_PUBLIC_DIR: artifacts/public
+          RF02_D_G2_DIR: artifacts/d_g2
+          RF02_M_G2_DIR: artifacts/m_g2
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_hj_parameter_gate.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Emit provenance-only H_j admission manifest without predictions/scores
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_hj_parameter_gate \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --d-native-dir artifacts/d_g2 \
+            --m-native-dir artifacts/m_g2 \
+            --out artifacts/HJ_PARAMETER_GATE.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/HJ_PARAMETER_GATE.json")
+          r=json.loads(p.read_text())
+          assert r["scope"]=="O0_PUBLIC_SYNTHETIC_PRE_G3_ENGINEERING_PROVENANCE_ONLY"
+          assert r["candidate_count"]==12
+          assert r["G2_source_audits_recomputed"]
+          assert r["common_signal_sha256"].startswith("sha256:")
+          assert r["observables"]["delivery_cumulative"]["operator_shape"]==(
+              "PASS_D_M_DIRECT_NATIVE_STOCKS")
+          assert r["observables"]["delivery_cumulative"]["G3_ADMISSIBLE"] is False
+          assert r["parameters"]["D"]["eligible_for_G3"] is False
+          assert r["parameters"]["M"]["eligible_for_G3"] is False
+          assert r["parameters"]["B"]["eligible_for_G3"] is False
+          assert r["gates"]["G3"]==r["gates"]["G4"]==r["gates"]["G5"]=="NOT_RUN"
+          assert r["gates"]["A3"]=="PARTIAL"
+          assert r["decision"]=="BLOCKED_G3_NEEDS_SCIENTIFIC_ADMISSION"
+          assert not r["cloudflare_provider_calls"] and not r["omc_invocations_in_this_job"]
+          assert all(x["H_j"]["scoring_against_observations"]=="NOT_RUN"
+                     and x["H_j"]["trajectory_values_exported"] is False
+                     and x["G3"]=="NOT_RUN" for x in r["candidates"])
+          print("RF02H_TWELVE_TYPED_DELIVERY_OUTPUTS_BUT_G3_REMAINS_BLOCKED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf02h-twelve-hj-parameter-g3-readiness-blocker
+          path: artifacts/HJ_PARAMETER_GATE.json
+          if-no-files-found: error
+          retention-days: 90
