@@ -110,7 +110,6 @@ class F3AdjudicationTests(unittest.TestCase):
         self.assertNotEqual(left["source_snapshot_hash"],right["source_snapshot_hash"])
         self.assertNotIn("physical_observation",left["construction"])
         self.assertIn("physical_observation",right["construction"])
-        self.assertEqual("PARTIAL",f3.adjudicate.__doc__) if False else None
         self.assertEqual(10,len({
             scoped_memory.scope(self.views[c],a,c,kind)["case_id"]
             for c in ("O0","O1") for a in ("D","B","M")
