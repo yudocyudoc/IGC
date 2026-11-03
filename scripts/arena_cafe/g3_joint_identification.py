@@ -161,9 +161,9 @@ def _joint_panels(families,ensembles):
             # joint vectors are distinct. This is RF146-01's core.
             scalar_gaps=[]
             for measure,t in coords:
-                left=tuple(v for vec in vectors_a for v in ())
-                l=[v[coords.index((measure,t))] for v in vectors_a]
-                r=[v[coords.index((measure,t))] for v in vectors_b]
+                index=coords.index((measure,t))
+                l=[v[index] for v in vectors_a]
+                r=[v[index] for v in vectors_b]
                 scalar_gaps.append(max(0.,min(l)-max(r),min(r)-max(l)))
             need(distance+1e-7>=max(scalar_gaps),
                  "RF03E_JOINT_GAP_SMALLER_THAN_MARGINAL_GAP")
