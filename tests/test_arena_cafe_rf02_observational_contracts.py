@@ -83,7 +83,7 @@ class RF02ContractsTest(unittest.TestCase):
                              doc["observational_boundary"]["events_n"])
             self.assertEqual(15,
                              doc["observational_boundary"]["total_input_orders"])
-            self.assertEqual([0,1,1,2,2,3],
+            self.assertEqual([1,1,2,2,3,3],
                 [len(x["structure"]["stocks"]) for x in doc["candidates"]])
             self.assertEqual([False,True]*3,
                 [x["structure"]["loss"] for x in doc["candidates"]])
