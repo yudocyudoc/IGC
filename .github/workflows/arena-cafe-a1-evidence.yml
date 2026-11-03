@@ -415,6 +415,11 @@ jobs:
             scripts/arena_cafe/observation_eval.py
             scripts/arena_cafe/native_pos_scenario.py
             scripts/arena_cafe/native_pos_verify.py
+            scripts/arena_cafe/scoped_memory.py
+            scripts/ledger.py
+            scripts/arena_atms.py
+            scripts/arena_memory.py
+            migrations/0001_ledger.sql
             scripts/arena_d_v01.py
             scripts/arena_m_short_e1.py
             scripts/arena_m_visible_pulse.py
