@@ -3,7 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/r2_observational_contracts.py'
+      - 'scripts/arena_cafe/r2_causal_pos_signal.py'
       - 'tests/test_arena_cafe_rf02_observational_contracts.py'
+      - 'tests/test_arena_cafe_rf02_causal_pos_signal.py'
       - 'docs/arena_cafe/r2/**'
       - '.github/workflows/arena-cafe-rf02-contracts.yml'
   workflow_dispatch:
@@ -34,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_arena_cafe_rf02_observational_contracts.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_pos_signal.py' -v
           python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
       - name: Produce two unselected, unsimulated D-B/M/Hj scope reports
         run: |
@@ -67,11 +70,41 @@ jobs:
               x["full_ast_sha256"] for x in a[1]]
           print("RF02_D_B_SIX_AND_M_BASE_SIX_STAGED_NO_SIGNAL_NO_NOMINAL_NO_G2")
           PY
+      - name: Emit only two causal signal policies from frozen observed creation events
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_causal_pos_signal \
+            --input artifacts/rf02/public/O0_VISIBLE.json --condition O0 \
+            --out artifacts/rf02/O0_CAUSAL_SIGNAL.json
+          python -m scripts.arena_cafe.r2_causal_pos_signal \
+            --input artifacts/rf02/public/O1_VISIBLE.json --condition O1 \
+            --out artifacts/rf02/O1_CAUSAL_SIGNAL.json
+          python - <<'PY'
+          import json
+          from fractions import Fraction as Q
+          from pathlib import Path
+          a=[json.loads(Path("artifacts/rf02/"+c+"_CAUSAL_SIGNAL.json").read_text())
+             for c in ("O0","O1")]
+          assert a[0]["signal"]==a[1]["signal"]
+          for r in a:
+              s=r["signal"]
+              assert s["policy"]=="CAUSAL_RIGHT_RECTANGULAR_EVENT_KERNEL/0.1"
+              assert s["events_count"]==15 and s["width_minutes_exact"]=="1/2"
+              assert Q(s["mass_before_cutoff_orders_exact"])+Q(
+                  s["mass_deferred_after_cutoff_orders_exact"])==15
+              assert s["no_lookahead_in_mathematical_kernel"] is True
+              assert s["tail_not_truncated_or_moved_before_event"] is True
+              assert r["scientific_policy_approval"]=="NOT_GRANTED"
+              assert r["G2"]==r["G3"]=="NOT_RUN"
+          print("RF02T_CAUSAL_SOURCE_AFTER_TIMESTAMP_EXACT_MASS_TAIL_ACCOUNTED_NO_G2")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: rf02-observational-contracts-O0-O1-no-solvers
           path: |
             artifacts/rf02/O0_CONTRACT.json
             artifacts/rf02/O1_CONTRACT.json
+            artifacts/rf02/O0_CAUSAL_SIGNAL.json
+            artifacts/rf02/O1_CAUSAL_SIGNAL.json
           if-no-files-found: error
           retention-days: 90
