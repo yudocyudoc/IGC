@@ -1,0 +1,108 @@
+name: RF-02G D-B — six causal-source engineering OpenModelica G2
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/r2_causal_g2.py'
+      - 'tests/test_arena_cafe_rf02_causal_g2.py'
+      - 'tests/fixtures/rf02_g2_fixture_nominals.json'
+      - 'docs/arena_cafe/r2/02_G2_ENGINEERING_SIX_D.md'
+      - '.github/workflows/arena-cafe-rf02-causal-g2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  g2-six-causal-engineering:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.26.5-minimal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Verify nonempirical fixture, original D source, and blocked counterfeit G2
+        env:
+          RF02_PUBLIC_DIR: artifacts/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Prepare six native D Modelica sources with causal arrival timestamps
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_causal_g2 prepare \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --condition O0 \
+            --fixture tests/fixtures/rf02_g2_fixture_nominals.json \
+            --native-dir artifacts/g2
+          test "$(find artifacts/g2 -name '*.mo' -type f | wc -l)" -eq 6
+          test "$(find artifacts/g2 -name '*.mos' -type f | wc -l)" -eq 1
+          test ! -e artifacts/g2/INVOCATION_STARTED
+      - name: Run one real OpenModelica instance with six engineering models
+        run: |
+          set -euo pipefail
+          docker pull "$OMC_IMAGE"
+          docker image inspect "$OMC_IMAGE" --format '{{json .RepoDigests}}' | tee artifacts/g2/image-digests.json
+          mkdir -p "$RUNNER_TEMP/omc-home"
+          printf 'INVOCATION_STARTED\n' > artifacts/g2/INVOCATION_STARTED
+          set +e
+          docker run --rm -v "$PWD:/repo" -w /repo/artifacts/g2 \
+            -v "$RUNNER_TEMP/omc-home:/omhome" -e HOME=/omhome \
+            "$OMC_IMAGE" omc simulate.mos > artifacts/g2/omc.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > artifacts/g2/exit_code.txt
+          sudo chown -R "$(id -u):$(id -g)" artifacts/g2
+          if [ "$code" -ne 0 ] || grep -Eq 'Error:|Failed to build model|Simulation execution failed|Failed to load' artifacts/g2/omc.log; then
+            cat artifacts/g2/omc.log
+            exit 1
+          fi
+          test "$(find artifacts/g2 -maxdepth 1 -name '*_res.csv' | wc -l)" -eq 6
+      - name: Verify six CSVs against exact causal injected mass including loss
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_causal_g2 verify \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --condition O0 \
+            --native-dir artifacts/g2 --out artifacts/g2/g2-report.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          x=json.loads(Path("artifacts/g2/g2-report.json").read_text())
+          assert x["G2"]=="PASS_REAL_OMC_ENGINEERING_ONLY"
+          assert x["candidate_count"]==6 and x["selection_actor"]=="NONE"
+          assert x["G3"]==x["G4"]==x["G5"]=="NOT_RUN"
+          assert x["scientific_adequacy"]=="NOT_ESTABLISHED"
+          assert x["no_compare_with_EV01_deliveries_or_truth"]
+          assert x["nominal_parameters_are_fixtures_not_ev01_estimates"]
+          assert all(c["status"]=="G2_ENGINEERING_MATERIAL_BALANCE_PASS"
+                     and c["G3"]=="NOT_RUN" and
+                     c["max_mass_residual_orders"]<=x["tolerance_orders_predeclared"]
+                     for c in x["candidates"])
+          print("RF02G_SIX_REAL_OMC_G2_ENGINEERING_ONLY_NO_COMPETITIVE_SCIENCE")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          path: |
+            artifacts/g2/manifest.json
+            artifacts/g2/simulate.mos
+            artifacts/g2/*.mo
+            artifacts/g2/*_res.csv
+            artifacts/g2/omc.log
+            artifacts/g2/image-digests.json
+            artifacts/g2/INVOCATION_STARTED
+            artifacts/g2/exit_code.txt
+            artifacts/g2/g2-report.json
+          if-no-files-found: error
+          retention-days: 90
