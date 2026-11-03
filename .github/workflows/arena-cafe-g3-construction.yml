@@ -52,6 +52,10 @@ jobs:
             --visible artifacts/public/O0_VISIBLE.json \
             --d-external-grid \
             --out artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json
+          python -m scripts.arena_cafe.g3_construction \
+            --visible artifacts/public/O0_VISIBLE.json \
+            --d-width-sensitivity \
+            --out artifacts/G3_CONSTRUCTION_D_WIDTH_SENSITIVITY.json
           python - <<'PY'
           import json
           from pathlib import Path
@@ -66,6 +70,11 @@ jobs:
           assert d["gates"]["A3"]=="PARTIAL"
           assert d["H_j"]["B"]=="NOT_AVAILABLE_NO_EV01_NATIVE_MODEL"
           assert d["no_new_world"] and d["no_provider_calls"] and d["no_new_omc"]
+          s=json.loads(Path('artifacts/G3_CONSTRUCTION_D_WIDTH_SENSITIVITY.json').read_text())
+          assert s["D_width_sensitivity"]["kernel_widths_minutes_exact"]==["1/4","1/2","1"]
+          assert all(x["candidate_count"]==6 and x["best_width_selected"] is False
+                     for x in s["D_width_sensitivity"]["panels"])
+          assert s["gates"]["G4"]==s["gates"]["G5"]=="NOT_RUN"
           print("G3_KNOWN_CONSTRUCTION_DESCRIPTIVE_D_EXTERNAL_M_FIXED_PRIOR_INCOMPATIBLE_NO_WINNER")
           PY
       - uses: actions/upload-artifact@v4
@@ -74,5 +83,6 @@ jobs:
           path: |
             artifacts/G3_CONSTRUCTION_ANALYTICAL.json
             artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json
+            artifacts/G3_CONSTRUCTION_D_WIDTH_SENSITIVITY.json
           if-no-files-found: error
           retention-days: 90
