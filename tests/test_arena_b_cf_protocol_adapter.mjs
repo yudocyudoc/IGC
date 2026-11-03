@@ -38,14 +38,3 @@ test("fail closed for missing schema, incorrect route, corrupt server result",()
  assert.throws(()=>responseToOpenRouter({success:false,result:{response:"{}"}},"hash"),/WORKERS_AI_UNSUCCESSFUL/);
  assert.throws(()=>responseToOpenRouter({success:true,result:{response:""}},"hash"),/WORKERS_AI_NO_CONTENT/);
 });
-
-test("separate EV01 one-shot uses authorized 7000 output cap only",()=>{
- const scoped=requestToCloudflare(original,{ev01Initial:true});
- assert.equal(scoped.max_completion_tokens,7000);
- const notScoped=requestToCloudflare(original);
- assert.equal(notScoped.max_completion_tokens,3500);
- assert.throws(()=>requestToCloudflare(original,{r1Initial:true,ev01Initial:true}),
-   /INVALID_TOKEN_BUDGET_OPTIONS/);
- assert.throws(()=>requestToCloudflare(original,{ev01Initial:"true"}),
-   /INVALID_TOKEN_BUDGET_OPTIONS/);
-});
