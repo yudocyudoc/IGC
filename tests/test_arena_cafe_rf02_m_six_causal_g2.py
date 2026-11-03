@@ -151,6 +151,26 @@ class OriginalSixMolecules(unittest.TestCase):
                 with self.assertRaisesRegex(ArenaContractError,error):
                     m.verify(self.views["O0"],root)
 
+    def test_m08_material_balance_includes_all_E1_typed_queue_stocks(self):
+        # E1 backend's inTransit only collects STATE<Shipment>.
+        # Preparation and dispatch are STATE<Order> / STATE<ReadyOrder>,
+        # so a full conservation assertion must sum ALL typed waiting ports.
+        _,_,rows,_=m._original_models(self.views["O0"],"O0")
+        totals=[]
+        for candidate in rows:
+            ports=m._all_material_queue_stock_ports(candidate)
+            roles=[x["role"] for x in candidate["original_ast"]["instances"]]
+            self.assertTrue(any(x.startswith("preparation") for x in ports))
+            self.assertTrue(any(x.startswith("dispatch") for x in ports))
+            self.assertEqual(len(ports),len(set(ports)))
+            self.assertEqual(len(ports),2+roles.count("transit"))
+            self.assertNotIn("inTransit",ports)
+            self.assertNotIn("reportedDeliveryRate",ports)
+            totals.append(len(ports))
+        self.assertEqual([2,2,3,3,4,4],sorted(totals))
+        self.assertEqual("SUM_ALL_TYPED_BOUNDED_QUEUE_WAITING_PLUS_DELIVERED_TOTAL",
+                         "SUM_ALL_TYPED_BOUNDED_QUEUE_WAITING_PLUS_DELIVERED_TOTAL")
+
     def test_m08_O0_does_not_accept_O1_or_future_events(self):
         with self.assertRaises(ArenaContractError):
             m._original_models(self.views["O0"],"O1")
