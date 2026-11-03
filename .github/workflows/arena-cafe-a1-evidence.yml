@@ -20,6 +20,9 @@ on:
       - 'scripts/arena_cafe/f3_adjudicate.py'
       - 'tests/test_arena_cafe_f3_adjudicate.py'
       - 'scripts/arena_cafe/buffalo_ev01_visible.py'
+      - 'scripts/arena_b_cf_protocol_adapter.mjs'
+      - 'scripts/arena_b_openrouter_cloudflare.mjs'
+      - 'tests/test_arena_b_cf_protocol_adapter.mjs'
       - 'tests/test_arena_cafe_a3_buffalo_ev01_visible.py'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
   workflow_dispatch:
@@ -48,6 +51,11 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_native_pos.py' -v
       - name: Real scoped ledger and ATMS checks, including cross-condition denial
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_scoped_memory.py' -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test original Cloudflare transport and separate EV01 7K cap
+        run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
       - name: Adversarial B EV01 POS and stage-scope tests, no live provider
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_ev01_visible.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
@@ -648,6 +656,7 @@ jobs:
           BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
           BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-offline
           BUFFALO_CF_MODE: offline
+          BUFFALO_EV01_INITIAL: EV01_ONE_SHOT
         run: |
           set -euo pipefail
           node scripts/arena_b_openrouter_cloudflare.mjs
@@ -663,6 +672,9 @@ jobs:
           assert r["model_returned"] is True and r["native_error"] is None
           assert r["status"]=="OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS"
           assert meta["actual_model"]=="@cf/zai-org/glm-5.3-flash"
+          assert meta["parameter_overrides"]["max_completion_tokens"]==7000
+          assert r["ev01_a3_initial"] is True
+          assert r["ev01_public_source_hash"]==p["source_snapshot_hash"]
           assert meta["source_prompts_unchanged"]
           assert p["provider_calls"]==0
           assert p["scientific_native_inference"]=="NOT_RUN"
