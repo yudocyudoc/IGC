@@ -29,6 +29,23 @@ Esto es una **pregunta predictiva**, no una optimización empresarial. La viabil
 
 Que el testigo cumpla el umbral en construcción **no certifica su rendimiento prospectivo**. La elección de los mecanismos, servicios y umbral fue efectuada con O0 ya conocido; no tiene una reserva independiente ni un prerregistro G4 válido para G5.
 
+## Resultado ejecutado: dos rivales, un mismo O0, seis pedidos de divergencia
+
+**Ejecución real:** [CI F4 41731608453](https://github.com/yudocyudoc/IGC/actions/runs/41731608453), artefacto [13277270769](https://github.com/yudocyudoc/IGC/actions/runs/41731608453/artifacts/13277270769), 10 pruebas (3 físicas sin artefacto + 7 adversariales con O0) aprobadas. La CI coteja los dos modelos contra las entradas y conteos públicos existentes, y ejecuta el **DES original** para los dos escenarios base y sus dos intervenciones.
+
+| Minuto | O0 observado = A base = B base | A con +1 preparación | B con +1 preparación |
+|---:|---:|---:|---:|
+| 0 | 0 | 0 | 0 |
+| 2 | 0 | 0 | 0 |
+| 4 | 2 | 4 | 2 |
+| 6 | 4 | 7 | 4 |
+| 8 | 6 | 10 | 6 |
+| 10 | **8** | **14** | **8** |
+
+**Resultado:** la misma observación S0 es compatible exactamente con mecanismos cuya localización nominal de la restricción es diferente; añadir la misma capacidad a preparación eleva entregas de A de 8 a 14 y **no cambia** las de B (8). Diferencia terminal **6 pedidos**. No es pronóstico validado, ni constatación de que una cafetería real pueda agregar capacidad: es un **contraejemplo físico constructivo** al diagnóstico único desde salidas acumuladas.
+
+Los estados internos simulados de ambos mecanismos son distintos, pero esos estados son **privados de la hipótesis del evaluador** y no están en O0. Eso es precisamente lo que hace posible la no-identificabilidad desde POS. O1 no ha sido usado para verificar ninguno de los dos mecanismos.
+
 ## Frontera con D/B/M y minería P
 
 - Estas dos **configuraciones auxiliares DES** representan mecanismos rivales para diseñar el problema; no se hacen pasar por inferencia nativa D, Buffalo ni Moléculas, ni como conocimiento observado por esos brazos.
