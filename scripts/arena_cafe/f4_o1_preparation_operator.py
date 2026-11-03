@@ -143,7 +143,8 @@ def build(o0,o1,witness):
         "PM_general_value":"NOT_ADJUDICATED",
         "PM_with_without_P_ablation":"NOT_RUN",
         "need_F4_design_revision_before_claiming_O1_ambiguous":True,
-        "no_new_generator_des_pm_omc_or_provider":True,
+        "original_DES_reexecuted_for_exact_preparation_counts":True,
+        "no_new_DES_engine_or_PM_OMC_provider":True,
         "G4":"NOT_RUN","G5":"NOT_RUN","A3":"PARTIAL",
     }
 
