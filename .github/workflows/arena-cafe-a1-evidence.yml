@@ -293,10 +293,29 @@ jobs:
           (root/"worker-receipt.json").write_bytes(canonical(r)+b"\n")
           print("A1_SCOPED_WORKER_PASS",arm,condition,r["status"])
           PY
+      - name: Record this worker in original scoped ledger/ATMS
+        env:
+          ARM: ${{ matrix.arm }}
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          python -m scripts.arena_cafe.scoped_memory record \
+            --db artifacts/scoped-ledger.sqlite \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --arm "$ARM" --condition "$CONDITION" --run-kind worker \
+            --receipt artifacts/worker-receipt.json --out artifacts/memory-receipt.json
+          python -m scripts.arena_cafe.scoped_memory inspect \
+            --db artifacts/scoped-ledger.sqlite \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --arm "$ARM" --condition "$CONDITION" --run-kind worker \
+            --out artifacts/memory-rebuild.json
       - uses: actions/upload-artifact@v4
         with:
           name: a1-cafe-native-${{ matrix.condition }}-${{ matrix.arm }}
-          path: artifacts/worker-receipt.json
+          path: |
+            artifacts/worker-receipt.json
+            artifacts/scoped-ledger.sqlite
+            artifacts/memory-receipt.json
+            artifacts/memory-rebuild.json
           if-no-files-found: error
 
   native-comparison:
