@@ -60,7 +60,13 @@ class PilotContract(unittest.TestCase):
         self.assertEqual("1204/765",
                          prep["mean_wait_of_completed_minutes_exact"])
         self.assertEqual(15,report["n_cases_created"])
-        self.assertEqual(1,report["observed_entry_route_variants"]["n_variants"])
+        routes=report["observed_entry_route_variants"]
+        self.assertEqual(1,routes["n_variants"])
+        self.assertTrue(routes["censored_prefixes_not_counted_as_process_variants"])
+        self.assertFalse(routes["observed_stage_logging_completeness_proven"])
+        self.assertGreater(
+            routes["n_right_censored_cases_with_observed_stage_entries"],0)
+        self.assertEqual(8,sum(x["cases"] for x in routes["counts"]))
 
     def test_01_no_calibration_from_synthetic_exact_timestamps(self):
         report=build(self.events)
@@ -84,6 +90,9 @@ class PilotContract(unittest.TestCase):
             x["censored_in_service_at_cutoff"]
             for x in report["stage_completed_only_descriptives"].values())
         self.assertGreater(censored,0)
+        self.assertEqual(report["n_delivered_pre_cutoff"],
+                         sum(x["cases"] for x in
+                             report["observed_entry_route_variants"]["counts"]))
         self.assertTrue(all(x["selection"]==
             "ONLY_SERVICES_COMPLETED_BEFORE_CUTOFF" for x in
             report["stage_completed_only_descriptives"].values()))
