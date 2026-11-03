@@ -1,0 +1,69 @@
+name: F4 cafe — O1 observability versus O0-equivalent mechanisms
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f4_o1_preparation_operator.py'
+      - 'tests/test_arena_cafe_f4_o1_preparation_operator.py'
+      - 'docs/arena_cafe/f4/01_O1_HJ_Y_DISCRIMINATE01.md'
+      - '.github/workflows/arena-cafe-f4-o1-hj.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  o1-censored-preparation-operator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse frozen public A1 O0 and O1, not FULL evaluator events
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Reuse frozen F4 O0-compatible rival design (no new selection)
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-known-o0-constructive-rival-mechanism-witness
+          run-id: 41731608453
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/previous-f4
+      - name: Exact F4 vs O1 operator, no G4/G5 and no FULL evidence
+        env:
+          F4O1_O0: artifacts/public/O0_VISIBLE.json
+          F4O1_O1: artifacts/public/O1_VISIBLE.json
+          F4O1_WITNESS: artifacts/previous-f4/F4_RIVAL_BOTTLENECKS_DEVELOPMENT.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f4_o1_preparation_operator.py' -v
+          python -m scripts.arena_cafe.f4_o1_preparation_operator \
+            --o0 "$F4O1_O0" \
+            --o1 "$F4O1_O1" \
+            --f4 "$F4O1_WITNESS" \
+            --out artifacts/F4_O1_PREPARATION_OPERATOR.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('artifacts/F4_O1_PREPARATION_OPERATOR.json').read_text())
+          assert d['S1_o1_has_n_completed_preparation_services']==9
+          assert d['S1_o1_mean_preparation_service_minutes_exact']=='15/17'
+          assert d['exact_matches_under_S1']==[]
+          assert d['no_false_single_winner']
+          assert d['PM_general_value']=='NOT_ADJUDICATED'
+          assert not d['real_sensor_error_model_estimated']
+          assert d['A3']=='PARTIAL' and d['G4']==d['G5']=='NOT_RUN'
+          print('F4_O0_BOTH_COMPATIBLE_BUT_O1_EXACTLY_EXCLUDES_BOTH_NO_FALSE_WINNER')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f4-o1-preparation-measurement-operator
+          path: artifacts/F4_O1_PREPARATION_OPERATOR.json
+          if-no-files-found: error
+          retention-days: 90
