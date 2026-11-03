@@ -28,7 +28,7 @@ class ScopedMemoryTests(unittest.TestCase):
         visible=self.views[condition]
         return {"schema":"igc-a1-isolated-worker-receipt/0.1",
                 "arm":arm,"condition":condition,"status":{
-                    "D":"BLOCKED_ORIGINAL_D_CONTRACT",
+                    "D":"BLOCKED_NOMINAL_PULSE_MISSING",
                     "B":"ORIGINAL_ENGINE_OFFLINE_MOCK",
                     "M":"ORIGINAL_E1_ENUMERATOR_ENGINEERING_ONLY"}[arm],
                 "visible_input_hash":digest(visible),
