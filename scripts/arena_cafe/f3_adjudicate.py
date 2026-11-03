@@ -220,13 +220,13 @@ def adjudicate(visible, roots, workers, f2):
             if arm=="B":
                 arms[cond][arm]={
                     "worker":own,
-                    "execution_state":"BLOCKED_RESOURCE_OR_AUTHORIZATION",
+                    "execution_state":"BLOCKED_NEW_EV01_PROVIDER_AUTHORIZATION",
                     "native_generation":"NO_LIVE_LLM_OUTPUT",
                     "G0":"NOT_RUN_GENUINE_INFERENCE",
                     "G1":"NOT_RUN","G2":"NOT_RUN","G3":"NOT_RUN",
                     "method_abstention":False,
                     "mock_is_not_method_inference":True,
-                    "interface":"UNSUPPORTED_DOCUMENTED_FOR_LIVE_REASONING"}
+                    "interface":"OFFLINE_TRANSPORT_ONLY_EV01_LIVE_NOT_TESTED"}
             else:
                 n=_native(roots[(cond,arm)],visible[cond],arm,cond)
                 arms[cond][arm]={
@@ -268,7 +268,18 @@ def adjudicate(visible, roots, workers, f2):
         "G4":"NOT_RUN","G5":"NOT_RUN",
         "diagnostic_only":"No tolerance, no heldout prediction, no structure selection",
         "provider_calls":0,
-        "no_genuine_buffalo_inference":True}
+        "no_genuine_buffalo_inference_in_this_EV01_run":True,
+        "historical_B_cloudflare_capability":{
+            "status":"REAL_INFERENCE_DEMONSTRATED_ON_OTHER_EXPERIMENTS_NOT_EV01",
+            "provider_model":"@cf/zai-org/glm-5.3-flash",
+            "original_engine":"UB-IAD/sd-ai@5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+            "prior_CI_runs":{
+                "initial_native":"40255975864",
+                "R1_physical_attempt":"40452596916",
+                "R2_truncated":"40486060023",
+                "R2_16k_simulated_with_stimulus_divergence":"40490534985"},
+            "prior_G2_is_not_EV01_G2":True,
+            "prior_outputs_not_scored_as_EV01_predictions":True}}
 
 
 def main():
