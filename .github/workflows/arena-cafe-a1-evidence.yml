@@ -19,6 +19,8 @@ on:
       - 'docs/arena_cafe/a3/**'
       - 'scripts/arena_cafe/f3_adjudicate.py'
       - 'tests/test_arena_cafe_f3_adjudicate.py'
+      - 'scripts/arena_cafe/buffalo_ev01_visible.py'
+      - 'tests/test_arena_cafe_a3_buffalo_ev01_visible.py'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
   workflow_dispatch:
 permissions:
@@ -572,6 +574,108 @@ jobs:
           name: a1-cafe-omc-${{ matrix.condition }}-${{ matrix.arm }}
           path: artifacts/native/
           if-no-files-found: warn
+          retention-days: 60
+
+  a3-b-cloudflare-offline-preflight:
+    needs: evidence-offline
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/arena_cafe/buffalo_ev01_visible.py
+            scripts/arena_cafe/native_pos_scenario.py
+            scripts/arena_cafe/evidence.py
+            scripts/arena_cafe/native_handoff.py
+            scripts/arena_event_observability.py
+            scripts/arena_v0_contract.py
+            scripts/arena_b_openrouter_cloudflare.mjs
+            scripts/arena_b_cf_protocol_adapter.mjs
+            scripts/arena_b_native_g1_diagnostic.mjs
+            tests/test_arena_cafe_a3_buffalo_ev01_visible.py
+      - name: Verify evaluator and D/M code are not provided to Buffalo
+        run: |
+          test ! -e scripts/arena_cafe/ev01.py
+          test ! -e scripts/arena_physical/des_engine.py
+          test ! -e scripts/arena_d_v01.py
+          test ! -e experiments/e1/backend.py
+          test ! -e docs/arena_cafe/a2
+          test ! -e historico
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-${{ matrix.condition }}
+          path: artifacts/public
+      - name: Stage O0 or O1 only for genuine original Buffalo engine
+        env:
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          test "$(find artifacts/public -type f | wc -l)" = 1
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --condition "$CONDITION" --out artifacts/b-visible
+      - name: Fetch pinned unmodified Buffalo SD-AI upstream
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Exercise original Buffalo quantitative engine via virtual OpenRouter and OFFLINE Cloudflare fixture
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path("artifacts/b-offline/receipt.json").read_text())
+          p=json.loads(Path("artifacts/b-visible/staging-receipt.json").read_text())
+          meta=json.loads(Path("artifacts/b-offline/cf-request-metadata.json").read_text())
+          assert r["live_provider_calls"]==0
+          assert r["intercepted_http_calls"]==1
+          assert r["inference_source"]=="SYNTHETIC_CLOUDFLARE_FIXTURE"
+          assert r["model_returned"] is True and r["native_error"] is None
+          assert r["status"]=="OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS"
+          assert meta["actual_model"]=="@cf/zai-org/glm-5.3-flash"
+          assert meta["source_prompts_unchanged"]
+          assert p["provider_calls"]==0
+          assert p["scientific_native_inference"]=="NOT_RUN"
+          print("A3_B_OFFLINE_ORIGINAL_SDK_CLOUDFLARE_TRANSPORT_OK_NO_REAL_INFERENCE")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-${{ matrix.condition }}-preflight-NO_PROVIDER
+          path: |
+            artifacts/b-visible/
+            artifacts/b-offline/receipt.json
+            artifacts/b-offline/cf-request-metadata.json
+            artifacts/b-offline/intercepted-request-metadata.json
+            artifacts/b-offline/native-output.json
+          if-no-files-found: error
           retention-days: 60
 
   f3-known-control-adjudication:
