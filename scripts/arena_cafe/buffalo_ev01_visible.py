@@ -142,7 +142,7 @@ def stage(visible,condition):
         "buffalo_visible_hash":digest(result),
         "model":MODEL,"native_original_engine":ORIGINAL_ENGINE,
         "provider_calls":0,"possible_later_max_provider_calls":MAX_PROVIDER_CALLS,
-        "max_output_tokens_unmodified_bridge":MAX_COMPLETION_TOKENS,
+        "max_output_tokens_EV01_scoped_transport":MAX_COMPLETION_TOKENS,
         "original_engine_unchanged":True,
         "public_pos_orders":15,
         "input_reconstruction_is_declared_assumption":True,
