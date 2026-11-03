@@ -79,8 +79,8 @@ class BuffaloEV01PublicStageTests(unittest.TestCase):
         self.assertTrue(record["historical_B_cloudflare_success_is_not_current_EV01_call"])
         self.assertEqual("B_NATIVE_INPUT_STAGED_ZERO_PROVIDER_CALLS",record["status"])
         self.assertIn("Buffalo",native["question"])
-        self.assertIn("NOT a measured instantaneous",str(native["construction"][
-            "declared_input_reconstruction"]))
+        self.assertTrue(native["construction"][
+            "declared_input_reconstruction"]["not_an_observed_instantaneous_rate"])
 
 
 if __name__=="__main__":
