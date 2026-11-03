@@ -1,0 +1,80 @@
+name: F3 cafeteria — existing PM4Py incremental-information check (no new PM)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f3_pm_incremental.py'
+      - 'tests/test_arena_cafe_f3_pm_incremental.py'
+      - 'docs/arena_cafe/a3/01_PM_VALOR_INCREMENTAL_EV01.md'
+      - '.github/workflows/arena-cafe-f3-pm-incremental.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  same-information-PM-versus-B1B2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Existing EV-01 original PM4Py DFG and evaluator-only FULL trace
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-ev01-pos-kds-full-evidence
+          run-id: 41356387093
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/ev01
+      - name: Existing B0/B1/B2 physical evaluator report
+        uses: actions/download-artifact@v4
+        with:
+          name: a2-cafe-f2-evaluator-physical-controls
+          run-id: 41552216315
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/f2
+      - name: Existing public O0/O1 source envelopes
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/a1
+      - name: Compare original mined DFG with B1 physical route, no new engine
+        env:
+          F3P_EV01_REPORT: artifacts/ev01/02_RESULTS.json
+          F3P_FULL_CSV: artifacts/ev01/01_FULL_PUBLIC_EVENTS.csv
+          F3P_F2_REPORT: artifacts/f2/f2-controls.json
+          F3P_O0: artifacts/a1/O0_VISIBLE.json
+          F3P_O1: artifacts/a1/O1_VISIBLE.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f3_pm_incremental.py' -v
+          python -m scripts.arena_cafe.f3_pm_incremental \
+            --ev01-report "$F3P_EV01_REPORT" \
+            --full "$F3P_FULL_CSV" \
+            --f2-report "$F3P_F2_REPORT" \
+            --o0 "$F3P_O0" --o1 "$F3P_O1" \
+            --out artifacts/F3_PM_INFORMATION_INCREMENT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/F3_PM_INFORMATION_INCREMENT.json").read_text())
+          assert r["full_case_route_variants"]==1
+          assert r["repeated_stage_cases"]==0
+          assert r["full_dfg_14_edges_count_15_each"]
+          assert r["PM_14"]=="NOT_TRIGGERED_FOR_THIS_KNOWN_CONTROL"
+          assert r["global_F6"]=="NOT_ADJUDICATED"
+          assert r["causal_bottleneck_location_from_DFG"]=="NOT_IDENTIFIED"
+          assert r["A3"]=="PARTIAL" and r["G4"]==r["G5"]=="NOT_RUN"
+          print("F3_PM_EXISTING_DFG_NO_ROUTE_INCREMENT_OVER_B1_IN_EV01")
+          PY
+      - name: Export only conclusion, never raw FULL or evaluator config
+        uses: actions/upload-artifact@v4
+        with:
+          name: f3-pm-existing-evidence-incremental-value
+          path: artifacts/F3_PM_INFORMATION_INCREMENT.json
+          if-no-files-found: error
+          retention-days: 90
