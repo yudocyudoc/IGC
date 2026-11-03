@@ -7,7 +7,7 @@ event kernel used for D, converted exactly from minutes to hours and
 orders/minute to orders/hour. The R2M OMC invocation is a separate CI job.
 
 The material audit uses the original backend's inTransit + deliveredTotal
-ports, never reportedDeliveryRate (an information-only signal).
+ports, never reportedDeliveryRate (an information-only signal).\nNOTE: original backend inTransit only sums STATE<Shipment> (transit) stocks;\nthe verified mass operator sums ALL typed bounded-queue waiting ports, including\npreparation and dispatch, plus deliveredTotal. No E1 equation is modified.
 """
 from __future__ import annotations
 
@@ -202,6 +202,37 @@ def prepare(visible,condition,out):
     return manifest
 
 
+
+def _all_material_queue_stock_ports(candidate):
+    """Use ALL typed queue stock outputs, not the restricted 'inTransit' tap.
+
+    The original E1 backend's 'inTransit' is the sum of STATE<Shipment>
+    outputs only; preparation/dispatch have different typed states.
+    Therefore that display variable CANNOT be used for global conservation.
+    """
+    c=get_composer()
+    cfg,classes,_=c.load_registry(r2.BASE_PATH)
+    graph=candidate["original_ast"]
+    c.check_graph(graph,cfg,classes)
+    result=[]
+    for node in graph["instances"]:
+        if node["role"] not in ("preparation","dispatch","transit"):
+            continue
+        need(node["class_id"]=="bounded-queue",
+             "RF02M_UNEXPECTED_NATIVE_MATERIAL_QUEUE_CLASS")
+        resolved=c.ports(classes[node["class_id"]],node["role"])
+        waiting=[p for p in resolved
+                 if p["name"]=="waiting" and p["direction"]=="out" and
+                 p["type"].startswith("STATE<") and p["unit"]=="units"]
+        need(len(waiting)==1,"RF02M_MATERIAL_STOCK_PORT_NOT_TYPED")
+        result.append(node["id"]+".waiting")
+    need(2<=len(result)<=4 and len(result)==len(set(result)) and
+         any(x.startswith("preparation") for x in result) and
+         any(x.startswith("dispatch") for x in result),
+         "RF02M_MATERIAL_PATH_STOCKS_NOT_COMPLETE")
+    return result
+
+
 def verify(visible,root):
     root=Path(root)
     need((root/"manifest.json").is_file(),"RF02M_MISSING_MANIFEST")
@@ -254,34 +285,41 @@ def verify(visible,root):
              "RF02M_MISSING_NATIVE_SOLVER_CSV")
         data=oe._rows(csv)
         need(len(data)>=1000,"RF02M_INSUFFICIENT_REAL_SAMPLES")
+        # E1 inTransit is a restricted STATE<Shipment> display, not an
+        # aggregate of preparation + dispatch + transit work-in-progress.
+        # Bind all native material queue ports by typed AST, not by a guessed
+        # 'inTransit' label or a manually imposed two-stage topology.
+        stock_ports=_all_material_queue_stock_ports(candidate)
         prev=-1.0
         prev_delivered=-1.0
         residual=0.0
         first=None
         last=None
-        last_transit=None
         for row in data:
             hour=oe._column(row,"time")
             minute=hour*60
             delivered=oe._column(row,"deliveredTotal")
-            transit=oe._column(row,"inTransit")
+            stock_levels=[oe._column(row,name) for name in stock_ports]
+            total_stocks=sum(stock_levels)
+            partial_in_transit=oe._column(row,"inTransit")
             need(minute+1e-8>=prev and -1e-8<=minute<=float(cutoff)+1e-7,
                  "RF02M_TIME_OR_CUTOFF_DRIFT")
             need(delivered>=prev_delivered-1e-6 and
-                 delivered>=-1e-6 and transit>=-1e-6,
+                 min([delivered,partial_in_transit]+stock_levels)>=-1e-6 and
+                 partial_in_transit<=total_stocks+1e-6,
                  "RF02M_NEGATIVE_OR_DECREASING_MATERIAL")
             injected=float(causal.event_mass_until(times,width,Q(str(minute))))
-            residual=max(residual,abs(transit+delivered-injected))
+            residual=max(residual,abs(total_stocks+delivered-injected))
             if first is None:
-                first=(minute,delivered,transit)
-            last=(minute,delivered,transit)
+                first=(minute,delivered,total_stocks,partial_in_transit)
+            last=(minute,delivered,total_stocks,partial_in_transit)
             prev,prev_delivered=minute,delivered
         need(abs(first[0])<=1e-7 and
              abs(last[0]-float(cutoff))<=1e-6,
              "RF02M_TRUNCATED_NATIVE_TRAJECTORY")
         need(residual<=TOLERANCE_ORDERS,"RF02M_MATERIAL_BALANCE_FAILED")
         samples.append({"group":candidate["material_only_projection_sha256"],
-                        "delivered":last[1],"transit":last[2]})
+                        "delivered":last[1],"all_material_stocks":last[2]})
         audited.append({
             "canonical_sha256":candidate["canonical_sha256"],
             "full_ast_sha256":candidate["full_ast_sha256"],
@@ -289,9 +327,13 @@ def verify(visible,root):
                 candidate["material_only_projection_sha256"],
             "solver_csv_sha256":sha_file(csv),
             "rows":len(data),
+            "material_stock_ports":stock_ports,
+            "mass_balance_operator":"SUM_ALL_TYPED_BOUNDED_QUEUE_WAITING_PLUS_DELIVERED_TOTAL",
+            "inTransit_is_shipment_only_subset_not_total_WIP":True,
             "max_material_residual_orders":residual,
             "delivered_final_engineering":last[1],
-            "in_transit_final_engineering":last[2],
+            "all_material_stocks_final_engineering":last[2],
+            "shipment_only_inTransit_final_engineering":last[3],
             "G2":"PASS_ENGINEERING_MASS_CONSERVATION",
             "G3":"NOT_RUN",
         })
@@ -303,19 +345,22 @@ def verify(visible,root):
     checks=[]
     for key,items in sorted(groups.items()):
         delta_delivery=abs(items[0]["delivered"]-items[1]["delivered"])
-        delta_transit=abs(items[0]["transit"]-items[1]["transit"])
+        delta_stocks=abs(items[0]["all_material_stocks"]-
+                         items[1]["all_material_stocks"])
         need(delta_delivery<=SIGNAL_GROUP_TOLERANCE_ORDERS and
-             delta_transit<=SIGNAL_GROUP_TOLERANCE_ORDERS,
+             delta_stocks<=SIGNAL_GROUP_TOLERANCE_ORDERS,
              "RF02M_INFORMATION_BRANCH_CHANGED_PHYSICAL_ENDSTATE")
         checks.append({"material_group_sha256":key,
                        "pair_count":len(items),
                        "delivery_end_difference_orders":delta_delivery,
-                       "transit_end_difference_orders":delta_transit,
+                       "all_stock_end_difference_orders":delta_stocks,
                        "end_state_parity_is_not_dynamic_equivalence":True})
     return {
         "schema":REPORT_SCHEMA,"condition_id":condition,
         "source_snapshot_hash":visible["source_snapshot_hash"],
         "original_molecule_count":6,
+        "balance_operator":"SUM_ALL_TYPED_BOUNDED_QUEUE_WAITING_PLUS_DELIVERED_TOTAL",
+        "inTransit_is_not_complete_WIP_across_E1_roles":True,
         "source_graphs":"ORIGINAL_SHORT_E1_BASE_FULL_AST",
         "native_source":"ORIGINAL_E1_COMPOSER_AND_BACKEND_WITH_EXTERNAL_INPUT_ONLY",
         "same_causal_signal_hash_as_D":signal["event_rate_signal_sha256"],
