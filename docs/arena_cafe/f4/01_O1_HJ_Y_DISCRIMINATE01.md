@@ -10,6 +10,8 @@ El testigo de desarrollo F4 contiene dos explicaciones físicas que dan exactame
 |---|---:|---:|---:|
 | Servicio medio en preparación (minutos exactos) | 15/17 | 1 | 3/5 |
 | Estado de coincidencia exacta de la media | Observado | **NO** | **NO** |
+| Preparaciones completadas antes de t=10 | 9 | **9** | **15** |
+| Coincidencia exacta del conteo | Observado | **SÍ** | **NO** |
 | Entregas acumuladas O0 al t=10 | 8 | 8 | 8 |
 
 **Un dato adicional legítimamente observado puede rechazar ambas explicaciones.** No debemos declarar «A o B son las posibilidades reales» solo porque constituyen dos hipótesis O0 compatibles. En el modelo de servicio fijo de ambos mecanismos, el tiempo medio de los *servicios completados* equivale al tiempo fijo de preparación; ése es el operador de observación `H_j` adecuado para dicha magnitud. No corresponde comparar esa medición con una tasa de entregas ni con los stocks de D/M por semejanza de nombre.
@@ -19,6 +21,16 @@ El script `scripts/arena_cafe/f4_o1_preparation_operator.py` usa solo **O0 y O1 
 Comprueba también que el conteo no cambia por un evento exactamente en t=10. Para la media de servicio usa la duración **determinista exacta** declarada en la hipótesis; no infiere ni fabrica esperas por pedido desde snapshots agregados.
 
 La igualdad o desigualdad se interpreta **condicionada a la correspondencia operacional de «preparación» en las hipótesis con el agregado publicado**. Los nombres internos de F4 no fueron identificados a partir de O0; son afirmaciones del constructor. La comparación **no demuestra** que el mundo real tenga esas mismas etapas o que sus tiempos de servicio sean constantes. No se ha medido aquí precisión instrumental, error de reloj ni variabilidad empírica; una falta de igualdad exacta no debe convertirse en un rechazo estadístico fuera de este control sintético.
+
+### Verificación ejecutada del operador físico
+
+**CI:** [run 41734201683](https://github.com/yudocyudoc/IGC/actions/runs/41734201683), **10 pruebas PASS**; [artefacto original ID 13278595601](https://github.com/yudocyudoc/IGC/actions/runs/41734201683/artifacts/13278595601). La comparación usa el O0 y O1 públicos congelados y el testigo físico F4 original. **No se descargó el registro FULL** para este estudio.
+
+- **A (cuello nominal en preparación):** 9 preparaciones completadas, igual que O1; servicio medio hipotético 1 min frente a 15/17 observado; residual **+2/17 min**. Falla el operador de duración.
+- **B (cuello nominal en despacho):** 15 preparaciones completadas frente a 9 observadas; servicio medio hipotético 3/5 frente a 15/17; residual **−24/85 min**. Falla tanto el conteo como la duración.
+- **Resultado:** 0 de las 2 hipótesis coinciden con **ambas** mediciones O1 bajo correspondencia de etapa y ley determinista. Es un **vacío de candidatos dentro de esta pareja**, NO evidencia de que no haya otro mecanismo físicamente compatible ni refutación estadística general.
+
+En particular, el conteo de A por sí solo **no** justifica seleccionar A: su duración de servicio sigue siendo inconsistente. Tampoco vale ajustar ambos tiempos de servicio a 15/17 después de ver O1 y llamar a ese par un nuevo testigo independiente.
 
 ## DISCRIMINATE-01 · Diseño científico, no congelación G4
 
