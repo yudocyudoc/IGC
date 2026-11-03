@@ -240,7 +240,13 @@ def resource_periods(full,resources,horizon,*,available=None):
             for rid in ids:
                 if available is None:
                     state="PROCESSING" if rid in processing else "UNKNOWN"
-                    if rid not in processing:unknown_ids.add(rid)
+                    if rid in processing:
+                        # An observed physical service proves this resource
+                        # was available DURING service, not that idle peers
+                        # were available throughout the window.
+                        available_ids.add(rid)
+                    else:
+                        unknown_ids.add(rid)
                 else:
                     avail=any(_exact(a)<=left<_exact(b) for a,b in available[rid])
                     if rid in processing:
