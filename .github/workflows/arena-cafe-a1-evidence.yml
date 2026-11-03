@@ -16,6 +16,16 @@ on:
       - 'scripts/arena_cafe/scoped_memory.py'
       - 'tests/test_arena_cafe_a1_handoff.py'
       - 'docs/arena_cafe/a1/**'
+      - 'docs/arena_cafe/a3/**'
+      - 'scripts/arena_cafe/f3_adjudicate.py'
+      - 'tests/test_arena_cafe_f3_adjudicate.py'
+      - 'scripts/arena_cafe/buffalo_ev01_visible.py'
+      - 'scripts/arena_b_cf_protocol_adapter.mjs'
+      - 'scripts/arena_b_openrouter_cloudflare.mjs'
+      - 'tests/test_arena_b_cf_protocol_adapter.mjs'
+      - 'tests/test_arena_cafe_a3_buffalo_ev01_visible.py'
+      - 'tests/test_arena_cafe_a3_buffalo_live_guard.py'
+      - '.github/workflows/arena-cafe-a3-b-cloudflare-one-shot.yml'
       - '.github/workflows/arena-cafe-a1-evidence.yml'
   workflow_dispatch:
 permissions:
@@ -43,6 +53,15 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_native_pos.py' -v
       - name: Real scoped ledger and ATMS checks, including cross-condition denial
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_scoped_memory.py' -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test F0-pinned original Cloudflare transport unchanged
+        run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
+      - name: Verify live one-shot authorization blocks all unapproved calls
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_live_guard.py' -v
+      - name: Adversarial B EV01 POS and stage-scope tests, no live provider
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_ev01_visible.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
         run: |
           python -m unittest discover -s tests -p 'test_arena_v0_common_evidence.py' -v
@@ -569,4 +588,166 @@ jobs:
           name: a1-cafe-omc-${{ matrix.condition }}-${{ matrix.arm }}
           path: artifacts/native/
           if-no-files-found: warn
+          retention-days: 60
+
+  a3-b-cloudflare-offline-preflight:
+    needs: evidence-offline
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/arena_cafe/buffalo_ev01_visible.py
+            scripts/arena_cafe/native_pos_scenario.py
+            scripts/arena_cafe/evidence.py
+            scripts/arena_cafe/native_handoff.py
+            scripts/arena_event_observability.py
+            scripts/arena_v0_contract.py
+            scripts/arena_b_openrouter_cloudflare.mjs
+            scripts/arena_b_cf_protocol_adapter.mjs
+            scripts/arena_b_native_g1_diagnostic.mjs
+            tests/test_arena_cafe_a3_buffalo_ev01_visible.py
+      - name: Verify evaluator and D/M code are not provided to Buffalo
+        run: |
+          test ! -e scripts/arena_cafe/ev01.py
+          test ! -e scripts/arena_physical/des_engine.py
+          test ! -e scripts/arena_d_v01.py
+          test ! -e experiments/e1/backend.py
+          test ! -e docs/arena_cafe/a2
+          test ! -e historico
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-${{ matrix.condition }}
+          path: artifacts/public
+      - name: Stage O0 or O1 only for genuine original Buffalo engine
+        env:
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          test "$(find artifacts/public -type f | wc -l)" = 1
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --condition "$CONDITION" --out artifacts/b-visible
+      - name: Fetch pinned unmodified Buffalo SD-AI upstream
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Exercise original Buffalo quantitative engine via virtual OpenRouter and OFFLINE Cloudflare fixture
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-offline
+          BUFFALO_CF_MODE: offline
+        run: |
+          set -euo pipefail
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path("artifacts/b-offline/receipt.json").read_text())
+          p=json.loads(Path("artifacts/b-visible/staging-receipt.json").read_text())
+          meta=json.loads(Path("artifacts/b-offline/cf-request-metadata.json").read_text())
+          assert r["live_provider_calls"]==0
+          assert r["intercepted_http_calls"]==1
+          assert r["inference_source"]=="SYNTHETIC_CLOUDFLARE_FIXTURE"
+          assert r["model_returned"] is True and r["native_error"] is None
+          assert r["status"]=="OFFLINE_CF_FAÇADE_NATIVE_ENGINE_PASS"
+          assert meta["actual_model"]=="@cf/zai-org/glm-5.3-flash"
+          assert meta["parameter_overrides"]["max_completion_tokens"]==3500
+          assert meta["source_prompts_unchanged"]
+          assert p["provider_calls"]==0
+          assert p["scientific_native_inference"]=="NOT_RUN"
+          print("A3_B_OFFLINE_ORIGINAL_SDK_CLOUDFLARE_TRANSPORT_OK_NO_REAL_INFERENCE")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-${{ matrix.condition }}-preflight-NO_PROVIDER
+          path: |
+            artifacts/b-visible/
+            artifacts/b-offline/receipt.json
+            artifacts/b-offline/cf-request-metadata.json
+            artifacts/b-offline/intercepted-request-metadata.json
+            artifacts/b-offline/native-output.json
+          if-no-files-found: error
+          retention-days: 60
+
+  f3-known-control-adjudication:
+    needs: [evidence-offline, native-isolated, native-comparison, native-pos-omc, a3-b-cloudflare-offline-preflight]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Adjudication adversarial offline guards
+        run: |
+          python -m unittest discover -s tests -p 'test_arena_cafe_f3_adjudicate.py' -v
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          path: artifacts/public
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: a1-cafe-omc-*
+          path: artifacts/native
+          merge-multiple: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: a1-cafe-native-O*
+          path: artifacts/workers
+          merge-multiple: false
+      - name: Reaudit four original OpenModelica traces and six worker lineages
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.f3_adjudicate \
+            --public artifacts/public --native artifacts/native \
+            --workers artifacts/workers --out artifacts/a3/f3-report.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          x=json.loads(Path("artifacts/a3/f3-report.json").read_text())
+          assert x["A3"]=="PARTIAL"
+          assert x["MODEL-01"]=="PARTIAL_D_M_REAL_B_LIVE_NOT_AUTHORIZED"
+          assert x["execution_scopes"]["unique_case_ids"]==10
+          assert x["G4"]=="NOT_RUN" and x["G5"]=="NOT_RUN"
+          for c in ("O0","O1"):
+              assert x["arms"][c]["B"]["native_generation"]=="NO_LIVE_LLM_OUTPUT"
+              for a in ("D","M"):
+                  native=x["arms"][c][a]["native"]
+                  assert native["G2"]=="PASS_REAL_OMC_MATERIAL_BALANCE_ENGINEERING"
+                  assert native["G3"]=="CONSTRUCTION_DESCRIPTIVE_ONLY_NO_ADMISSIBILITY_THRESHOLD"
+                  assert native["metrics"]["delivery_rmse_orders"]>0
+                  assert native["independent_forecast"]=="NOT_RUN"
+          print("A3_F3_PARTIAL_D_M_NATIVE_B_OFFLINE_BOUNDARY_AND_10_LEDGER_SCOPES_PASS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-cafe-f3-known-control-adjudication
+          path: artifacts/a3/f3-report.json
+          if-no-files-found: error
           retention-days: 60

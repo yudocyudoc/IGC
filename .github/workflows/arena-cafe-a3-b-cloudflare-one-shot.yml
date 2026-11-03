@@ -1,0 +1,177 @@
+name: A3 Buffalo EV01 O0/O1 — TWO authorized Cloudflare calls, no reruns
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RUN_EV01_BUFFALO_TWO_LIVE_CALLS_ONCE to spend up to 2 one-shot Cloudflare model calls"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: a3-b-ev01-one-shot-real-provider
+  cancel-in-progress: false
+jobs:
+  public-input-only:
+    if: ${{ github.repository == 'yudocyudoc/IGC' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_number == 1 && github.run_attempt == 1 && inputs.confirmation == 'RUN_EV01_BUFFALO_TWO_LIVE_CALLS_ONCE' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify frozen public EV01 source and export ONLY O0/O1
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_cafe import ev01
+          from scripts import arena_event_observability as obs
+          raw, checkpoints = ev01.trace_generator()
+          ev01.verify_des_parity(checkpoints)
+          root = Path('/tmp/a3-b-ev01-evaluator')
+          root.mkdir(exist_ok=False)
+          ev01.write_csv(root,'POS.csv',obs.project_events(raw,'POS'),'POS')
+          ev01.write_csv(root,'FULL.csv',obs.project_events(raw,'FULL'),'FULL')
+          PY
+          python -m scripts.arena_cafe.evidence \
+            --pos /tmp/a3-b-ev01-evaluator/POS.csv \
+            --full /tmp/a3-b-ev01-evaluator/FULL.csv \
+            --cutoff 10 --out artifacts/public
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path("artifacts/public")
+          assert {p.name for p in root.iterdir()}=={"O0_VISIBLE.json","O1_VISIBLE.json","INTERFACE01.json","EVIDENCE01.json"}
+          for p in root.iterdir():
+              s=p.read_text()
+              assert "transferencia_final" not in s and "resource_id" not in s
+              assert "generator_parameters" not in s
+          print("EV01_PUBLIC_SOURCE_ONLY_TWO_CONDITIONS_PREPARED")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-O0-public-only
+          path: artifacts/public/O0_VISIBLE.json
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-O1-public-only
+          path: artifacts/public/O1_VISIBLE.json
+          if-no-files-found: error
+          retention-days: 90
+
+  live-original-buffalo:
+    needs: public-input-only
+    if: ${{ needs.public-input-only.result == 'success' && github.repository == 'yudocyudoc/IGC' && github.ref == 'refs/heads/main' && github.run_number == 1 && github.run_attempt == 1 && inputs.confirmation == 'RUN_EV01_BUFFALO_TWO_LIVE_CALLS_ONCE' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: a3-buffalo-cloudflare
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/arena_cafe/buffalo_ev01_visible.py
+            scripts/arena_cafe/native_pos_scenario.py
+            scripts/arena_cafe/evidence.py
+            scripts/arena_cafe/native_handoff.py
+            scripts/arena_event_observability.py
+            scripts/arena_v0_contract.py
+            scripts/arena_b_openrouter_cloudflare.mjs
+            scripts/arena_b_cf_protocol_adapter.mjs
+            scripts/arena_b_native_g1_diagnostic.mjs
+      - name: Verify evaluator sources and peer models are unavailable
+        run: |
+          set -euo pipefail
+          test ! -e scripts/arena_cafe/ev01.py
+          test ! -e scripts/arena_physical/des_engine.py
+          test ! -e scripts/arena_d_v01.py
+          test ! -e experiments/e1/backend.py
+          test ! -e historico
+      - uses: actions/download-artifact@v4
+        with:
+          name: a3-b-ev01-${{ matrix.condition }}-public-only
+          path: artifacts/reference-public
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify only one condition artifact is visible
+        run: test "$(find artifacts/reference-public -type f | wc -l)" = 1
+      - name: Convert ONLY this condition's public evidence for original Buffalo
+        env:
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          test -f "artifacts/reference-public/${CONDITION}_VISIBLE.json"
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/reference-public/${CONDITION}_VISIBLE.json" \
+            --condition "$CONDITION" --out artifacts/b-visible
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=json.loads(Path('artifacts/b-visible/staging-receipt.json').read_text())
+          assert p["provider_calls"]==0 and p["max_output_tokens_existing_frozen_bridge"]==3500
+          assert p["physical_available"] in ("NONE","PREPARATION_AGGREGATE_ONLY")
+          assert p["truth_after_cutoff_supplied"] is False
+          PY
+      - name: Fetch original Buffalo pinned unmodified
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Exactly ONE live GLM-5.3-Flash call per authorized condition; NEVER retry
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/b-visible/b-visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/b-live
+          BUFFALO_CF_MODE: live
+          BUFFALO_CF_AUTH: RUN_SINGLE_CF_AI_MODEL
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "A3_BUFFALO_EV01_ONE_AUTHORIZED_CALL_ATTEMPT_STARTED_CONDITION=${{ matrix.condition }}"
+          node scripts/arena_b_openrouter_cloudflare.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/b-live/receipt.json").read_text())
+          assert r["live_provider_calls"]==1
+          assert r["real_model"]=="@cf/zai-org/glm-5.3-flash"
+          assert r["inference_source"]=="REAL_CLOUDFLARE_WORKERS_AI"
+          assert r["raw_cloudflare_preserved"] is True
+          m=json.loads(Path("artifacts/b-live/cf-request-metadata.json").read_text())
+          assert m["parameter_overrides"]["max_completion_tokens"]==3500
+          print("A3_EV01_AUTHENTIC_ORIGINAL_BUFFALO_RESPONSE_ARCHIVED_NOT_YET_G2")
+          PY
+      - name: Preserve original bytes, including truncated or failed runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a3-b-ev01-${{ matrix.condition }}-one-live-native-${{ github.run_id }}
+          path: |
+            artifacts/b-visible/
+            artifacts/b-live/
+          if-no-files-found: warn
+          retention-days: 90
