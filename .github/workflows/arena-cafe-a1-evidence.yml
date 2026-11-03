@@ -542,6 +542,24 @@ jobs:
           assert g["nominal_parameters_are_assumptions"]
           print("A1_NATIVE_POS_D_M_REAL_SOLVER_HJ_ENGINEERING_ONLY",g["arm_id"],g["condition_id"])
           PY
+      - name: Record real OMC engineering outcome in original scoped ledger/ATMS
+        env:
+          ARM: ${{ matrix.arm }}
+          CONDITION: ${{ matrix.condition }}
+        run: |
+          python -m scripts.arena_cafe.scoped_memory record \
+            --db artifacts/native/ledger.sqlite \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --arm "$ARM" --condition "$CONDITION" --run-kind native \
+            --receipt artifacts/native/g2-report.json \
+            --manifest artifacts/native/manifest.json \
+            --hj artifacts/native/hj.json \
+            --out artifacts/native/memory-receipt.json
+          python -m scripts.arena_cafe.scoped_memory inspect \
+            --db artifacts/native/ledger.sqlite \
+            --input "artifacts/public/${CONDITION}_VISIBLE.json" \
+            --arm "$ARM" --condition "$CONDITION" --run-kind native \
+            --out artifacts/native/memory-rebuild.json
       - name: Make native artifacts readable even when the solver fails
         if: always()
         run: sudo chown -R "$(id -u):$(id -g)" artifacts/native || true
