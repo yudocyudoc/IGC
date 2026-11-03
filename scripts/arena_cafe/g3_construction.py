@@ -241,6 +241,40 @@ def d_external_grid(visible, *, width=DEFAULT_WIDTH,
     }
 
 
+def width_sensitivity(visible, *, capacities=CAPACITIES,
+                      responses=RESPONSE_TIMES, losses=LOSS_TIMES):
+    """Report all three predeclared kernel widths; never choose a winner."""
+    panels=[]
+    for width in signal.SENSITIVITY_WIDTHS:
+        d=d_external_grid(visible,width=width,capacities=capacities,
+                          responses=responses,losses=losses)
+        panels.append({
+            "width_minutes_exact":str(width),
+            "candidate_count":d["candidate_count"],
+            "same_native_six_structure_hashes":
+                [x["native_structure_sha256"] for x in d["candidates"]],
+            "per_structure_minimum_MAE":[
+                {"candidate_id":x["candidate_id"],
+                 "MAE_posthoc_grid_minimum":x["best_in_grid"]["mae"],
+                 "near_best_grid_count":x["near_best_grid_count"]}
+                for x in d["candidates"]],
+            "best_width_selected":False,
+        })
+    need(all(p["same_native_six_structure_hashes"] ==
+             panels[0]["same_native_six_structure_hashes"] for p in panels),
+         "G3_SENSITIVITY_CHANGED_NATIVE_UNIVERSE")
+    return {
+        "mode":"EXPLORATORY_KERNEL_SENSITIVITY_NOT_METHOD_SELECTION",
+        "kernel_widths_minutes_exact":
+            [str(x) for x in signal.SENSITIVITY_WIDTHS],
+        "panels":panels,
+        "M_priors_modified":False,
+        "D_native_model_selection":False,
+        "width_optimized_on_O0":False,
+        "no_scientific_PASS":True,
+    }
+
+
 def build(visible, *, run_external_grid=False):
     m = m_analytical_bound(visible)
     d = d_external_grid(visible) if run_external_grid else {
@@ -280,10 +314,15 @@ def main():
     ap.add_argument("--visible", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--d-external-grid", action="store_true")
+    ap.add_argument("--d-width-sensitivity", action="store_true")
     args = ap.parse_args()
+    need(not (args.d_external_grid and args.d_width_sensitivity),
+         "G3_CHOOSE_GRID_OR_SENSITIVITY_SEPARATELY")
     need(not args.out.exists(), "G3_REFUSE_OVERWRITE")
     visible = json.loads(args.visible.read_text(encoding="utf-8"))
     report = build(visible, run_external_grid=args.d_external_grid)
+    if args.d_width_sensitivity:
+        report["D_width_sensitivity"] = width_sensitivity(visible)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_bytes(canonical(report) + b"\n")
     print(json.dumps({
