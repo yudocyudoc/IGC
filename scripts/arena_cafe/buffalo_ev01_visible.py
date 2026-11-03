@@ -104,11 +104,20 @@ def stage(visible,condition):
           "It is NOT a time series and it does not reveal other stations or "
           "allow an unobserved stage to be identified."
         )
+    # The shared IGC input contract caps question at 180 characters.
+    # Preserve the complete method instruction inside construction, which
+    # Buffalo's ORIGINAL engine passes through as backgroundKnowledge.
+    construction["modeling_task_instructions"]=prompt
+    brief=(
+      "Buffalo SD-AI: propose one native stock-flow model of EV01 from "
+      "permitted POS data; see modeling_task_instructions and public "
+      "reconstruction. Report limits."
+    )
     result={
         "schema":INPUT_SCHEMA,
         "investigation_id":"cafeteria-known-control-a3-b",
         "round_id":"a3-"+condition.lower()+"-buffalo-initial",
-        "question":prompt,
+        "question":brief,
         "construction":construction,
         "observability":{
             "condition_id":condition,
