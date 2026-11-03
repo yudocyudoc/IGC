@@ -1,0 +1,60 @@
+name: A2 cafe — F2 B0 B1 B2 evaluator physical controls
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f2_physical_controls.py'
+      - 'tests/test_arena_cafe_f2_physical_controls.py'
+      - 'docs/arena_cafe/a2/**'
+      - '.github/workflows/arena-cafe-a2-physical.yml'
+  push:
+    branches:
+      - 'feature/a2-cafeteria-f2-physical-controls-20261102'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  f2-physical-evaluator-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: F2 exact physical and adversarial regression
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f2_physical_controls.py' -v
+      - name: Run known evaluator-only physics with private FULL source
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/a2
+          python -m scripts.arena_cafe.f2_physical_controls --out artifacts/a2/f2-controls.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          x=json.loads(Path("artifacts/a2/f2-controls.json").read_text())
+          assert x["regression"]["n_orders"]==15
+          assert [x["regression"]["events_"+k] for k in ("POS","POS_KDS","FULL")]==[45,75,225]
+          assert x["regression"]["checkpoints"]==9
+          assert x["B0"]["status"]=="B0_POS_MATERIAL_BALANCE_PASS"
+          assert x["B1"]["status"]=="B1_DIRECT_FULL_INSTRUMENTATION_PASS"
+          assert x["B2"]["status"]=="B2_EXACT_RESOURCE_PERIODS_PASS"
+          assert x["separate_sustained_control"]["status"]=="F2_SEPARATE_SUSTAINED_CONTROL_COMPLETED"
+          assert x["causal_bottleneck_discovery"]=="NOT_ESTABLISHED"
+          assert x["data_access"]=="EVALUATOR_SIDE_FULL_NEVER_TO_O0_O1_PRODUCERS"
+          assert x["new_engine_implemented"] is False
+          print("F2_15_ORDER_REGRESSION_AND_150_HOUR_SEPARATE_CONTROL_PASS")
+          PY
+      - name: Regression of original physical DES source
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/arena_cafe -p 'test_diagnosis.py' -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a2-cafe-f2-evaluator-physical-controls
+          path: artifacts/a2/f2-controls.json
+          if-no-files-found: error
+          retention-days: 60
