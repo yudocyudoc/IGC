@@ -122,7 +122,7 @@ class G3ConformanceToFrozenNative(unittest.TestCase):
         dg2.verify(self.visible,self.native)
         m=json.loads((self.native/"manifest.json").read_text())
         seg=signal.from_visible(self.visible,"O0")["signal"]["segments"]
-        p=m["nominal_parameters"]
+        p={k:v["value"] for k,v in m["nominal_parameters"].items()}
         for item in m["candidates"]:
             pred,_=g.integrate_native_d_equations(
                 seg,item["stock_count"],item["loss"],
