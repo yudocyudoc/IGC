@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-02. **Contrato rector:** `PLAN_ACCION_CORRECCION_FIDELIDAD_ARENA_IGC_V1_2026-11-02.md`, §§0–3 R0/R1.  
 **Baseline auditable:** [F0_FIDELITY_BASELINE.json](F0_FIDELITY_BASELINE.json), corte PR #137 `589a4b8604753b8ab5d0adf3f0606f6c30ae6e45`.  
 **Código de verificación:** `scripts/arena_cafe/method_fidelity_manifest.py`.  
-**Estado:** IMPLEMENTACIÓN DE R0–R1; firma del revisor independiente **PENDIENTE**. **A3 = PARTIAL**. Ningún motor/solver/proveedor nuevo se ejecuta para esta reparación; los trabajos originales se rehacen por la regresión A1 existente si CI los dispara, pero se clasifica solamente su salida previa.  
+**Estado:** IMPLEMENTACIÓN DE R0–R1; firma del revisor independiente **PENDIENTE**. **A3 = PARTIAL**. El workflow definitivo RF-01 **no** ejecuta ni generador DES, ni motor/solver, ni proveedor: lee exclusivamente los artefactos inmutables de [A1/A3 run #41575917332](https://github.com/yudocyudoc/IGC/actions/runs/41575917332).  
 **Ramas:** nuevo PR apilado encima de #137, sin fusión a `main`, sin tocar #134–137 retrospectivamente.
 
 ## 1. Hallazgo vinculante
@@ -64,9 +64,15 @@ No existe `null` ambiguo para las compuertas G0–G3: se declaran explícitament
 
 **Prohibición de promoción:** hasta revisión independiente, `scientific_method_fidelity=NOT_ESTABLISHED`, `native_method_complete_count=0`, `A3=PARTIAL`, `G4=G5=NOT_RUN`.
 
+### Incidente de implementación y corrección comprobable
+
+La primera CI de esta PR, [#41580640572](https://github.com/yudocyudoc/IGC/actions/runs/41580640572), fue **16/16 PASS** pero el job RF-01 estaba encadenado al workflow A1, por lo que se reejecutaron **cuatro controles OpenModelica D2/C00**. Esto **violó el requisito operativo R0 «sin nueva simulación»**, aunque no produjo ninguna inferencia Buffalo live, candidato nuevo, calibración ni G4/G5. No se borran ni se reetiquetan esas corridas.
+
+**Corrección:** restaurado byte por byte `.github/workflows/arena-cafe-a1-evidence.yml` de PR #137; RF-01 se movió a `.github/workflows/arena-cafe-rf01-fidelity.yml` con permisos `actions: read`, que descarga *por run ID fijo* los dos sobres públicos, seis worker artifacts/SQLite y el reporte F3 **de la ejecución anterior**. Los tests adversariales RF-01 también leen los sobres descargados y no generan otra traza DES. Es una corrección de procedimiento, no de los resultados. La nueva CI debe verificarse al HEAD final: un PASS de #41580640572 **no sirve** como cumplimiento de la condición «sin nueva simulación».
+
 ## 6. Trazabilidad
 
 - [A1/A3/B offline, CI de origen #41575917332](https://github.com/yudocyudoc/IGC/actions/runs/41575917332) — 15/15 PASS en el commit de corte.
 - [F0 fuente original #41575917359](https://github.com/yudocyudoc/IGC/actions/runs/41575917359) — PASS, blob nativo protegido.
 - [Buffalo histórico real #40255975864](https://github.com/yudocyudoc/IGC/actions/runs/40255975864), [R1 #40452596916](https://github.com/yudocyudoc/IGC/actions/runs/40452596916), [R2 7K #40486060023](https://github.com/yudocyudoc/IGC/actions/runs/40486060023) y [R2 16K #40490534985](https://github.com/yudocyudoc/IGC/actions/runs/40490534985) — **NO** cuentan como EV-01 live.
-- [Auditoría FID-01 a FID-15](../../../../AUDITORIA_FIDELIDAD_METODOLOGICA_ARENA_IGC_2026-11-02.md): referencia **externa al repositorio** en este PR; no se añade como fuente histórica de runtime.
+- Auditoría externa original: `AUDITORIA_FIDELIDAD_METODOLOGICA_ARENA_IGC_2026-11-02.md` (archivo del proyecto, no copiado al código ejecutable).
