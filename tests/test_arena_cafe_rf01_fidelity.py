@@ -3,11 +3,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import unittest
 
-from scripts import arena_event_observability as obs
-from scripts.arena_cafe import ev01,evidence
 from scripts.arena_cafe import method_fidelity_manifest as rf
 from scripts.arena_v0_contract import ArenaContractError,digest
 
@@ -20,10 +19,15 @@ class RF01FidelityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.baseline=json.loads(BASELINE.read_text())
-        raw,snaps=ev01.trace_generator()
-        ev01.verify_des_parity(snaps)
-        cls.views=evidence.build(obs.project_events(raw,"POS"),
-                                 obs.project_events(raw,"FULL"))["views"]
+        # RF-01 must NEVER generate a new DES world even in tests.
+        # Fixture inputs come only from the prior frozen A1 run, via artifact.
+        source=os.environ.get("RF01_PUBLIC_DIR")
+        if not source:
+            raise unittest.SkipTest(
+                "Supply RF01_PUBLIC_DIR with immutable existing A1 O0/O1 artifacts")
+        root=Path(source)
+        cls.views={c:json.loads((root/(c+"_VISIBLE.json")).read_text())
+                   for c in ("O0","O1")}
 
     def source(self,arm,condition):
         visible=self.views[condition]
