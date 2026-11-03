@@ -83,8 +83,7 @@ class JointFrozenO0(unittest.TestCase):
         self.assertEqual(15,len(r["joint_pairwise"]))
         self.assertEqual(7,len(r["joint_plan_summaries"]))
         self.assertEqual(21,len(r["loss_domain_sensitivity"]["results"]))
-        self.assertEqual(7,len(r["hypothetical_sensor_absolute_error_orders"])
-                         if False else len(joint.MEASUREMENT_PLANS))
+        self.assertEqual(4,len(r["hypothetical_sensor_absolute_error_orders"]))
         self.assertEqual(set(joint.MEASUREMENT_PLANS),
             {x["plan"] for x in r["joint_plan_summaries"]})
         self.assertTrue(all(p["pairs"]==15 for p in r["joint_plan_summaries"]))
