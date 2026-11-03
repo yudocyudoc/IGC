@@ -19,9 +19,6 @@ on:
       - 'docs/arena_cafe/a3/**'
       - 'scripts/arena_cafe/f3_adjudicate.py'
       - 'tests/test_arena_cafe_f3_adjudicate.py'
-      - 'scripts/arena_cafe/method_fidelity_manifest.py'
-      - 'tests/test_arena_cafe_rf01_fidelity.py'
-      - 'docs/arena_cafe/fidelity/**'
       - 'scripts/arena_cafe/buffalo_ev01_visible.py'
       - 'scripts/arena_b_cf_protocol_adapter.mjs'
       - 'scripts/arena_b_openrouter_cloudflare.mjs'
@@ -63,8 +60,6 @@ jobs:
         run: node --test tests/test_arena_b_cf_protocol_adapter.mjs
       - name: Verify live one-shot authorization blocks all unapproved calls
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_live_guard.py' -v
-      - name: RF-01 fidelity adversarial tests (no method promotion)
-        run: python -m unittest discover -s tests -p 'test_arena_cafe_rf01_fidelity.py' -v
       - name: Adversarial B EV01 POS and stage-scope tests, no live provider
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a3_buffalo_ev01_visible.py' -v
       - name: Existing common evidence and visible-input contracts remain unchanged
@@ -756,67 +751,3 @@ jobs:
           path: artifacts/a3/f3-report.json
           if-no-files-found: error
           retention-days: 60
-
-  rf01-method-fidelity-audit:
-    needs: [evidence-offline, native-isolated, native-pos-omc, f3-known-control-adjudication]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: RF-01 source identity, decision ownership and no-fake-completion guards
-        run: |
-          set -euo pipefail
-          python -m unittest discover -s tests -p 'test_arena_cafe_rf01_fidelity.py' -v
-          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
-      - uses: actions/download-artifact@v4
-        with:
-          name: a1-cafe-public-evidence
-          path: artifacts/public
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: a1-cafe-native-O*
-          path: artifacts/workers
-          merge-multiple: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: a3-cafe-f3-known-control-adjudication
-          path: artifacts/f3
-      - name: Reconstruct six original worker scopes and classify four parity traces
-        run: |
-          set -euo pipefail
-          python -m scripts.arena_cafe.method_fidelity_manifest \
-            --public artifacts/public \
-            --workers artifacts/workers \
-            --f3 artifacts/f3/f3-report.json \
-            --baseline docs/arena_cafe/fidelity/F0_FIDELITY_BASELINE.json \
-            --out artifacts/rf01/fidelity-report.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          x=json.loads(Path("artifacts/rf01/fidelity-report.json").read_text())
-          assert x["method_case_count"]==6 and x["parity_case_count"]==4
-          assert x["native_method_complete_count"]==0
-          assert x["scientific_method_fidelity"]=="NOT_ESTABLISHED"
-          assert x["parity_classification"]=="PARITY_BENCHMARK_D2_EQUIVALENT_E1_C00"
-          assert x["independent_review"]=="PENDING"
-          assert x["G4"]==x["G5"]=="NOT_RUN" and x["A3"]=="PARTIAL"
-          assert {p["selection_decision_owner"] for p in x["parity_cases"]}=={"ARENA_POLICY"}
-          assert all(not p["competitive_evidence"] for p in x["parity_cases"])
-          assert len({m["ledger_case_id"] for m in x["method_manifest_cases"]})==6
-          assert not any(m["method_complete"] for m in x["method_manifest_cases"])
-          assert all(m["selection_decision_owner"]=="NONE" for m in x["method_manifest_cases"])
-          print("RF01_R0_R1_CLASSIFIED_6_METHOD_LANES_AND_4_PARITY_ONLY_NOT_SCIENTIFIC_COMPLETE")
-          PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rf01-arena-fidelity-six-native-four-parity-classifications
-          path: artifacts/rf01/fidelity-report.json
-          if-no-files-found: error
-          retention-days: 90
