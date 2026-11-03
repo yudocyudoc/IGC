@@ -1,0 +1,102 @@
+{
+  "schema": "igc-arena-fidelity-baseline/1.0",
+  "cutoff_date": "2026-11-02",
+  "source_head": "589a4b8604753b8ab5d0adf3f0606f6c30ae6e45",
+  "main_sha_at_cutoff": "5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "provenance_type": "FROZEN_AUDIT_SNAPSHOT_NOT_DYNAMIC_LATEST_CLAIM",
+  "stacked_prs": [
+    {
+      "number": 134,
+      "head_sha": "9465b669027df6aae06db05b1261a02adff18472",
+      "base": "main",
+      "role": "F0_HISTORICAL_PRESERVATION"
+    },
+    {
+      "number": 135,
+      "head_sha": "6bb816539b201c9a7431a4de98acfb19f23c0c08",
+      "base": "chore/f0-historico-cafeteria-promote-des-20261102",
+      "role": "A1_F1_PUBLIC_EVIDENCE"
+    },
+    {
+      "number": 136,
+      "head_sha": "6c73d612c8431de73bc8e1dc97771706341934e8",
+      "base": "feature/a1-cafeteria-f0-f1-evidence-20261102",
+      "role": "A2_F2_EVALUATOR_PHYSICAL_CONTROLS"
+    },
+    {
+      "number": 137,
+      "head_sha": "589a4b8604753b8ab5d0adf3f0606f6c30ae6e45",
+      "base": "feature/a2-cafeteria-f2-physical-controls-20261102",
+      "role": "A3_ENGINEERING_PARITY_PLUS_MOCK"
+    }
+  ],
+  "original_source_git_blobs": {
+    "scripts/arena_d_v01.py": "9dcab2bf1ee3a3c7430595385f381d89ba023a6d",
+    "scripts/arena_m_short_e1.py": "d7a3345f8ee0169445369e573658a1e004fd8146",
+    "experiments/e1/composer.py": "27d9fe2e65db924f204423f9660a576e723bfd9b",
+    "experiments/e1/backend.py": "cc854a0f29399a8299146271fbe3c56c7c5347b3",
+    "experiments/e1/registry.base.json": "956eb9636046165b827275a822f37f3643dc1e59",
+    "experiments/e1/registry.extended.json": "63a038ff3c6d88477f2ac3e2fb1a08efd29b15ac",
+    "scripts/arena_b_native_runner.mjs": "572656687ae2e6b6fce0031b7eb02dbab5868990",
+    "scripts/arena_b_openrouter_cloudflare.mjs": "0a93a48d42e6b04c87e8dda3cf18e643785dfbc8",
+    "scripts/arena_b_cf_protocol_adapter.mjs": "724843043e699efbfc20fa79be3c0edb08a95c98",
+    "src/modelica/IGCMolecules.mo": "2f83de72d38d0b8f5e866295b806d19067c5194d",
+    "src/modelica/IGCInformationMolecules.mo": "36d97a7e9de4d7ee80bf884beec6094a9bb1cf98"
+  },
+  "original_buffalo_upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "original_buffalo_cloudflare_model": "@cf/zai-org/glm-5.3-flash",
+  "preceding_ci": {
+    "a1_a3_offline": "41575917332",
+    "f0_original_sources": "41575917359",
+    "result": "PASS_ON_SOURCE_HEAD_ONLY_NOT_PROOF_OF_METHOD_FIDELITY",
+    "public_url": "https://github.com/yudocyudoc/IGC/actions/runs/41575917332"
+  },
+  "historic_buffalo_live_runs": [
+    "40255975864",
+    "40452596916",
+    "40486060023",
+    "40490534985"
+  ],
+  "historic_live_is_ev01_live": false,
+  "original_candidates": {
+    "D": {
+      "native_generate_supports_max": 6,
+      "ev01_native_generate_invoked": false
+    },
+    "M": {
+      "base_graph_count": 6,
+      "extended_graph_count": 15,
+      "active_registry": "registry.base.json",
+      "m0_enumerated": true,
+      "m0_data_selected": false
+    },
+    "B": {
+      "ev01_provider_calls": 0,
+      "offline_mock_not_valid_method_output": true
+    }
+  },
+  "tracks": {
+    "PARITY": {
+      "id": "PARITY_BENCHMARK_D2_EQUIVALENT_E1_C00",
+      "report_source": "A3_F3",
+      "scope": "four real D/M OMC numerical traces; native components, external candidate and shared prior",
+      "method_complete": false,
+      "competitive_G3": false
+    },
+    "NATIVE_METHOD": {
+      "id": "NATIVE_METHOD_NOT_YET_RUN",
+      "scope": "six arm-condition original worker outcomes and documented limits",
+      "method_complete": false,
+      "competitive_G3": false
+    }
+  },
+  "independent_holdout": "NOT_RUN",
+  "G4": "NOT_RUN",
+  "G5": "NOT_RUN",
+  "R0": "TECHNICAL_CLASSIFICATION_PENDING_INDEPENDENT_REVIEW",
+  "R1": "MANIFEST_IMPLEMENTATION_PENDING_INDEPENDENT_REVIEW",
+  "A3": "PARTIAL",
+  "no_paid_new_calls": true,
+  "no_original_model_mutation": true,
+  "caveat": "Git source identity and working CSV are not native scientific method execution. No cross-arm priors in NATIVE_METHOD are accepted."
+}

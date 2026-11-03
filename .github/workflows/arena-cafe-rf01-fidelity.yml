@@ -1,0 +1,85 @@
+name: RF-01 Arena fidelity R0-R1 — frozen-artifact read-only audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/method_fidelity_manifest.py'
+      - 'tests/test_arena_cafe_rf01_fidelity.py'
+      - 'docs/arena_cafe/fidelity/**'
+      - '.github/workflows/arena-cafe-rf01-fidelity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  fidelity-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse frozen A1/A3 public evidence — NO NEW DES, MODEL OR PROVIDER
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Reuse six frozen original worker artifacts with actual SQLite
+        uses: actions/download-artifact@v4
+        with:
+          pattern: a1-cafe-native-O*
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/workers
+          merge-multiple: false
+      - name: Reuse frozen F3 verification of four authentic engineering parity CSV
+        uses: actions/download-artifact@v4
+        with:
+          name: a3-cafe-f3-known-control-adjudication
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/f3
+      - name: Confirm frozen-source identities and run R0/R1 negative tests
+        env:
+          RF01_PUBLIC_DIR: artifacts/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf01_fidelity.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Classify six original method lanes and four parity models without rerunning any
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.method_fidelity_manifest \
+            --public artifacts/public \
+            --workers artifacts/workers \
+            --f3 artifacts/f3/f3-report.json \
+            --baseline docs/arena_cafe/fidelity/F0_FIDELITY_BASELINE.json \
+            --out artifacts/rf01/fidelity-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/rf01/fidelity-report.json").read_text())
+          assert r["method_case_count"]==6 and r["parity_case_count"]==4
+          assert r["native_method_complete_count"]==0
+          assert r["scientific_method_fidelity"]=="NOT_ESTABLISHED"
+          assert r["A3"]=="PARTIAL" and r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["independent_review"]=="PENDING"
+          assert all(p["selection_decision_owner"]=="ARENA_POLICY"
+                     for p in r["parity_cases"])
+          assert all(not p["competitive_evidence"] and
+                     not p["method_complete"] for p in r["parity_cases"])
+          assert all(m["selection_decision_owner"]=="NONE" and
+                     not m["method_complete"] for m in r["method_manifest_cases"])
+          assert len({m["ledger_case_id"] for m in r["method_manifest_cases"]})==6
+          print("RF01_AUDIT_PREEXISTING_ARTIFACTS_PASS_NO_NEW_MODEL_SIMULATION")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf01-six-native-four-parity-readonly-classification
+          path: artifacts/rf01/fidelity-report.json
+          if-no-files-found: error
+          retention-days: 90
