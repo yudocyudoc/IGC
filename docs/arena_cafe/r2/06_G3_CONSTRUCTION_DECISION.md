@@ -42,6 +42,7 @@ El usuario puede activar `--d-external-grid` para una evaluación de **represent
 - Malla declarada (unidades en min y pedidos/min): `capacity={0.8,1.2,1.8,2.7,4.0}`, `response_time={0.15,0.35,0.7,1.4,2.7}`, `loss_time={0.5,1.5,4.0,8.1,20.0}` para modelos con pérdida. En modelos sin pérdida `loss_time` no interviene y se etiqueta `INACTIVE`.
 - Salida: MAE de cinco observaciones, residuos en cada tiempo, parámetros del mínimo **dentro de la malla** y rangos descriptivos de los puntos con `MAE <= mejor + 0.25 pedidos`. Este conjunto cercano al mínimo **no es intervalo de confianza ni conjunto de parámetros identificados**; la malla es deliberadamente pequeña y los resultados pueden depender de sus límites.
 - El uso de O0 y la propuesta de métrica son retrospectivos y declarados `POST_HOC_EXPLORATORY`. No hay umbral de `G3 PASS`, ranking científico entre métodos ni supuesta selección D nativa.
+- La sensibilidad de anchura ahora es ejecutable con `--d-width-sensitivity`: evalúa **por separado** los tres anchos ya declarados en RF-02T (`1/4, 1/2, 1` minutos), conserva seis topologías idénticas en cada panel y **no selecciona un ancho por mínimo MAE**.
 - El integrador es **espejo numérico externo**, no OpenModelica ni el estimador original D (que no existe). El test de CI contrasta sus seis salidas bajo el fixture anterior con los seis CSV OpenModelica congelados; conformidad en esos puntos no equivale a validación universal del integrador ni del ajuste de nuevos parámetros.
 
 **Importante:** la política genérica `SCORE_G3` del PR #144 sigue denegada para evaluaciones privilegiadas. Este incremento solo produce el informe especializado, explícitamente descriptivo y acotado al O0 público; **no desbloquea** una adjudicación general ni un `G3=PASS` científico.
@@ -57,6 +58,11 @@ python -m scripts.arena_cafe.g3_construction \
   --visible artifacts/public/O0_VISIBLE.json \
   --d-external-grid \
   --out artifacts/G3_CONSTRUCTION_D_EXTERNAL_GRID.json
+
+python -m scripts.arena_cafe.g3_construction \
+  --visible artifacts/public/O0_VISIBLE.json \
+  --d-width-sensitivity \
+  --out artifacts/G3_CONSTRUCTION_D_WIDTH_SENSITIVITY.json
 ```
 
 La CI lee el artefacto público A1 y las seis trazas OMC G2 D existentes, sin generar un nuevo DES ni realizar llamadas a modelos. Los tests comprueban conservación, no negatividad, convergencia de paso, las seis estructuras, incoherencia del prior M y deriva respecto del solver anterior. Los resultados se publican como artefacto de ingeniería/metodología, **no como certificado de adecuación científica**.
@@ -64,7 +70,7 @@ La CI lee el artefacto público A1 y las seis trazas OMC G2 D existentes, sin ge
 ## Límites y pendientes
 
 - M mantiene priors originales; no calibrar M oportunistamente ni compararlo con D ajustado como si fueran métodos simétricos.
-- La integral del input rectangular es una aproximación exógena no medida; ensayos de sensibilidad de anchura requieren reportes separados, nunca escoger ancho por mejor puntuación post hoc.
+- La integral del input rectangular es una aproximación exógena no medida; la sensibilidad se entrega en paneles separados, nunca escogiendo el ancho por mejor puntuación post hoc.
 - La aproximación RK4 externa no sustituye ejecuciones nativas OpenModelica nuevas si se exige confirmación de parámetros hallados.
 - Buffalo no tiene nueva inferencia EV-01.
 - La pregunta que ahora se puede explorar: **¿qué estructuras D logran aproximar las salidas conocidas bajo ajustes externos, con qué sensibilidad y con cuánta no-identificabilidad?** No es «¿cuál descubrió la verdad?».
