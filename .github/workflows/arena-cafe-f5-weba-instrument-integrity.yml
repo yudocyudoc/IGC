@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/weba_instrument_integrity.py'
+      - 'scripts/arena_cafe/weba_shift_bounded_windows.py'
+      - 'tests/test_arena_cafe_weba_shift_bounded_windows.py'
+      - 'docs/arena_cafe/f5/06_WEBA_VENTANAS_ACOTADAS_COBERTURA_DESCONOCIDA.md'
       - 'tests/test_arena_cafe_weba_instrument_integrity.py'
       - 'docs/arena_cafe/f5/05_WEBA_AUDITORIA_COBERTURA_Y_RELOJES.md'
       - '.github/workflows/arena-cafe-f5-weba-instrument-integrity.yml'
@@ -24,6 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_arena_cafe_weba_instrument_integrity.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_shift_bounded_windows.py' -v
       - name: Retrieve only pinned WEBA POS, shift summary, three IoT logs
         run: |
           set -euo pipefail
@@ -146,6 +150,71 @@ jobs:
           check(r)
           print("WEBA_INSTRUMENT_AUDIT_OBSERVATIONAL_LIMITS_RETAINED")
           PY
+      - name: Re-run corrected half-hour comparison clipped to original declared shifts
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_shift_bounded_windows \
+            --pos artifacts/weba-private-source-do-not-upload/pos.bin \
+            --shift-summary artifacts/weba-private-source-do-not-upload/shift_summary.bin \
+            --tapo-20240223 artifacts/weba-private-source-do-not-upload/20240223_evening.bin \
+            --tapo-20240304 artifacts/weba-private-source-do-not-upload/20240304_evening.bin \
+            --tapo-20240308 artifacts/weba-private-source-do-not-upload/20240308_evening.bin \
+            --out artifacts/WEBA_SHIFT_BOUNDED_COVERAGE_UNKNOWN.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/WEBA_SHIFT_BOUNDED_COVERAGE_UNKNOWN.json")
+          r=json.loads(p.read_text())
+          assert r["schema"]=="igc-weba-shift-bounded-temporal-evidence/0.1"
+          shifts=r["shifts_in_previously_disclosed_order"]
+          assert shifts==[
+              "20240223_evening","20240304_evening","20240308_evening"]
+          assert r["time_grid_from_original_PR161"]=="13:00_TO_18:00_UTC_30MIN"
+          assert [r["by_shift"][s]["shift_duration_minutes"]
+                  for s in shifts]==[235,236,248]
+          assert [r["by_shift"][s]["POS_original_selected_shift_rows"]
+                  for s in shifts]==[33,7,15]
+          assert r["by_shift"]["20240308_evening"][
+              "shift_minutes_AFTER_latest_Tapo_export_cannot_have_been_collected"]>3.9
+          assert [r["by_shift"][s]["Tapo_all_ten_sensor_original_snapshot_count"]
+                  for s in shifts]==[911,888,889]
+          for shift in shifts:
+              record=r["by_shift"][shift]
+              assert not record["Tapo_coverage_continuity_verified"]
+              assert not record["POS_cross_device_time_sync_verified"]
+              cells=record["half_hour_cells"]
+              assert len(cells)==10
+              assert sum(c["minutes_inside_declared_shift"] for c in cells)==\
+                     record["shift_duration_minutes"]
+              assert all(c["no_sensor_signal_does_NOT_mean_IDLE"] for c in cells)
+              assert all("UNKNOWN" in c["temporal_evidence_status"] or
+                         c["temporal_evidence_status"] in (
+                            "OUTSIDE_DECLARED_SHIFT_NOT_IN_SAMPLE",
+                            "SHIFT_PARTLY_AFTER_TAPO_EXPORT_CANNOT_OBSERVE_TAIL")
+                         for c in cells)
+          assert r["even_full_shift_window_never_implies_sensor_was_ON"]
+          assert r["no_downtime_estimated_from_motion_gaps"]
+          assert r["no_pos_to_sensor_lag_fitted_or_linked_to_orders"]
+          assert r["no_per_order_service_start_or_finish_inferred"]
+          assert not r["POS_timezone_calibrated"]
+          assert not r["sensor_continuity_calibrated"]
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          def reject_private_fields(value):
+              if isinstance(value,dict):
+                  for k,v in value.items():
+                      assert k not in {
+                          "order_ID","par_ID","participant_id","case_id",
+                          "visit_id","event_id","device_id","mac","ip",
+                          "ssid","resource_id","raw_order_time",
+                          "t_minutes_exact"}
+                      reject_private_fields(v)
+              elif isinstance(value,list):
+                  for x in value:
+                      reject_private_fields(x)
+          reject_private_fields(r)
+          print("WEBA_DECLARED_SHIFTS_CLIPPED_AND_TAPO_COVERAGE_UNKNOWN_NOT_IDLE")
+          PY
       - name: Remove all source bytes before publication
         if: always()
         run: rm -rf artifacts/weba-private-source-do-not-upload
@@ -153,6 +222,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: weba-tapo-pos-clock-coverage-audit-aggregate
-          path: artifacts/WEBA_TAPO_POS_INSTRUMENT_INTEGRITY_AUDIT.json
+          path: |
+            artifacts/WEBA_TAPO_POS_INSTRUMENT_INTEGRITY_AUDIT.json
+            artifacts/WEBA_SHIFT_BOUNDED_COVERAGE_UNKNOWN.json
           if-no-files-found: error
           retention-days: 90
