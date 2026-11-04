@@ -104,13 +104,15 @@ def index_for(moment,initial,*,width=WINDOW_MINUTES,count=N_BINS):
 def histogram(moments,initial):
     result=[0]*N_BINS
     outside=0
+    observed=0
     for moment in moments:
+        observed+=1
         index=index_for(moment,initial)
         if index is None:
             outside+=1
         else:
             result[index]+=1
-    need(sum(result)+outside==len(moments),
+    need(sum(result)+outside==observed,
          "WEBA_REPL_EVENT_COUNT_LOST")
     return result,outside
 
