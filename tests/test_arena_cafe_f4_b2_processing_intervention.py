@@ -49,6 +49,37 @@ class ProcessingPeriods(unittest.TestCase):
         self.assertTrue(rank["idle_and_available_are_not_inferred_from_silence"])
         self.assertTrue(rank["not_full_active_period_method"])
 
+    def test_00b_t10_processing_fragment_is_clipped_without_lookahead(self):
+        values=[
+            (0,5,"PROCESSING"),(5,10,"PROCESSING"),
+            (10,20,"UNKNOWN"),(20,30,"PROCESSING")]
+        result={
+            "status":"B2_EXACT_RESOURCE_PERIODS_PASS",
+            "availability_source":"NO_AVAILABILITY_TELEMETRY",
+            "horizon_minutes_exact":"30",
+            "segments":[{
+                "start_minutes_exact":str(a),"end_minutes_exact":str(b),
+                "by_stage":{"preparacion":{
+                    "resource_states":{"preparacion-r1":state}}}}
+                for a,b,state in values],
+            "resource_total_minutes":{
+                "preparacion-r1":{"PROCESSING":"20","UNKNOWN":"10"}},
+        }
+        before=apm.per_resource_processing_periods(
+            result,{"preparacion":["preparacion-r1"]},observed_until=Q(10))
+        self.assertEqual("10",before["horizon_minutes_exact"])
+        self.assertEqual("30",before["B2_source_horizon_minutes_exact"])
+        self.assertTrue(before["diagnostic_excludes_processing_after_observed_until"])
+        station=before["stages"]["preparacion"]
+        self.assertEqual("10",station["longest_resource_processing_minutes_exact"])
+        self.assertEqual("10",station["total_resource_processing_minutes_exact"])
+        self.assertEqual(1,station["processing_episode_count"])
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "F4APM_UNAPPROVED_DIAGNOSTIC_CUTOFF"):
+            apm.per_resource_processing_periods(
+                result,{"preparacion":["preparacion-r1"]},
+                observed_until=Q(20))
+
     def test_01_invalid_busy_state_cannot_be_called_available_idle(self):
         value={
             "status":"B2_EXACT_RESOURCE_PERIODS_PASS",
@@ -175,6 +206,49 @@ class ActualPairedWorlds(unittest.TestCase):
         self.assertEqual("1/2",r["same_action_only_dispatch_plus_minutes_exact"])
         self.assertEqual("NOT_ASSESSED",r[
             "action_operational_feasibility_and_cost"])
+
+    def test_11b_t10_A_has_already_lost_deliveries_without_APM_shift(self):
+        r=self.report
+        same={
+            f4.BASELINE_KEYS[0]:"preparacion",
+            f4.BASELINE_KEYS[1]:"preparacion",
+        }
+        self.assertEqual(same,r["baseline_processing_winners_through_t10"])
+        self.assertEqual(same,r["stressed_processing_winners_through_t10"])
+        self.assertEqual("despacho",r["stressed_processing_winners"][
+            f4.BASELINE_KEYS[0]])
+        self.assertEqual(-2,r["difference_stress_minus_baseline"][
+            f4.BASELINE_KEYS[0]])
+        self.assertTrue(r["t30_full_drain_proxy_is_post_t10_retrospective"])
+        self.assertTrue(r["t30_proxy_must_NOT_be_used_as_t10_forecast"])
+        for kind in ("baseline_proxy_measured_only_through_t10",
+                     "stressed_proxy_measured_only_through_t10"):
+            for world in f4.BASELINE_KEYS:
+                item=r[kind][world]
+                self.assertEqual("10",item["horizon_minutes_exact"])
+                self.assertEqual(
+                    "preparacion",item["winner_under_processing_only_proxy"])
+
+    def test_11c_exact_processing_lengths_and_two_independent_cashiers(self):
+        r=self.report
+        a,b=f4.BASELINE_KEYS
+        self.assertEqual("225/17",r["baseline_processing_proxy"][a][
+            "stages"]["preparacion"][
+            "longest_resource_processing_minutes_exact"])
+        self.assertEqual("1545/86",r["after_common_stress_processing_proxy"][a][
+            "stages"]["despacho"][
+            "longest_resource_processing_minutes_exact"])
+        self.assertEqual("225/17",r["after_common_stress_processing_proxy"][b][
+            "stages"]["preparacion"][
+            "longest_resource_processing_minutes_exact"])
+        for world in f4.BASELINE_KEYS:
+            station=r["baseline_processing_proxy"][world][
+                "stages"]["caja"]
+            self.assertEqual("8",station[
+                "longest_resource_processing_minutes_exact"])
+            self.assertEqual("15",station[
+                "total_resource_processing_minutes_exact"])
+            self.assertEqual(2,station["processing_episode_count"])
 
     def test_12_APM_proxy_is_not_full_machine_status_or_causal_truth(self):
         r=self.report
