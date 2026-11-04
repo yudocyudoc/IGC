@@ -241,7 +241,7 @@ def build(files: list[dict], shifts: list[str], worker_count: int = 5) -> dict:
         "F5_independent_reserve": "NOT_CREATED",
         "D_B_M_models_unchanged": True,
     }
-    need(not any(key in str(result) for key in PRIVATE_FIELDS),
+    need(not any(key in result for key in PRIVATE_FIELDS),
          "WEBA_MACHINE_PRIVACY_FIELD_IN_REPORT")
     return result
 
