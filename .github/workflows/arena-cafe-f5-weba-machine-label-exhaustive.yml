@@ -1,0 +1,87 @@
+name: WEBA F5 machine label exhaustive source-schema audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/weba_machine_label_exhaustive_audit.py'
+      - 'tests/test_arena_cafe_weba_machine_label_exhaustive_audit.py'
+      - '.github/workflows/arena-cafe-f5-weba-machine-label-exhaustive.yml'
+      - 'docs/arena_cafe/f5/09_WEBA_MAQUINA_AUDITORIA_EXHAUSTIVA_ETIQUETAS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-public-machine-blob-schemas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run fast parser contract tests (no external downloads)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_machine_label_exhaustive_audit.py' -v
+      - name: Inspect all 209 pinned public coffee-machine blobs, no user files
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_machine_label_exhaustive_audit \
+            --out artifacts/WEBA_MACHINE_LABEL_ALL_209_SOURCE_FORMAT_AUDIT.json \
+            --workers 5
+      - name: Validate aggregate evidence, noninterference and absence of raw rows
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/WEBA_MACHINE_LABEL_ALL_209_SOURCE_FORMAT_AUDIT.json")
+          r=json.loads(p.read_text())
+          assert r["schema"]=="igc-weba-machine-format-exhaustive-source-audit/0.1"
+          assert r["upstream_git_commit_fixed"]==(
+              "d6841669e544579547c94b7ce1e8613bbd6b3a39")
+          assert r["machine_files_fully_read_and_git_blob_verified"]==209
+          assert r["all_209_machine_files_scanned"]
+          assert r["machine_shifts_with_files"]==53
+          assert r["shift_folders_verified"]==55
+          assert r["shifts_without_machine_files"]==2
+          assert r["by_source_form"]["FLAT_FILE"]["verified_files"]==12
+          assert r["by_source_form"]["STANDARD_FRAGMENT"]["verified_files"]==185
+          assert r["by_source_form"]["KAVE_FRAGMENT"]["verified_files"]==12
+          assert r["machine_bytes_fully_read_and_verified"]>600_000_000
+          c=r["total_rows"]
+          assert c.get("nonblank_rows",0)==sum(c.get(x,0) for x in (
+              "unexpected_column_count","unexpected_time_format",
+              "nonnumeric_xyz","nonfinite_xyz","valid_time_and_numeric_xyz"))
+          assert not r["raw_rows_event_timestamps_or_order_ID_exported"]
+          assert not r["machine_cycle_ground_truth_observed"]
+          assert not r["per_order_correlation_matching_performed"]
+          assert not r["POS_clock_or_completion_link_validated"]
+          assert not r["figshare_rar_directly_compared_bytewise"]
+          assert not r["google_drive_copy_fully_compared_bytewise"]
+          assert r["D_B_M_models_unchanged"]
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          private={"order_ID", "par_ID", "participant_id",
+                   "event_time", "raw_row", "exact_timestamp",
+                   "device_id", "machine_event_timestamp"}
+          def keys(node):
+              if isinstance(node,dict):
+                  assert not private.intersection(node)
+                  for v in node.values(): keys(v)
+              elif isinstance(node,list):
+                  for v in node: keys(v)
+          keys(r)
+          print("WEBA_209_MACHINE_BLOBS_GIT_HASH_VALIDATED_AGGREGATES_ONLY")
+          print("SCHEMA_ANOMALIES_NONBLANK", r["nonstandard_nonblank_rows"])
+          PY
+      - name: Upload aggregate only (no vibration samples, POS or biometric data)
+        uses: actions/upload-artifact@v4
+        with:
+          name: weba-209-machine-source-format-aggregate
+          path: artifacts/WEBA_MACHINE_LABEL_ALL_209_SOURCE_FORMAT_AUDIT.json
+          retention-days: 90
+          if-no-files-found: error
