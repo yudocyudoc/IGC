@@ -237,9 +237,19 @@ def inspect_pos_xlsx(bytes_):
             val(r,"time_of_day").lower()=="evening"]
     timestamped=[r for r in target if val(r,"order_time")]
     # Do not release order ID, item detail, price, customer or raw timestamps.
+    # Date-only category diagnostics: do not emit per-order timestamps,
+    # IDs or sales. Dates alone are not service- or customer-level events.
+    distinct_date_tokens=sorted({
+        val(r,"order_date") for r in valid if val(r,"order_date")})
+    distinct_shift_labels=sorted({
+        val(r,"time_of_day") for r in valid if val(r,"time_of_day")})
     return {
         "first_worksheet_headers":sorted(columns.keys()),
         "source_has_order_id_field":True,
+        "number_of_distinct_date_tokens":len(distinct_date_tokens),
+        "first_three_date_only_tokens_for_format_audit":
+            distinct_date_tokens[:3],
+        "observed_shift_label_categories":distinct_shift_labels[:15],
         "total_nonempty_order_rows":len(valid),
         "rows_with_nonempty_order_time":len(known_time),
         "rows_without_order_time":len(valid)-len(known_time),
