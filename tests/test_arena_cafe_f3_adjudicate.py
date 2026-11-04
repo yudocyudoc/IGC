@@ -59,6 +59,61 @@ class F3AdjudicationTests(unittest.TestCase):
         (folder/"memory-receipt.json").write_text(json.dumps(row))
         (folder/"memory-rebuild.json").write_text(json.dumps(x))
 
+    def test_native_condition_fidelity_uses_source_not_equal_rmse(self):
+        def model(source, candidate, curve, rmse=1.0):
+            return {
+                "native_model_sha256":source,
+                "full_candidate_hash":candidate,
+                "metrics":{
+                    "delivery_curve_predicted":curve,
+                    "delivery_rmse_orders":rmse,
+                },
+            }
+        same_a=model("sha256:original","sha256:graph",
+                     [0.,0.,1.,2.,3.,4.],rmse=2.0)
+        same_b=model("sha256:original","sha256:graph",
+                     [0.,0.,1.,2.,3.,4.],rmse=99.0)
+        result=f3.compare_native_conditions(same_a,same_b,"D")
+        self.assertTrue(result["same_native_source_bytes"])
+        self.assertEqual(
+            "NOT_CONSUMED_IN_IDENTICAL_POS_ONLY_NATIVE_SOURCE",
+            result["conditional_O1_generation_use"])
+        self.assertTrue(result["equal_scores_are_not_general_condition_criterion"])
+        self.assertEqual(0,result["delivery_curve_max_abs_difference_orders"])
+
+        changed=model("sha256:new-O1","sha256:changed",
+                      [0.,0.,2.,4.,6.,8.],rmse=0.0)
+        future=f3.compare_native_conditions(same_a,changed,"M")
+        self.assertFalse(future["same_native_source_bytes"])
+        self.assertEqual(
+            "NOT_VERIFIED_BY_SOURCE_DIFFERENCE_REQUIRES_NATIVE_CONSUMPTION_TRACE",
+            future["conditional_O1_generation_use"])
+        self.assertFalse(future["O1_extra_preparation_not_encoded_by_current_generator"])
+
+    def test_same_source_different_solver_curve_is_guarded(self):
+        original={
+            "native_model_sha256":"sha256:original",
+            "full_candidate_hash":"sha256:graph",
+            "metrics":{"delivery_curve_predicted":[0.,0.,1.,2.,3.,4.]},
+        }
+        diverged=deepcopy(original)
+        diverged["metrics"]["delivery_curve_predicted"][-1]+=0.01
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "F3_SAME_NATIVE_SOURCE_NUMERIC_REGRESSION_DRIFT"):
+            f3.compare_native_conditions(original,diverged,"M")
+
+    def test_identical_source_cannot_relabel_candidate(self):
+        original={
+            "native_model_sha256":"sha256:original",
+            "full_candidate_hash":"sha256:graph",
+            "metrics":{"delivery_curve_predicted":[0.,0.,1.,2.,3.,4.]},
+        }
+        spoof=deepcopy(original)
+        spoof["full_candidate_hash"]="sha256:other"
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "F3_IDENTICAL_SOURCE_CANDIDATE_INCONSISTENT"):
+            f3.compare_native_conditions(original,spoof,"D")
+
     def test_deliveries_rmse_has_t0_and_exact_six_samples(self):
         rows=[{"t_minutes":float(t),"native_prediction":0.5*t,
                "observed_orders":t, "residual_orders":-0.5*t}
