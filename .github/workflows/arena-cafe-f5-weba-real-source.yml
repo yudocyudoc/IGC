@@ -4,6 +4,9 @@ on:
     paths:
       - 'scripts/arena_cafe/weba_source_readiness.py'
       - 'tests/test_arena_cafe_weba_source_readiness.py'
+      - 'scripts/arena_cafe/weba_temporal_windows.py'
+      - 'tests/test_arena_cafe_weba_temporal_windows.py'
+      - 'docs/arena_cafe/f5/03_WEBA_POS_TAPO_TEMPORAL_WINDOWS.md'
       - 'docs/arena_cafe/f5/02_WEBA_REAL_SOURCE_FIRST_PASS.md'
       - '.github/workflows/arena-cafe-f5-weba-real-source.yml'
   workflow_dispatch:
@@ -24,6 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_arena_cafe_weba_source_readiness.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_temporal_windows.py' -v
       - name: Fetch ONLY pinned external POS and Tapo text (exclude participant/health)
         run: |
           set -euo pipefail
@@ -94,6 +98,72 @@ jobs:
           audit_public_keys(r)
           print("WEBA_REAL_SOURCE_AUDIT_PASS_NO_PER_ORDER_SERVICE_INFERENCE")
           PY
+      - name: Compare pre-fixed half-hour bins under declared Budapest clock assumption
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_temporal_windows \
+            --pos artifacts/weba-private-source-do-not-upload/orders.xlsx \
+            --tapo artifacts/weba-private-source-do-not-upload/tapo.log \
+            --out artifacts/F5_WEBA_POS_TAPO_TEMPORAL_WINDOWS_DEVELOPMENT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/F5_WEBA_POS_TAPO_TEMPORAL_WINDOWS_DEVELOPMENT.json").read_text())
+          assert r["schema"]=="igc-weba-pos-tapo-fixed-windows/0.1"
+          assert r["pos_orders_selected"]==33
+          assert r["number_of_bins"]==10 and r["window_minutes"]==30
+          assert r["assumed_pos_clock_zone"]=="Europe/Budapest"
+          assert r["POS_clock_timezone_from_raw_metadata_certified"] is False
+          assert r["cross_clock_offset_calibrated"] is False
+          assert len(r["sensor_rows_per_window_with_pos_assumed_local"])==10
+          assert r["sensor_selected_event_totals"]=={
+              "front_door":161,"front_door_m":115,
+              "zone_1":147,"zone_2":244}
+          pos_count=sum(v["pos_orders_assuming_Budapest_local_clock"] for v
+                        in r["sensor_rows_per_window_with_pos_assumed_local"])
+          assert pos_count+r["pos_orders_outside_primary_windows"]==33
+          sensor_fields={
+              "front_door":"tapo_front_door_contact_events",
+              "front_door_m":"tapo_front_door_motion_events",
+              "zone_1":"tapo_zone_1_motion_events",
+              "zone_2":"tapo_zone_2_motion_events"}
+          for sensor,field in sensor_fields.items():
+              counted=sum(v[field] for v in r[
+                  "sensor_rows_per_window_with_pos_assumed_local"])
+              assert counted+r["sensor_outside_fixed_windows"][sensor]==r[
+                  "sensor_selected_event_totals"][sensor]
+          assert r["pos_orders_in_primary_windows"]==33
+          assert r["pos_orders_outside_primary_windows"]==0
+          assert r["pos_orders_in_UTC_as_written_sensitivity_windows"]==32
+          assert r["pos_orders_outside_UTC_as_written_sensitivity_windows"]==1
+          assert r["bins_with_at_least_one_pos_order_assuming_local"]==7
+          assert r["bins_with_sensor_activity_but_zero_pos_orders_assuming_local"]==2
+          assert r["bins_with_both_pos_and_sensor_pulse_assuming_local"]=={
+              "front_door":7,"front_door_m":7,"zone_1":7,"zone_2":7}
+          assert r["sensor_events_in_zero_pos_order_windows_assuming_local"]=={
+              "front_door":27,"front_door_m":14,"zone_1":12,"zone_2":23}
+          assert r["sensor_pulses_when_no_pos_orders_are_NOT_false_detections"]
+          assert r["coactivity_does_NOT_validate_sensor_as_pos_order_proxy"]
+          assert r["no_single_time_offset_optimized_for_correspondence"]
+          assert r["no_pos_order_tapo_event_pairing_attempted"]
+          assert r["no_causality_or_service_event_inferred"]
+          assert r["health_participant_wearable_data_not_read"]
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_reserve"]=="NOT_CREATED"
+          def prohibit_raw(node):
+              if isinstance(node,dict):
+                  for k,v in node.items():
+                      assert k not in {
+                          "order_ID","case_id","device_id","mac",
+                          "ip","ssid","event_id","resource_id",
+                          "t_minutes_exact","raw_order_time"}
+                      prohibit_raw(v)
+              elif isinstance(node,list):
+                  for v in node:
+                      prohibit_raw(v)
+          prohibit_raw(r)
+          print("WEBA_FIXED_TIME_WINDOWS_DESCRIPTIVE_ONLY_NO_SENSOR_TO_ORDER_LINK")
+          PY
       - name: Remove private source files before artifact upload
         if: always()
         run: |
@@ -102,6 +172,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: f5-weba-real-one-shift-aggregate-readiness
-          path: artifacts/F5_WEBA_REAL_ONE_SHIFT_SOURCE_READINESS.json
+          path: |
+            artifacts/F5_WEBA_REAL_ONE_SHIFT_SOURCE_READINESS.json
+            artifacts/F5_WEBA_POS_TAPO_TEMPORAL_WINDOWS_DEVELOPMENT.json
           if-no-files-found: error
           retention-days: 90
