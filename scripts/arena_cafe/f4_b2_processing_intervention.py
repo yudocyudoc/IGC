@@ -287,11 +287,20 @@ def build(o0,o1):
            {KEYS[0]:6,KEYS[1]:8},
          "F4APM_ACTION_EFFECT_NOT_CONFIRMED_BY_DES")
     winner=lambda world:world["apm"]["winner_under_processing_only_proxy"]
+    winner_t10=lambda world:world["apm_observed_through_t10"][
+        "winner_under_processing_only_proxy"]
     need([winner(baselines[k]) for k in KEYS]==
          ["preparacion","preparacion"] and
          [winner(after[k]) for k in KEYS]==
          ["despacho","preparacion"],
          "F4APM_PROCESSING_PROXY_NOT_EXPECTED_FOR_KNOWN_PAIR")
+    # At the decision cutoff t10, no completed-case future information may
+    # be smuggled in to assert that the processing-period proxy has shifted.
+    need([winner_t10(baselines[k]) for k in KEYS]==
+         ["preparacion","preparacion"] and
+         [winner_t10(after[k]) for k in KEYS]==
+         ["preparacion","preparacion"],
+         "F4APM_T10_PROXY_INCORRECTLY_USES_FUTURE_PROCESSING")
     return {
         "schema":SCHEMA,
         "phase":"F4_KNOWN_EVALUATOR_DEVELOPMENT_NOT_INDEPENDENT_F5",
@@ -309,11 +318,9 @@ def build(o0,o1):
         "stressed_processing_winners":{
             k:winner(after[k]) for k in KEYS},
         "baseline_processing_winners_through_t10":{
-            k:winner({"apm":baselines[k]["apm_observed_through_t10"]})
-            for k in KEYS},
+            k:winner_t10(baselines[k]) for k in KEYS},
         "stressed_processing_winners_through_t10":{
-            k:winner({"apm":after[k]["apm_observed_through_t10"]})
-            for k in KEYS},
+            k:winner_t10(after[k]) for k in KEYS},
         "baseline_proxy_measured_only_through_t10":{
             k:baselines[k]["apm_observed_through_t10"] for k in KEYS},
         "stressed_proxy_measured_only_through_t10":{
