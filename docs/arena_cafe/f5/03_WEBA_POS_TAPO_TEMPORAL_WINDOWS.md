@@ -33,6 +33,30 @@ El resultado no publica identificadores, horas individuales de pedido, timestamp
 
 **La co-presencia en una ventana no demuestra co-causalidad ni que el pulso Tapo pertenezca al pedido POS.** No hay prueba de acceso a \`despacho.servicio_fin\` por pedido, de presencia de varios empleados o de equivalencia con el escenario sintético EV-01.
 
+## Primer resultado empírico: comparación de canales, sin enlace a pedidos
+
+Tras ejecutar el comparador sobre los archivos originales (hashes iguales a PR #160), la **hipótesis de reloj POS local Budapest** coloca los **33 pedidos** en la rejilla fija [13:00,18:00) UTC. Si, **solo para sensibilidad**, interpretáramos los mismos valores POS como UTC directamente, **32** quedarían dentro y **uno fuera**. Esta diferencia **no valida** que el reloj POS sea efectivamente Budapest ni permite estimar un offset a posteriori.
+
+| Ventana UTC, 23-feb-2024 | POS (reloj local supuesto) | Puerta contacto Tapo | Puerta movimiento Tapo | Zona 1 Tapo | Zona 2 Tapo |
+|---|---:|---:|---:|---:|---:|
+| 13:00–13:30 | 0 | 0 | 0 | 0 | 0 |
+| 13:30–14:00 | 6 | 32 | 18 | 25 | 36 |
+| 14:00–14:30 | 4 | 16 | 13 | 18 | 38 |
+| 14:30–15:00 | **0** | **22** | **12** | **9** | **14** |
+| 15:00–15:30 | 9 | 22 | 11 | 15 | 40 |
+| 15:30–16:00 | 2 | 24 | 15 | 21 | 31 |
+| 16:00–16:30 | 4 | 13 | 12 | 18 | 20 |
+| 16:30–17:00 | 7 | 18 | 22 | 24 | 23 |
+| 17:00–17:30 | 1 | 9 | 10 | 14 | 33 |
+| 17:30–18:00 | **0** | **5** | **2** | **3** | **9** |
+| **Total** | **33** | **161** | **115** | **147** | **244** |
+
+**Control negativo no trivial:** hay **dos ventanas** con POS=0 pero con actividad en los cuatro sensores. Esos intervalos reúnen, respectivamente, **27 disparos de contacto**, **14 de movimiento de puerta**, **12 en zona 1** y **23 en zona 2**. Eso **no** significa que los sensores sean erróneos; podrían registrar limpieza, movimiento, uso de zona sin venta, entradas/salidas u otros fenómenos, o reflejar carencias de los registros POS. Tampoco permite inferir servicios pendientes. Lo único demostrado es que **un disparo no representa necesariamente un pedido POS en su misma ventana**.
+
+En **siete de las diez ventanas** hay al menos un pedido POS y pulsos de los cuatro sensores, pero los sensores emiten pulsos en nueve de las diez ventanas: **la co-presencia es poco discriminante y no acredita vinculación por pedido**. Es un resultado descriptivo de una jornada y una hipótesis horaria, no correlación calibrada ni ventaja de un método.
+
+La primera ventana termina antes del primer disparo observado del snapshot Tapo y la última continúa más allá del último disparo registrado. Los ceros de esos extremos **no deben interpretarse como ausencia física de actividad**: el snapshot no acredita cobertura continua.
+
 ## Implementación y límites
 
 - \`scripts/arena_cafe/weba_temporal_windows.py\`: extrae **en memoria** las horas de los 33 pedidos seleccionados y los eventos de los cuatro sensores. Reutiliza \`weba_source_readiness\` para validar el formato y los hashes. Aplica la rejilla fija, la conversión horaria explícita y control de conservación de conteos; no selecciona rezagos ni calcula un índice de éxito.
