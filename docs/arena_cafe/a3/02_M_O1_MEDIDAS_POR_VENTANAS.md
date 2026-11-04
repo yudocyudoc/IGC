@@ -30,6 +30,23 @@ Las entradas internas FULL se controlan en el evaluador, **no** en el generador 
 - `tests/test_arena_cafe_m_o1_window_measures.py`: pruebas de suma de 9, ventanas exactas, flujo continuo, exclusión de eventos del corte, rechazo de cambios físicos/CSV/identidad de condiciones y ausencia de exposición de eventos privados en la salida.
 - CI existente A1/A3: reejecuta las cuatro soluciones D/M auténticas y las dos verificaciones Buffalo offline, compara fuentes, vuelve a adjudicar F3 y publica únicamente un JSON resumido de la auditoría.
 
+## Resultados efectivos del control EV-01, versión actual
+
+[CI reproducible](https://github.com/yudocyudoc/IGC/actions/runs/41755458718) y [reporte F3 original de esa ejecución](https://github.com/yudocyudoc/IGC/actions/runs/41755458718/artifacts/13287498204), que contiene `arms.O1.M.native.metrics.preparation.evaluator_only_window_measures`.
+
+| Ventana [a,b) min | Eventos físicos `servicio_fin` | Masa `ReadyOrder` integrada del OMC M/O1 (aprox.) | Cota exacta nominal E1 |
+|---|---:|---:|---:|
+| [0,2) | 0 | 0.1550978568 | 2/3 |
+| [2,4) | 3 | 0.4675602033 | 2/3 |
+| [4,6) | 2 | 0.6628212075 | 2/3 |
+| [6,8) | 2 | 0.6666666667 | 2/3 |
+| [8,10) | 2 | 0.6666666667 | 2/3 |
+| **Total** | **9** | **2.6188126009** | **10/3** |
+
+Al corte hay **cinco visitas a preparación esperando servicio** y **una en servicio**, todas censuradas por la ventana [0,10), por lo cual no se suman a las nueve terminaciones.
+
+**Interpretación exclusivamente descriptiva:** el proceso físico muestra tres terminaciones en [2,4), mientras que el E1 original todavía está en la fase de crecimiento de la tasa. Estos objetos tienen unidades y geometría temporal diferentes: los conteos son saltos unitarios y las integrales son masa continua aproximada numéricamente. La discrepancia depende de la correspondencia temporal y material **no validada**, y **no** mide error de sensor, capacidad empresarial real, sesgo del generador ni mejora causal.
+
 ## Lo que permite concluir
 
 Se observa **cómo difiere la geometría temporal de ambas medidas** sin esconder sus tipos. Podemos investigar qué escala temporal hace coherente una comparación y qué información necesitamos para justificarla; **no** inferir tolerancias cambiando ventanas hasta que coincidan los resultados.
