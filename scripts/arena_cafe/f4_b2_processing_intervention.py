@@ -136,12 +136,16 @@ def verify_original_full(intervals):
     return True
 
 
-def per_resource_processing_periods(b2_result,resources):
+def per_resource_processing_periods(b2_result,resources,*,
+                                    observed_until=HORIZON):
     """Merge adjacent B2 PROCESSING intervals per physical server.
 
     A [t0,t1) processing span joins the next if t1==t2 with no inactive
     interval. UNKNOWN outside service is not reclassified as idle/available.
     """
+    need(type(observed_until) is Q and
+         observed_until in (Q(10),HORIZON),
+         "F4APM_UNAPPROVED_DIAGNOSTIC_CUTOFF")
     need(b2_result["status"]=="B2_EXACT_RESOURCE_PERIODS_PASS" and
          b2_result["availability_source"]=="NO_AVAILABILITY_TELEMETRY" and
          Q(b2_result["horizon_minutes_exact"])==HORIZON,
@@ -159,7 +163,9 @@ def per_resource_processing_periods(b2_result,resources):
             spent=Q(0)
             for segment in b2_result["segments"]:
                 left=Q(segment["start_minutes_exact"])
-                right=Q(segment["end_minutes_exact"])
+                if left>=observed_until:
+                    break
+                right=min(Q(segment["end_minutes_exact"]),observed_until)
                 need(left<right and (last is None or left==last),
                      "F4APM_B2_NONCONTIGUOUS_TIMELINE")
                 last=right
@@ -173,14 +179,16 @@ def per_resource_processing_periods(b2_result,resources):
                 elif starts is not None:
                     runs.append((starts,left))
                     starts=None
-            need(last==HORIZON,"F4APM_B2_HORIZON_NOT_COVERED")
+            need(last==observed_until,"F4APM_B2_HORIZON_NOT_COVERED")
             if starts is not None:
-                runs.append((starts,HORIZON))
+                runs.append((starts,observed_until))
             need(all(a<b for a,b in runs) and
                  sum((b-a for a,b in runs),Q(0))==spent,
                  "F4APM_B2_PROCESSING_EPISODE_MISMATCH")
             expected=b2_result["resource_total_minutes"][rid]
-            need(spent==Q(expected.get("PROCESSING","0")),
+            need(spent==Q(expected.get("PROCESSING","0"))
+                 if observed_until==HORIZON else
+                 spent<=Q(expected.get("PROCESSING","0")),
                  "F4APM_B2_RESOURCE_TOTAL_MISMATCH")
             max_length=max((b-a for a,b in runs),default=Q(0))
             longest=max(longest,max_length)
@@ -215,7 +223,9 @@ def per_resource_processing_periods(b2_result,resources):
         "missing_states":["SETUP","CLEANING","BREAKDOWN","BLOCKING",
                           "AVAILABILITY_WHEN_NOT_PROCESSING"],
         "idle_and_available_are_not_inferred_from_silence":True,
-        "horizon_minutes_exact":str(HORIZON),
+        "horizon_minutes_exact":str(observed_until),
+        "B2_source_horizon_minutes_exact":str(HORIZON),
+        "diagnostic_excludes_processing_after_observed_until":True,
         "winner_under_processing_only_proxy":ranking[0],
         "ranked_stages_by_longest_processing":ranking,
         "stages":result,
@@ -238,9 +248,12 @@ def measured_world(config,arrivals,*,original_source=False):
     periods=b2.resource_periods(events,resources,HORIZON,
                                 available=None)
     apm=per_resource_processing_periods(periods,resources)
+    apm_t10=per_resource_processing_periods(
+        periods,resources,observed_until=Q(10))
     counts={str(s.t_min):s.delivered_cum_orders for s in snaps}
     return {
         "apm":apm,
+        "apm_observed_through_t10":apm_t10,
         "deliveries_at_t10":counts["10"],
         "counts_checkpoints":counts,
         "B2_processing_periods_verified":True,
@@ -295,6 +308,18 @@ def build(o0,o1):
             k:winner(baselines[k]) for k in KEYS},
         "stressed_processing_winners":{
             k:winner(after[k]) for k in KEYS},
+        "baseline_processing_winners_through_t10":{
+            k:winner({"apm":baselines[k]["apm_observed_through_t10"]})
+            for k in KEYS},
+        "stressed_processing_winners_through_t10":{
+            k:winner({"apm":after[k]["apm_observed_through_t10"]})
+            for k in KEYS},
+        "baseline_proxy_measured_only_through_t10":{
+            k:baselines[k]["apm_observed_through_t10"] for k in KEYS},
+        "stressed_proxy_measured_only_through_t10":{
+            k:after[k]["apm_observed_through_t10"] for k in KEYS},
+        "t30_full_drain_proxy_is_post_t10_retrospective":True,
+        "t30_proxy_must_NOT_be_used_as_t10_forecast":True,
         "reference_action":ACTION,
         "action_kind":"COMMON_ADVERSE_WORKLOAD_STRESS_NOT_BUSINESS_RECOMMENDATION",
         "same_action_only_dispatch_plus_minutes_exact":str(ACTION_MINUTES),
