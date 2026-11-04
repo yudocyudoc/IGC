@@ -98,6 +98,32 @@ jobs:
                      for s in r["shift_selection"])
           assert all(r["shifts"][s]["Tapo"]["snapshot_consistency_passed"]
                      for s in r["shift_selection"])
+          # Actual pinned external-source findings: no parameter fitting.
+          assert r["shift_metadata_workbook_nonempty_rows"]==56
+          assert r["POS"]["nonempty_order_rows"]==588
+          assert r["POS"]["parseable_order_time_as_wall_clock"]==588
+          assert r["POS"]["blank_order_time"]==0
+          assert r["POS"]["order_time_values_stored_as_numeric_Excel_cells"]==588
+          assert r["POS"]["order_time_with_explicit_timezone_offset_or_Z"]==0
+          assert r["POS"]["order_date_raw_encoding_counts"]=={
+              "YYYYMMDD_8_DIGITS":588}
+          assert [r["shifts"][s]["start_clock_local"]
+                  for s in r["shift_selection"]]==[
+                  "14:36:00","14:54:00","14:33:00"]
+          assert [r["shifts"][s]["end_clock_local"]
+                  for s in r["shift_selection"]]==[
+                  "18:31:00","18:50:00","18:41:00"]
+          assert [r["shifts"][s]["Tapo"]["events_before_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[16,436,287]
+          assert [r["shifts"][s]["Tapo"]["events_inside_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[873,452,602]
+          assert [r["shifts"][s]["Tapo"]["events_after_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[22,0,0]
+          assert [r["shifts"][s]["Tapo"]["sensors_over_50_returned_records"]
+                  for s in r["shift_selection"]]==[6,6,5]
+          assert [r["shifts"][s]["Tapo"][
+                "Tapo_snapshot_last_export_before_declared_shift_end"]
+                for s in r["shift_selection"]]==[False,False,True]
           assert r["Tapo_continuous_service_coverage_ESTABLISHED"] is False
           assert r["POS_and_Tapo_synchronized_ESTABLISHED"] is False
           assert r["POS"]["timezone_certified_by_source"] is False
