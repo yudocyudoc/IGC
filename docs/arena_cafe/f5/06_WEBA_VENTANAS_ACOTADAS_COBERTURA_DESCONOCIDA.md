@@ -39,6 +39,47 @@ El algoritmo **no estima tasas de servicio, correlaciones, desfasajes óptimos, 
 
 La selección de turnos es **retrospectiva y ya revelada**. No se admite una nueva condición O2 para D/B/M, no se deducen eventos `servicio_fin`, y **G4/G5 siguen NOT_RUN; F5 independiente NOT_CREATED**.
 
+
+## Primer resultado empírico de la corrección (mismos datos, nuevo recorte)
+
+Se ejecutó el nuevo operador sobre los cinco archivos originales, con identidad de bytes confirmada mediante hashes y con la rejilla anterior intacta. **Estos resultados no proceden de turnos nuevos ni deben evaluarse como experimento ciego.**
+
+| Turno | Pulsos en los archivos de los 4 sensores seleccionados | Pulsos ANTES del turno | Pulsos DENTRO del turno | Pulsos DESPUÉS del turno |
+|---|---:|---:|---:|---:|
+| 23 febrero | **667** | 12 | **638** | 17 |
+| 4 marzo | **660** | 353 | **307** | 0 |
+| 8 marzo | **704** | 226 | **478** | 0 |
+
+Esta tabla **solo** cubre los cuatro canales `front_door`, `front_door_m`, `zone_1` y `zone_2`. El universo completo de diez sensores sigue registrando 911, 888 y 889 disparos por turno, respectivamente. Los conteos se conservan; las porciones fuera de turno no se borran del origen, pero ya no se suman como actividad del turno para la comparación.
+
+**En el 4 de marzo, 353/660 disparos de los cuatro canales seleccionados están fuera del turno declarado.** El análisis original de ventanas sin recortar confundía una parte importante del historial de dispositivo con actividad de la sesión vespertina.
+
+| Turno | Pedidos POS recibidos dentro del turno, hipótesis Budapest | Pedidos dentro del turno si la hora POS se interpretara como UTC | Ventanas con pulsos y cero nuevos pedidos POS después del recorte |
+|---|---:|---:|---:|
+| 23 febrero | 33 | 25 | 2 |
+| 4 marzo | 7 | 6 | 2 |
+| 8 marzo | 15 | 13 | 3 |
+
+**Sensibilidad horaria más notable:** los 33 pedidos de febrero permanecen dentro del turno bajo el supuesto Budapest, pero **solo 25** caerían dentro si el número Excel fuese una hora UTC. Esto es una advertencia sobre la identificación de reloj, **no evidencia de que un supuesto sea el correcto**.
+
+### Ventana crítica del 8 de marzo, 17:30–18:00 UTC
+
+El intervalo declarado del turno termina a las **17:41 UTC** y la última respuesta Tapo fue exportada a las **17:37:02.167 UTC**. Por tanto, los treinta minutos de esta ventana se dividen en:
+
+- **19 minutos fuera del turno**, sin intentar medir actividad de ese turno.
+- **~7.036 minutos anteriores a la exportación dentro del turno**, pero **sin continuidad de Tapo demostrada**.
+- **~3.964 minutos posteriores a la exportación y anteriores al final declarado**, **imposibles de observar** con ese snapshot.
+
+No hay inferencia de estado `IDLE` en ninguno de estos tramos. En el archivo de POS seleccionado, los quince pedidos del 8 de marzo quedan anteriores al final de la exportación bajo la hipótesis Budapest, pero eso **no informa** de la actividad física faltante en los últimos cuatro minutos.
+
+### Qué cambia en nuestra interpretación previa
+
+Las ventanas con pulsos y cero pedidos POS dejan de ser **2 / 3 / 4** (23-feb / 4-mar / 8-mar, cálculo sin recortar de #161–#162) y pasan a ser **2 / 2 / 3** tras recortar a los turnos. Esto confirma que la actividad ambiental del archivo no se reduce a las ventas registradas, pero **no** demuestra servicios activos, pedidos acumulados ni falsos positivos de ningún sensor.
+
+La auditoría demuestra que un **conteo físicamente registrado** puede ser válido como registro de pulsos y, al mismo tiempo, **ser inadmisible para medir carga de una operación en un intervalo específico**. La validez de la observación exige tanto su procedencia como una delimitación temporal apropiada y un operador físicamente justificado.
+
+**Ejecución:** CI reproducible sobre el mismo commit externo WEBA fijado en #160, sin alterar D/B/M, sin sensores personales ni etiquetas físicas artificiales, con resultados JSON agregados y pruebas sobre cortes, censura y relojes.
+
 ## Decisión metodológica siguiente
 
 La regla de observación ya respeta las fronteras documentadas; persisten dos incógnitas que el dataset abierto no resuelve automáticamente: **(1)** continuidad y sensibilidad del sensor durante el turno; **(2)** offset/error efectivo entre POS y Tapo. Si una de ellas es crucial para el siguiente modelo, necesitaremos nueva documentación instrumental, sincronización auditada u observación independiente. **No** aumentar el número de turnos antes de aclarar el operador físico que realmente queremos estimar.
