@@ -1,0 +1,116 @@
+name: WEBA F5 exploratory three-shift vibration regimes
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/weba_three_shift_vibration_exploratory.py'
+      - 'tests/test_arena_cafe_weba_three_shift_vibration_exploratory.py'
+      - 'docs/arena_cafe/f5/10_WEBA_TRES_TURNOS_VIBRACION_EXPLORATORIA.md'
+      - '.github/workflows/arena-cafe-f5-weba-three-shift-vibration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exploratory-window-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests for empirical parser and temporal discontinuities
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_three_shift_vibration_exploratory.py' -v
+      - name: Download only 12 public pinned machine blobs
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import time
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from scripts.arena_cafe.weba_three_shift_vibration_exploratory import (
+              SOURCES,UPSTREAM_REPO,UPSTREAM_COMMIT,blob_sha1)
+          root=Path("weba_machine_temp_source")
+          root.mkdir()
+          for shift,name,size,sha in SOURCES:
+              url=(f"https://raw.githubusercontent.com/{UPSTREAM_REPO}/"
+                   f"{UPSTREAM_COMMIT}/B.shift_data/{shift}/"
+                   f"5.coffee_machine_acc/{name}")
+              for retry in range(3):
+                  try:
+                      req=Request(url,headers={"User-Agent":"IGC-WEBA-vibration-pilot"})
+                      with urlopen(req,timeout=120) as r:
+                          raw=r.read()
+                      break
+                  except Exception:
+                      if retry==2: raise
+                      time.sleep(2**retry)
+              assert len(raw)==size and blob_sha1(raw)==sha, (
+                  "WEBA_SOURCE_INTEGRITY_GUARD")
+              (root/(name+".bin")).write_bytes(raw)
+          print("WEBA_12_MACHINE_BLOBS_VERIFIED_GIT_SHA1")
+          PY
+      - name: Calculate three-shift empirical aggregate only
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_three_shift_vibration_exploratory \
+            --root weba_machine_temp_source \
+            --out artifacts/WEBA_THREE_SHIFT_VIBRATION_EXPLORATORY.json
+      - name: Check exact regression and invariant boundary
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          r=json.load(open("artifacts/WEBA_THREE_SHIFT_VIBRATION_EXPLORATORY.json"))
+          assert r["schema"]=="weba-three-shift-vibration-exploration/0.1"
+          assert r["total_verified_machine_files"]==12
+          assert r["total_valid_windows"]==8803
+          assert r["calibration_shifts"]==[
+              "20240223_evening","20240304_evening"]
+          assert r["descriptive_holdout"]=="20240308_evening"
+          assert len(r["shifts"])==3
+          for s,n,episodes,high in zip(r["shifts"],
+                                        (2863,2881,3059),
+                                        (64,16,35),
+                                        (288,79,159)):
+              assert s["valid_5s_windows"]==n
+              assert s["rows_rejected"]==0
+              assert s["threshold_sensitivity"][1]["episodes_ge_10_seconds"]==episodes
+              assert s["threshold_sensitivity"][1]["high_windows"]==high
+              assert sum(s["cluster_counts_by_rms_low_medium_high"])==n
+              assert s["sampling_gaps_gt_0_3s"]==0
+          assert r["machine_cycle_verified"] is False
+          assert r["task_ground_truth_verified"] is False
+          assert r["order_to_cycle_match_performed"] is False
+          assert r["retrospective_not_blind"] is True
+          assert r["D_B_M_unchanged"] and not r["O2_authorized"]
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          prohibited={"order_ID","par_ID","participant_id","raw_event_time",
+                      "raw_xyz","per_event_log","POS_time","cycle_finish"}
+          def check(x):
+              if isinstance(x,dict):
+                  assert not (set(x)&prohibited)
+                  for value in x.values():check(value)
+              elif isinstance(x,list):
+                  for value in x:check(value)
+          check(r)
+          print("WEBA_3_SHIFT_PINNED_EXPLORATION_PASS_AGGREGATE_ONLY")
+          PY
+      - name: Remove all raw source blobs before artifact upload
+        if: always()
+        run: |
+          rm -rf weba_machine_temp_source
+      - name: Upload only aggregate JSON with no raw vibration/time/order records
+        uses: actions/upload-artifact@v4
+        with:
+          name: weba-three-shift-vibration-exploratory-aggregate
+          path: artifacts/WEBA_THREE_SHIFT_VIBRATION_EXPLORATORY.json
+          retention-days: 90
+          if-no-files-found: error
