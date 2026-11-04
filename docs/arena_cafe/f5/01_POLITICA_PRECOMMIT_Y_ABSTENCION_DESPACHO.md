@@ -56,6 +56,36 @@ Esta auditoría distingue **que una fuente tenga columnas parecidas** de que los
 
 **Decisión de adquisición:** priorizar **una cafetería colaboradora con POS + KDS que exponga marcas originales a nivel de evento**, o bien observación directa de despacho corroborada por un POS real y por una segunda fuente de contraste. **Ninguna columna se mapeará automáticamente a `servicio_inicio` o `servicio_fin` sin verificar su semántica física.** No se requieren servicios específicos de estas marcas.
 
+### Nuevo candidato documental: WEBA (Tran et al., Scientific Data, 2025)
+
+**Estado tras inspección de artículo y archivos de GitHub: ACEPTADO COMO FUENTE REAL DE OBSERVABILIDAD PARCIAL / NO ELEGIBLE TODAVÍA COMO F5 DE TERMINACIONES POR PEDIDO.** Procedencia académica: [artículo](https://doi.org/10.1038/s41597-024-04348-z); [Figshare v3](https://doi.org/10.6084/m9.figshare.27186516.v3); [repositorio actual](https://github.com/Department-of-System-Engineering/datasets_WEBA), redirección del enlace original `operator40/datasets_WEBA`.
+
+La cafetería observada estaba en **Budapest**. Los autores documentan cinco baristas y 55 turnos, con **un solo barista trabajando a la vez**, que se desplaza entre las zonas de caja/despacho y preparación. **No** modelar ambas zonas como servidores humanos independientes en paralelo: una misma persona comparte la capacidad física. El repositorio accesible presenta exactamente **55 carpetas** en `B.shift_data/`, más `orders_summary.xlsx`, `shift_summary.xlsx` y `workload_summary.xlsx`.
+
+| Observación original WEBA | Archivo/canal auditado | Qué se puede decir ahora | Qué **no** se puede inferir directamente |
+|---|---|---|---|
+| Hora e ítems del pedido en POS | `B.shift_data/orders_summary.xlsx`, variables `order_ID`, `order_date`, `order_time`, `coffee_cup`, `choco_cup`, `cake` (Tabla 9 del artículo) | Identificador y **hora de recepción de pedido** en una fuente externa real | Entrada física por puerta, inicio de caja o correspondencia con fin de servicio individual |
+| Apertura de puerta / movimiento delante de entrada | `yyyymmdd_shift/3.logs.txt`, eventos Tapo T110/T100 `front_door`, `front_door_m` | Señales ambientales con marca temporal, útiles como **proxies** de actividad de entrada | Un evento = un cliente nuevo. Aperturas también pueden obedecer a salidas, barista o visitantes, y varios clientes pueden compartir una apertura |
+| Presencia/movimiento en Zona 1 o Zona 2 | Mismo `3.logs.txt`: T100 `zone_1`, `zone_2` | Señales de actividad espacial del barista/ocupación potencial de zonas, a validar por secuencia | Inicio/fin de caja, preparación, despacho o `servicio_fin` de un pedido; presencia no significa procesamiento efectivo |
+| Funcionamiento de máquina | `5.coffee_machine_acc` o carpeta `5.coffee_machine_acc/` según turno; ADXL345 a 25 Hz, raw | Señal física de **vibración de máquina** con muestreo nominal de 40 ms | Que un segmento de vibración corresponda sin ambigüedad a una bebida, pedido, barista o al fin completo de preparación/entrega |
+| Movimiento humano | `1.body_acc.csv` 25 Hz, `2.hand_acc.csv` 12.5 Hz | Señales temporales de actividad laboral | Terminación auditada de cada servicio o identificación inequívoca de pedido, sin validación y anotación |
+| Percepción / condiciones de turno | `4.hr.csv`, cuestionarios, summaries | Contexto humano y de carga; **no necesario** para el primer pase operacional | No usar datos de salud/participantes como sustituto de eventos físicos ni publicar información de participantes |
+
+**Restricción de cobertura que cambia el diseño:** los autores declaran que las marcas temporales POS de pedidos **faltan para los primeros 13 turnos y están disponibles para los últimos 42**. El análisis de llegada POS solo es posible donde ese campo existe. No completar horas faltantes con puertas Tapo.
+
+**Comprobación directa limitada de un turno:** `B.shift_data/20240223_evening/` incluye `3.logs.txt`, señales de cuerpo/mano, HR y carpeta de aceleración de máquina; el log es un volcado de registros Tapo que puede incluir **listas de eventos históricos recientes** por dispositivo, no un CSV ya deduplicado de `servicio_fin`. No existe un `front_door_events.csv` en ese directorio. `B.shift_data/20231129_evening/` presenta una disposición distinta de archivos. Se inspeccionaron metadatos, nombres, documentación y encabezados de log, **NO** se descargó ni analizó íntegramente el paquete Figshare ni se validaron los enlaces pedido↔sensores.
+
+**Puertas científicas que todavía NO pasan:**
+
+- **T0 — Origen externo auténtico:** SÍ: artículo revisado por pares y datos crudos de campo documentados, independencia de la construcción sintética EV-01.
+- **T1 — Señales ambientales crudas disponibles:** SÍ, en el repositorio GitHub, con diferencias de cobertura y formato por turno.
+- **T2 — Eventos derivados físicos de tarea validados:** NO DEMOSTRADO: hace falta algoritmo/revisión manual, definiciones de zona y machine-on/off, calibración de reloj, tasa de omisiones y falsos positivos.
+- **T3 — Enlace caso/pedido a evento de preparación y despacho:** NO DEMOSTRADO. El artículo ofrece `order_ID` en POS y `shift_ID`, no un identificador de pedido por evento de máquina o de zona.
+- **T4 — `despacho.servicio_fin([0,6))` directamente medible para la regla PR #159:** NO, salvo nueva prueba de mapeo que todavía no existe. **Nunca** llamar `servicio_fin` a un retorno a Zona 1.
+- **T5 — G5 independiente, ciego y predeclarado:** NO: la independencia del **origen de datos** no implica una evaluación prospectiva válida ni que los mundos A/B sintéticos representen esa cafetería.
+
+**Decisión técnica:** no ingerir el archivo completo de ~centenas de MB indiscriminadamente, especialmente mediciones de HR/cuestionarios de participantes. Priorizar **un inventario de cobertura por turno**, usando SOLO `orders_summary.xlsx` y registros `3.logs.txt` de una muestra; confirmar offsets y reloj de ambos sensores/servidores. Definir después, antes de leer una muestra de evaluación separada, un operador observacional de **eventos de máquina/zonas** etiquetado como aproximación, con abstención cuando el vínculo a pedido no sea defendible. Conservar la procedencia, la licencia aplicable y los archivos originales; no publicarlos en la Arena. Si solo conseguimos proxies de actividad, **cambiar la pregunta medible** y no fingir que son el operador F5 de despacho original.
+
 ### Plan mínimo de una captura verificable, antes de ejecutar `probe`
 
 1. **Permiso y unidad:** obtener autorización para un ensayo observacional sin clientes identificados; fijar si se cuenta *pedido*, *ítem* o *visita a estación*. No mezclar ítems KDS con pedidos para conseguir artificialmente 4 o 5.
