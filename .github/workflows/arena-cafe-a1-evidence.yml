@@ -767,10 +767,28 @@ jobs:
           w=m["metrics"]["preparation"]["evaluator_only_window_measures"]
           assert w["physical_total_completed_pre_cutoff"]==9
           assert len(w["windows"])==5
-          assert sum(b["observed_discrete_prep_completions"] for b in w["windows"])==9
+          assert [b["window_minutes_half_open"] for b in w["windows"]]==[
+              ["0","2"],["2","4"],["4","6"],["6","8"],["8","10"]]
+          physical=[b["observed_discrete_prep_completions"] for b in w["windows"]]
+          assert physical==[0,3,2,2,2] and sum(physical)==9
           from fractions import Fraction
+          from math import isclose
+          published_masses=[
+              0.15509785678779014,0.4675602033052391,
+              0.662821207508607,0.6666666666644565,
+              0.6666666666666647]
+          actual_masses=[b["native_e1_integrated_continuous_readyorder_mass_numeric"]
+                         for b in w["windows"]]
+          assert all(isclose(actual,expected,rel_tol=0,abs_tol=1e-5)
+                     for actual,expected in zip(actual_masses,published_masses))
+          assert isclose(sum(actual_masses),w["native_continuous_prep_integral_numeric"],
+                         rel_tol=0,abs_tol=1e-8)
+          assert isclose(w["native_continuous_prep_integral_numeric"],
+                         2.6188126009327575,rel_tol=0,abs_tol=1e-5)
           assert w["native_continuous_prep_integral_numeric"]<=float(Fraction(w["native_nominal_max_mass_exact"]))+1e-5
           assert all(b["nominal_E1_max_mass_exact"]=="2/3" for b in w["windows"])
+          assert w["physical_censored_waiting_at_cutoff"]==5
+          assert w["physical_censored_in_service_at_cutoff"]==1
           assert w["exact_cutoff_mass_equality_empirically_verified"] is False
           assert w["operator_sufficient_for_scientific_G3"] is False
           assert w["M_native_model_generated_or_selected_from_O1"] is False
