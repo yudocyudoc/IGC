@@ -1,0 +1,107 @@
+name: F5 WEBA — real one-shift POS/Tapo source readiness (no G5 inference)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/weba_source_readiness.py'
+      - 'tests/test_arena_cafe_weba_source_readiness.py'
+      - 'docs/arena_cafe/f5/02_WEBA_REAL_SOURCE_FIRST_PASS.md'
+      - '.github/workflows/arena-cafe-f5-weba-real-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-real-shift-aggregate-source-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source parser semantics without synthetic cafe worlds
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_source_readiness.py' -v
+      - name: Fetch ONLY pinned external POS and Tapo text (exclude participant/health)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from scripts.arena_cafe import weba_source_readiness as w
+          base=("https://raw.githubusercontent.com/"
+                +w.UPSTREAM_REPO+"/"+w.UPSTREAM_COMMIT+"/")
+          private=Path("artifacts/weba-private-source-do-not-upload")
+          private.mkdir(parents=True,exist_ok=True)
+          for name,meta in w.SOURCE_FILES.items():
+              url=base+meta["path"]
+              req=Request(url,headers={"User-Agent":"IGC-WEBA-source-readiness"})
+              with urlopen(req,timeout=30) as response:
+                  raw=response.read()
+              info=w.verify_pinned(name,raw)
+              (private/("orders.xlsx" if name=="pos" else "tapo.log")).write_bytes(raw)
+              print(name,"PINNED_GIT_BLOB",info["git_blob_sha1"],
+                    "bytes",info["bytes"])
+          PY
+      - name: Inspect real workbook and raw Tapo snapshot; publish aggregates ONLY
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_source_readiness \
+            --pos artifacts/weba-private-source-do-not-upload/orders.xlsx \
+            --tapo artifacts/weba-private-source-do-not-upload/tapo.log \
+            --out artifacts/F5_WEBA_REAL_ONE_SHIFT_SOURCE_READINESS.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path(
+            "artifacts/F5_WEBA_REAL_ONE_SHIFT_SOURCE_READINESS.json").read_text())
+          assert r["upstream_git_commit"]=="d6841669e544579547c94b7ce1e8613bbd6b3a39"
+          assert r["tapo"]["sensor_count"]==10
+          assert r["tapo"]["total_returned_tapo_events"]==911
+          assert r["tapo"]["keepopen_events_retained"]==7
+          assert r["tapo"]["returned_records_per_selected_sensor"]=={
+              "front_door":161,"front_door_m":115,
+              "zone_1":147,"zone_2":244}
+          assert r["pos"]["source_has_order_id_field"]
+          assert r["pos"]["total_nonempty_order_rows"]>0
+          assert r["pos"]["raw_date_encoding_observed"]=="YYYYMMDD_FOR_THIS_PINNED_SOURCE"
+          assert r["pos"]["number_of_rows_with_parseable_order_date"]==r["pos"]["total_nonempty_order_rows"]
+          assert r["pos"]["total_nonempty_order_rows"]==588
+          assert r["pos"]["number_of_distinct_date_tokens"]==28
+          assert r["pos"]["rows_matching_selected_day"]==48
+          assert r["pos"]["rows_matching_selected_evening_shift"]==33
+          assert r["pos"]["selected_shift_rows_with_order_time"]==33
+          assert r["raw_source_records_not_published"]
+          assert r["participant_health_wearables_or_questionnaires_not_ingested"]
+          assert not r["same_shift_pos_tapo_basic_presence_check"][
+              "physical_stage_completion_per_order_identified"]
+          assert r["eligible_as_independent_F5_dispatch_service_finish"]=="NO"
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_reserve"]=="NOT_CREATED"
+          def audit_public_keys(node):
+              if isinstance(node,dict):
+                  for key,value in node.items():
+                      assert key not in {
+                          "mac","ip","ssid","order_ID","case_id",
+                          "device_id","event_id","resource_id",
+                          "t_minutes_exact","raw_order_time"}
+                      audit_public_keys(value)
+              elif isinstance(node,list):
+                  for item in node:
+                      audit_public_keys(item)
+          audit_public_keys(r)
+          print("WEBA_REAL_SOURCE_AUDIT_PASS_NO_PER_ORDER_SERVICE_INFERENCE")
+          PY
+      - name: Remove private source files before artifact upload
+        if: always()
+        run: |
+          rm -rf artifacts/weba-private-source-do-not-upload
+      - name: Upload only source digests and aggregate readiness, never raw source
+        uses: actions/upload-artifact@v4
+        with:
+          name: f5-weba-real-one-shift-aggregate-readiness
+          path: artifacts/F5_WEBA_REAL_ONE_SHIFT_SOURCE_READINESS.json
+          if-no-files-found: error
+          retention-days: 90
