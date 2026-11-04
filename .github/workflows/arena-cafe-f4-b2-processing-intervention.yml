@@ -1,0 +1,92 @@
+name: F4 cafe — B2 PROCESSING episodes versus common intervention sensitivity
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f4_b2_processing_intervention.py'
+      - 'tests/test_arena_cafe_f4_b2_processing_intervention.py'
+      - 'docs/arena_cafe/f4/04_B2_PERIODOS_PROCESAMIENTO_E_INTERVENCION.md'
+      - '.github/workflows/arena-cafe-f4-b2-processing-intervention.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evaluator-only-processing-proxy-vs-action:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve previously authorized public O0/O1 EV01 development envelopes
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Audit original B2 processing state and intervention using unchanged DES
+        env:
+          F4SYM_O0: artifacts/public/O0_VISIBLE.json
+          F4SYM_O1: artifacts/public/O1_VISIBLE.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f4_b2_processing_intervention.py' -v
+          python -m scripts.arena_cafe.f4_b2_processing_intervention \
+            --o0 "$F4SYM_O0" --o1 "$F4SYM_O1" \
+            --out artifacts/F4_B2_PROCESSING_PROXY_ACTION_DEVELOPMENT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/F4_B2_PROCESSING_PROXY_ACTION_DEVELOPMENT.json").read_text())
+          A,B="REFERENCE_EV01_WORLD_A","SWAPPED_DOWNSTREAM_WORLD_B"
+          assert r["baseline_processing_winners"]=={
+              A:"preparacion",B:"preparacion"}
+          assert r["stressed_processing_winners"]=={
+              A:"despacho",B:"preparacion"}
+          assert r["baseline_processing_winners_through_t10"]=={
+              A:"preparacion",B:"preparacion"}
+          assert r["stressed_processing_winners_through_t10"]=={
+              A:"preparacion",B:"preparacion"}
+          assert r["t30_full_drain_proxy_is_post_t10_retrospective"]
+          assert r["t30_proxy_must_NOT_be_used_as_t10_forecast"]
+          assert r["baseline_processing_proxy"][A]["stages"]["preparacion"][
+              "longest_resource_processing_minutes_exact"]=="225/17"
+          assert r["after_common_stress_processing_proxy"][A]["stages"]["despacho"][
+              "longest_resource_processing_minutes_exact"]=="1545/86"
+          assert r["baseline_deliveries_t10"]=={A:8,B:8}
+          assert r["stressed_deliveries_t10"]=={A:6,B:8}
+          assert r["difference_stress_minus_baseline"]=={A:-2,B:0}
+          assert r["same_action_only_dispatch_plus_minutes_exact"]=="1/2"
+          assert r["B2_no_availability_telemetry"]
+          assert r["active_period_proxy_scope"]=="PROCESSING_ONLY_NOT_FULL_APM_OR_CAUSAL_ORACLE"
+          assert r["B2_and_DES_evidence_only_on_evaluator_side"]
+          for condition in ("baseline_processing_proxy","after_common_stress_processing_proxy"):
+              for world in (A,B):
+                  item=r[condition][world]
+                  assert item["not_full_active_period_method"]
+                  assert item["not_causal_bottleneck_truth"]
+                  assert item["idle_and_available_are_not_inferred_from_silence"]
+          for condition in ("baseline_proxy_measured_only_through_t10",
+                            "stressed_proxy_measured_only_through_t10"):
+              for world in (A,B):
+                  item=r[condition][world]
+                  assert item["horizon_minutes_exact"]=="10"
+                  assert item["winner_under_processing_only_proxy"]=="preparacion"
+                  assert item["not_causal_bottleneck_truth"]
+          assert r["A3"]=="PARTIAL"
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          assert r["provider_calls"]==0
+          print("F4_B2_PROCESSING_ONLY_PROXY_VALIDATED_AS_ENGINEERING_AND_DISTINCT_FROM_INTERVENTION_CAUSALITY")
+          PY
+      - name: Publish evaluator statistics only, never physical event rows
+        uses: actions/upload-artifact@v4
+        with:
+          name: f4-b2-processing-period-action-known-development
+          path: artifacts/F4_B2_PROCESSING_PROXY_ACTION_DEVELOPMENT.json
+          if-no-files-found: error
+          retention-days: 90
