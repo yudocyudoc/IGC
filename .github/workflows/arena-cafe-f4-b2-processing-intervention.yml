@@ -47,6 +47,16 @@ jobs:
               A:"preparacion",B:"preparacion"}
           assert r["stressed_processing_winners"]=={
               A:"despacho",B:"preparacion"}
+          assert r["baseline_processing_winners_through_t10"]=={
+              A:"preparacion",B:"preparacion"}
+          assert r["stressed_processing_winners_through_t10"]=={
+              A:"preparacion",B:"preparacion"}
+          assert r["t30_full_drain_proxy_is_post_t10_retrospective"]
+          assert r["t30_proxy_must_NOT_be_used_as_t10_forecast"]
+          assert r["baseline_processing_proxy"][A]["stages"]["preparacion"][
+              "longest_resource_processing_minutes_exact"]=="225/17"
+          assert r["after_common_stress_processing_proxy"][A]["stages"]["despacho"][
+              "longest_resource_processing_minutes_exact"]=="1545/86"
           assert r["baseline_deliveries_t10"]=={A:8,B:8}
           assert r["stressed_deliveries_t10"]=={A:6,B:8}
           assert r["difference_stress_minus_baseline"]=={A:-2,B:0}
@@ -60,6 +70,13 @@ jobs:
                   assert item["not_full_active_period_method"]
                   assert item["not_causal_bottleneck_truth"]
                   assert item["idle_and_available_are_not_inferred_from_silence"]
+          for condition in ("baseline_proxy_measured_only_through_t10",
+                            "stressed_proxy_measured_only_through_t10"):
+              for world in (A,B):
+                  item=r[condition][world]
+                  assert item["horizon_minutes_exact"]=="10"
+                  assert item["winner_under_processing_only_proxy"]=="preparacion"
+                  assert item["not_causal_bottleneck_truth"]
           assert r["A3"]=="PARTIAL"
           assert r["G4"]==r["G5"]=="NOT_RUN"
           assert r["F5_independent_reserve"]=="NOT_CREATED"
