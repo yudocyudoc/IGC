@@ -5,6 +5,7 @@ No hypothesis-pair fitting, POS↔Tapo link, or G5 independence claim.
 """
 from __future__ import annotations
 
+import argparse
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 import hashlib
