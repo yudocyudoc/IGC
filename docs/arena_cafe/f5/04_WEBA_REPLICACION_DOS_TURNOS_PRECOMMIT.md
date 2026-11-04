@@ -32,3 +32,29 @@ Una ejecución válida no depende de que aparezcan patrones similares: demuestra
 El análisis se implementará en `scripts/arena_cafe/weba_two_shift_replication.py` con tests de relojes, límites de ventanas, ausencia de optimización, fuente fijada por hash y no publicación de registros individuales. Los originales solo existirán en el runner de CI y se eliminarán antes del artefacto; la única salida pública será JSON agregado con metadatos de procedencia.
 
 **Regla de frontera:** la observación no autoriza inferir `etapa_entrada`, `servicio_inicio`, `servicio_fin`, KDS ni llegada física por cliente, y no altera D/B/M, O0/O1 ni la reserva F5.
+
+
+## Resultado del primer análisis real (posterior al compromiso de selección)
+
+Se ejecutó el protocolo anterior **sin cambiar el par de turnos ni la rejilla**, usando bytes del repositorio WEBA verificados por hash. Los números siguientes son **registros ambientales y ventas POS**, no servicios físicos.
+
+| Indicador observado | 20240304_evening | 20240308_evening |
+|---|---:|---:|
+| Pedidos POS en el turno, con hora | **7** | **15** |
+| Pedidos dentro de [13:00,18:00) UTC bajo hipótesis Budapest | 7 | 15 |
+| Pedidos dentro de la misma ventana si POS fuera UTC | 6 | 13 |
+| Pedidos fuera de ventana bajo interpretación UTC alternativa | 1 | 2 |
+| Registros Tapo en los 10 sensores | **888** | **889** |
+| Ventanas de 30 min con al menos un pedido POS | 6/10 | 6/10 |
+| Ventanas con disparos Tapo pero ningún nuevo pedido POS | **3/10** | **4/10** |
+| Disparos de los cuatro sensores seleccionados en ventanas sin POS | **115** | **136** |
+
+**Control negativo reproducido:** en ambos turnos hay actividad ambiental en intervalos donde el POS no registró pedidos. El valor 115 del 4-mar proviene de puerta contacto **20**, puerta movimiento **11**, zona 1 **31**, zona 2 **53**; el 8-mar los correspondientes valores son **33**, **20**, **34** y **49** (suma 136). **No** implica que alguno sea un falso disparo ni un servicio pendiente; tampoco demuestra la existencia de clientes no registrados.
+
+**Cobertura incompleta del intervalo fijo:** se contabilizan y publican por separado los registros Tapo fuera de la rejilla en los cuatro canales: para 4-mar, contacto 33, movimiento 19, zona 1 60 y zona 2 94; para 8-mar, contacto 34, movimiento 21, zona 1 37 y zona 2 78. **No se descartaron silenciosamente** para hacer coincidir canales. Las ventanas vacías no demuestran inactividad: el archivo es un snapshot histórico cuya cobertura del turno no está certificada.
+
+**Limitación metodológica decisiva:** no se ha validado que el POS esté expresado en hora local de Budapest. El análisis UTC alternativo se informa simultáneamente y **no se selecciona el desfase que maximice concordancia**. Tampoco se ha demostrado una correspondencia entre pedido y pulso Tapo; que las seis ventanas con POS también tengan pulsos en los cuatro sensores es compatible con actividad general de una cafetería y no identifica servicios ni cuellos de botella.
+
+El único avance acreditado es de **replicabilidad de extracción y comparación de observabilidad parcial en dos turnos reales**, frente a la única muestra exploratoria de febrero. No hay predicciones de intervención, ni E1 calibrado, ni identificación de tareas por caso, ni G4/G5 o reserva F5 independiente.
+
+**Evidencia técnica:** workflow específico para dos turnos de WEBA, fuentes congeladas por commit y blobs, pruebas de extracción y límites, JSON agregado de GitHub Actions. Los datos crudos se eliminan antes de publicación.
