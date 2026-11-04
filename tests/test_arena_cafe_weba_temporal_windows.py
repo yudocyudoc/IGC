@@ -129,8 +129,9 @@ class TemporalContracts(unittest.TestCase):
             result=w.compare(b"fixture-pos",toy_tapo().encode())
         self.assertEqual(33,result["pos_orders_selected"])
         self.assertEqual(33,result["pos_orders_in_primary_windows"])
-        self.assertEqual(33,result["sensor_rows_per_window_with_pos_assumed_local"][0][
+        self.assertEqual(33,result["sensor_rows_per_window_with_pos_assumed_local"][1][
             "pos_orders_assuming_Budapest_local_clock"])
+        self.assertEqual(1,result["bins_with_both_pos_and_sensor_pulse_assuming_local"]["front_door"])
         self.assertEqual(0,result["pos_orders_outside_primary_windows"])
         self.assertTrue(result["no_pos_order_tapo_event_pairing_attempted"])
         self.assertTrue(result["no_causality_or_service_event_inferred"])
