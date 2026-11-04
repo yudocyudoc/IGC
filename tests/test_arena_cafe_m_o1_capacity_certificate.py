@@ -49,7 +49,7 @@ class OriginalShortE1CapacityCertificate(unittest.TestCase):
         self.assertFalse(r["bound_under_unverified_bridge"][
             "necessary_one_to_one_condition_satisfied"])
         self.assertEqual(
-            "EXCLUDED_BY_NECESSARY_CAPACITY_BOUND_IF_ONE_TO_ONE_BRIDGE",
+            "EXCLUDED_ONLY_IF_EXACT_CUTOFF_COUNTER_EQUALS_MODEL_MASS",
             r["conditional_fixed_nominal_candidate_status"])
 
     def test_01_all_original_composed_graphs_have_same_prep_capacity_without_fitting(self):
@@ -85,6 +85,25 @@ class OriginalShortE1CapacityCertificate(unittest.TestCase):
         self.assertEqual("PARTIAL",r["A3"])
         self.assertEqual("NOT_RUN",r["G4"])
         self.assertEqual("NOT_RUN",r["G5"])
+
+    def test_02b_requires_two_distinct_bridges_not_just_one_to_one_units(self):
+        a=self.report["semantic_bridge_audit"]
+        self.assertFalse(a["unit_identity_empirically_verified"])
+        self.assertFalse(a["exact_cutoff_mass_equality_empirically_verified"])
+        self.assertFalse(a["independent_error_budget_available"])
+        self.assertTrue(self.report[
+            "unit_identity_and_cutoff_equality_are_two_DISTINCT_unverified_assumptions"])
+        self.assertEqual("NOT_IDENTIFIED_BY_AGGREGATED_O1",
+                         a["unconditional_scientific_model_verdict"])
+        self.assertEqual("NOT_VALIDATED",a["bridge_readiness"])
+        self.assertEqual("MATHEMATICALLY_IMPOSSIBLE_WITH_POSITIVE_EVENTS",
+                         a["pointwise_event_vs_continuous_integral_identity"])
+        self.assertTrue(a["pointwise_impossibility_is_not_cutoff_mismatch_proof"])
+        self.assertEqual("17/3",
+                         a["necessary_shortfall_IF_EXACT_CUTOFF_BRIDGE_exact"])
+        self.assertTrue(a["necessary_discrepancy_is_not_empirical_sensor_error"])
+        self.assertFalse(a["native_e1_model_generated_or_fitted_from_O1"])
+        self.assertTrue(a["no_case_level_preparation_completion_timestamps_in_O1"])
 
     def test_03_o0_cannot_run_o1_certificate(self):
         with self.assertRaisesRegex(ArenaContractError,"A1_CROSS_CONDITION"):
