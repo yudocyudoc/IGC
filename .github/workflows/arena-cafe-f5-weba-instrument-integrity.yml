@@ -56,6 +56,25 @@ jobs:
               (private/(k+".bin")).write_bytes(v)
           print("WEBA_FIVE_UPSTREAM_INPUTS_PINNED_AND_AUTHENTICATED")
           PY
+      - name: Inspect only shift-level clock values and encodings (no participant IDs)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_cafe import weba_instrument_integrity as audit
+          from scripts.arena_cafe import weba_source_readiness as source
+          raw=Path("artifacts/weba-private-source-do-not-upload/shift_summary.bin").read_bytes()
+          rows,fields=audit.workbook_values(raw,audit.REQUIRED_SHIFT_COLS)
+          found=[]
+          for row in rows:
+              pick=lambda k:str(row.get(fields[k],"")).strip()
+              date=source._normalize_date(pick("shift_date"))
+              label=pick("time_of_day").lower()
+              name=(date.replace("-","")+"_"+label) if date else ""
+              if name in audit.SHIFTS:
+                  found.append((name,pick("start_time"),pick("end_time")))
+          print("WEBA_SELECTED_SHIFT_CLOCK_FIELDS_ONLY",sorted(found))
+          PY
       - name: Audit real source timestamps and coverage WITHOUT calibration
         run: |
           set -euo pipefail
