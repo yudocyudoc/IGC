@@ -23,10 +23,10 @@ from fractions import Fraction as Q
 from pathlib import Path
 
 from scripts.arena_cafe.native_handoff import need,validate_a1_visible
-from scripts.arena_cafe import observation_ports
+from scripts.arena_cafe import observation_ports, m_o1_bridge_semantics
 from scripts.arena_v0_contract import canonical,digest
 
-SCHEMA="igc-cafe-f3-m-o1-fixed-registry-necessary-bound/0.1"
+SCHEMA="igc-cafe-f3-m-o1-fixed-registry-necessary-bound/0.2"
 REGISTRY=Path("experiments/e1/registry.base.json")
 EXPECTED_ROLE="preparation"
 EXPECTED_CLASS="bounded-queue"
@@ -34,7 +34,7 @@ ASSUMPTION="UNVERIFIED_ONE_DISCRETE_COMPLETION_EQUALS_ONE_E1_READYORDER_UNIT"
 
 
 def bound(count,max_throughput,cutoff_minutes):
-    """Exact bound. No uncertainty margin is inferred from a model residual."""
+    """Exact hypothetical mass bound, NOT an event-count observation operator."""
     need(type(count) is int and count>=0,
          "F3M_O1_BAD_DISCRETE_COUNT")
     need(type(max_throughput) in (int,float,str,Q)
@@ -153,6 +153,11 @@ def certificate(visible,candidate,registry=REGISTRY):
     # This diagnoses the *fixed E1 baseline* under the conditional 1:1
     # projection, not an empirical incompatibility of the entire class.
     failed=not result["necessary_one_to_one_condition_satisfied"]
+    bridge=m_o1_bridge_semantics.audit(visible,result)
+    need(bridge["conditional_nominal_capacity_status"]==(
+        "EXCLUDED_ONLY_IF_EXACT_CUTOFF_COUNTER_EQUALS_MODEL_MASS"
+        if failed else "NOT_EXCLUDED_BY_THIS_NECESSARY_BOUND_ONLY"),
+        "F3M_O1_BRIDGE_BOUND_CONTRADICTION")
     return {
         "schema":SCHEMA,
         "arm_id":"M",
@@ -173,9 +178,11 @@ def certificate(visible,candidate,registry=REGISTRY):
            "CONTINUOUS_FLOW_READYORDER_UNITS_PER_HOUR",
         "bridge_assumption":ASSUMPTION,
         "bridge_empirically_verified":False,
+        "unit_identity_and_cutoff_equality_are_two_DISTINCT_unverified_assumptions":True,
+        "semantic_bridge_audit":bridge,
         "bound_under_unverified_bridge":result,
         "conditional_fixed_nominal_candidate_status":(
-            "EXCLUDED_BY_NECESSARY_CAPACITY_BOUND_IF_ONE_TO_ONE_BRIDGE"
+            "EXCLUDED_ONLY_IF_EXACT_CUTOFF_COUNTER_EQUALS_MODEL_MASS"
             if failed else "NOT_EXCLUDED_BY_THIS_NECESSARY_BOUND_ONLY"),
         "inference_about_other_E1_parameters_or_structures":"NOT_ESTABLISHED",
         "native_model_generation_uses_O1":False,
