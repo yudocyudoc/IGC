@@ -114,6 +114,18 @@ class WEBAReaders(unittest.TestCase):
         self.assertNotIn("5:00:00 PM",raw)
         self.assertNotIn("ordered_value",out)
 
+    def test_05b_real_weba_yyyymmdd_date_encoding_matches_shift(self):
+        self.assertEqual("2024-02-23",weba._normalize_date("20240223"))
+        workbook=inline_xlsx([
+            ("order_ID","order_time","order_date","time_of_day"),
+            ("hiddenA","17:02:00","20240223","evening"),
+            ("hiddenB","08:32:00","20240223","morning"),
+            ("hiddenC","18:09:00","20240222","evening")])
+        out=weba.inspect_pos_xlsx(workbook)
+        self.assertEqual(1,out["rows_matching_selected_evening_shift"])
+        self.assertEqual(1,out["selected_shift_rows_with_order_time"])
+        self.assertEqual(3,out["number_of_rows_with_parseable_order_date"])
+
     def test_06_excel_serial_dates_and_bad_sheet_are_handled_explicitly(self):
         self.assertEqual("2024-02-23",
            weba._normalize_date(str((__import__("datetime").datetime(
