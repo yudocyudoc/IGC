@@ -106,8 +106,8 @@ class AggregateCounterContract(unittest.TestCase):
     def test_06_resource_switch_in_same_service_rejected(self):
         fake=deepcopy(self.rows)
         for r in fake:
-            if r["stage"]=="despacho" and
-               r["event_type"]=="servicio_fin":
+            if (r["stage"]=="despacho" and
+                    r["event_type"]=="servicio_fin"):
                 r["resource_id"]="despacho-r2"
                 break
         with self.assertRaisesRegex(ArenaContractError,
@@ -166,7 +166,7 @@ class OriginalKnownPairOnly(unittest.TestCase):
         a,b=o2.KEYS
         self.assertEqual({a:4,b:5},
                          r["dispatch_count_at_t6_by_world"])
-        self.assertEqual("6",r["measurement_window"][3:4])
+        self.assertEqual("[0,6)_UNSTRESSED_BASELINE",r["measurement_window"])
         self.assertEqual(1,r["count_of_additional_aggregated_scalars"])
         self.assertEqual("NEW_DISPATCH_FINISH_COUNTER_NOT_IN_O0_OR_O1",
                          r["candidate_source"])
@@ -222,7 +222,7 @@ class OriginalKnownPairOnly(unittest.TestCase):
         self.assertEqual("NOT_RUN",r["G4"])
         self.assertEqual("NOT_RUN",r["G5"])
         self.assertEqual("NOT_CREATED",r["F5_independent_reserve"])
-        self.assertFalse(r["not_minimum_across_all_possible_sensors_or_worlds"] is False)
+        self.assertTrue(r["not_minimum_across_all_possible_sensors_or_worlds"])
         self.assertEqual(0,r["provider_calls"])
         serialized=json.dumps(r,ensure_ascii=False)
         self.assertNotIn("case_id",serialized)
