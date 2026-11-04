@@ -743,6 +743,9 @@ jobs:
           assert x["MODEL-01"]=="PARTIAL_D_M_REAL_B_LIVE_NOT_AUTHORIZED"
           assert x["M_O1_fixed_E1_candidate_necessary_bound_audited"] is True
           assert x["M_O1_discrete_to_continuous_bridge"]=="NOT_EMPIRICALLY_VERIFIED"
+          assert x["M_O1_unit_identity"]=="NOT_EMPIRICALLY_VERIFIED"
+          assert x["M_O1_exact_cutoff_mass_equality"]=="NOT_EMPIRICALLY_VERIFIED"
+          assert x["M_O1_unconditional_scientific_model_verdict"]=="NOT_IDENTIFIED_BY_AGGREGATED_O1"
           m=x["arms"]["O1"]["M"]["native"]
           assert m["O1_extra_preparation_used_to_construct_native_model"] is False
           assert m["O1_extra_preparation_used_for_conditional_bound_audit"] is True
