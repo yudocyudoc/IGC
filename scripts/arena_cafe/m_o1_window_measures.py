@@ -29,6 +29,63 @@ STAGE="preparacion"
 CHECKPOINTS=(Q(0),Q(2),Q(4),Q(6),Q(8),Q(10))
 
 
+
+def count_completed_by_half_open_windows(times, checkpoints=CHECKPOINTS):
+    """Exact independent window binning; t=b belongs to the next window.
+
+    Input is already explicitly physical service_fin from the evaluator.
+    A service at the final cutoff is excluded, never imputed as completed.
+    """
+    need(len(checkpoints)>=2 and all(
+        type(x) is Q and x>=0 for x in checkpoints) and
+        all(a<b for a,b in zip(checkpoints,checkpoints[1:])),
+        "F3M_WINDOW_INVALID_GRID")
+    values=tuple(Q(t) for t in times)
+    need(all(0<=t<checkpoints[-1] for t in values),
+         "F3M_WINDOW_EVENT_OUTSIDE_HALF_OPEN_HORIZON")
+    counts=[sum(a<=t<b for t in values)
+            for a,b in zip(checkpoints,checkpoints[1:])]
+    need(sum(counts)==len(values),"F3M_WINDOW_PHYSICAL_COUNT_LOST")
+    return counts
+
+
+def preparation_censor_states(full, *, cutoff=CHECKPOINTS[-1]):
+    """Validate order-local censored prep visits, not just total starts.
+
+    The full telemetry is evaluator-only, with service_fin strictly before
+    the cutoff; no service in progress is falsely counted as completed.
+    """
+    cases={}
+    kinds=("etapa_entrada","servicio_inicio","servicio_fin")
+    for r in full:
+        if r.get("stage")!=STAGE or r.get("event_type") not in kinds:
+            continue
+        time=Q(r["t_minutes_exact"])
+        need(0<=time<cutoff,"F3M_WINDOW_CENSOR_STATES_INVALID")
+        seen=cases.setdefault(r["case_id"],{})
+        kind=r["event_type"]
+        need(kind not in seen,"F3M_WINDOW_CENSOR_STATES_INVALID")
+        seen[kind]=time
+    waiting=in_service=completed=0
+    for events in cases.values():
+        need("etapa_entrada" in events and
+             (not ("servicio_inicio" in events) or
+                events["etapa_entrada"]<=events["servicio_inicio"]) and
+             (not ("servicio_fin" in events) or
+                ("servicio_inicio" in events and
+                 events["servicio_inicio"]<=events["servicio_fin"])),
+             "F3M_WINDOW_CENSOR_STATES_INVALID")
+        if "servicio_fin" in events:
+            completed+=1
+        elif "servicio_inicio" in events:
+            in_service+=1
+        else:
+            waiting+=1
+    return {"waiting":waiting,"in_service":in_service,
+            "completed":completed,"entered":len(cases)}
+
+
+
 def compare(visible,full_pre_cutoff,candidate,registry,native_trace_csv,
             native_csv_sha256,capacity_certificate):
     validate_a1_visible(visible,"O1")
@@ -90,15 +147,12 @@ def compare(visible,full_pre_cutoff,candidate,registry,native_trace_csv,
     stage_finishes=[Q(r["t_minutes_exact"]) for r in full if
                    r["event_type"]=="servicio_fin" and
                    r.get("stage")==STAGE]
-    counts=[sum(a<=t<b for t in stage_finishes)
-            for a,b in zip(CHECKPOINTS,CHECKPOINTS[1:])]
+    counts=count_completed_by_half_open_windows(stage_finishes,CHECKPOINTS)
     need(sum(counts)==actual_aggregate["n_completed_stage_services"],
          "F3M_WINDOW_PHYSICAL_COUNT_LOST")
-    starts=[r for r in full if r["event_type"]=="servicio_inicio"
-            and r.get("stage")==STAGE]
-    entrances=[r for r in full if r["event_type"]=="etapa_entrada"
-               and r.get("stage")==STAGE]
-    need(len(entrances)>=len(starts)>=len(stage_finishes),
+    censored=preparation_censor_states(full,cutoff=cutoff)
+    need(censored["completed"]==sum(counts) and
+         censored["entered"]==15,
          "F3M_WINDOW_CENSOR_STATES_INVALID")
 
     windows=[]
@@ -142,8 +196,8 @@ def compare(visible,full_pre_cutoff,candidate,registry,native_trace_csv,
         "physical_total_completed_pre_cutoff":n,
         "native_continuous_prep_integral_numeric":total,
         "native_nominal_max_mass_exact":str(numeric_cap*cutoff/60),
-        "physical_censored_waiting_at_cutoff":len(entrances)-len(starts),
-        "physical_censored_in_service_at_cutoff":len(starts)-n,
+        "physical_censored_waiting_at_cutoff":censored["waiting"],
+        "physical_censored_in_service_at_cutoff":censored["in_service"],
         "completed_only_O1_mean_wait_and_service_crosschecked":True,
         "unit_identity_empirically_verified":False,
         "exact_cutoff_mass_equality_empirically_verified":False,
