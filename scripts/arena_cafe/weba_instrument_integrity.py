@@ -172,6 +172,14 @@ def pos_clock_audit(pos):
     }
 
 
+def _shift_metadata_clock(raw):
+    """Use HHhMM only for shift metadata, never reinterpret POS times."""
+    m=re.fullmatch(r"([01]?\d|2[0-3])h([0-5]\d)",raw.strip())
+    if m:
+        return datetime.strptime(raw.strip(),"%Hh%M").time(),"HHhMM"
+    return clocks.parse_pos_clock(raw),"STANDARD_WALL_CLOCK"
+
+
 def shift_boundaries(summary):
     """Only shift date, label and clock fields (skip participant IDs)."""
     rows,cols=workbook_values(summary,REQUIRED_SHIFT_COLS)
@@ -188,8 +196,8 @@ def shift_boundaries(summary):
         if name not in SHIFTS:
             continue
         need(name not in selected,"WEBA_AUDIT_DUPLICATE_SHIFT_METADATA")
-        start=clocks.parse_pos_clock(val("start_time"))
-        end=clocks.parse_pos_clock(val("end_time"))
+        start,start_fmt=_shift_metadata_clock(val("start_time"))
+        end,end_fmt=_shift_metadata_clock(val("end_time"))
         need(start<end,"WEBA_AUDIT_SHIFT_CLOCK_CROSSES_DAY_OR_INVALID")
         day_dt=datetime.strptime(day,"%Y-%m-%d")
         initial=datetime.combine(day_dt.date(),start).replace(
@@ -200,6 +208,8 @@ def shift_boundaries(summary):
         selected[name]={
             "metadata_shift_start_local_wall_clock":start.isoformat(),
             "metadata_shift_end_local_wall_clock":end.isoformat(),
+            "start_clock_original_format":start_fmt,
+            "end_clock_original_format":end_fmt,
             "shift_start_utc_under_Budapest_assumption":initial.isoformat(),
             "shift_end_utc_under_Budapest_assumption":final.isoformat(),
             "interval_for_audit_only":(initial,final),
@@ -302,6 +312,8 @@ def build(pos,shift_summary,logs):
         shift_reports[shift]={
             "start_clock_local":b["metadata_shift_start_local_wall_clock"],
             "end_clock_local":b["metadata_shift_end_local_wall_clock"],
+            "source_shift_start_clock_encoding":b["start_clock_original_format"],
+            "source_shift_end_clock_encoding":b["end_clock_original_format"],
             "UTC_boundaries_under_UNVERIFIED_local_clock_assumption":[
                 b["shift_start_utc_under_Budapest_assumption"],
                 b["shift_end_utc_under_Budapest_assumption"]],
