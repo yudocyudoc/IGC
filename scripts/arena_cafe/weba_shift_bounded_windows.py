@@ -149,7 +149,7 @@ def shift_report(name,shift_info,log_text,orders):
         b=a+HALF_HOUR
         in_shift=overlap_seconds(a,b,utc_start,utc_end)
         post_export=overlap_seconds(
-            a,b,max(utc_start,export_end),utc_end)
+            a,b,min(utc_end,max(utc_start,export_end)),utc_end)
         pre_export=in_shift-post_export
         need(pre_export>=-1e-7 and post_export>=0 and
              in_shift<=HALF_HOUR.total_seconds(),
@@ -182,9 +182,6 @@ def shift_report(name,shift_info,log_text,orders):
                 n:counts[n] for n in SENSORS},
             "no_sensor_signal_does_NOT_mean_IDLE":True,
         })
-    need(sum(c["minutes_inside_declared_shift"] for c in cells)-
-         _minutes((utc_end-utc_start).total_seconds())<0.00002,
-         "WEBA_BOUNDED_GRID_MASS_NOT_CONSERVED")
     need(abs(sum(c["minutes_inside_declared_shift"] for c in cells)-
              _minutes((utc_end-utc_start).total_seconds()))<0.00002,
          "WEBA_BOUNDED_GRID_MASS_NOT_CONSERVED")
