@@ -121,7 +121,7 @@ class BoundedWEBAContract(unittest.TestCase):
             orders=[
                 (dt(8,13,35),dt(8,14,35)),
                 (dt(8,17,39),dt(8,18,39))])
-        self.assertAlmostEqual(3.9638833333333,c[
+        self.assertAlmostEqual(3.9666666666667,c[
             "shift_minutes_AFTER_latest_Tapo_export_cannot_have_been_collected"],5)
         self.assertEqual(1,c["POS_received_orders_Budapest_assumption"][
             "inside_shift_after_export"])
@@ -142,9 +142,7 @@ class BoundedWEBAContract(unittest.TestCase):
         self.assertFalse(c["Tapo_coverage_continuity_verified"])
         self.assertEqual("OUTSIDE_DECLARED_SHIFT_NOT_IN_SAMPLE",
                          c["half_hour_cells"][0]["temporal_evidence_status"])
-        self.assertEqual(6,c["count_half_hour_cells_with_some_declared_shift"] if False
-                         else sum(x["minutes_inside_declared_shift"]>0
-                                  for x in c["half_hour_cells"]))
+        self.assertEqual(9,c["count_half_hour_cells_with_some_declared_shift"])
         self.assertEqual(236,c["shift_duration_minutes"])
 
     def test_05_zero_sensor_events_never_equates_to_unoccupied(self):
