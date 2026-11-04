@@ -1,0 +1,121 @@
+name: WEBA F5 — metadata-preselected March evening shifts, real-source replication only
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/weba_two_shift_replication.py'
+      - 'tests/test_arena_cafe_weba_two_shift_replication.py'
+      - 'docs/arena_cafe/f5/04_WEBA_REPLICACION_DOS_TURNOS_PRECOMMIT.md'
+      - '.github/workflows/arena-cafe-f5-weba-two-shift-replication.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-external-two-shifts-descriptive-replication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test fixed selection, physical-event abstention, and clock semantics offline
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_two_shift_replication.py' -v
+      - name: Download ONLY frozen external POS and two Tapo files (no participant data)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from scripts.arena_cafe import weba_source_readiness as source
+          from scripts.arena_cafe import weba_two_shift_replication as replication
+          base=("https://raw.githubusercontent.com/"+source.UPSTREAM_REPO+
+                "/"+source.UPSTREAM_COMMIT+"/")
+          private=Path("artifacts/weba-source-private-do-not-upload")
+          private.mkdir(parents=True,exist_ok=True)
+          resources=[("pos",source.SOURCE_FILES["pos"]["path"],private/"pos.xlsx")]
+          for s in replication.SHIFTS:
+              resources.append((s["name"],
+                  "B.shift_data/"+s["name"]+"/3.logs.txt",
+                  private/(s["name"]+".log")))
+          buffers={}
+          for name,path,save_path in resources:
+              req=Request(base+path,headers={"User-Agent":"IGC-WEBA-replication"})
+              with urlopen(req,timeout=45) as resp:
+                  payload=resp.read()
+              buffers[name]=payload
+              save_path.write_bytes(payload)
+          source.verify_pinned("pos",buffers["pos"])
+          passed=replication.verify_sources(buffers["pos"],{
+              s["name"]:buffers[s["name"]] for s in replication.SHIFTS})
+          print("POS_AND_TWO_PRECOMMITTED_WEBA_TAPO_FILES_HASH_VERIFIED",
+                sorted(passed))
+          PY
+      - name: Generate real-source descriptive results; retain all ineligible shifts
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_two_shift_replication \
+            --pos artifacts/weba-source-private-do-not-upload/pos.xlsx \
+            --log-20240304 artifacts/weba-source-private-do-not-upload/20240304_evening.log \
+            --log-20240308 artifacts/weba-source-private-do-not-upload/20240308_evening.log \
+            --out artifacts/WEBA_TWO_SHIFTS_REAL_SOURCE_AGGREGATES.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path("artifacts/WEBA_TWO_SHIFTS_REAL_SOURCE_AGGREGATES.json").read_text())
+          assert r["schema"]=="igc-weba-two-evening-shifts-window-replication/0.1"
+          assert [x["shift"] for x in r["results"]]==[
+              "20240304_evening","20240308_evening"]
+          assert r["fixed_window_minutes"]==30
+          assert r["fixed_window_UTC_start"]=="13:00"
+          assert r["fixed_window_UTC_end"]=="18:00"
+          assert r["pos_clock_assumed_zone_not_verified"]=="Europe/Budapest"
+          assert r["no_time_shift_or_lag_optimized"]
+          assert r["no_Poisson_or_service_rate_fitted"]
+          assert r["not_G5_blind_independent_sample"]
+          for result in r["results"]:
+              assert len(result["half_hour_windows"])==10
+              assert result["pos_rows_in_shift"]==(
+                  result["pos_clock_values_available"]+
+                  result["pos_rows_without_clock"])
+              assert result["pos_clock_values_available"]==(
+                  result["pos_local_assumption_in_windows"]+
+                  result["pos_local_assumption_outside_windows"])
+              assert result["pos_clock_values_available"]==(
+                  result["pos_UTC_as_written_sensitivity_in_windows"]+
+                  result["pos_UTC_as_written_sensitivity_outside_windows"])
+              for sensor,n in result["tapo_selected_sensors_total_events"].items():
+                  assert n==sum(
+                      b["sensors"][sensor] for b in result["half_hour_windows"])+(
+                      result["tapo_selected_sensors_outside_windows"][sensor])
+              assert not result["case_to_sensor_event_link_proven"]
+              assert not result["tapo_snapshot_full_shift_coverage_proven"]
+              assert not result["pos_tapo_independent_clock_calibration_proven"]
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          def audit(node):
+              if isinstance(node,dict):
+                  for key,v in node.items():
+                      assert key not in {
+                          "order_ID","case_id","visit_id","resource_id",
+                          "event_id","device_id","mac","ip","ssid",
+                          "t_minutes_exact","raw_order_time"}
+                      audit(v)
+              elif isinstance(node,list):
+                  for v in node:audit(v)
+          audit(r)
+          print("WEBA_TWO_SHIFTS_REAL_REPLICATION_DESCRIPTIVE_ONLY_PASS")
+          PY
+      - name: Remove all fetched source bytes before publishing
+        if: always()
+        run: rm -rf artifacts/weba-source-private-do-not-upload
+      - name: Upload only aggregate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weba-two-precommitted-real-shifts-aggregate-audit
+          path: artifacts/WEBA_TWO_SHIFTS_REAL_SOURCE_AGGREGATES.json
+          if-no-files-found: error
+          retention-days: 90
