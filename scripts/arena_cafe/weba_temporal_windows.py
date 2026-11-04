@@ -168,6 +168,17 @@ def compare(workbook,tapo):
         k:sum(p>0 and q>0 for p,q in zip(main_counts,sensor_counts[k]))
         for k in SENSORS
     }
+    # Deliberate negative control: an environmental sensor can fire in
+    # windows with ZERO recorded POS orders. These are not "false events";
+    # they simply cannot be equated to orders or per-order service finishes.
+    zero_pos_activity={
+        k:sum(q for p,q in zip(main_counts,sensor_counts[k]) if p==0)
+        for k in SENSORS
+    }
+    sensor_only_bins=sum(
+        p==0 and any(sensor_counts[k][i]>0 for k in SENSORS)
+        for i,p in enumerate(main_counts))
+    pos_active_bins=sum(n>0 for n in main_counts)
     bins=[]
     for i in range(10):
         bins.append({
@@ -203,6 +214,13 @@ def compare(workbook,tapo):
         "sensor_outside_fixed_windows":outside,
         "sensor_rows_per_window_with_pos_assumed_local":bins,
         "bins_with_both_pos_and_sensor_pulse_assuming_local":coactive,
+        "bins_with_at_least_one_pos_order_assuming_local":pos_active_bins,
+        "bins_with_sensor_activity_but_zero_pos_orders_assuming_local":
+            sensor_only_bins,
+        "sensor_events_in_zero_pos_order_windows_assuming_local":
+            zero_pos_activity,
+        "sensor_pulses_when_no_pos_orders_are_NOT_false_detections":True,
+        "coactivity_does_NOT_validate_sensor_as_pos_order_proxy":True,
         "no_single_time_offset_optimized_for_correspondence":True,
         "no_pos_order_tapo_event_pairing_attempted":True,
         "no_causality_or_service_event_inferred":True,
