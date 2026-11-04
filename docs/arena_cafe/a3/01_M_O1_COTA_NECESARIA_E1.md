@@ -12,10 +12,18 @@ Sin convertirlo en una igualdad establecida, podemos estudiar una **implicación
 
 El catálogo original E0 `experiments/e0/catalog.json` registra `bounded-queue`, y la implementación en `src/modelica/IGCMolecules.mo` implementa `SystemDynamics.Rates.RRate release(minFlow=0,maxFlow=maxThroughput)`. La salida `release.y` está conectada al puerto `completed`. El registro original Short E1 `experiments/e1/registry.base.json` fija **`maxThroughput=20 units/hour` en la etapa `preparation`** y `responseTime=0.5 hours`. Los gráficos de E1 se generan por su compositor original, no por un banco nuevo de parámetros; sus composiciones publicadas mantienen una etapa de preparación con la misma parametrización.
 
-Bajo el puente hipotético **una preparación física completada = una unidad ReadyOrder salida de la molécula**, el modelo tendría que satisfacer
+**Corrección del puente (PR #155):** son dos hipótesis separadas, no una sola:
+
+- **Correspondencia material:** cada evento físico `servicio_fin` representa exactamente una unidad `ReadyOrder` del modelo. El tipo `FLOW<ReadyOrder>` es una declaración de rol, **no prueba empírica** de esa relación.
+- **Correspondencia temporal en el corte:** el contador de servicios completados estrictamente antes de `T` coincide con el **acumulado continuo** de flujo del modelo a `T` (o bien se especifica de forma independiente una discrepancia acotada). Esto **no se deduce** de la correspondencia material.
+
+Una integral de flujo acotado es una función **continua** en el tiempo; un contador de eventos con terminaciones es una función escalonada con **saltos**. Sus trayectorias no pueden ser idénticas punto por punto cuando hay servicios terminados. La igualdad **solo en un corte** es una hipótesis de observación adicional, potencialmente útil, pero aún no comprobada.
+
+**Únicamente si se impone la igualdad exacta en el corte**, se desprende la condición necesaria:
 
 \[
-N_{\mathrm{fin,prep}}([0,T)) \leq \int_0^T \mathrm{completed}_{E1}(t)\,dt
+\underbrace{N_{\mathrm{fin,prep}}([0,T)) =
+  \int_0^T \mathrm{completed}_{E1}(t)\,dt}_{\text{hipótesis de correspondencia exacta en el corte, no validada}}
 \leq \mathrm{maxThroughput}_{E1}\cdot T.
 \]
 
@@ -25,9 +33,9 @@ Para el control EV-01 `T=10/60=1/6 h`:
 9 \;\not\leq\;20\cdot\frac16=\frac{10}{3}\approx3.333.
 \]
 
-El faltante, **si se impone ese puente**, es `9−10/3=17/3` unidades. Se requeriría una capacidad de salida media de **al menos 54 unidades/h** para satisfacer únicamente esa condición necesaria. **54 NO es una capacidad estimada, calibración recomendada, parámetro ajustado ni límite suficiente** para reproducir el proceso: no se modifica `maxThroughput`, `responseTime` ni las moléculas. La desigualdad ignora explícitamente restricciones dinámicas adicionales y nunca acredita un modelo cuando se satisface.
+El faltante, **si se impone el puente de acumulados exactos al corte**, es `9−10/3=17/3` unidades. Si en vez de igualdad exacta se definiera antes del ensayo un error máximo absoluto de correspondencia `ε`, sería **necesario** `ε ≥ 17/3` para no excluir el candidato por esta cota. **No hemos medido ni establecido ese ε**. Se requeriría una capacidad de salida media de **al menos 54 unidades/h** para satisfacer únicamente esa condición necesaria. **54 NO es una capacidad estimada, calibración recomendada, parámetro ajustado ni límite suficiente** para reproducir el proceso: no se modifica `maxThroughput`, `responseTime` ni las moléculas. La desigualdad ignora explícitamente restricciones dinámicas adicionales y nunca acredita un modelo cuando se satisface.
 
-**Significado correcto:** todos los candidatos con **los mismos parámetros congelados** de ese registro fallarían **si** adoptáramos la equivalencia de una unidad de flujo por cada preparación física terminada. **No significa** que toda la familia E1, una variante con nuevos parámetros, ni la física empresarial estén falsadas. También puede fallar la correspondencia entre una unidad abstracta y una terminación física. Es un `MODEL_GAP` *condicional a un supuesto de medición*, no un diagnóstico causal incondicional.
+**Significado correcto:** todos los candidatos con **los mismos parámetros congelados** de ese registro fallarían **si** se justificaran *ambas* hipótesis —unidad uno-a-uno y acumulados iguales al corte— o una banda independientemente calibrada demasiado estrecha para cubrir la diferencia. **No significa** que toda la familia E1, una variante con nuevos parámetros, ni la física empresarial estén falsadas. También puede fallar la correspondencia entre una unidad abstracta y una terminación física. Es un `MODEL_GAP` *condicional a un supuesto de medición*, no un diagnóstico causal incondicional.
 
 ## 3. Qué cambia realmente en la Arena
 
@@ -35,8 +43,10 @@ El faltante, **si se impone ese puente**, es `9−10/3=17/3` unidades. Se requer
 
 - fuente O1, su digest y su corte; clase física Modelica `BoundedQueue` con salida efectivamente limitada;
 - gramática y candidatos del compositor original E1, AST **íntegro y parámetros congelados**, tipo del puerto `FLOW<ReadyOrder>` y ausencia de candidatos reparametrizados;
-- la cota racional de tiempo y caudal y la diferencia respecto a los nueve servicios terminados, con estado `EXCLUDED_BY_NECESSARY_CAPACITY_BOUND_IF_ONE_TO_ONE_BRIDGE`;
+- la cota racional de tiempo y caudal y la diferencia respecto a los nueve servicios terminados, con estado `EXCLUDED_ONLY_IF_EXACT_CUTOFF_COUNTER_EQUALS_MODEL_MASS`;
 - `bridge_empirically_verified=false`; `method_level_scientific_G3=NOT_ESTABLISHED`; `candidate_selected_or_fitted_using_O1=false`.
+
+El nuevo `scripts/arena_cafe/m_o1_bridge_semantics.py` audita esas dos hipótesis por separado y certifica que la identidad **de trayectorias** es imposible por continuidad/saltos. Reporta `bridge_readiness=NOT_VALIDATED`, `independent_error_budget_available=false` y `unconditional_scientific_model_verdict=NOT_IDENTIFIED_BY_AGGREGATED_O1`. No estima un error a partir del residuo de 17/3.
 
 El diagnóstico se integra en `scripts/arena_cafe/f3_adjudicate.py` para **M/O1 solamente, en el evaluador**. No alimenta el generador E1 y por ello la salida de Modelica M sigue siendo idéntica en O0/O1. Eso ahora está **expresamente documentado**, no oculto detrás de una comparación numérica. El reporte mantiene la comparación integrada `preparation.completed` previa como `PROVISIONAL_NON_EQUIVALENT_MEASUREMENT_NO_G3_SCORE` y añade el certificado como razón analítica adicional.
 
@@ -53,6 +63,6 @@ El control que hoy sí puede hacerse es **una prueba condicional de incompatibil
 
 ### Decisión
 
-**No modificar la clase `IGCMolecules.BoundedQueue` ni su catálogo para que el número 9 «encaje».** Registrar en el estado de la Arena que, **con el puente uno a uno asumido**, sus candidatos fijos no pueden representar la carga observada O1. Si no puede defenderse el puente, **no** promover el resultado a una falsación científica ni a una selección por evidencia.
+**No modificar la clase `IGCMolecules.BoundedQueue` ni su catálogo para que el número 9 «encaje».** Registrar en el estado de la Arena que, **solo bajo una hipótesis de equivalencia exacta de acumulados en el corte**, sus candidatos fijos no pueden representar la carga observada O1. Si no puede defenderse el puente, **no** promover el resultado a una falsación científica ni a una selección por evidencia.
 
 **Estado:** A3 `PARTIAL`; D/M generación nominal O0/O1 sin asimilación nativa extra de O1; Buffalo EV-01 live `NOT_RUN`; G4/G5 `NOT_RUN`; PM-14 `NOT_TRIGGERED_FOR_EV01`; F5 independiente `NOT_CREATED`. No rejilla, nuevo DES, otro motor M, ni proveedor autorizado.
