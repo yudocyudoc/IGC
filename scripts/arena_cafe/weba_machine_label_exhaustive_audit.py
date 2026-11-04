@@ -119,6 +119,16 @@ def scan_file_bytes(raw: bytes) -> dict:
         fields = row.strip().split(b",")
         if len(fields) != 4:
             count["unexpected_column_count"] += 1
+            count["unexpected_number_of_fields_" + str(len(fields))] += 1
+            if CLOCK_RE.fullmatch(fields[0].strip()):
+                count["unexpected_first_field_was_valid_clock"] += 1
+            if re.search(rb"[A-Za-z]", row):
+                count["unexpected_contained_ascii_letters"] += 1
+            for word in (b"espresso", b"latte", b"cappuccino",
+                         b"drink", b"beverage", b"coffee", b"label",
+                         b"order", b"chocolate", b"americano"):
+                if word in row.lower():
+                    count["unexpected_keyword_" + word.decode("ascii")] += 1
             continue
         if not CLOCK_RE.fullmatch(fields[0].strip()):
             count["unexpected_time_format"] += 1
