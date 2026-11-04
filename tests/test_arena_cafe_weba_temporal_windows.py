@@ -107,15 +107,15 @@ class TemporalContracts(unittest.TestCase):
         raw=w.raw_sensor_times(toy_tapo())
         sensors,logaudit=raw
         self.assertEqual(4,logaudit["sensor_count"])
-        self.assertEqual(4,set(sensors).__len__())
+        self.assertEqual(4,len(sensors))
         self.assertEqual(1,len(sensors["front_door"]))
         self.assertEqual("Open",sensors["front_door"][0][0])
         self.assertEqual("Motion",sensors["zone_1"][0][0])
-        self.assertEqual(w.START+timedelta(hours=1),
+        self.assertEqual(w.START+timedelta(minutes=30),
                          sensors["front_door"][0][1])
 
     def test_06_fixed_windows_coactivity_only_never_claims_event_matching(self):
-        times=[time(14,1)]*33
+        times=[time(14,31)]*33
         fixture={
             "schema":"previous-real-source-readiness-fixture",
             "upstream_git_commit":source.UPSTREAM_COMMIT,
@@ -131,8 +131,7 @@ class TemporalContracts(unittest.TestCase):
         self.assertEqual(33,result["pos_orders_in_primary_windows"])
         self.assertEqual(33,result["sensor_rows_per_window_with_pos_assumed_local"][0][
             "pos_orders_assuming_Budapest_local_clock"])
-        self.assertEqual(0,result["pos_orders_in_UTC_as_written_sensitivity_windows"] if False else
-                         result["pos_orders_outside_primary_windows"])
+        self.assertEqual(0,result["pos_orders_outside_primary_windows"])
         self.assertTrue(result["no_pos_order_tapo_event_pairing_attempted"])
         self.assertTrue(result["no_causality_or_service_event_inferred"])
         self.assertFalse(result["cross_clock_offset_calibrated"])
