@@ -19,6 +19,8 @@ on:
       - 'docs/arena_cafe/a3/**'
       - 'scripts/arena_cafe/f3_adjudicate.py'
       - 'tests/test_arena_cafe_f3_adjudicate.py'
+      - 'scripts/arena_cafe/m_o1_capacity_certificate.py'
+      - 'tests/test_arena_cafe_m_o1_capacity_certificate.py'
       - 'scripts/arena_cafe/buffalo_ev01_visible.py'
       - 'scripts/arena_b_cf_protocol_adapter.mjs'
       - 'scripts/arena_b_openrouter_cloudflare.mjs'
@@ -49,6 +51,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_ports.py' -v
       - name: Execute read-only H_j operators on controlled fixtures, assert native-trace abstention
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_eval.py' -v
+      - name: F3 M original E1 O1 necessary capacity bound without event-flow equivalence
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_m_o1_capacity_certificate.py' -v
       - name: Test timestamp-retaining public D/E1 native stimulus emission
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_native_pos.py' -v
       - name: Real scoped ledger and ATMS checks, including cross-condition denial
@@ -733,6 +737,18 @@ jobs:
           x=json.loads(Path("artifacts/a3/f3-report.json").read_text())
           assert x["A3"]=="PARTIAL"
           assert x["MODEL-01"]=="PARTIAL_D_M_REAL_B_LIVE_NOT_AUTHORIZED"
+          assert x["M_O1_fixed_E1_candidate_necessary_bound_audited"] is True
+          assert x["M_O1_discrete_to_continuous_bridge"]=="NOT_EMPIRICALLY_VERIFIED"
+          m=x["arms"]["O1"]["M"]["native"]
+          assert m["O1_extra_preparation_used_to_construct_native_model"] is False
+          assert m["O1_extra_preparation_used_for_conditional_bound_audit"] is True
+          gate=m["metrics"]["preparation"]["conditional_original_E1_bound"]
+          assert gate["conditional_fixed_nominal_candidate_status"]=="EXCLUDED_BY_NECESSARY_CAPACITY_BOUND_IF_ONE_TO_ONE_BRIDGE"
+          assert gate["bridge_empirically_verified"] is False
+          assert gate["bound_under_unverified_bridge"]["maximum_possible_cumulative_completed_mass_exact"]=="10/3"
+          assert gate["bound_under_unverified_bridge"]["observed_discrete_services_completed_pre_cutoff"]==9
+          assert gate["method_level_scientific_G3"]=="NOT_ESTABLISHED"
+          assert gate["candidate_selected_or_fitted_using_O1"] is False
           assert x["execution_scopes"]["unique_case_ids"]==10
           assert x["G4"]=="NOT_RUN" and x["G5"]=="NOT_RUN"
           for c in ("O0","O1"):
