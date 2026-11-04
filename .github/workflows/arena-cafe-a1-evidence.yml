@@ -23,6 +23,8 @@ on:
       - 'tests/test_arena_cafe_m_o1_capacity_certificate.py'
       - 'scripts/arena_cafe/m_o1_bridge_semantics.py'
       - 'tests/test_arena_cafe_m_o1_bridge_semantics.py'
+      - 'scripts/arena_cafe/m_o1_window_measures.py'
+      - 'tests/test_arena_cafe_m_o1_window_measures.py'
       - 'scripts/arena_cafe/buffalo_ev01_visible.py'
       - 'scripts/arena_b_cf_protocol_adapter.mjs'
       - 'scripts/arena_b_openrouter_cloudflare.mjs'
@@ -53,6 +55,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_ports.py' -v
       - name: Execute read-only H_j operators on controlled fixtures, assert native-trace abstention
         run: python -m unittest discover -s tests -p 'test_arena_cafe_a1_observation_eval.py' -v
+      - name: F3 evaluator-only O1 finite-window physical events versus E1 fluid measurement
+        run: python -m unittest discover -s tests -p 'test_arena_cafe_m_o1_window_measures.py' -v
       - name: F3 M continuous mass versus discrete event semantic bridge review
         run: python -m unittest discover -s tests -p 'test_arena_cafe_m_o1_bridge_semantics.py' -v
       - name: F3 M original E1 O1 necessary capacity bound without event-flow equivalence
@@ -760,6 +764,17 @@ jobs:
           assert link["unconditional_scientific_model_verdict"]=="NOT_IDENTIFIED_BY_AGGREGATED_O1"
           assert link["necessary_shortfall_IF_EXACT_CUTOFF_BRIDGE_exact"]=="17/3"
           assert link["bridge_readiness"]=="NOT_VALIDATED"
+          w=m["metrics"]["preparation"]["evaluator_only_window_measures"]
+          assert w["physical_total_completed_pre_cutoff"]==9
+          assert len(w["windows"])==5
+          assert sum(b["observed_discrete_prep_completions"] for b in w["windows"])==9
+          assert w["native_continuous_prep_integral_numeric"]<=float(w["native_nominal_max_mass_exact"])+1e-5
+          assert all(b["nominal_E1_max_mass_exact"]=="2/3" for b in w["windows"])
+          assert w["exact_cutoff_mass_equality_empirically_verified"] is False
+          assert w["operator_sufficient_for_scientific_G3"] is False
+          assert w["M_native_model_generated_or_selected_from_O1"] is False
+          assert x["M_O1_event_measures_not_native_arm_input"] is True
+          assert x["M_O1_evaluator_window_operator_status"]=="DESCRIPTIVE_ONLY_NOT_G3"
           assert gate["bridge_empirically_verified"] is False
           assert gate["bound_under_unverified_bridge"]["maximum_possible_cumulative_completed_mass_exact"]=="10/3"
           assert gate["bound_under_unverified_bridge"]["observed_discrete_services_completed_pre_cutoff"]==9
