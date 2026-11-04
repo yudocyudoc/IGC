@@ -1,0 +1,69 @@
+name: F4 cafe — structural latent bottleneck symmetry despite O0 and O1
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f4_latent_downstream_symmetry.py'
+      - 'tests/test_arena_cafe_f4_latent_downstream_symmetry.py'
+      - 'docs/arena_cafe/f4/03_SIMETRIA_CUELLO_LATENTE_O0_O1.md'
+      - '.github/workflows/arena-cafe-f4-latent-symmetry.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evaluator-only-known-truth-development:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve the original two PUBLIC A1 conditions, not reserved
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Algebraic commutation and original DES full-timeline regression
+        env:
+          F4SYM_O0: artifacts/public/O0_VISIBLE.json
+          F4SYM_O1: artifacts/public/O1_VISIBLE.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f4_latent_downstream_symmetry.py' -v
+          python -m scripts.arena_cafe.f4_latent_downstream_symmetry \
+            --o0 "$F4SYM_O0" --o1 "$F4SYM_O1" \
+            --out artifacts/F4_LATENT_SYMMETRY_DEVELOPMENT.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/F4_LATENT_SYMMETRY_DEVELOPMENT.json").read_text())
+          assert r["original_O0_and_O1_compatible_for_BOTH_mechanisms"]
+          assert r["both_baselines_delivered_cumulative_at_O0_times"]==[0,0,2,4,6,8]
+          assert r["proof"]["all_15_exact_terminal_delivery_times_identical"]
+          assert r["original_O1_preparation_aggregate"]=={
+              "n_completed_stage_services":9,
+              "mean_service_minutes_exact":"15/17",
+              "mean_wait_minutes_exact":"1204/765"}
+          assert r["counterfactual_delivered_at_t10"]=={
+              "REFERENCE_EV01_WORLD_A":6,
+              "SWAPPED_DOWNSTREAM_WORLD_B":8}
+          assert r["same_active_baseline_bottleneck_in_both"]=="PREPARACION"
+          assert r["ambiguous_latent_downstream_constraint"]
+          assert r["no_parameter_grid_or_fitter_or_new_DES_engine"]
+          assert r["no_live_provider_no_PM4Py_no_OMC"]
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          assert r["A3"]=="PARTIAL" and r["G4"]==r["G5"]=="NOT_RUN"
+          print("F4_STRUCTURAL_DOWNSTREAM_COMMUTATION_O0_O1_MATCHED_LATENT_CONSTRAINT_DIFFERENTIAL_STRESS")
+          PY
+      - name: Only release evaluator summary, never private config or case traces
+        uses: actions/upload-artifact@v4
+        with:
+          name: f4-latent-downstream-symmetry-known-development
+          path: artifacts/F4_LATENT_SYMMETRY_DEVELOPMENT.json
+          if-no-files-found: error
+          retention-days: 90
