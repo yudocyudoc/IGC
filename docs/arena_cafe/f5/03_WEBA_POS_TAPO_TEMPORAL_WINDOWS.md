@@ -13,7 +13,7 @@ Ambos archivos se descargan desde el **commit externo fijo** \`d6841669e54457954
 
 El nuevo comparador solo emplea cuatro sensores: \`front_door\` (contacto), \`front_door_m\` (movimiento), \`zone_1\` y \`zone_2\`. No combina los demás dispositivos como si fueran órdenes físicas.
 
-**Ventanas de análisis fijadas antes del cruce:** intervalos **[13:00,18:00) UTC del 23-feb-2024**, con paso de **30 minutos**, diez ventanas exactas **[a,b)**. El evento exactamente en una frontera pertenece a la ventana que empieza allí. La primera y la última ventana pueden estar truncadas por el historial Tapo: no se declara una jornada íntegra ni se infiere silencio como inactividad.
+**Ventanas de análisis fijadas antes del cruce (pero con conocimiento previo del rango temporal Tapo de #160; no constituyen una preinscripción independiente):** intervalos **[13:00,18:00) UTC del 23-feb-2024**, con paso de **30 minutos**, diez ventanas exactas **[a,b)**. El evento exactamente en una frontera pertenece a la ventana que empieza allí. La primera y la última ventana pueden estar truncadas por el historial Tapo: no se declara una jornada íntegra ni se infiere silencio como inactividad.
 
 ## Hipótesis explícita de reloj, no calibración
 
