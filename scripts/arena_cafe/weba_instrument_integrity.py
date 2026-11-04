@@ -111,8 +111,10 @@ def excel_cell_type_counts(data,field,required):
             number=0
             for letter in prefix.group():
                 number=number*26+ord(letter)-64
-            if number==target_col and cell.find(MAIN+"v") is not None or (
-               number==target_col and cell.find(MAIN+"is") is not None):
+            if number==target_col and (
+                cell.find(MAIN+"v") is not None or
+                cell.find(MAIN+"is") is not None
+            ):
                 target_cells+=1
                 counts[cell.attrib.get("t","n_or_default")]+=1
     # Counts include header row, so do not equate them with 588 orders.
@@ -163,6 +165,10 @@ def pos_clock_audit(pos):
         "order_date_raw_encoding_counts":dict(date_encoding),
         "order_time_OOXML_cells":excel_cell_type_counts(
             pos,"order_time",REQUIRED_POS_COLS),
+        "order_time_values_stored_as_numeric_Excel_cells":
+            excel_cell_type_counts(pos,"order_time",REQUIRED_POS_COLS)[
+                "cell_storage_types_including_header"].get("n_or_default",0),
+        "Excel_numeric_time_fractions_have_no_embedded_timezone":True,
         "POS_time_provenance":"ORDER_RECEIPT_CLOCK_FROM_POS_PER_ARTICLE",
         "POS_is_physical_arrival_time":False,
         "timezone_present_in_individual_order_time_values":explicit_offset>0,
@@ -280,9 +286,20 @@ def tapo_log_audit(shift,text,bounds):
          before+within+after==total,"WEBA_AUDIT_TAPO_EVENT_MASS_LOST")
     need(all(t<=max(dump_stamps) for t in all_times),
          "WEBA_AUDIT_EVENT_LATER_THAN_EXPORT")
+    last_export=max(dump_stamps)
+    # A snapshot taken BEFORE the declared shift ends cannot possibly
+    # certify the unobserved tail. A snapshot taken AFTER end is STILL not
+    # proof of historical completeness or continuous sensor availability.
+    delta_until_shift_end=end-last_export
     return {
         "Tapo_source_text_has_UTF8_BOM_or_indented_log_lines":
             text.startswith("\ufeff") or any(x.startswith(" ") for x in text.splitlines()[:3]),
+        "Tapo_dump_log_has_leading_UTF8_BOM":text.startswith("\ufeff"),
+        "Tapo_snapshot_last_export_before_declared_shift_end":
+            last_export<end,
+        "minutes_from_last_export_to_assumed_shift_end_signed":
+            str(delta_until_shift_end.total_seconds()/60),
+        "snapshot_export_after_end_is_NOT_proof_of_full_coverage":True,
         "Tapo_snapshot_time_utc_first":min(dump_stamps).isoformat(),
         "Tapo_snapshot_time_utc_last":max(dump_stamps).isoformat(),
         "Tapo_earliest_recorded_event_utc":min(all_times).isoformat(),
