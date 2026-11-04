@@ -288,7 +288,10 @@ def adjudicate(visible, roots, workers, f2):
     from fractions import Fraction as Q
     from scripts.arena_cafe import ev01
     from scripts import arena_event_observability as obs
-    original_events,_=ev01.trace_generator()
+    original_events,original_snapshots=ev01.trace_generator()
+    # Confirm the original synthetic event generator and the independent
+    # CAF-01 DES still agree before disclosing any evaluator-only detail.
+    ev01.verify_des_parity(original_snapshots)
     full=obs.project_events(original_events,"FULL")
     cutoff=Q(visible["O1"]["observability"]["cutoff_minutes_exact"])
     evaluator_full_pre_cutoff=[
