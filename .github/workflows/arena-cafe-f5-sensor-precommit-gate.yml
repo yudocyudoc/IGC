@@ -1,0 +1,58 @@
+name: F5 cafe — freeze dispatch count policy and abstention gate without independent data
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f5_sensor_precommit_gate.py'
+      - 'tests/test_arena_cafe_f5_sensor_precommit_gate.py'
+      - 'docs/arena_cafe/f5/01_POLITICA_PRECOMMIT_Y_ABSTENCION_DESPACHO.md'
+      - '.github/workflows/arena-cafe-f5-sensor-precommit-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  policy-freeze-and-known-fixture-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No physical holdout data acquired; test only the known pair
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f5_sensor_precommit_gate.py' -v
+      - name: Freeze proposal without reading any physical event file
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python -m scripts.arena_cafe.f5_sensor_precommit_gate freeze \
+            --out artifacts/F5_SENSOR_POLICY.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.arena_cafe import f5_sensor_precommit_gate as gate
+          p=json.loads(Path('artifacts/F5_SENSOR_POLICY.json').read_text())
+          assert gate.validate_policy(p)==p["policy_sha256"]
+          assert p["stage"]=="despacho"
+          assert p["event_type"]=="servicio_fin"
+          assert p["cutoff_minutes_exact"]=="6"
+          assert p["closed_reference_hypotheses_only"]=={
+              gate.A:4,gate.B:5}
+          assert p["selection_origin"]=="POSTHOC_PR158_KNOWN_EV01_PAIR_NO_BLIND_DISCOVERY"
+          assert p["selection_is_prospective_for_existing_EV01"] is False
+          assert p["requires_independent_new_data_not_supplied_here"] is True
+          assert p["experiment_blind_reserve"]=="NOT_CREATED"
+          assert p["G4"]==p["G5"]=="NOT_RUN"
+          print("F5_POSTHOC_RULE_FROZEN_FOR_FUTURE_DATA_ONLY_NO_BLIND_TEST")
+          PY
+      - name: Publish only frozen candidate policy, never fixture events
+        uses: actions/upload-artifact@v4
+        with:
+          name: f5-dispatch-t6-policy-known-history-not-independent
+          path: artifacts/F5_SENSOR_POLICY.json
+          if-no-files-found: error
+          retention-days: 90
