@@ -68,8 +68,11 @@ jobs:
           assert r["pos"]["total_nonempty_order_rows"]>0
           assert r["pos"]["raw_date_encoding_observed"]=="YYYYMMDD_FOR_THIS_PINNED_SOURCE"
           assert r["pos"]["number_of_rows_with_parseable_order_date"]==r["pos"]["total_nonempty_order_rows"]
-          assert r["pos"]["rows_matching_selected_evening_shift"]>0
-          assert r["pos"]["selected_shift_rows_with_order_time"]>0
+          assert r["pos"]["total_nonempty_order_rows"]==588
+          assert r["pos"]["number_of_distinct_date_tokens"]==28
+          assert r["pos"]["rows_matching_selected_day"]==48
+          assert r["pos"]["rows_matching_selected_evening_shift"]==33
+          assert r["pos"]["selected_shift_rows_with_order_time"]==33
           assert r["raw_source_records_not_published"]
           assert r["participant_health_wearables_or_questionnaires_not_ingested"]
           assert not r["same_shift_pos_tapo_basic_presence_check"][
@@ -77,9 +80,18 @@ jobs:
           assert r["eligible_as_independent_F5_dispatch_service_finish"]=="NO"
           assert r["G4"]==r["G5"]=="NOT_RUN"
           assert r["F5_reserve"]=="NOT_CREATED"
-          import re
-          serialized=json.dumps(r)
-          assert not re.search(r'"(mac|ip|ssid|order_ID|case_id|device_id)"\\s*:',serialized)
+          def audit_public_keys(node):
+              if isinstance(node,dict):
+                  for key,value in node.items():
+                      assert key not in {
+                          "mac","ip","ssid","order_ID","case_id",
+                          "device_id","event_id","resource_id",
+                          "t_minutes_exact","raw_order_time"}
+                      audit_public_keys(value)
+              elif isinstance(node,list):
+                  for item in node:
+                      audit_public_keys(item)
+          audit_public_keys(r)
           print("WEBA_REAL_SOURCE_AUDIT_PASS_NO_PER_ORDER_SERVICE_INFERENCE")
           PY
       - name: Remove private source files before artifact upload
