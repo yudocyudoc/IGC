@@ -195,7 +195,7 @@ def _normalize_date(s):
     if not s:
         return None
     s=s.strip()
-    for fmt in ("%d/%m/%Y","%Y-%m-%d","%d-%m-%Y",
+    for fmt in ("%Y%m%d","%d/%m/%Y","%Y-%m-%d","%d-%m-%Y",
                 "%Y/%m/%d","%m/%d/%Y"):
         try:
             return datetime.strptime(s,fmt).date().isoformat()
@@ -243,12 +243,14 @@ def inspect_pos_xlsx(bytes_):
         val(r,"order_date") for r in valid if val(r,"order_date")})
     distinct_shift_labels=sorted({
         val(r,"time_of_day") for r in valid if val(r,"time_of_day")})
+    dates_parseable=sum(_normalize_date(val(r,"order_date")) is not None
+                        for r in valid)
     return {
         "first_worksheet_headers":sorted(columns.keys()),
         "source_has_order_id_field":True,
         "number_of_distinct_date_tokens":len(distinct_date_tokens),
-        "first_three_date_only_tokens_for_format_audit":
-            distinct_date_tokens[:3],
+        "number_of_rows_with_parseable_order_date":dates_parseable,
+        "raw_date_encoding_observed":"YYYYMMDD_FOR_THIS_PINNED_SOURCE",
         "observed_shift_label_categories":distinct_shift_labels[:15],
         "total_nonempty_order_rows":len(valid),
         "rows_with_nonempty_order_time":len(known_time),
@@ -257,7 +259,7 @@ def inspect_pos_xlsx(bytes_):
         "rows_matching_selected_evening_shift":len(target),
         "selected_shift_rows_with_order_time":len(timestamped),
         "selected_shift_rows_without_order_time":len(target)-len(timestamped),
-        "date_normalization_policy":"KNOWN_DMY_OR_YMD_STRINGS_OR_EXCEL_SERIAL",
+        "date_normalization_policy":"YYYYMMDD_DMY_YMD_OR_EXCEL_SERIAL",
         "order_time_values_not_exported":True,
         "pos_order_timestamp_is_NOT_physical_customer_arrival":True,
         "no_order_id_or_items_or_financial_values_exported":True,
