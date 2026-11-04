@@ -47,7 +47,7 @@ LOG_FILES={
 }
 UTC=timezone.utc
 MAIN="{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-DUMP_RE=re.compile(r"(?m)^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z)")
+DUMP_RE=re.compile(r"(?m)^[\ufeff \t]*(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z)")
 EXPLICIT_ZONE_RE=re.compile(r"(?:Z|[+-]\d{2}:\d{2})$",re.I)
 REQUIRED_SHIFT_COLS={"shift_date","time_of_day","start_time","end_time"}
 REQUIRED_POS_COLS={"order_date","time_of_day","order_time","order_id"}
@@ -281,6 +281,8 @@ def tapo_log_audit(shift,text,bounds):
     need(all(t<=max(dump_stamps) for t in all_times),
          "WEBA_AUDIT_EVENT_LATER_THAN_EXPORT")
     return {
+        "Tapo_source_text_has_UTF8_BOM_or_indented_log_lines":
+            text.startswith("\ufeff") or any(x.startswith(" ") for x in text.splitlines()[:3]),
         "Tapo_snapshot_time_utc_first":min(dump_stamps).isoformat(),
         "Tapo_snapshot_time_utc_last":max(dump_stamps).isoformat(),
         "Tapo_earliest_recorded_event_utc":min(all_times).isoformat(),
