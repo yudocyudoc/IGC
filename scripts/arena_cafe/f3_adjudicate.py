@@ -16,6 +16,7 @@ from scripts.arena_cafe import (
     native_pos_scenario as scenario, native_pos_verify as verifier,
     observation_eval as hj, observation_ports as ports, scoped_memory,
     f2_physical_controls as physical, m_o1_capacity_certificate,
+    m_o1_window_measures,
 )
 from scripts.arena_cafe.native_handoff import need, validate_a1_visible
 from scripts.arena_v0_contract import canonical, digest
@@ -149,7 +150,7 @@ def _worker(root,visible,arm,cond):
             "memory":memory}
 
 
-def _native(root,visible,arm,cond):
+def _native(root,visible,arm,cond,*,evaluator_pre_cutoff_full=None):
     root=Path(root)
     manifest=_read(root/"manifest.json")
     original_model,original_script,regenerated=scenario.build(
@@ -211,11 +212,18 @@ def _native(root,visible,arm,cond):
         # the evaluator, not inside the frozen native E1 composer.
         bound_certificate=m_o1_capacity_certificate.certificate(
             visible,manifest["candidate"])
+        need(evaluator_pre_cutoff_full is not None,
+             "F3_M_O1_EVALUATOR_FULL_REQUIRED_FOR_WINDOW_DEVELOPMENT")
+        window_comparison=m_o1_window_measures.compare(
+            visible,evaluator_pre_cutoff_full,manifest["candidate"],
+            E1_REGISTRY,root/"native_res.csv",
+            verified["solver_csv_sha256"],bound_certificate)
         m["preparation"]={
             "observed":extras[0]["observed_orders"],
             "model_integrated_flow":extras[0]["native_prediction"],
             "status":"PROVISIONAL_NON_EQUIVALENT_MEASUREMENT_NO_G3_SCORE",
-            "conditional_original_E1_bound":bound_certificate}
+            "conditional_original_E1_bound":bound_certificate,
+            "evaluator_only_window_measures":window_comparison}
     else:
         need(not extras,"F3_ILLEGITIMATE_PHYSICAL_MEASUREMENT")
     return {
@@ -274,6 +282,20 @@ def adjudicate(visible, roots, workers, f2):
             x["delivered_cumulative"]==y["delivered_cumulative"]
             and x["orders_created_cumulative"]==y["orders_created_cumulative"]
             for x,y in zip(ref,public)),"F3_B0_NOT_SAME_PUBLIC_OBSERVATIONS")
+    # Original EV01 FULL is reconstructed ONLY INSIDE the evaluator.
+    # The arm workers and their separately scoped artifact directories already
+    # ran before this stage; none receives FULL or the private generator.
+    from fractions import Fraction as Q
+    from scripts.arena_cafe import ev01
+    from scripts import arena_event_observability as obs
+    original_events,_=ev01.trace_generator()
+    full=obs.project_events(original_events,"FULL")
+    cutoff=Q(visible["O1"]["observability"]["cutoff_minutes_exact"])
+    evaluator_full_pre_cutoff=[
+        {**row,"event_seq":i}
+        for i,row in enumerate(r for r in full
+             if Q(r["t_minutes_exact"])<cutoff)
+    ]
     arms={}
     for cond in CONDITIONS:
         arms[cond]={}
@@ -290,7 +312,10 @@ def adjudicate(visible, roots, workers, f2):
                     "mock_is_not_method_inference":True,
                     "interface":"OFFLINE_TRANSPORT_ONLY_EV01_LIVE_NOT_TESTED"}
             else:
-                n=_native(roots[(cond,arm)],visible[cond],arm,cond)
+                n=_native(
+                    roots[(cond,arm)],visible[cond],arm,cond,
+                    evaluator_pre_cutoff_full=evaluator_full_pre_cutoff
+                        if arm=="M" and cond=="O1" else None)
                 arms[cond][arm]={
                     "worker":own,"native":n,
                     "execution_state":"COMPLETED_ENGINEERING_NATIVE",
@@ -327,6 +352,8 @@ def adjudicate(visible, roots, workers, f2):
         "M_O1_unit_identity":"NOT_EMPIRICALLY_VERIFIED",
         "M_O1_exact_cutoff_mass_equality":"NOT_EMPIRICALLY_VERIFIED",
         "M_O1_unconditional_scientific_model_verdict":"NOT_IDENTIFIED_BY_AGGREGATED_O1",
+        "M_O1_evaluator_window_operator_status":"DESCRIPTIVE_ONLY_NOT_G3",
+        "M_O1_event_measures_not_native_arm_input":True,
         "M_O1_model_generation_or_calibration_from_extra_evidence":"NOT_RUN",
         "O1_native_assimilation":"NOT_DEMONSTRATED",
         "A1_B_MOCK_ORIGINAL_ENGINE":"TRANSPORT_ONLY_NOT_SCIENTIFIC_CONSUMPTION",
