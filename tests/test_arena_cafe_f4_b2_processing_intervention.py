@@ -133,7 +133,7 @@ class ProcessingPeriods(unittest.TestCase):
         cfg=ev01.config()
         schedule=apm.analytic_intervals(cfg,ev01.ARRIVALS)
         broken=deepcopy(schedule)
-        broken["preparacion"][0]["finish"]+=Q(1)
+        broken["preparacion"][0]["finish"]=Q(5)
         with self.assertRaisesRegex(ArenaContractError,
                                     "F4APM_ANALYTIC_SERVICE_STATE_NOT_ORIGINAL_DES"):
             apm.verify_des_snapshots(cfg,ev01.ARRIVALS,broken)
