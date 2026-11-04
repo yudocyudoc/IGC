@@ -203,7 +203,11 @@ def per_resource_processing_periods(b2_result,resources):
     ranking=sorted(result,key=lambda s:
                    (-Q(result[s]["longest_resource_processing_minutes_exact"]),
                     s))
-    need(len(ranking)==len(STAGES),
+    # The period reducer can be tested on a subset of physical resources;
+    # the full four-stage coverage invariant belongs to the caller that
+    # compares the known F4 worlds, not to this per-resource helper.
+    need(len(ranking)==len(resources) and
+         bool(ranking) and set(ranking).issubset(STAGES),
          "F4APM_STAGE_RANKING_INCOMPLETE")
     return {
         "proxy":"LONGEST_UNINTERRUPTED_OBSERVED_PROCESSING_PER_RESOURCE",
@@ -228,6 +232,9 @@ def measured_world(config,arrivals,*,original_source=False):
     resources={stage:[f"{stage}-r{i+1}" for i in range(n)]
                for stage,(n,_) in
                zip(STAGES,des.validate_private_config(config))}
+    need(set(resources)==set(STAGES) and
+         all(resources[stage] for stage in STAGES),
+         "F4APM_STAGE_RANKING_INCOMPLETE")
     periods=b2.resource_periods(events,resources,HORIZON,
                                 available=None)
     apm=per_resource_processing_periods(periods,resources)
