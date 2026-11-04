@@ -12,7 +12,7 @@ En el caso F4 conocido, **O0 y O1 no separan** dos mundos que tienen exactamente
 
 El evaluador inspeccionó **después de construir y conocer ambos mundos** los conteos acumulados de servicios `servicio_fin` **en la estación explícitamente identificada como despacho**, estrictamente anteriores a cada corte temporal **ya existente** en O0/O1:
 
-| Corte (min) | Mundo A, preparaciones de despacho terminadas | Mundo B, terminaciones en despacho | ¿Separa el par? |
+| Corte (min) | Mundo A, servicios de despacho terminados | Mundo B, servicios de despacho terminados | ¿Separa el par? |
 |---|---:|---:|---|
 | 0 | 0 | 0 | No |
 | 2 | 0 | 0 | No |
