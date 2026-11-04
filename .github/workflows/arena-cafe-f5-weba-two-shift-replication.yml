@@ -94,6 +94,30 @@ jobs:
               assert not result["case_to_sensor_event_link_proven"]
               assert not result["tapo_snapshot_full_shift_coverage_proven"]
               assert not result["pos_tapo_independent_clock_calibration_proven"]
+          # The original, metadata-selected March 4/8 files must keep
+          # their real observed results; pin them after the FIRST run,
+          # never replace a turn to improve the pattern.
+          first,second=r["results"]
+          assert [x["pos_rows_in_shift"] for x in (first,second)]==[7,15]
+          assert [x["tapo_total_returned_all_sensor_groups"]
+                  for x in (first,second)]==[888,889]
+          assert [x["bins_with_POS_orders"] for x in (first,second)]==[6,6]
+          assert [x["bins_with_sensor_pulses_but_zero_pos_orders"]
+                  for x in (first,second)]==[3,4]
+          assert [x["pos_local_assumption_in_windows"]
+                  for x in (first,second)]==[7,15]
+          assert [x["pos_UTC_as_written_sensitivity_in_windows"]
+                  for x in (first,second)]==[6,13]
+          assert [x["pos_UTC_as_written_sensitivity_outside_windows"]
+                  for x in (first,second)]==[1,2]
+          assert [sum(x["sensor_pulses_in_zero_pos_order_bins"].values())
+                  for x in (first,second)]==[115,136]
+          assert [x["tapo_selected_sensors_outside_windows"]
+                  for x in (first,second)]==[
+                      {"front_door":33,"front_door_m":19,
+                       "zone_1":60,"zone_2":94},
+                      {"front_door":34,"front_door_m":21,
+                       "zone_1":37,"zone_2":78}]
           assert r["G4"]==r["G5"]=="NOT_RUN"
           assert r["F5_independent_reserve"]=="NOT_CREATED"
           def audit(node):
