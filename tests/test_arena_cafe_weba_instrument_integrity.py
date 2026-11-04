@@ -131,6 +131,24 @@ class InstrumentContract(unittest.TestCase):
         self.assertNotIn("PRIVATE_PERSON",serialized)
         self.assertNotIn("999",serialized)
 
+    def test_02b_original_shift_metadata_HHhMM_not_imputed_elsewhere(self):
+        self.assertEqual("14:36:00",audit._shift_metadata_clock("14h36")[0].isoformat())
+        self.assertEqual("HHhMM",audit._shift_metadata_clock("18h31")[1])
+        with self.assertRaises(ValueError):
+            audit._shift_metadata_clock("25h99")
+        workbook=excel_xml(
+            ("shift_date","time_of_day","start_time","end_time"),
+            [("20240223","evening","14h36","18h31"),
+             ("20240304","evening","14h54","18h50"),
+             ("20240308","evening","14h33","18h41")])
+        bounds,_=audit.shift_boundaries(workbook)
+        self.assertEqual("HHhMM",bounds["20240223_evening"][
+            "start_clock_original_format"])
+        self.assertEqual(datetime(2024,2,23,13,36,tzinfo=timezone.utc),
+                         bounds["20240223_evening"]["interval_for_audit_only"][0])
+        self.assertEqual(datetime(2024,2,23,17,31,tzinfo=timezone.utc),
+                         bounds["20240223_evening"]["interval_for_audit_only"][1])
+
     def test_03_Tapo_snapshot_has_one_block_per_sensor_and_no_causal_certainty(self):
         bounds,_=audit.shift_boundaries(shift_summary_fixture())
         t=audit.tapo_log_audit(
