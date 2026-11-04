@@ -1,0 +1,158 @@
+name: WEBA F5 — Tapo history coverage and POS clock provenance audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/weba_instrument_integrity.py'
+      - 'tests/test_arena_cafe_weba_instrument_integrity.py'
+      - 'docs/arena_cafe/f5/05_WEBA_AUDITORIA_COBERTURA_Y_RELOJES.md'
+      - '.github/workflows/arena-cafe-f5-weba-instrument-integrity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-weba-tapo-snapshot-and-POS-clock-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests with parser-only fixtures
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_weba_instrument_integrity.py' -v
+      - name: Retrieve only pinned WEBA POS, shift summary, three IoT logs
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          from scripts.arena_cafe import weba_instrument_integrity as audit
+          from scripts.arena_cafe import weba_source_readiness as source
+          private=Path("artifacts/weba-private-source-do-not-upload")
+          private.mkdir(parents=True,exist_ok=True)
+          repo=("https://raw.githubusercontent.com/"+
+                source.UPSTREAM_REPO+"/"+source.UPSTREAM_COMMIT+"/")
+          paths={
+              "pos":source.SOURCE_FILES["pos"]["path"],
+              "shift_summary":audit.META_FILE["path"],
+          }
+          paths.update({
+              k:"B.shift_data/"+k+"/3.logs.txt" for k in audit.SHIFTS
+          })
+          downloaded={}
+          for name,path in paths.items():
+              req=Request(repo+path,headers={
+                  "User-Agent":"IGC-WEBA-instrument-integrity-audit"})
+              with urlopen(req,timeout=45) as response:
+                  raw=response.read()
+              downloaded[name]=raw
+          audit.verify_inputs(downloaded["pos"],downloaded["shift_summary"],{
+              k:downloaded[k] for k in audit.SHIFTS})
+          for k,v in downloaded.items():
+              (private/(k+".bin")).write_bytes(v)
+          print("WEBA_FIVE_UPSTREAM_INPUTS_PINNED_AND_AUTHENTICATED")
+          PY
+      - name: Inspect only shift-level clock values and encodings (no participant IDs)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_cafe import weba_instrument_integrity as audit
+          from scripts.arena_cafe import weba_source_readiness as source
+          raw=Path("artifacts/weba-private-source-do-not-upload/shift_summary.bin").read_bytes()
+          rows,fields=audit.workbook_values(raw,audit.REQUIRED_SHIFT_COLS)
+          found=[]
+          for row in rows:
+              pick=lambda k:str(row.get(fields[k],"")).strip()
+              date=source._normalize_date(pick("shift_date"))
+              label=pick("time_of_day").lower()
+              name=(date.replace("-","")+"_"+label) if date else ""
+              if name in audit.SHIFTS:
+                  found.append((name,pick("start_time"),pick("end_time")))
+          print("WEBA_SELECTED_SHIFT_CLOCK_FIELDS_ONLY",sorted(found))
+          PY
+      - name: Audit real source timestamps and coverage WITHOUT calibration
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.weba_instrument_integrity \
+            --pos artifacts/weba-private-source-do-not-upload/pos.bin \
+            --shift-summary artifacts/weba-private-source-do-not-upload/shift_summary.bin \
+            --tapo-20240223 artifacts/weba-private-source-do-not-upload/20240223_evening.bin \
+            --tapo-20240304 artifacts/weba-private-source-do-not-upload/20240304_evening.bin \
+            --tapo-20240308 artifacts/weba-private-source-do-not-upload/20240308_evening.bin \
+            --out artifacts/WEBA_TAPO_POS_INSTRUMENT_INTEGRITY_AUDIT.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path("artifacts/WEBA_TAPO_POS_INSTRUMENT_INTEGRITY_AUDIT.json").read_text())
+          assert r["schema"]=="igc-weba-tapo-history-pos-clock-provenance-audit/0.1"
+          assert r["shift_selection"]==[
+              "20240223_evening","20240304_evening","20240308_evening"]
+          assert [r["shifts"][s]["Tapo"]["total_events_in_snapshot"]
+                  for s in r["shift_selection"]]==[911,888,889]
+          assert all(r["shifts"][s]["Tapo"]["sensor_group_count"]==10
+                     for s in r["shift_selection"])
+          assert all(r["shifts"][s]["Tapo"]["snapshot_consistency_passed"]
+                     for s in r["shift_selection"])
+          # Actual pinned external-source findings: no parameter fitting.
+          assert r["shift_metadata_workbook_nonempty_rows"]==56
+          assert r["POS"]["nonempty_order_rows"]==588
+          assert r["POS"]["parseable_order_time_as_wall_clock"]==588
+          assert r["POS"]["blank_order_time"]==0
+          assert r["POS"]["order_time_values_stored_as_numeric_Excel_cells"]==588
+          assert r["POS"]["order_time_with_explicit_timezone_offset_or_Z"]==0
+          assert r["POS"]["order_date_raw_encoding_counts"]=={
+              "YYYYMMDD_8_DIGITS":588}
+          assert [r["shifts"][s]["start_clock_local"]
+                  for s in r["shift_selection"]]==[
+                  "14:36:00","14:54:00","14:33:00"]
+          assert [r["shifts"][s]["end_clock_local"]
+                  for s in r["shift_selection"]]==[
+                  "18:31:00","18:50:00","18:41:00"]
+          assert [r["shifts"][s]["Tapo"]["events_before_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[16,436,287]
+          assert [r["shifts"][s]["Tapo"]["events_inside_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[873,452,602]
+          assert [r["shifts"][s]["Tapo"]["events_after_assumed_recording_shift"]
+                  for s in r["shift_selection"]]==[22,0,0]
+          assert [r["shifts"][s]["Tapo"]["sensors_over_50_returned_records"]
+                  for s in r["shift_selection"]]==[6,6,5]
+          assert [r["shifts"][s]["Tapo"][
+                "Tapo_snapshot_last_export_before_declared_shift_end"]
+                for s in r["shift_selection"]]==[False,False,True]
+          assert r["Tapo_continuous_service_coverage_ESTABLISHED"] is False
+          assert r["POS_and_Tapo_synchronized_ESTABLISHED"] is False
+          assert r["POS"]["timezone_certified_by_source"] is False
+          assert r["POS"]["UTC_offset_or_drift_calibrated_against_Tapo"] is False
+          assert r["no_per_order_service_finish_or_customer_arrival_reconstructed"]
+          assert r["no_patient_heart_rate_wearable_questionnaires_loaded"]
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          assert r["G4"]==r["G5"]=="NOT_RUN"
+          def check(node):
+              if isinstance(node,dict):
+                  for k,v in node.items():
+                      assert k not in {
+                          "order_ID","par_ID","participant_id","case_id",
+                          "visit_id","event_id","device_id","mac","ip",
+                          "ssid","resource_id","raw_order_time",
+                          "t_minutes_exact"}
+                      check(v)
+              elif isinstance(node,list):
+                  for v in node:check(v)
+          check(r)
+          print("WEBA_INSTRUMENT_AUDIT_OBSERVATIONAL_LIMITS_RETAINED")
+          PY
+      - name: Remove all source bytes before publication
+        if: always()
+        run: rm -rf artifacts/weba-private-source-do-not-upload
+      - name: Publish ONLY aggregate metadata / audit output
+        uses: actions/upload-artifact@v4
+        with:
+          name: weba-tapo-pos-clock-coverage-audit-aggregate
+          path: artifacts/WEBA_TAPO_POS_INSTRUMENT_INTEGRITY_AUDIT.json
+          if-no-files-found: error
+          retention-days: 90
