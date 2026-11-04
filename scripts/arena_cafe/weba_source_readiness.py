@@ -42,12 +42,12 @@ SOURCE_FILES={
 }
 EXPECTED_SENSORS=("front_door","front_door_m","zone_1","zone_2")
 TAPO_SENSOR_RE=re.compile(
-    r"Found (T\\d{3}) child device with nickname: ([A-Za-z0-9_-]+),"
-    r"[^\\n]*?last 50 trigger logs: TriggerLogsResult"
-    r" \\{ start_id: (\\d+), sum: (\\d+), logs: \\[([^\\n]*?)\\] \\}"
+    r"Found (T\d{3}) child device with nickname: ([A-Za-z0-9_-]+),"
+    r"[^\n]*?last 50 trigger logs: TriggerLogsResult"
+    r" \{ start_id: (\d+), sum: (\d+), logs: \[([^\n]*?)\] \}"
 )
 TAPO_EVENT_RE=re.compile(
-    r"\\b(Open|Close|KeepOpen|Motion) \\{ id: (\\d+), timestamp: (\\d+) \\}"
+    r"\b(Open|Close|KeepOpen|Motion) \{ id: (\d+), timestamp: (\d+) \}"
 )
 MAIN="{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
@@ -62,7 +62,7 @@ def verify_pinned(name,bytes_):
          "WEBA_UNAUTHORIZED_SOURCE")
     meta=SOURCE_FILES[name]
     sha=hashlib.sha1(
-        f"blob {len(bytes_)}\\0".encode("ascii")+bytes_).hexdigest()
+        f"blob {len(bytes_)}\0".encode("ascii")+bytes_).hexdigest()
     need(len(bytes_)==meta["size_bytes"] and
          sha==meta["git_blob_sha1"],
          "WEBA_SOURCE_NOT_PINNED_GIT_BLOB")
@@ -92,7 +92,7 @@ def parse_tapo_text(text):
         need(nickname not in seen,"WEBA_TAPO_DUPLICATED_SENSOR")
         seen.add(nickname)
         matches=list(TAPO_EVENT_RE.finditer(raw))
-        unparsed=TAPO_EVENT_RE.sub("",raw).strip(" ,\\t\\r")
+        unparsed=TAPO_EVENT_RE.sub("",raw).strip(" ,\t\r")
         need(not unparsed,"WEBA_TAPO_UNPARSED_EVENT_TYPE")
         ev=[(kind,int(event_id),int(timestamp))
             for kind,event_id,timestamp in
