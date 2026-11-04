@@ -52,7 +52,8 @@ class WindowEventMeasureTests(unittest.TestCase):
             "time":format(t/60,".17g"),
             "deliveredTotal":str(t/2),
             source+".outflow":"60",
-            prep+".completed":completed_per_hour,
+            prep+".completed":(completed_per_hour(t)
+                if callable(completed_per_hour) else completed_per_hour),
         } for t in range(11)]
         with Path(path).open("w",newline="",encoding="utf-8") as f:
             writer=csv.DictWriter(f,fieldnames=cols)
@@ -112,6 +113,86 @@ class WindowEventMeasureTests(unittest.TestCase):
                                         "F3M_WINDOW_FUTURE_EVENTS_NOT_ALLOWED"):
                 self._run(path,sha,full=fake)
 
+    def test_02b_interior_boundaries_go_to_next_half_open_window(self):
+        # The historical EV01 physical completions never fall exactly
+        # on 2,4,6,8, so directly test the binning operator at the edge.
+        exact=[Q(0),Q(2),Q(4),Q(6),Q(8),Q(10)-Q(1,100)]
+        self.assertEqual(
+            [1,1,1,1,2],
+            windows.count_completed_by_half_open_windows(exact))
+        self.assertEqual(
+            [0,1,0,0,0],
+            windows.count_completed_by_half_open_windows([Q(2)]))
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "F3M_WINDOW_EVENT_OUTSIDE_HALF_OPEN_HORIZON"):
+            windows.count_completed_by_half_open_windows([Q(10)])
+        with self.assertRaisesRegex(ArenaContractError,
+                                    "F3M_WINDOW_INVALID_GRID"):
+            windows.count_completed_by_half_open_windows(
+                [Q(1)],(Q(0),Q(2),Q(2)))
+
+    def test_02c_censored_preparation_without_entry_is_rejected(self):
+        # Remove ONLY the entry of a case in service but not completed
+        # at t10. The completed-case O1 mean/count remain unchanged, so
+        # the case-level censor audit—not O1 aggregation—must reject it.
+        with TemporaryDirectory() as temp:
+            path=Path(temp)/"fixture.csv";sha=self._write_csv(path)
+            fake=deepcopy(self.full)
+            finished={r["case_id"] for r in fake
+                      if r["event_type"]=="servicio_fin"
+                      and r.get("stage")=="preparacion"}
+            active=next(r["case_id"] for r in fake
+                        if r["event_type"]=="servicio_inicio"
+                        and r.get("stage")=="preparacion"
+                        and r["case_id"] not in finished)
+            fake=[r for r in fake
+                  if not (r["case_id"]==active and
+                          r["event_type"]=="etapa_entrada" and
+                          r.get("stage")=="preparacion")]
+            for i,r in enumerate(fake):r["event_seq"]=i
+            with self.assertRaisesRegex(ArenaContractError,
+                                        "F3M_WINDOW_CENSOR_STATES_INVALID"):
+                self._run(path,sha,full=fake)
+
+    def test_02d_over_capacity_native_flux_is_rejected(self):
+        # An authenticated CSV hash is not enough: a fabricated 30/h
+        # constant signal must fail the original bounded-queue 20/h cap.
+        with TemporaryDirectory() as temp:
+            path=Path(temp)/"over-cap.csv"
+            sha=self._write_csv(path,"30")
+            with self.assertRaisesRegex(ArenaContractError,
+                                        "F3M_WINDOW_MODEL_FLUX_EXCEEDS_FIXED_E1_CAP"):
+                self._run(path,sha)
+
+    def test_02e_negative_flow_rejected_by_native_parser_first(self):
+        with TemporaryDirectory() as temp:
+            path=Path(temp)/"negative.csv"
+            sha=self._write_csv(path,"-5")
+            with self.assertRaisesRegex(ArenaContractError,
+                                        "A1_TRACE_NEGATIVE_MATERIAL"):
+                self._run(path,sha)
+
+    def test_02f_linearly_rising_flow_has_exact_piecewise_trapezoid_mass(self):
+        # In contrast to the constant 20/h engineering fixture, this
+        # independent ramp (2*t units/hour) exercises numeric integration
+        # across different rates; it is NOT the OMC scientific trajectory.
+        with TemporaryDirectory() as temp:
+            path=Path(temp)/"linear-ramp.csv"
+            sha=self._write_csv(path,lambda t:str(2*t))
+            result=self._run(path,sha)
+        expected=[Q(1,15),Q(1,5),Q(1,3),Q(7,15),Q(3,5)]
+        actual=[w["native_e1_integrated_continuous_readyorder_mass_numeric"]
+                for w in result["windows"]]
+        for observed,reference in zip(actual,expected):
+            self.assertAlmostEqual(observed,float(reference),places=7)
+        self.assertAlmostEqual(
+            result["native_continuous_prep_integral_numeric"],
+            float(Q(5,3)),places=7)
+        self.assertEqual([0,3,2,2,2],
+            [w["observed_discrete_prep_completions"]
+             for w in result["windows"]])
+        self.assertFalse(result["exact_cutoff_mass_equality_empirically_verified"])
+
     def test_03_tampered_physical_times_rejected_by_original_o1_mean(self):
         with TemporaryDirectory() as temp:
             path=Path(temp)/"fixture.csv";sha=self._write_csv(path)
@@ -144,15 +225,32 @@ class WindowEventMeasureTests(unittest.TestCase):
                                         "F3M_WINDOW_INVALID_OR_FALSELY_VALIDATED_BRIDGE"):
                 self._run(path,sha,cert=counterfeit)
 
-    def test_06_same_count_without_same_pos_case_trace_does_not_pass(self):
+    def test_06_creation_time_changed_without_changing_O0_bin_is_rejected(self):
         with TemporaryDirectory() as temp:
             path=Path(temp)/"fixture.csv";sha=self._write_csv(path)
             fake=deepcopy(self.full)
+            case=next(r["case_id"] for r in fake
+                      if r["event_type"]=="pedido_creado")
             for row in fake:
-                if row["event_type"]=="pedido_creado":
-                    row["case_id"]="X999"
-                    break
-            with self.assertRaises((ValueError,ArenaContractError)):
+                if row["case_id"]==case and row["event_type"] in (
+                        "pedido_creado","pago_confirmado"):
+                    row["t_minutes_exact"]=str(
+                        Q(row["t_minutes_exact"])+Q(1,100))
+            # O0/O1 aggregate checkpoints have not changed, but the
+            # exact authorized POS case arrival and its identity did.
+            with self.assertRaisesRegex(ArenaContractError,
+                                        "F3M_WINDOW_CASES_OR_TIMES_CHANGED"):
+                self._run(path,sha,full=fake)
+
+    def test_06b_delivery_moved_across_bin_fails_original_O1_counts(self):
+        with TemporaryDirectory() as temp:
+            path=Path(temp)/"fixture.csv";sha=self._write_csv(path)
+            fake=deepcopy(self.full)
+            row=next(r for r in fake if r["event_type"]=="pedido_entregado")
+            self.assertLess(Q(row["t_minutes_exact"]),Q(19,2))
+            row["t_minutes_exact"]="19/2"
+            with self.assertRaisesRegex(ArenaContractError,
+                                        "F3M_WINDOW_FULL_POS_NOT_SAME_O1"):
                 self._run(path,sha,full=fake)
 
     def test_07_no_private_timestamps_or_case_ids_in_public_summary(self):
