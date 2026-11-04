@@ -225,10 +225,13 @@ class OriginalKnownPairOnly(unittest.TestCase):
         self.assertTrue(r["not_minimum_across_all_possible_sensors_or_worlds"])
         self.assertEqual(0,r["provider_calls"])
         serialized=json.dumps(r,ensure_ascii=False)
-        self.assertNotIn("case_id",serialized)
-        self.assertNotIn("resource_id",serialized)
-        self.assertNotIn("t_minutes_exact",serialized)
-        self.assertNotIn("service_minutes",serialized)
+        # Check actual JSON field names, not a documentation flag whose
+        # name may legitimately mention "case_ids" or "resource_id".
+        for forbidden_key in ("case_id","resource_id","t_minutes_exact",
+                              "service_minutes","event_type"):
+            self.assertNotIn(json.dumps(forbidden_key)+":",serialized)
+        for i in range(15):
+            self.assertNotIn(json.dumps(f"O{i:03d}"),serialized)
 
 
 if __name__=="__main__":
