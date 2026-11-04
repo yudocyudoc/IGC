@@ -42,6 +42,33 @@ Las líneas muestreadas, incluidas las de `5.kave`, presentan **cuatro columnas 
 
 La búsqueda examinó (a) tabla 3/tabla 8/figura 10 del paper, (b) `Description.txt` y `code_for_public/preprocessing.py`, (c) árbol GitHub recursivo completo `truncated=false`, y (d) la página de Figshare v3 (identificación de archivo RAR, **sin inspección del interior del archivo**). **Etiqueta de bebida concreta: NO LOCALIZADA; inicio/fin de ciclo externo: NO LOCALIZADO; vínculo a `order_ID`: NO LOCALIZADO.** Lo encontrado son rutas verificables de señales crudas. No elevar la afirmación de la tabla 3 a una etiqueta recuperada.
 
+## Inspección adicional de la copia descomprimida subida por el investigador a Google Drive (2026-11-04)
+
+**Origen:** copia que el investigador afirma haber descomprimido de `WEBA_dataset.rar` y subido a Google Drive. Se accedió mediante conector autenticado. **La copia no constituye por sí sola una comparación de hashes de todo el RAR original**; se documenta como una fuente aportada adicional. No se expone la URL privada ni las credenciales en el repositorio público.
+
+### Inventario de directorios efectivamente accesibles
+
+- Raíz visible: `A.participant_data` (5 carpetas de participantes + resumen), `B.shift_data` (**55 carpetas de turnos + 4 ficheros XLSX**) y `code_for_public` (`preprocessing.py`).
+- Se inspeccionaron por listado **los 55 directorios de turno**: hay `5.coffee_machine_acc` en 53, más `5.kave` en dos turnos. Dentro de `5.coffee_machine_acc`, **12 entradas son archivos únicos** y **41 son directorios**; de estos, **dos están vacíos** (`20240122_evening`, `20240202_evening`) y **39 contienen fragmentos**.
+- Se listaron **las 41 carpetas `5.coffee_machine_acc` y las dos `5.kave`**. En todas las carpetas no vacías, los nombres de archivos corresponden a horas (`YYYYMMDD_HHMMSS`, `HHMMSS` o `HHMMSS.coffee_machine_acc`). **No se encontró un archivo separado de anotación o mapeo de tipos de bebida, ni etiquetas por `order_ID` en los nombres**.
+- El inventario de datos coincide con el árbol GitHub: **12 ficheros planos + 185 fragmentos `5.coffee_machine_acc` + 12 fragmentos `5.kave` = 209 archivos con señal**, 53 turnos con algún archivo, dos turnos con carpeta vacía. La copia de Drive conserva esas dos carpetas vacías mientras el árbol de GitHub del commit anterior carecía de esas rutas; **no son nuevos datos**.
+- Los libros revisados: `orders_summary.xlsx` (588 pedidos, `order_ID`, `order_time`, `coffee_cup`, `choco_cup`, `cake`, `ordered_value`; no contiene una columna de ciclo físico de máquina), `workload_summary.xlsx` (escalas de percepción y carga laboral por turno; no anotación de bebida por ciclo). El resto del material visible es sensores, frecuencia cardíaca, cuestionarios y código original de preprocesamiento. La inspección preservó la privacidad de las personas y no publicó identificadores de pedidos.
+
+### Cuatro archivos completos inspeccionados por contenido
+
+Se usaron lecturas de archivo completo, **no solo primeras líneas**, sobre dos segmentos cortos, uno largo y un registro continuo:
+
+| Registro | Bytes | Filas | Git blob SHA-1 calculado |
+|---|---:|---:|---|
+| `20231129_evening/5.coffee_machine_acc` (plano) | 11,823,053 | 328,206 (incluye una línea final vacía) | `034d0466d726447a70d692351411e1b997f8e4fe` |
+| `20240304_evening/5.coffee_machine_acc/185214.coffee_machine_acc` | 5,559,300 | 146,004 | `06a1aac6a467122f0fb1b6d3add7c457a2ad3938` |
+| `20240325_morning/5.coffee_machine_acc/20240325_142014` | 34,012 | 887 | `389a284d20bbf5081ce95fb3d3570fbd324be08d` |
+| `20240308_morning/5.kave/20240308_114003` | 203,756 | 5,316 | `1989150a3b2ce23b71a4b9734bf3aaebfeb8d4e5` |
+
+**Validación de formato:** **480,412 filas de datos** en conjunto, todas con exactamente cuatro campos (hora de pared + tres componentes numéricos), sin una etiqueta textual adicional; más una línea vacía terminal. No se observó una columna `drink_type`, `order_ID`, evento de encendido ni etiqueta de inicio/fin. Los hashes Git blob del archivo plano de 20231129, del fragmento de 20240304 y del fragmento `5.kave` de 20240308 coinciden con los previamente visibles en GitHub. Esto prueba identidad de **esas muestras**, no del conjunto completo ni del RAR original.
+
+**Dictamen:** búsqueda de nombres y estructura **completa para la copia accesible**, contenido auditado **solo para cuatro archivos representativos**; anotaciones de tipo de bebida **NO LOCALIZADAS**. No declarar que ninguno de los otros 205 archivos contenga anotaciones internas, ni resolver la afirmación de los autores por suposición. Para cerrar de manera concluyente hace falta inspeccionar los 209 contenidos completos o localizar el inventario/protocolo original de anotación con el equipo autor.
+
 ## Escalera de identificabilidad y límites
 
 | Nivel | Proposición | Dictamen en esta inspección |
