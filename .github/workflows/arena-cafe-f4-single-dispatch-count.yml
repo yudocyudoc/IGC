@@ -1,0 +1,80 @@
+name: F4 cafe — one dispatch completion count distinguishes known O0/O1-equivalent pair
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/f4_single_dispatch_count_observability.py'
+      - 'tests/test_arena_cafe_f4_single_dispatch_count_observability.py'
+      - 'docs/arena_cafe/f4/05_UN_CONTEO_DESPACHO_OBSERVABILIDAD.md'
+      - '.github/workflows/arena-cafe-f4-single-dispatch-count.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evaluator-only-known-pair-sensor-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve original A1 public O0/O1 known-development inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Verify original worlds and one stage-specific scalar versus negative controls
+        env:
+          F4SYM_O0: artifacts/public/O0_VISIBLE.json
+          F4SYM_O1: artifacts/public/O1_VISIBLE.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_f4_single_dispatch_count_observability.py' -v
+          python -m scripts.arena_cafe.f4_single_dispatch_count_observability \
+            --o0 "$F4SYM_O0" --o1 "$F4SYM_O1" \
+            --out artifacts/F4_DISPATCH_ONE_COUNT_KNOWN_PAIR.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/F4_DISPATCH_ONE_COUNT_KNOWN_PAIR.json").read_text())
+          A,B="REFERENCE_EV01_WORLD_A","SWAPPED_DOWNSTREAM_WORLD_B"
+          assert r["candidate_completed_dispatch_counts_by_grid"]=={
+              A:[0,0,2,4,6,9],
+              B:[0,0,2,5,7,9]}
+          assert r["negative_control_terminal_counts_by_grid"]=={
+              A:[0,0,2,4,6,8],
+              B:[0,0,2,4,6,8]}
+          assert r["dispatch_count_at_t6_by_world"]=={A:4,B:5}
+          assert r["dispatch_count_at_t10_by_world"]=={A:9,B:9}
+          assert r["informative_grid_cutoffs_in_this_known_pair"]==["6","8"]
+          assert r["count_of_additional_aggregated_scalars"]==1
+          assert r["t6_two_world_rule_for_count_4"][
+              "compatible_declared_world_keys"]==[A]
+          assert r["t6_two_world_rule_for_count_5"][
+              "compatible_declared_world_keys"]==[B]
+          assert r["t10_two_world_rule_for_count_9"][
+              "number_of_compatible_declared_worlds"]==2
+          assert r["posthoc_smallest_distance_to_t6_of_any_dispatch_completion_exact"]=="108/935"
+          assert r["posthoc_stage_and_cutoff_selection_after_worlds_known"]
+          assert r["timing_margin_is_oracle_RETROSPECTIVE_not_sensor_calibration"]
+          assert r["not_installed_or_independently_validated_sensor"]
+          assert not r["O2_experiment_actually_performed"]
+          assert not r["O2_authorized_as_arm_input"]
+          assert r["no_private_event_data_sent_to_D_B_M"]
+          assert r["A3"]=="PARTIAL" and r["G4"]==r["G5"]=="NOT_RUN"
+          assert r["F5_independent_reserve"]=="NOT_CREATED"
+          assert r["provider_calls"]==0
+          print("F4_ONE_STAGE_DISPATCH_T6_COUNT_POSTHOC_PAIR_WITNESS_NOT_G5")
+          PY
+      - name: Publish evaluator-only aggregate, never case events or private configs
+        uses: actions/upload-artifact@v4
+        with:
+          name: f4-single-dispatch-count-known-pair-development
+          path: artifacts/F4_DISPATCH_ONE_COUNT_KNOWN_PAIR.json
+          if-no-files-found: error
+          retention-days: 90
