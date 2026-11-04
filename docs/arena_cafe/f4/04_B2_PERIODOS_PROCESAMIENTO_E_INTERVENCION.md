@@ -39,9 +39,24 @@ Para sensibilidad mantenemos exactamente los resultados del DES original en `t=1
 
 La comparación incluye el ganador del **proxy** antes/después, pero **una coincidencia de ganador con la sensibilidad no valida causalidad general**. Para una etiqueta causal más fuerte harían falta intervenciones de aumento de capacidad, condiciones relevantes de disponibilidad, y pruebas independientes. Ninguno de esos experimentos se abre aquí.
 
+## Hallazgo sobre horizonte de observación: evitar fuga temporal
+
+El diagnóstico de mayor período `PROCESSING` se computa de **dos maneras**, ambas procedentes del mismo B2 físico sintético: limitado estrictamente a **[0,10)**, para coincidir con el momento en que se mide el efecto en entregas; y sobre el ciclo completo **[0,30)**, una observación **retrospectiva posterior**.
+
+| Mundo/condición | Ganador por períodos PROCESSING hasta t=10 | Ganador a t=30 (retrospectivo) | Entregas t=10 |
+|---|---|---|---:|
+| A, base | Preparación | Preparación | 8 |
+| B, base | Preparación | Preparación | 8 |
+| A, +30 s/pedido en despacho | **Preparación** | **Despacho** | **6** |
+| B, +30 s/pedido en despacho | Preparación | Preparación | 8 |
+
+En [0,30), el mayor período individual observado de preparación es **225/17 minutos (≈13.2353)** en ambos mundos. Bajo el estrés en A, despacho procesa ininterrumpidamente durante **1545/86 minutos (≈17.9651)**, y supera al de preparación. En B la preparación permanece como ganadora. Los dos cajeros se analizan **como recursos diferentes**; la longitud mayor de uno es 8 minutos, no la suma de sus 15 minutos de ocupación total.
+
+**Consecuencia:** A **ya perdió dos entregas al minuto 10** aun cuando el proxy de procesamiento acotado al minuto 10 seguía identificando preparación. El cambio hacia despacho se reconoce **a posteriori** al permitir que la observación continúe hasta t=30. **Utilizar el ganador a t=30 para explicar una supuesta predicción emitida en t=10 introduciría fuga de información futura.** Este ejemplo no valida APM como predictor temprano de restricciones latentes, ni obliga a declarar que una estación sea el cuello causal verdadero.
+
 ## Salidas y pruebas
 
-- `scripts/arena_cafe/f4_b2_processing_intervention.py`: construcción y comprobación del evaluador. No crea modelos nativos ni acceso a proveedores.
+- `scripts/arena_cafe/f4_b2_processing_intervention.py`: construcción y comprobación del evaluador. Reporta **dos cortes** (t10 y t30) sobre los mismos segmentos B2; impide usar información posterior a t10 en el diagnóstico recortado. No crea modelos nativos ni acceso a proveedores.
 - `tests/test_arena_cafe_f4_b2_processing_intervention.py`: unión de episodios `PROCESSING` adyacentes, rechazo de `IDLE_AVAILABLE` sin disponibilidad, consistencia B2 por recurso, caja con dos servidores, eventos originales FULL, paridad DES, alteración del calendario, misma intervención y frontera científica.
 - `.github/workflows/arena-cafe-f4-b2-processing-intervention.yml`: reutiliza los artefactos públicos originales de O0/O1 y ejecuta el DES original y B2. Publica **estadísticas del evaluador**, nunca el log por pedido ni su configuración como insumos de D/B/M.
 - El informe muestra **por estación y recurso** la longitud máxima de procesamiento continuo, su duración total y el número de episodios, además del resultado de la intervención. Distingue claramente que la referencia APM aquí es un **proxy limitado**, no el método completo.
