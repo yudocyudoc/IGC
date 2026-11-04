@@ -163,6 +163,21 @@ class InstrumentContract(unittest.TestCase):
         self.assertTrue(t["vendor_ID_gaps_not_interpretable_as_missing_count"])
         self.assertFalse(t["Tapo_event_clock_calibrated_against_POS"])
 
+    def test_03b_export_before_declared_end_cannot_cover_shift_tail(self):
+        bounds,_=audit.shift_boundaries(shift_summary_fixture())
+        # A valid snapshot whose LAST export precedes shift end proves
+        # that the final interval was not yet observed.
+        raw=tapo_fixture("20240308").decode().replace(
+            "18:10:00.123Z","16:40:00.123Z")
+        out=audit.tapo_log_audit(
+            "20240308_evening",raw,bounds["20240308_evening"])
+        self.assertTrue(out[
+            "Tapo_snapshot_last_export_before_declared_shift_end"])
+        self.assertTrue(out[
+            "snapshot_export_after_end_is_NOT_proof_of_full_coverage"])
+        self.assertGreater(float(out[
+            "minutes_from_last_export_to_assumed_shift_end_signed"]),0)
+
     def test_04_duplicate_vendor_id_detected(self):
         bounds,_=audit.shift_boundaries(shift_summary_fixture())
         with self.assertRaisesRegex(ValueError,
