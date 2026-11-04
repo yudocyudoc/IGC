@@ -20,6 +20,28 @@ El sensor front_door incluye **siete registros KeepOpen**, que perderíamos al f
 
 Los timestamps Tapo corresponden a registros epoch Unix del sensor. Las horas POS son campos del sistema de pedidos; **no se ha demostrado el offset, la deriva ni la identificación uno-a-uno de ambos canales**. Este primer pase no alinea físicamente dichos relojes.
 
+## Resultado real del primer pase con fecha normalizada
+
+El archivo original de pedidos conserva las fechas como **YYYYMMDD** (por ejemplo, el día del turno se representa como 20240223), no como una fecha ya normalizada ISO o DMY. El primer extractor no reconoció ese formato y reportó incorrectamente cero coincidencias. **Se corrigió el parseo y se añadió una prueba adversarial específica**; los archivos originales y sus hashes permanecen idénticos.
+
+Tras normalizar este encoding, el informe agregado de la ejecución real produce:
+
+| Auditoría POS | Conteo |
+|---|---:|
+| Filas no vacías de pedidos | **588** |
+| Filas con hora de pedido no vacía | **588** |
+| Filas con fecha original normalizable | **588** |
+| Fechas distintas representadas en el libro | **28** |
+| Pedidos del día 2024-02-23 | **48** |
+| Pedidos del turno 20240223_evening | **33** |
+| Pedidos de ese turno con hora disponible | **33** |
+
+En paralelo, el log Tapo del mismo turno presenta **911 registros IoT devueltos por 10 sensores** y siete eventos **KeepOpen**. Los tiempos de sensor van aproximadamente de **13:34 a 17:35 UTC**, pero esos extremos son de un historial de disparos, no de la apertura y cierre operacional certificada de la cafetería.
+
+**La coincidencia del identificador de fecha/turno NO valida correspondencia pedido↔sensor**, integridad del historial ni sincronización de relojes. En particular, **911/33 no es una medida de tareas por pedido**. No se extrajeron servicios individuales, llegadas físicas por puerta ni una tasa de atención.
+
+La prueba final debe fallar si un cambio de fuente vuelve a dejar sin marcas POS el turno seleccionado; no basta detectar que el archivo global contiene filas.
+
 ## Libro de pedidos POS
 
 Se inspecciona orders_summary.xlsx con un lector mínimo de solo lectura para OOXML, usando la biblioteca estándar de Python. El informe resume encabezados y cobertura de order_ID, order_date, order_time y time_of_day; cuenta filas con horas y filas asociables por fecha/etiqueta al turno elegido. No se emiten horas individuales, IDs, productos ni montos. Ninguna hora faltante se reconstruye desde aperturas de puerta.
