@@ -132,6 +132,14 @@ class TemporalContracts(unittest.TestCase):
         self.assertEqual(33,result["sensor_rows_per_window_with_pos_assumed_local"][1][
             "pos_orders_assuming_Budapest_local_clock"])
         self.assertEqual(1,result["bins_with_both_pos_and_sensor_pulse_assuming_local"]["front_door"])
+        self.assertEqual(1,result["bins_with_at_least_one_pos_order_assuming_local"])
+        self.assertEqual(3,result[
+            "bins_with_sensor_activity_but_zero_pos_orders_assuming_local"])
+        self.assertEqual({
+            "front_door":0,"front_door_m":1,"zone_1":1,"zone_2":1},
+            result["sensor_events_in_zero_pos_order_windows_assuming_local"])
+        self.assertTrue(result[
+            "coactivity_does_NOT_validate_sensor_as_pos_order_proxy"])
         self.assertEqual(0,result["pos_orders_outside_primary_windows"])
         self.assertTrue(result["no_pos_order_tapo_event_pairing_attempted"])
         self.assertTrue(result["no_causality_or_service_event_inferred"])
