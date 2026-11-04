@@ -129,12 +129,34 @@ class FrozenSensorPolicy(unittest.TestCase):
             "ABSTAIN_NO_USABLE_DISPATCH_COUNT_OR_SHARED_CLOCK",
             out["two_known_worlds_consistency_status"])
 
-    def test_05_missing_service_finish_must_not_be_silently_reconstructed(self):
+    def test_05_missing_finish_with_later_start_is_rejected_as_overlap(self):
         rows=deepcopy(self.fixtures[0])
         victim=next(r for r in rows
                     if r["stage"]=="despacho" and
                        r["event_type"]=="servicio_fin")
         rows.remove(victim)
+        # An unfinished service ties up the resource until cutoff; a
+        # subsequent start on that resource contradicts this record.
+        with self.assertRaisesRegex(
+             ValueError,"PILOT_OVERLAPPING_SERVICE_ON_ONE_RESOURCE"):
+            gate.probe(self.p,rows,source_context="synthetic_fixture")
+
+    def test_05b_plausibly_censored_missing_finish_stays_abstention(self):
+        rows=deepcopy(self.fixtures[0])
+        completions=sorted((Q(r["t_minutes_exact"]),r["case_id"])
+                           for r in rows if
+                           r["stage"]=="despacho" and
+                           r["event_type"]=="servicio_fin")
+        last_finish,last_case=completions[-1]
+        # Simulate an incomplete, internally consistent observation:
+        # the last completion vanishes and the next service no longer
+        # starts in the truncated record. POS and queue entrances remain.
+        rows=[r for r in rows if not (
+            r["stage"]=="despacho" and
+            ((r["case_id"]==last_case and
+              r["event_type"]=="servicio_fin") or
+             (r["event_type"] in ("servicio_inicio","servicio_fin")
+              and Q(r["t_minutes_exact"])>=last_finish)))]
         out=gate.probe(self.p,rows,source_context="synthetic_fixture")
         self.assertEqual(3,out["physical_services_completed_pre_cutoff"])
         self.assertEqual("ABSTAIN_NEITHER_KNOWN_HYPOTHESIS_MATCHES",
