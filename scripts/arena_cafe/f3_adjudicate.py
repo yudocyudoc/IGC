@@ -15,7 +15,7 @@ from pathlib import Path
 from scripts.arena_cafe import (
     native_pos_scenario as scenario, native_pos_verify as verifier,
     observation_eval as hj, observation_ports as ports, scoped_memory,
-    f2_physical_controls as physical,
+    f2_physical_controls as physical, m_o1_capacity_certificate,
 )
 from scripts.arena_cafe.native_handoff import need, validate_a1_visible
 from scripts.arena_v0_contract import canonical, digest
@@ -205,10 +205,17 @@ def _native(root,visible,arm,cond):
         need(len(extras)==1 and
              "DISCRETE_COMPLETED_SERVICES" in extras[0].get("limit",""),
              "F3_O1_NOT_MAPPED_SEMANTICALLY")
+        # A necessary physical-capacity implication can be checked without
+        # making the UNVERIFIED discrete-completion vs continuous-flow bridge
+        # into a G3 score or a fitted maxThroughput. O1 is read only here in
+        # the evaluator, not inside the frozen native E1 composer.
+        bound_certificate=m_o1_capacity_certificate.certificate(
+            visible,manifest["candidate"])
         m["preparation"]={
             "observed":extras[0]["observed_orders"],
             "model_integrated_flow":extras[0]["native_prediction"],
-            "status":"PROVISIONAL_NON_EQUIVALENT_MEASUREMENT_NO_G3_SCORE"}
+            "status":"PROVISIONAL_NON_EQUIVALENT_MEASUREMENT_NO_G3_SCORE",
+            "conditional_original_E1_bound":bound_certificate}
     else:
         need(not extras,"F3_ILLEGITIMATE_PHYSICAL_MEASUREMENT")
     return {
@@ -220,6 +227,8 @@ def _native(root,visible,arm,cond):
         "interface_POS":"SUPPORTED_AND_CONSUMED_BY_DECLARED_STIMULUS",
         "generator_evidence_consumed":["pos_arrival_events"],
         "O1_extra_preparation_used_to_construct_native_model":False,
+        "O1_extra_preparation_used_for_conditional_bound_audit":
+            arm=="M" and cond=="O1",
         "O1_extra_preparation_role":"NOT_AVAILABLE"
             if cond=="O0" else (
                 "EVALUATOR_HJ_PROVISIONAL_NON_EQUIVALENT"
@@ -313,6 +322,9 @@ def adjudicate(visible, roots, workers, f2):
         "native_condition_fidelity":condition_fidelity,
         "O1_additional_evidence_consumed_by_D_M_generator":False,
         "O1_extra_preparation_only_in_evaluator_HJ_for_M":True,
+        "M_O1_fixed_E1_candidate_necessary_bound_audited":True,
+        "M_O1_discrete_to_continuous_bridge":"NOT_EMPIRICALLY_VERIFIED",
+        "M_O1_model_generation_or_calibration_from_extra_evidence":"NOT_RUN",
         "O1_native_assimilation":"NOT_DEMONSTRATED",
         "A1_B_MOCK_ORIGINAL_ENGINE":"TRANSPORT_ONLY_NOT_SCIENTIFIC_CONSUMPTION",
         "physical_evaluator_reference":{
