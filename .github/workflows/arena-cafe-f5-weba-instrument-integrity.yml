@@ -178,6 +178,26 @@ jobs:
               "shift_minutes_AFTER_latest_Tapo_export_cannot_have_been_collected"]>3.9
           assert [r["by_shift"][s]["Tapo_all_ten_sensor_original_snapshot_count"]
                   for s in shifts]==[911,888,889]
+          def sensor_total(record,category):
+              return sum(v[category] for v in record[
+                  "Tapo_pulses_four_sensors_by_relative_shift_position"].values())
+          assert [sensor_total(r["by_shift"][s],"before_shift")
+                  for s in shifts]==[12,353,226]
+          assert [sensor_total(r["by_shift"][s],"inside_shift_pre_export")
+                  for s in shifts]==[638,307,478]
+          assert [sensor_total(r["by_shift"][s],"after_shift")
+                  for s in shifts]==[17,0,0]
+          assert [r["by_shift"][s][
+                  "count_declared_shift_cells_with_Tapo_and_zero_POS"]
+                  for s in shifts]==[2,2,3]
+          assert [r["by_shift"][s][
+                  "POS_received_orders_UTC_as_written_sensitivity"][
+                      "inside_shift_pre_export"]
+                  for s in shifts]==[25,6,13]
+          assert r["by_shift"]["20240308_evening"][
+              "half_hour_cells"][9][
+                  "temporal_evidence_status"]==(
+                  "SHIFT_PARTLY_AFTER_TAPO_EXPORT_CANNOT_OBSERVE_TAIL")
           for shift in shifts:
               record=r["by_shift"][shift]
               assert not record["Tapo_coverage_continuity_verified"]
