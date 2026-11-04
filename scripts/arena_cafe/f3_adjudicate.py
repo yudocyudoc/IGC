@@ -42,6 +42,53 @@ def _rmse(rows):
     return math.sqrt(sum(x["residual_orders"]**2 for x in rows)/len(rows))
 
 
+def compare_native_conditions(o0_native, o1_native, arm):
+    """Distinguish a fixed nominal regression from legitimate O1 assimilation.
+
+    Equal POS evidence does NOT generally require equal model scores.
+    In this exact existing D/M native POS benchmark, a byte-identical
+    generated Modelica source with the same deterministic setup should give
+    the same *prediction curve*, within solver numerical tolerance. Different
+    sources could be legitimate once a method consumes O1, but a changed
+    source alone is NOT evidence of such consumption.
+    """
+    need(arm in ("D","M"),"F3_CONDITION_BAD_ARM")
+    for native in (o0_native,o1_native):
+        need(native.get("native_model_sha256") and
+             native.get("full_candidate_hash") and
+             native.get("metrics") and
+             isinstance(native["metrics"].get("delivery_curve_predicted"),list) and
+             len(native["metrics"]["delivery_curve_predicted"])==6,
+             "F3_CONDITION_INCOMPLETE_NATIVE_PROVENANCE")
+    same_source=(o0_native["native_model_sha256"]==
+                 o1_native["native_model_sha256"])
+    same_candidate=(o0_native["full_candidate_hash"]==
+                    o1_native["full_candidate_hash"])
+    need(not same_source or same_candidate,
+         "F3_IDENTICAL_SOURCE_CANDIDATE_INCONSISTENT")
+    delta=max(abs(float(a)-float(b)) for a,b in zip(
+        o0_native["metrics"]["delivery_curve_predicted"],
+        o1_native["metrics"]["delivery_curve_predicted"]))
+    need(math.isfinite(delta),"F3_CONDITION_NONFINITE_FORECAST")
+    if same_source:
+        need(delta<1e-7,"F3_SAME_NATIVE_SOURCE_NUMERIC_REGRESSION_DRIFT")
+    return {
+        "arm_id":arm,
+        "same_native_source_bytes":same_source,
+        "same_original_candidate":same_candidate,
+        "delivery_curve_max_abs_difference_orders":delta,
+        "conditional_O1_generation_use":(
+            "NOT_CONSUMED_IN_IDENTICAL_POS_ONLY_NATIVE_SOURCE"
+            if same_source else
+            "NOT_VERIFIED_BY_SOURCE_DIFFERENCE_REQUIRES_NATIVE_CONSUMPTION_TRACE"),
+        "O1_extra_preparation_in_input_envelope":True,
+        "O1_extra_preparation_not_encoded_by_current_generator":
+            same_source,
+        "equal_scores_are_not_general_condition_criterion":True,
+        "scientific_calibration_or_selection":"NOT_RUN",
+    }
+
+
 def _read_scope(root, visible, arm, cond, run_kind):
     expected=scoped_memory.scope(visible,arm,cond,run_kind)
     prefix="ledger.sqlite" if run_kind=="native" else "scoped-ledger.sqlite"
@@ -171,6 +218,12 @@ def _native(root,visible,arm,cond):
         "G2":"PASS_REAL_OMC_MATERIAL_BALANCE_ENGINEERING",
         "G3":"CONSTRUCTION_DESCRIPTIVE_ONLY_NO_ADMISSIBILITY_THRESHOLD",
         "interface_POS":"SUPPORTED_AND_CONSUMED_BY_DECLARED_STIMULUS",
+        "generator_evidence_consumed":["pos_arrival_events"],
+        "O1_extra_preparation_used_to_construct_native_model":False,
+        "O1_extra_preparation_role":"NOT_AVAILABLE"
+            if cond=="O0" else (
+                "EVALUATOR_HJ_PROVISIONAL_NON_EQUIVALENT"
+                if arm=="M" else "UNSUPPORTED_NATIVE_PORT"),
         "interface_O1_physical":(
             "PARTIALLY_MAPPED_NOT_CALIBRATED"
             if arm=="M" and cond=="O1" else
@@ -236,11 +289,13 @@ def adjudicate(visible, roots, workers, f2):
     need(arms["O0"]["B"]["worker"]["prompt_hashes"]!=
          arms["O1"]["B"]["worker"]["prompt_hashes"],
          "F3_B_MOCK_NOT_CONDITION_DISTINCT")
+    # Model source identity, not equality of RMSE, explains the nominal
+    # O0/O1 similarity. A future method MAY legitimately change its output
+    # after consuming O1; source inequality alone is not consumption proof.
+    condition_fidelity={}
     for arm in ("D","M"):
         a,b=arms["O0"][arm]["native"],arms["O1"][arm]["native"]
-        need(abs(a["metrics"]["delivery_rmse_orders"]-
-                 b["metrics"]["delivery_rmse_orders"])<1e-7,
-             "F3_SAME_PUBLIC_POS_PRODUCED_UNEXPLAINED_DIFFERENCE")
+        condition_fidelity[arm]=compare_native_conditions(a,b,arm)
     distinct_case_ids=[arms[c][a]["worker"]["memory"]["case_id"]
                        for c in CONDITIONS for a in ARMS]
     distinct_case_ids +=[arms[c][a]["native"]["memory"]["case_id"]
@@ -255,6 +310,10 @@ def adjudicate(visible, roots, workers, f2):
         "CONDITION-01":"PARTIAL_APP_ISOLATION_NOT_GITHUB_ACL",
         "MEMORY-01":"PARTIAL_ORIGINAL_LEDGER_PER_SCOPE_RECONSTRUCTED",
         "interface_shared_POS":"SUPPORTED_AND_USED_IN_D_M_INPUT",
+        "native_condition_fidelity":condition_fidelity,
+        "O1_additional_evidence_consumed_by_D_M_generator":False,
+        "O1_extra_preparation_only_in_evaluator_HJ_for_M":True,
+        "O1_native_assimilation":"NOT_DEMONSTRATED",
         "A1_B_MOCK_ORIGINAL_ENGINE":"TRANSPORT_ONLY_NOT_SCIENTIFIC_CONSUMPTION",
         "physical_evaluator_reference":{
             "B0":"SAME_PUBLIC_OBSERVATIONS",
