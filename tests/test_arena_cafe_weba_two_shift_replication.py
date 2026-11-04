@@ -130,7 +130,13 @@ class ReplicationContracts(unittest.TestCase):
             r.SHIFTS[1],{"total":0,"missing":0,"clocks":[]},fake_log())
         self.assertEqual(0,item["pos_rows_in_shift"])
         self.assertEqual(0,item["bins_with_POS_orders"])
-        self.assertTrue(item["bins_with_sensor_pulses_but_zero_pos_orders"]>0)
+        # This fixture deliberately contains March 4 sensor timestamps
+        # while asking about March 8. They must be preserved OUTSIDE
+        # the March 8 grid, not silently shifted to fabricate activity.
+        self.assertEqual(0,item["bins_with_sensor_pulses_but_zero_pos_orders"])
+        self.assertEqual(
+            1,item["tapo_selected_sensors_outside_windows"]["front_door"])
+        self.assertEqual(0,item["pos_local_assumption_in_windows"])
 
     def test_06_wrong_clock_ordinal_cannot_be_fit_by_switching_timezone(self):
         shift=r.SHIFTS[0]
