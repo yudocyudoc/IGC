@@ -1,0 +1,201 @@
+event_id,order_id,event_type,activity,resource_type,lower_video_s,upper_video_s,source,view,evidence
+P001-start,P001,start,order_milestone,unassigned,,2,video_visual_review,primary,contactos/P001_01.jpg
+P001-assembly_end,P001,assembly_end,order_milestone,unassigned,56,58,video_visual_review,primary,contactos/P001_01.jpg
+P001-last_product_exit,P001,last_product_exit,order_milestone,unassigned,104,106,video_visual_review,primary,contactos/P001_01.jpg
+P002-start,P002,start,order_milestone,unassigned,104,110,video_visual_review,primary,contactos/P002_01.jpg | contactos/P002_02.jpg
+P002-assembly_end,P002,assembly_end,order_milestone,unassigned,360,370,video_visual_review,primary,contactos/P002_01.jpg | contactos/P002_02.jpg
+P002-last_product_exit,P002,last_product_exit,order_milestone,unassigned,380,390,video_visual_review,primary,contactos/P002_01.jpg | contactos/P002_02.jpg
+P003-start,P003,start,order_milestone,unassigned,380,390,video_visual_review,primary,contactos/P003_01.jpg
+P003-assembly_end,P003,assembly_end,order_milestone,unassigned,480,490,video_visual_review,primary,contactos/P003_01.jpg
+P003-last_product_exit,P003,last_product_exit,order_milestone,unassigned,490,500,video_visual_review,primary,contactos/P003_01.jpg
+P004-start,P004,start,order_milestone,unassigned,500,510,video_visual_review,primary,contactos/P004_01.jpg
+P004-assembly_end,P004,assembly_end,order_milestone,unassigned,560,570,video_visual_review,primary,contactos/P004_01.jpg
+P004-last_product_exit,P004,last_product_exit,order_milestone,unassigned,570,580,video_visual_review,primary,contactos/P004_01.jpg
+P005-start,P005,start,order_milestone,unassigned,570,580,video_visual_review,primary,contactos/P005_01.jpg
+P005-assembly_end,P005,assembly_end,order_milestone,unassigned,620,630,video_visual_review,primary,contactos/P005_01.jpg
+P005-last_product_exit,P005,last_product_exit,order_milestone,unassigned,630,640,video_visual_review,primary,contactos/P005_01.jpg
+P006-start,P006,start,order_milestone,unassigned,630,640,video_visual_review,primary,contactos/P006_01.jpg | finales/finales_01.jpg
+P006-assembly_end,P006,assembly_end,order_milestone,unassigned,774,778,video_visual_review,primary,contactos/P006_01.jpg | finales/finales_01.jpg
+P006-last_product_exit,P006,last_product_exit,order_milestone,unassigned,778,780,video_visual_review,primary,contactos/P006_01.jpg | finales/finales_01.jpg
+P007-start,P007,start,order_milestone,unassigned,780,790,video_visual_review,primary,contactos/P007_01.jpg
+P007-assembly_end,P007,assembly_end,order_milestone,unassigned,850,860,video_visual_review,primary,contactos/P007_01.jpg
+P007-last_product_exit,P007,last_product_exit,order_milestone,unassigned,860,870,video_visual_review,primary,contactos/P007_01.jpg
+P008-start,P008,start,order_milestone,unassigned,860,870,video_visual_review,primary,contactos/P008_01.jpg | finales/finales_01.jpg
+P008-assembly_end,P008,assembly_end,order_milestone,unassigned,934,938,video_visual_review,primary,contactos/P008_01.jpg | finales/finales_01.jpg
+P008-last_product_exit,P008,last_product_exit,order_milestone,unassigned,938,940,video_visual_review,primary,contactos/P008_01.jpg | finales/finales_01.jpg
+P009-start,P009,start,order_milestone,unassigned,940,950,video_visual_review,primary,contactos/P009_01.jpg
+P009-assembly_end,P009,assembly_end,order_milestone,unassigned,980,990,video_visual_review,primary,contactos/P009_01.jpg
+P009-last_product_exit,P009,last_product_exit,order_milestone,unassigned,990,1000,video_visual_review,primary,contactos/P009_01.jpg
+P010-start,P010,start,order_milestone,unassigned,990,1000,video_visual_review,primary,contactos/P010_01.jpg
+P010-assembly_end,P010,assembly_end,order_milestone,unassigned,1070,1080,video_visual_review,primary,contactos/P010_01.jpg
+P010-last_product_exit,P010,last_product_exit,order_milestone,unassigned,1080,1090,video_visual_review,primary,contactos/P010_01.jpg
+P011-start,P011,start,order_milestone,unassigned,1080,1090,video_visual_review,primary,contactos/P011_01.jpg
+P011-assembly_end,P011,assembly_end,order_milestone,unassigned,1130,1140,video_visual_review,primary,contactos/P011_01.jpg
+P011-last_product_exit,P011,last_product_exit,order_milestone,unassigned,1140,1150,video_visual_review,primary,contactos/P011_01.jpg
+P012-start,P012,start,order_milestone,unassigned,1140,1150,video_visual_review,primary,contactos/P012_01.jpg | finales/finales_01.jpg
+P012-assembly_end,P012,assembly_end,order_milestone,unassigned,1180,1182,video_visual_review,primary,contactos/P012_01.jpg | finales/finales_01.jpg
+P012-last_product_exit,P012,last_product_exit,order_milestone,unassigned,1182,1184,video_visual_review,primary,contactos/P012_01.jpg | finales/finales_01.jpg
+P013-start,P013,start,order_milestone,unassigned,1180,1190,video_visual_review,primary,contactos/P013_01.jpg | contactos/P013_02.jpg | finales/finales_02.jpg
+P013-assembly_end,P013,assembly_end,order_milestone,unassigned,1330,1332,video_visual_review,primary,contactos/P013_01.jpg | contactos/P013_02.jpg | finales/finales_02.jpg
+P013-last_product_exit,P013,last_product_exit,order_milestone,unassigned,1332,1334,video_visual_review,primary,contactos/P013_01.jpg | contactos/P013_02.jpg | finales/finales_02.jpg
+P014-start,P014,start,order_milestone,unassigned,1350,1360,video_visual_review,primary,contactos/P014_01.jpg
+P014-last_product_exit,P014,last_product_exit,order_milestone,unassigned,1400,1410,video_visual_review,primary,contactos/P014_01.jpg
+P015-start,P015,start,order_milestone,unassigned,1400,1410,video_visual_review,primary,contactos/P015_01.jpg | finales/finales_02.jpg
+P015-assembly_end,P015,assembly_end,order_milestone,unassigned,1470,1472,video_visual_review,primary,contactos/P015_01.jpg | finales/finales_02.jpg
+P015-last_product_exit,P015,last_product_exit,order_milestone,unassigned,1476,1478,video_visual_review,primary,contactos/P015_01.jpg | finales/finales_02.jpg
+P016-start,P016,start,order_milestone,unassigned,1470,1480,video_visual_review,primary,contactos/P016_01.jpg | finales/finales_02.jpg
+P016-last_product_exit,P016,last_product_exit,order_milestone,unassigned,1580,1582,video_visual_review,primary,contactos/P016_01.jpg | finales/finales_02.jpg
+P017-start,P017,start,order_milestone,unassigned,1580,1590,video_visual_review,primary,contactos/P017_01.jpg
+P017-assembly_end,P017,assembly_end,order_milestone,unassigned,1630,1640,video_visual_review,primary,contactos/P017_01.jpg
+P017-last_product_exit,P017,last_product_exit,order_milestone,unassigned,1640,1650,video_visual_review,primary,contactos/P017_01.jpg
+P018-start,P018,start,order_milestone,unassigned,1640,1650,video_visual_review,primary,contactos/P018_01.jpg | finales/finales_03.jpg
+P018-assembly_end,P018,assembly_end,order_milestone,unassigned,1720,1722,video_visual_review,primary,contactos/P018_01.jpg | finales/finales_03.jpg
+P018-last_product_exit,P018,last_product_exit,order_milestone,unassigned,1724,1726,video_visual_review,primary,contactos/P018_01.jpg | finales/finales_03.jpg
+P019-start,P019,start,order_milestone,unassigned,1720,1730,video_visual_review,primary,contactos/P019_01.jpg | contactos/P019_02.jpg | finales/finales_03.jpg
+P019-assembly_end,P019,assembly_end,order_milestone,unassigned,1930,1932,video_visual_review,primary,contactos/P019_01.jpg | contactos/P019_02.jpg | finales/finales_03.jpg
+P019-last_product_exit,P019,last_product_exit,order_milestone,unassigned,1936,1938,video_visual_review,primary,contactos/P019_01.jpg | contactos/P019_02.jpg | finales/finales_03.jpg
+P020-start,P020,start,order_milestone,unassigned,1930,1940,video_visual_review,primary,contactos/P020_01.jpg
+P020-assembly_end,P020,assembly_end,order_milestone,unassigned,2020,2030,video_visual_review,primary,contactos/P020_01.jpg
+P020-last_product_exit,P020,last_product_exit,order_milestone,unassigned,2030,2040,video_visual_review,primary,contactos/P020_01.jpg
+P021-start,P021,start,order_milestone,unassigned,2030,2040,video_visual_review,primary,contactos/P021_01.jpg
+P021-assembly_end,P021,assembly_end,order_milestone,unassigned,2070,2080,video_visual_review,primary,contactos/P021_01.jpg
+P021-last_product_exit,P021,last_product_exit,order_milestone,unassigned,2080,2090,video_visual_review,primary,contactos/P021_01.jpg
+P022-start,P022,start,order_milestone,unassigned,2080,2090,video_visual_review,primary,contactos/P022_01.jpg | finales/finales_03.jpg
+P022-assembly_end,P022,assembly_end,order_milestone,unassigned,2126,2128,video_visual_review,primary,contactos/P022_01.jpg | finales/finales_03.jpg
+P022-last_product_exit,P022,last_product_exit,order_milestone,unassigned,2128,2130,video_visual_review,primary,contactos/P022_01.jpg | finales/finales_03.jpg
+P023-start,P023,start,order_milestone,unassigned,2130,2140,video_visual_review,primary,contactos/P023_01.jpg | finales/finales_04.jpg
+P023-assembly_end,P023,assembly_end,order_milestone,unassigned,2202,2204,video_visual_review,primary,contactos/P023_01.jpg | finales/finales_04.jpg
+P023-last_product_exit,P023,last_product_exit,order_milestone,unassigned,2204,2206,video_visual_review,primary,contactos/P023_01.jpg | finales/finales_04.jpg
+P024-start,P024,start,order_milestone,unassigned,2210,2220,video_visual_review,primary,contactos/P024_01.jpg
+P024-last_product_exit,P024,last_product_exit,order_milestone,unassigned,2290,2300,video_visual_review,primary,contactos/P024_01.jpg
+P025-start,P025,start,order_milestone,unassigned,2290,2300,video_visual_review,primary,contactos/P025_01.jpg
+P025-assembly_end,P025,assembly_end,order_milestone,unassigned,2360,2370,video_visual_review,primary,contactos/P025_01.jpg
+P025-last_product_exit,P025,last_product_exit,order_milestone,unassigned,2370,2380,video_visual_review,primary,contactos/P025_01.jpg
+P026-start,P026,start,order_milestone,unassigned,2380,2390,video_visual_review,primary,contactos/P026_01.jpg
+P026-assembly_end,P026,assembly_end,order_milestone,unassigned,2450,2460,video_visual_review,primary,contactos/P026_01.jpg
+P026-last_product_exit,P026,last_product_exit,order_milestone,unassigned,2460,2470,video_visual_review,primary,contactos/P026_01.jpg
+P027-start,P027,start,order_milestone,unassigned,2460,2470,video_visual_review,primary,contactos/P027_01.jpg
+P027-last_product_exit,P027,last_product_exit,order_milestone,unassigned,2520,2530,video_visual_review,primary,contactos/P027_01.jpg
+P028-start,P028,start,order_milestone,unassigned,2520,2530,video_visual_review,primary,contactos/P028_01.jpg | finales/finales_04.jpg
+P028-assembly_end,P028,assembly_end,order_milestone,unassigned,2600,2602,video_visual_review,primary,contactos/P028_01.jpg | finales/finales_04.jpg
+P028-last_product_exit,P028,last_product_exit,order_milestone,unassigned,2604,2606,video_visual_review,primary,contactos/P028_01.jpg | finales/finales_04.jpg
+P029-start,P029,start,order_milestone,unassigned,2600,2610,video_visual_review,primary,contactos/P029_01.jpg
+P029-assembly_end,P029,assembly_end,order_milestone,unassigned,2680,2690,video_visual_review,primary,contactos/P029_01.jpg
+P029-last_product_exit,P029,last_product_exit,order_milestone,unassigned,2690,2700,video_visual_review,primary,contactos/P029_01.jpg
+P030-start,P030,start,order_milestone,unassigned,2690,2700,video_visual_review,primary,contactos/P030_01.jpg
+P030-assembly_end,P030,assembly_end,order_milestone,unassigned,2740,2750,video_visual_review,primary,contactos/P030_01.jpg
+P030-last_product_exit,P030,last_product_exit,order_milestone,unassigned,2750,2760,video_visual_review,primary,contactos/P030_01.jpg
+P031-start,P031,start,order_milestone,unassigned,2750,2760,video_visual_review,primary,contactos/P031_01.jpg
+P031-assembly_end,P031,assembly_end,order_milestone,unassigned,2880,2890,video_visual_review,primary,contactos/P031_01.jpg
+P031-last_product_exit,P031,last_product_exit,order_milestone,unassigned,2890,2900,video_visual_review,primary,contactos/P031_01.jpg
+P032-start,P032,start,order_milestone,unassigned,2890,2900,video_visual_review,primary,contactos/P032_01.jpg
+P032-assembly_end,P032,assembly_end,order_milestone,unassigned,2960,2970,video_visual_review,primary,contactos/P032_01.jpg
+P032-last_product_exit,P032,last_product_exit,order_milestone,unassigned,2970,2980,video_visual_review,primary,contactos/P032_01.jpg
+P033-start,P033,start,order_milestone,unassigned,2970,2980,video_visual_review,primary,contactos/P033_01.jpg
+P033-assembly_end,P033,assembly_end,order_milestone,unassigned,3040,3050,video_visual_review,primary,contactos/P033_01.jpg
+P033-last_product_exit,P033,last_product_exit,order_milestone,unassigned,3050,3060,video_visual_review,primary,contactos/P033_01.jpg
+P034-start,P034,start,order_milestone,unassigned,3050,3060,video_visual_review,primary,contactos/P034_01.jpg
+P034-assembly_end,P034,assembly_end,order_milestone,unassigned,3070,3080,video_visual_review,primary,contactos/P034_01.jpg
+P034-last_product_exit,P034,last_product_exit,order_milestone,unassigned,3080,3090,video_visual_review,primary,contactos/P034_01.jpg
+P035-start,P035,start,order_milestone,unassigned,3080,3090,video_visual_review,primary,contactos/P035_01.jpg | finales/finales_04.jpg
+P035-last_product_exit,P035,last_product_exit,order_milestone,unassigned,3150,3154,video_visual_review,primary,contactos/P035_01.jpg | finales/finales_04.jpg
+P036-start,P036,start,order_milestone,unassigned,3150,3160,video_visual_review,primary,contactos/P036_01.jpg | finales/finales_05.jpg
+P036-assembly_end,P036,assembly_end,order_milestone,unassigned,3260,3270,video_visual_review,primary,contactos/P036_01.jpg | finales/finales_05.jpg
+P036-last_product_exit,P036,last_product_exit,order_milestone,unassigned,3272,3274,video_visual_review,primary,contactos/P036_01.jpg | finales/finales_05.jpg
+P037-start,P037,start,order_milestone,unassigned,3270,3280,video_visual_review,primary,contactos/P037_01.jpg
+P037-assembly_end,P037,assembly_end,order_milestone,unassigned,3390,3400,video_visual_review,primary,contactos/P037_01.jpg
+P037-last_product_exit,P037,last_product_exit,order_milestone,unassigned,3400,3410,video_visual_review,primary,contactos/P037_01.jpg
+P038-start,P038,start,order_milestone,unassigned,3410,3420,video_visual_review,primary,contactos/P038_01.jpg
+P038-assembly_end,P038,assembly_end,order_milestone,unassigned,3490,3500,video_visual_review,primary,contactos/P038_01.jpg
+P038-last_product_exit,P038,last_product_exit,order_milestone,unassigned,3500,3510,video_visual_review,primary,contactos/P038_01.jpg
+P039-start,P039,start,order_milestone,unassigned,3510,3520,video_visual_review,primary,contactos/P039_01.jpg | contactos/P039_02.jpg | finales/finales_05.jpg
+P039-assembly_end,P039,assembly_end,order_milestone,unassigned,3692,3694,video_visual_review,primary,contactos/P039_01.jpg | contactos/P039_02.jpg | finales/finales_05.jpg
+P039-last_product_exit,P039,last_product_exit,order_milestone,unassigned,3696,3698,video_visual_review,primary,contactos/P039_01.jpg | contactos/P039_02.jpg | finales/finales_05.jpg
+P040-start,P040,start,order_milestone,unassigned,3690,3700,video_visual_review,primary,contactos/P040_01.jpg | finales/finales_05.jpg
+P040-assembly_end,P040,assembly_end,order_milestone,unassigned,3804,3806,video_visual_review,primary,contactos/P040_01.jpg | finales/finales_05.jpg
+P040-last_product_exit,P040,last_product_exit,order_milestone,unassigned,3806,3808,video_visual_review,primary,contactos/P040_01.jpg | finales/finales_05.jpg
+P041-start,P041,start,order_milestone,unassigned,3800,3810,video_visual_review,primary,contactos/P041_01.jpg | finales/finales_06.jpg
+P041-assembly_end,P041,assembly_end,order_milestone,unassigned,3864,3866,video_visual_review,primary,contactos/P041_01.jpg | finales/finales_06.jpg
+P041-last_product_exit,P041,last_product_exit,order_milestone,unassigned,3866,3868,video_visual_review,primary,contactos/P041_01.jpg | finales/finales_06.jpg
+P042-start,P042,start,order_milestone,unassigned,3860,3870,video_visual_review,primary,contactos/P042_01.jpg | finales/finales_06.jpg
+P042-assembly_end,P042,assembly_end,order_milestone,unassigned,3914,3916,video_visual_review,primary,contactos/P042_01.jpg | finales/finales_06.jpg
+P042-last_product_exit,P042,last_product_exit,order_milestone,unassigned,3916,3918,video_visual_review,primary,contactos/P042_01.jpg | finales/finales_06.jpg
+P043-start,P043,start,order_milestone,unassigned,3910,3920,video_visual_review,primary,contactos/P043_01.jpg
+P043-assembly_end,P043,assembly_end,order_milestone,unassigned,3960,3970,video_visual_review,primary,contactos/P043_01.jpg
+P043-last_product_exit,P043,last_product_exit,order_milestone,unassigned,3970,3980,video_visual_review,primary,contactos/P043_01.jpg
+P044-start,P044,start,order_milestone,unassigned,3970,3980,video_visual_review,primary,contactos/P044_01.jpg | finales/finales_06.jpg
+P044-assembly_end,P044,assembly_end,order_milestone,unassigned,4014,4016,video_visual_review,primary,contactos/P044_01.jpg | finales/finales_06.jpg
+P044-last_product_exit,P044,last_product_exit,order_milestone,unassigned,4018,4020,video_visual_review,primary,contactos/P044_01.jpg | finales/finales_06.jpg
+P045-start,P045,start,order_milestone,unassigned,4020,4030,video_visual_review,primary,contactos/P045_01.jpg | finales/finales_07.jpg | finales/P045_adicional.jpg
+P045-assembly_end,P045,assembly_end,order_milestone,unassigned,4142,4144,video_visual_review,primary,contactos/P045_01.jpg | finales/finales_07.jpg | finales/P045_adicional.jpg
+P045-last_product_exit,P045,last_product_exit,order_milestone,unassigned,4144,4146,video_visual_review,primary,contactos/P045_01.jpg | finales/finales_07.jpg | finales/P045_adicional.jpg
+P046-start,P046,start,order_milestone,unassigned,4140,4150,video_visual_review,primary,contactos/P046_01.jpg
+P046-assembly_end,P046,assembly_end,order_milestone,unassigned,4220,4230,video_visual_review,primary,contactos/P046_01.jpg
+P046-last_product_exit,P046,last_product_exit,order_milestone,unassigned,4230,4240,video_visual_review,primary,contactos/P046_01.jpg
+P047-start,P047,start,order_milestone,unassigned,4230,4240,video_visual_review,primary,contactos/P047_01.jpg | contactos/P047_02.jpg
+P047-assembly_end,P047,assembly_end,order_milestone,unassigned,4450,4460,video_visual_review,primary,contactos/P047_01.jpg | contactos/P047_02.jpg
+P047-last_product_exit,P047,last_product_exit,order_milestone,unassigned,4470,4480,video_visual_review,primary,contactos/P047_01.jpg | contactos/P047_02.jpg
+P048-start,P048,start,order_milestone,unassigned,4470,4480,video_visual_review,primary,contactos/P048_01.jpg
+P048-assembly_end,P048,assembly_end,order_milestone,unassigned,4520,4530,video_visual_review,primary,contactos/P048_01.jpg
+P048-last_product_exit,P048,last_product_exit,order_milestone,unassigned,4530,4540,video_visual_review,primary,contactos/P048_01.jpg
+P049-start,P049,start,order_milestone,unassigned,4530,4540,video_visual_review,primary,contactos/P049_01.jpg | contactos/P049_02.jpg | finales/finales_07.jpg
+P049-last_product_exit,P049,last_product_exit,order_milestone,unassigned,4678,4680,video_visual_review,primary,contactos/P049_01.jpg | contactos/P049_02.jpg | finales/finales_07.jpg
+P050-start,P050,start,order_milestone,unassigned,4680,4690,video_visual_review,primary,contactos/P050_01.jpg | finales/finales_07.jpg
+P050-assembly_end,P050,assembly_end,order_milestone,unassigned,4814,4816,video_visual_review,primary,contactos/P050_01.jpg | finales/finales_07.jpg
+P050-last_product_exit,P050,last_product_exit,order_milestone,unassigned,4816,4818,video_visual_review,primary,contactos/P050_01.jpg | finales/finales_07.jpg
+P051-start,P051,start,order_milestone,unassigned,4810,4820,video_visual_review,primary,contactos/P051_01.jpg
+P051-assembly_end,P051,assembly_end,order_milestone,unassigned,4890,4900,video_visual_review,primary,contactos/P051_01.jpg
+P051-last_product_exit,P051,last_product_exit,order_milestone,unassigned,4900,4910,video_visual_review,primary,contactos/P051_01.jpg
+P052-start,P052,start,order_milestone,unassigned,4900,4910,video_visual_review,primary,contactos/P052_01.jpg
+P052-assembly_end,P052,assembly_end,order_milestone,unassigned,5000,5010,video_visual_review,primary,contactos/P052_01.jpg
+P052-last_product_exit,P052,last_product_exit,order_milestone,unassigned,5010,5020,video_visual_review,primary,contactos/P052_01.jpg
+P001-op-01-start,P001,start,preparacion_portafiltro,barista,,2,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-01-end,P001,end,preparacion_portafiltro,barista,10,12,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-02-start,P001,start,acople_y_activacion_grupo,barista,10,12,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-02-end,P001,end,acople_y_activacion_grupo,barista,18,20,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-03-start,P001,start,preparacion_jarra,barista,20,22,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-03-end,P001,end,preparacion_jarra,barista,24,26,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-04-start,P001,start,vaporizado_con_sujecion,barista_y_lanza,24,26,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-04-end,P001,end,vaporizado_con_sujecion,barista_y_lanza,36,38,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-05-start,P001,start,limpieza_lanza_y_acondicionamiento_jarra,barista,38,40,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-05-end,P001,end,limpieza_lanza_y_acondicionamiento_jarra,barista,42,44,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-06-start,P001,start,vertido_montaje,barista,44,46,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-06-end,P001,end,vertido_montaje,barista,56,58,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-07-start,P001,start,manipulacion_portafiltro_posterior,barista,58,60,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-07-end,P001,end,manipulacion_portafiltro_posterior,barista,64,66,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-08-start,P001,start,trasvase_entre_jarras,barista,66,68,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-08-end,P001,end,trasvase_entre_jarras,barista,72,74,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-09-start,P001,start,limpieza_y_rearme_visible,barista,74,76,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-09-end,P001,end,limpieza_y_rearme_visible,barista,92,94,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-10-start,P001,start,retiro_producto,barista,98,100,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P001-op-10-end,P001,end,retiro_producto,barista,104,106,video_visual_review,primary,P001_revision_01.jpg | P001_revision_02.jpg | P001_revision_03.jpg
+P004-steam-01-start,P004,start,vaporizado_con_sujecion,barista_y_lanza,526,530,video_visual_review,primary,vaporizados/P004-steam-01.jpg
+P004-steam-01-end,P004,end,vaporizado_con_sujecion,barista_y_lanza,540,542,video_visual_review,primary,vaporizados/P004-steam-01.jpg
+P006-steam-02-start,P006,start,vaporizado_con_sujecion,barista_y_lanza,660,662,video_visual_review,primary,vaporizados/P006-steam-02.jpg
+P006-steam-02-end,P006,end,vaporizado_con_sujecion,barista_y_lanza,674,676,video_visual_review,primary,vaporizados/P006-steam-02.jpg
+P006-steam-03-start,P006,start,vaporizado_con_sujecion,barista_y_lanza,738,740,video_visual_review,primary,vaporizados/P006-steam-03.jpg
+P006-steam-03-end,P006,end,vaporizado_con_sujecion,barista_y_lanza,752,754,video_visual_review,primary,vaporizados/P006-steam-03.jpg
+P008-steam-04-start,P008,start,vaporizado_con_sujecion,barista_y_lanza,896,898,video_visual_review,primary,vaporizados/P008-steam-04.jpg
+P008-steam-04-end,P008,end,vaporizado_con_sujecion,barista_y_lanza,906,910,video_visual_review,primary,vaporizados/P008-steam-04.jpg
+P025-steam-05-start,P025,start,vaporizado_con_sujecion,barista_y_lanza,2332,2334,video_visual_review,primary,vaporizados/P025-steam-05.jpg
+P025-steam-05-end,P025,end,vaporizado_con_sujecion,barista_y_lanza,2346,2348,video_visual_review,primary,vaporizados/P025-steam-05.jpg
+P035-steam-06-start,P035,start,vaporizado_con_sujecion,barista_y_lanza,3112,3114,video_visual_review,primary,vaporizados/P035-steam-06.jpg
+P035-steam-06-end,P035,end,vaporizado_con_sujecion,barista_y_lanza,3122,3124,video_visual_review,primary,vaporizados/P035-steam-06.jpg
+P036-steam-07-start,P036,start,vaporizado_con_sujecion,barista_y_lanza,3226,3228,video_visual_review,primary,vaporizados/P036-steam-07.jpg
+P036-steam-07-end,P036,end,vaporizado_con_sujecion,barista_y_lanza,3234,3236,video_visual_review,primary,vaporizados/P036-steam-07.jpg
+P039-steam-08-start,P039,start,vaporizado_con_sujecion,barista_y_lanza,3654,3656,video_visual_review,primary,vaporizados/P039-steam-08.jpg
+P039-steam-08-end,P039,end,vaporizado_con_sujecion,barista_y_lanza,3668,3670,video_visual_review,primary,vaporizados/P039-steam-08.jpg
+P045-steam-09-start,P045,start,vaporizado_con_sujecion,barista_y_lanza,4066,4068,video_visual_review,primary,vaporizados/P045-steam-09.jpg
+P045-steam-09-end,P045,end,vaporizado_con_sujecion,barista_y_lanza,4082,4086,video_visual_review,primary,vaporizados/P045-steam-09.jpg
+P045-steam-10-start,P045,start,vaporizado_con_sujecion,barista_y_lanza,4110,4112,video_visual_review,primary,vaporizados/P045-steam-10.jpg
+P045-steam-10-end,P045,end,vaporizado_con_sujecion,barista_y_lanza,4124,4128,video_visual_review,primary,vaporizados/P045-steam-10.jpg
+P047-steam-11-start,P047,start,vaporizado_con_sujecion,barista_y_lanza,4366,4368,video_visual_review,primary,vaporizados/P047-steam-11.jpg
+P047-steam-11-end,P047,end,vaporizado_con_sujecion,barista_y_lanza,4382,4384,video_visual_review,primary,vaporizados/P047-steam-11.jpg
+P047-steam-12-start,P047,start,vaporizado_con_sujecion,barista_y_lanza,4420,4422,video_visual_review,primary,vaporizados/P047-steam-12.jpg
+P047-steam-12-end,P047,end,vaporizado_con_sujecion,barista_y_lanza,4432,4436,video_visual_review,primary,vaporizados/P047-steam-12.jpg
+P049-steam-13-start,P049,start,vaporizado_con_sujecion,barista_y_lanza,4640,4642,video_visual_review,primary,vaporizados/P049-steam-13.jpg
+P049-steam-13-end,P049,end,vaporizado_con_sujecion,barista_y_lanza,4652,4654,video_visual_review,primary,vaporizados/P049-steam-13.jpg
+P050-steam-14-start,P050,start,vaporizado_con_sujecion,barista_y_lanza,4768,4770,video_visual_review,primary,vaporizados/P050-steam-14.jpg
+P050-steam-14-end,P050,end,vaporizado_con_sujecion,barista_y_lanza,4782,4784,video_visual_review,primary,vaporizados/P050-steam-14.jpg
+P051-steam-15-start,P051,start,vaporizado_con_sujecion,barista_y_lanza,4846,4848,video_visual_review,primary,vaporizados/P051-steam-15.jpg
+P051-steam-15-end,P051,end,vaporizado_con_sujecion,barista_y_lanza,4862,4864,video_visual_review,primary,vaporizados/P051-steam-15.jpg

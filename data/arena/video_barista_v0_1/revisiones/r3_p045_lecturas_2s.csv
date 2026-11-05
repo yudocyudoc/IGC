@@ -1,0 +1,70 @@
+<PARSED TEXT FOR SHEET: 1 / 1 TABS
+TAB NAME: lecturas_cada_2s_p045.csv>index,video_second,case,frame_path,barista_label,barista_visibility,pitcher_at_wand_visible,visually_mounted_cups_minimum,can_claim_machine_on,can_claim_barista_idle,certainty,notes
+0,4018,P045_contextual,P045_continuo_2s/fotogramas/04018.jpg,transicion_manos_estacion,parcial,no,0,NO,NO,descriptive_video_frame_only,ambiguo P044/P045
+1,4020,P045_contextual,P045_continuo_2s/fotogramas/04020.jpg,transicion_manos_estacion,parcial,no,0,NO,NO,descriptive_video_frame_only,ambiguo P044/P045
+2,4022,P045_contextual,P045_continuo_2s/fotogramas/04022.jpg,transicion_manos_estacion,parcial,no,0,NO,NO,descriptive_video_frame_only,ambiguo P044/P045
+3,4024,P045_contextual,P045_continuo_2s/fotogramas/04024.jpg,transicion_manos_estacion,parcial,no,0,NO,NO,descriptive_video_frame_only,ambiguo P044/P045
+4,4026,P045_contextual,P045_continuo_2s/fotogramas/04026.jpg,accion_izquierda_parcialmente_oculta,parcial,no,0,NO,NO,descriptive_video_frame_only,actividad indeterminada
+5,4028,P045_contextual,P045_continuo_2s/fotogramas/04028.jpg,accion_izquierda_parcialmente_oculta,parcial,no,0,NO,NO,descriptive_video_frame_only,actividad indeterminada
+6,4030,P045_contextual,P045_continuo_2s/fotogramas/04030.jpg,accion_izquierda_parcialmente_oculta,parcial,no,0,NO,NO,descriptive_video_frame_only,actividad indeterminada
+7,4032,P045_contextual,P045_continuo_2s/fotogramas/04032.jpg,manipulacion_herrajes_portafiltro,parcial,no,0,NO,NO,descriptive_video_frame_only,manos cerca de portafiltro/tamping
+8,4034,P045_contextual,P045_continuo_2s/fotogramas/04034.jpg,manipulacion_herrajes_portafiltro,parcial,no,0,NO,NO,descriptive_video_frame_only,manos cerca de portafiltro/tamping
+9,4036,P045_contextual,P045_continuo_2s/fotogramas/04036.jpg,manipulacion_herrajes_portafiltro,parcial,no,0,NO,NO,descriptive_video_frame_only,manos cerca de portafiltro/tamping
+10,4038,P045_contextual,P045_continuo_2s/fotogramas/04038.jpg,manipulacion_herrajes_portafiltro,parcial,no,0,NO,NO,descriptive_video_frame_only,manos cerca de portafiltro/tamping
+11,4040,P045_contextual,P045_continuo_2s/fotogramas/04040.jpg,acople_o_manipulacion_grupo,visible,no,0,NO,NO,descriptive_video_frame_only,contacto con grupo
+12,4042,P045_contextual,P045_continuo_2s/fotogramas/04042.jpg,recipiente_debajo_grupo_actividad_no_medida,parcial,no,0,NO,NO,descriptive_video_frame_only,"taza bajo grupo, bomba no verificable"
+13,4044,P045_contextual,P045_continuo_2s/fotogramas/04044.jpg,recipiente_debajo_grupo_actividad_no_medida,parcial,no,0,NO,NO,descriptive_video_frame_only,"taza bajo grupo, bomba no verificable"
+14,4046,P045_contextual,P045_continuo_2s/fotogramas/04046.jpg,recipiente_debajo_grupo_actividad_no_medida,parcial,no,0,NO,NO,descriptive_video_frame_only,"taza bajo grupo, bomba no verificable"
+15,4048,P045_contextual,P045_continuo_2s/fotogramas/04048.jpg,recipiente_debajo_grupo_actividad_no_medida,parcial,no,0,NO,NO,descriptive_video_frame_only,"taza bajo grupo, bomba no verificable"
+16,4050,P045_contextual,P045_continuo_2s/fotogramas/04050.jpg,posicionamiento_taza_y_jarra,visible,no,0,NO,NO,descriptive_video_frame_only,taza negra y jarra metálica sobre superficie
+17,4052,P045_contextual,P045_continuo_2s/fotogramas/04052.jpg,posicionamiento_taza_y_jarra,visible,no,0,NO,NO,descriptive_video_frame_only,taza negra y jarra metálica sobre superficie
+18,4054,P045_contextual,P045_continuo_2s/fotogramas/04054.jpg,manipulacion_en_estacion_izquierda,parcial,no,0,NO,NO,descriptive_video_frame_only,recursos adicionales no verificables
+19,4056,P045_contextual,P045_continuo_2s/fotogramas/04056.jpg,manipulacion_en_estacion_izquierda,parcial,no,0,NO,NO,descriptive_video_frame_only,recursos adicionales no verificables
+20,4058,P045_contextual,P045_continuo_2s/fotogramas/04058.jpg,manipulacion_en_estacion_izquierda,parcial,no,0,NO,NO,descriptive_video_frame_only,recursos adicionales no verificables
+21,4060,P045_contextual,P045_continuo_2s/fotogramas/04060.jpg,manipulacion_en_estacion_izquierda,parcial,no,0,NO,NO,descriptive_video_frame_only,recursos adicionales no verificables
+22,4062,P045_contextual,P045_continuo_2s/fotogramas/04062.jpg,preparacion_jarra_y_control_estacion,visible,aproximacion,0,NO,NO,descriptive_video_frame_only,cambio de utensilios
+23,4064,P045_contextual,P045_continuo_2s/fotogramas/04064.jpg,preparacion_jarra_y_control_estacion,visible,aproximacion,0,NO,NO,descriptive_video_frame_only,cambio de utensilios
+24,4066,P045_contextual,P045_continuo_2s/fotogramas/04066.jpg,preparacion_jarra_y_control_estacion,visible,aproximacion,0,NO,NO,descriptive_video_frame_only,cambio de utensilios
+25,4068,P045_contextual,P045_continuo_2s/fotogramas/04068.jpg,preparacion_jarra_y_control_estacion,visible,aproximacion,0,NO,NO,descriptive_video_frame_only,cambio de utensilios
+26,4070,P045_contextual,P045_continuo_2s/fotogramas/04070.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+27,4072,P045_contextual,P045_continuo_2s/fotogramas/04072.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+28,4074,P045_contextual,P045_continuo_2s/fotogramas/04074.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+29,4076,P045_contextual,P045_continuo_2s/fotogramas/04076.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+30,4078,P045_contextual,P045_continuo_2s/fotogramas/04078.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+31,4080,P045_contextual,P045_continuo_2s/fotogramas/04080.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+32,4082,P045_contextual,P045_continuo_2s/fotogramas/04082.jpg,jarra_sostenida_bajo_lanza,visible,si,0,NO,NO,descriptive_video_frame_only,no se confirma vapor efectivo
+33,4084,P045_contextual,P045_continuo_2s/fotogramas/04084.jpg,jarra_sostenida_y_control,visible,si,0,NO,NO,descriptive_video_frame_only,mano hacia mando
+34,4086,P045_contextual,P045_continuo_2s/fotogramas/04086.jpg,retirada_jarra_y_manipulacion,visible,no,0,NO,NO,descriptive_video_frame_only,acondicionamiento no distinguible
+35,4088,P045_contextual,P045_continuo_2s/fotogramas/04088.jpg,retirada_jarra_y_manipulacion,visible,no,0,NO,NO,descriptive_video_frame_only,acondicionamiento no distinguible
+36,4090,P045_contextual,P045_continuo_2s/fotogramas/04090.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+37,4092,P045_contextual,P045_continuo_2s/fotogramas/04092.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+38,4094,P045_contextual,P045_continuo_2s/fotogramas/04094.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+39,4096,P045_contextual,P045_continuo_2s/fotogramas/04096.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+40,4098,P045_contextual,P045_continuo_2s/fotogramas/04098.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+41,4100,P045_contextual,P045_continuo_2s/fotogramas/04100.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+42,4102,P045_contextual,P045_continuo_2s/fotogramas/04102.jpg,actividad_fuera_de_region_observable,oculto,no,0,NO,NO,descriptive_video_frame_only,no equivale a inactividad
+43,4104,P045_contextual,P045_continuo_2s/fotogramas/04104.jpg,colocacion_producto_en_zona_visible,visible,no,0,NO,NO,descriptive_video_frame_only,taza aparece desde lateral
+44,4106,P045_contextual,P045_continuo_2s/fotogramas/04106.jpg,taza_con_montaje_visible,visible,no,1,NO,NO,descriptive_video_frame_only,primera taza montada; no entrega
+45,4108,P045_contextual,P045_continuo_2s/fotogramas/04108.jpg,vertido_de_envase_a_jarra,visible,no,1,NO,NO,descriptive_video_frame_only,ingrediente/dosis no medidos
+46,4110,P045_contextual,P045_continuo_2s/fotogramas/04110.jpg,vertido_de_envase_a_jarra,visible,no,1,NO,NO,descriptive_video_frame_only,ingrediente/dosis no medidos
+47,4112,P045_contextual,P045_continuo_2s/fotogramas/04112.jpg,aproximacion_segunda_jarra_lanza,visible,aproximacion,1,NO,NO,descriptive_video_frame_only,primer producto sigue en mesa
+48,4114,P045_contextual,P045_continuo_2s/fotogramas/04114.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+49,4116,P045_contextual,P045_continuo_2s/fotogramas/04116.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+50,4118,P045_contextual,P045_continuo_2s/fotogramas/04118.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+51,4120,P045_contextual,P045_continuo_2s/fotogramas/04120.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+52,4122,P045_contextual,P045_continuo_2s/fotogramas/04122.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+53,4124,P045_contextual,P045_continuo_2s/fotogramas/04124.jpg,jarra_sostenida_bajo_lanza,visible,si,1,NO,NO,descriptive_video_frame_only,primera taza visible; no vapor confirmado
+54,4126,P045_contextual,P045_continuo_2s/fotogramas/04126.jpg,jarra_sostenida_y_control,visible,si,1,NO,NO,descriptive_video_frame_only,mano hacia mando
+55,4128,P045_contextual,P045_continuo_2s/fotogramas/04128.jpg,retirada_segunda_jarra,visible,no,1,NO,NO,descriptive_video_frame_only,primera taza visible
+56,4130,P045_contextual,P045_continuo_2s/fotogramas/04130.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+57,4132,P045_contextual,P045_continuo_2s/fotogramas/04132.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+58,4134,P045_contextual,P045_continuo_2s/fotogramas/04134.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+59,4136,P045_contextual,P045_continuo_2s/fotogramas/04136.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+60,4138,P045_contextual,P045_continuo_2s/fotogramas/04138.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+61,4140,P045_contextual,P045_continuo_2s/fotogramas/04140.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+62,4142,P045_contextual,P045_continuo_2s/fotogramas/04142.jpg,actividad_fuera_de_region_observable,oculto,no,1,NO,NO,descriptive_video_frame_only,"primera taza visible en mesa, no confirmar montaje segunda"
+63,4144,P045_contextual,P045_continuo_2s/fotogramas/04144.jpg,dos_tazas_montadas_simultaneas,visible,no,2,NO,NO,descriptive_video_frame_only,ambas tazas en mesa; vínculo a pedido contextual
+64,4146,P045_contextual,P045_continuo_2s/fotogramas/04146.jpg,retirada_de_tazas_del_encuadre,parcial,no,0,NO,NO,descriptive_video_frame_only,"ausencia observada, no entrega"
+65,4148,P045_contextual,P045_continuo_2s/fotogramas/04148.jpg,manipulacion_estacion_transicion_siguiente,parcial,no,0,NO,NO,descriptive_video_frame_only,puede ser P046
+66,4150,P045_contextual,P045_continuo_2s/fotogramas/04150.jpg,manipulacion_estacion_transicion_siguiente,parcial,no,0,NO,NO,descriptive_video_frame_only,puede ser P046
+67,4152,P045_contextual,P045_continuo_2s/fotogramas/04152.jpg,manipulacion_estacion_transicion_siguiente,parcial,no,0,NO,NO,descriptive_video_frame_only,puede ser P046

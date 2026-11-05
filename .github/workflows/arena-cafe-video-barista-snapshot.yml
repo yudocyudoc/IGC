@@ -1,0 +1,17 @@
+name: Arena cafe video barista snapshot (data-only)
+on:
+  pull_request:
+    paths:
+      - 'data/arena/video_barista_v0_1/**'
+      - 'tests/test_arena_cafe_video_barista_snapshot.py'
+      - '.github/workflows/arena-cafe-video-barista-snapshot.yml'
+  workflow_dispatch:
+jobs:
+  data_integrity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify data-only invariants (no video required)
+        run: python -m unittest discover -s tests -p test_arena_cafe_video_barista_snapshot.py -v
