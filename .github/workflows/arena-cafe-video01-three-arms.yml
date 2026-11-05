@@ -1,0 +1,25 @@
+name: Arena Cafe Video 01 - D B M observational compatibility
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/video01/**'
+      - 'data/arena/video_barista_v0_1/**'
+      - '.github/workflows/arena-cafe-video01-three-arms.yml'
+  workflow_dispatch:
+jobs:
+  three_native_boundaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and run all three native method boundaries
+        run: |
+          python -m unittest discover -s experiments/cafeteria/video01 -p 'test_*.py' -v
+          python -m experiments.cafeteria.video01.run --out artifacts/caf-video-01
+      - name: Preserve 3-arm diagnostic and F1a ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf-video-01-three-arms-observational
+          path: artifacts/caf-video-01/
+          retention-days: 30

@@ -1,0 +1,31 @@
+name: Arena cafe video barista snapshot (data-only)
+on:
+  pull_request:
+    paths:
+      - 'data/arena/video_barista_v0_1/**'
+      - 'docs/arena_cafe/video_barista_v0_1/**'
+      - 'scripts/arena_cafe/validar_anotaciones_video_v0_1.py'
+      - 'scripts/arena_cafe/generar_paquete_ciego_v0_1.py'
+      - 'scripts/arena_cafe/comparar_doble_anotacion_v0_1.py'
+      - 'tests/test_arena_cafe_video_*.py'
+      - '.github/workflows/arena-cafe-video-barista-snapshot.yml'
+  workflow_dispatch:
+jobs:
+  data_integrity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned JSON Schema validator
+        run: python -m pip install 'jsonschema==4.25.1'
+      - name: Original snapshot integrity
+        run: python -m unittest discover -s tests -p test_arena_cafe_video_barista_snapshot.py -v
+      - name: Observational contract semantic gates
+        run: python -m unittest discover -s tests -p test_arena_cafe_video_contract.py -v
+      - name: Blind comparison no-data gates (synthetic tests)
+        run: python -m unittest discover -s tests -p test_arena_cafe_video_doble_anotacion.py -v
+      - name: Compile reproducible blind pack generator (no MP4 in repo)
+        run: python -m py_compile scripts/arena_cafe/generar_paquete_ciego_v0_1.py
+      - name: Validate 7 prior examples without video
+        run: python scripts/arena_cafe/validar_anotaciones_video_v0_1.py data/arena/video_barista_v0_1/contrato/ejemplos_p031_p045_v0_1.jsonl

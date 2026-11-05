@@ -1,0 +1,4 @@
+case,observable,observed_times_video_s,last_counterevidence_time_video_s,evidence,interpretation
+P004,vaso_apoyado_y_visible,"562,566,568,570",572,s00562.jpg;s00570.jpg;s00572.jpg,Vaso aparece en mostrador; deja de verse entre 570 y 572; no es entrega observada
+P045,taza_con_montaje_visible_mientras_sujeta_otra_jarra,"4114,4118,4122,4124,4126",,s04114.jpg;s04122.jpg;s04126.jpg,Taza con dibujo visible sobre mostrador durante otra operación; no se presupone continuidad entre muestras ni cliente
+P045,dos_tazas_con_montaje_visibles,4144,,s04144.jpg,Coexistencia visible de dos productos montados en el área de trabajo; asociación con lote contextual

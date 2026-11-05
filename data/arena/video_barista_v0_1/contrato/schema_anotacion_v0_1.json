@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/igc-arena-video-annot-v0.1.schema.json",
+  "title": "IGC Arena: anotación observacional de video v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_code",
+    "kind",
+    "claim_level",
+    "observation",
+    "time",
+    "region_id",
+    "entities",
+    "resources",
+    "evidence",
+    "provenance",
+    "review"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "igc-arena-video-annotation/0.1"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_code": {
+      "enum": [
+        "objeto_visible_en_region",
+        "recipiente_con_contenido_visible",
+        "recipiente_estacionado_muestra",
+        "superficie_montada_visible",
+        "recipiente_bajo_grupo_visible",
+        "jarra_proxima_a_lanza_visible",
+        "barista_visibilidad_parcial",
+        "minimo_recipientes_con_contenido",
+        "barista_manipula_objeto_visible",
+        "barista_interactua_con_equipo_visible",
+        "liquido_vertido_visible",
+        "mezcla_manual_visible",
+        "accesorio_colocado_visible",
+        "objeto_desplazado_visible",
+        "objeto_aparece_en_region",
+        "objeto_deja_de_verse_en_region",
+        "objeto_cruza_frontera_region",
+        "ultimo_vertido_visible",
+        "montaje_completo_verificado",
+        "jarra_sostenida_junto_a_lanza",
+        "manipulacion_equipo_delimitada",
+        "vapor_activo_verificado",
+        "extraccion_activa_verificada"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "estado",
+        "accion",
+        "transicion",
+        "episodio"
+      ]
+    },
+    "claim_level": {
+      "enum": [
+        "OBSERVADO",
+        "INFERIDO",
+        "HIPOTESIS",
+        "DESCONOCIDO"
+      ]
+    },
+    "observation": {
+      "type": "string",
+      "minLength": 5
+    },
+    "time": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sampleTime"
+        },
+        {
+          "$ref": "#/$defs/transitionTime"
+        },
+        {
+          "$ref": "#/$defs/episodeTime"
+        }
+      ]
+    },
+    "region_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "batch_context": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "batch_link": {
+      "enum": [
+        "none",
+        "contextual_not_POS",
+        "object_trace_verified"
+      ]
+    },
+    "object_track_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "review": {
+      "$ref": "#/$defs/review"
+    },
+    "count_lower_bound": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "quantity_unit": {
+      "type": "string"
+    },
+    "parallel_group": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_annotation_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_criterion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "continuity_status": {
+      "enum": [
+        "sampled_only",
+        "episode_bounded_not_continuous",
+        "continuous_video_manually_verified",
+        "unknown"
+      ]
+    }
+  },
+  "$defs": {
+    "sampleTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "samples_video_s"
+      ],
+      "properties": {
+        "mode": {
+          "const": "sample"
+        },
+        "samples_video_s": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "transitionTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "last_state_video_s",
+        "first_new_state_video_s",
+        "transition_in"
+      ],
+      "properties": {
+        "mode": {
+          "const": "transition"
+        },
+        "last_state_video_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "first_new_state_video_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "transition_in": {
+          "const": "(last_state, first_new_state]"
+        }
+      }
+    },
+    "episodeTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "start_video_s",
+        "end_video_s",
+        "censoring"
+      ],
+      "properties": {
+        "mode": {
+          "const": "episode"
+        },
+        "start_video_s": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/interval"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end_video_s": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/interval"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "censoring": {
+          "enum": [
+            "bounded",
+            "left_censored",
+            "right_censored",
+            "both_censored",
+            "missing_endpoint"
+          ]
+        }
+      }
+    },
+    "interval": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_video_s",
+        "source_path"
+      ],
+      "properties": {
+        "frame_video_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_video_sha256",
+        "view",
+        "clock",
+        "physical_clock_verified",
+        "continuous_recording_verified"
+      ],
+      "properties": {
+        "source_video_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "view": {
+          "const": "principal"
+        },
+        "clock": {
+          "const": "video_presentation_time_s"
+        },
+        "physical_clock_verified": {
+          "type": "boolean"
+        },
+        "continuous_recording_verified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "reviewer_independent",
+        "certainty_qualitative",
+        "adjudication"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "visual_manual",
+            "visual_assisted",
+            "instrumented"
+          ]
+        },
+        "reviewer_independent": {
+          "type": "boolean"
+        },
+        "certainty_qualitative": {
+          "enum": [
+            "alta",
+            "media",
+            "baja",
+            "indeterminada"
+          ]
+        },
+        "adjudication": {
+          "enum": [
+            "provisional",
+            "revisar",
+            "aceptado_en_revisión",
+            "descartado"
+          ]
+        }
+      }
+    }
+  }
+}

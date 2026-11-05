@@ -1,0 +1,804 @@
+{
+  "schema": "igc-displayed-orders-visual-review/0.1",
+  "reviewer": "Codex assistant, visual inspection of evidence crops; not an independent audit",
+  "meaning": "Displayed ORDER batches. Not certified POS transactions, physical arrival times, completion or delivery events.",
+  "reviewed_contact_pages": [
+    "pedidos_provisional/revision_01.jpg",
+    "pedidos_provisional/revision_02.jpg",
+    "pedidos_provisional/revision_03.jpg",
+    "pedidos_provisional_completo/revision_04.jpg",
+    "pedidos_provisional_completo/revision_05.jpg",
+    "pedidos_provisional_completo/revision_06.jpg"
+  ],
+  "orders": [
+    {
+      "first_seen_video_s": 10.0,
+      "last_seen_video_s": 100.0,
+      "representative_video_s": 60.0,
+      "items": [
+        {
+          "product": "Cappuccino",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 110.0,
+      "last_seen_video_s": 380.0,
+      "representative_video_s": 250.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 3
+        },
+        {
+          "product": "Iced Americano (Decaf)",
+          "quantity": 2
+        },
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Americano (Decaf)",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 390.0,
+      "last_seen_video_s": 490.0,
+      "representative_video_s": 430.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 3
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 500.0,
+      "last_seen_video_s": 570.0,
+      "representative_video_s": 540.0,
+      "items": [
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 580.0,
+      "last_seen_video_s": 620.0,
+      "representative_video_s": 610.0,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Lemon Ginger Tea",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 640.0,
+      "last_seen_video_s": 770.0,
+      "representative_video_s": 710.0,
+      "items": [
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 790.0,
+      "last_seen_video_s": 850.0,
+      "representative_video_s": 820.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 870.0,
+      "last_seen_video_s": 930.0,
+      "representative_video_s": 900.0,
+      "items": [
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 950.0,
+      "last_seen_video_s": 990.0,
+      "representative_video_s": 970.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1000.0,
+      "last_seen_video_s": 1080.0,
+      "representative_video_s": 1040.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 2
+        }
+      ],
+      "notes": [
+        "La cantidad cambia de 1 a 2 sin reset de marca visible en los extremos inspeccionados: podr?a ser actualizaci?n del pedido previo o pedido nuevo."
+      ],
+      "boundary_identity_status": "possible_update_or_new_order"
+    },
+    {
+      "first_seen_video_s": 1090.0,
+      "last_seen_video_s": 1140.0,
+      "representative_video_s": 1120.0,
+      "items": [
+        {
+          "product": "Iced Americano (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1150.0,
+      "last_seen_video_s": 1180.0,
+      "representative_video_s": 1170.0,
+      "items": [
+        {
+          "product": "Iced Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1190.0,
+      "last_seen_video_s": 1330.0,
+      "representative_video_s": 1260.0,
+      "items": [
+        {
+          "product": "Iced Americano (Decaf)",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Americano (1 Shot)",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Flat White",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1340.0,
+      "last_seen_video_s": 1400.0,
+      "representative_video_s": 1370.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1410.0,
+      "last_seen_video_s": 1470.0,
+      "representative_video_s": 1440.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Americano (1 Shot)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1480.0,
+      "last_seen_video_s": 1580.0,
+      "representative_video_s": 1530.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 2
+        },
+        {
+          "product": "Iced Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1590.0,
+      "last_seen_video_s": 1640.0,
+      "representative_video_s": 1620.0,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1650.0,
+      "last_seen_video_s": 1720.0,
+      "representative_video_s": 1690.0,
+      "items": [
+        {
+          "product": "Iced Latte",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1730.0,
+      "last_seen_video_s": 1930.0,
+      "representative_video_s": 1840.0,
+      "items": [
+        {
+          "product": "Iced Latte",
+          "quantity": 1
+        },
+        {
+          "product": "Affogato",
+          "quantity": 2
+        },
+        {
+          "product": "Ice Cream with Strawberry Syrup",
+          "quantity": 1
+        },
+        {
+          "product": "Red Bean Ice Cream",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 1940.0,
+      "last_seen_video_s": 2030.0,
+      "representative_video_s": 1990.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2040.0,
+      "last_seen_video_s": 2080.0,
+      "representative_video_s": 2060.0,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2090.0,
+      "last_seen_video_s": 2120.0,
+      "representative_video_s": 2110.0,
+      "items": [
+        {
+          "product": "Iced Americano (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2140.0,
+      "last_seen_video_s": 2200.0,
+      "representative_video_s": 2170.0,
+      "items": [
+        {
+          "product": "Iced Latte",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2210.0,
+      "last_seen_video_s": 2290.0,
+      "representative_video_s": 2250.0,
+      "items": [
+        {
+          "product": "Iced Americano (4 Shots)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2300.0,
+      "last_seen_video_s": 2370.0,
+      "representative_video_s": 2340.0,
+      "items": [
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2380.0,
+      "last_seen_video_s": 2460.0,
+      "representative_video_s": 2420.0,
+      "items": [
+        {
+          "product": "Iced Americano (1 Shot)",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2470.0,
+      "last_seen_video_s": 2520,
+      "representative_video_s": 2520,
+      "items": [
+        {
+          "product": "Hot Americano (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se unieron dos grupos OCR: el texto 10.20.14 pertenece a un envase, no al pedido."
+      ]
+    },
+    {
+      "first_seen_video_s": 2530.0,
+      "last_seen_video_s": 2600.0,
+      "representative_video_s": 2560.0,
+      "items": [
+        {
+          "product": "Iced Flat White",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Chocolate Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2610.0,
+      "last_seen_video_s": 2690.0,
+      "representative_video_s": 2680.0,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Affogato",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2700.0,
+      "last_seen_video_s": 2750.0,
+      "representative_video_s": 2730.0,
+      "items": [
+        {
+          "product": "Iced Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2760.0,
+      "last_seen_video_s": 2890.0,
+      "representative_video_s": 2840.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Black Sesame Cream Latte",
+          "quantity": 1
+        },
+        {
+          "product": "Green Tangerine Ade",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2900.0,
+      "last_seen_video_s": 2970.0,
+      "representative_video_s": 2930.0,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 2980.0,
+      "last_seen_video_s": 3050.0,
+      "representative_video_s": 3020.0,
+      "items": [
+        {
+          "product": "Iced Einspanner (Water Base)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3060.0,
+      "last_seen_video_s": 3080.0,
+      "representative_video_s": 3070.0,
+      "items": [
+        {
+          "product": "Iced Cold Brew Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3090.0,
+      "last_seen_video_s": 3150.0,
+      "representative_video_s": 3120.0,
+      "items": [
+        {
+          "product": "Hot Flat White",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3160.0,
+      "last_seen_video_s": 3270.0,
+      "representative_video_s": 3220.0,
+      "items": [
+        {
+          "product": "Hot Flat White",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Matcha Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se agrega Iced Matcha Latte al panel previo de Hot Flat White sin reset de marca visible: podr?a ser ampliaci?n del pedido previo o pedido nuevo."
+      ],
+      "boundary_identity_status": "possible_update_or_new_order"
+    },
+    {
+      "first_seen_video_s": 3280.0,
+      "last_seen_video_s": 3400.0,
+      "representative_video_s": 3300,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 2
+        },
+        {
+          "product": "Iced Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se unieron lecturas OCR fragmentadas del mismo panel; productos y cantidades revisados visualmente."
+      ]
+    },
+    {
+      "first_seen_video_s": 3420.0,
+      "last_seen_video_s": 3500.0,
+      "representative_video_s": 3420,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "La lectura OCR 7/f del segundo rengl?n se corrigi? a 1 por revisi?n del panel."
+      ]
+    },
+    {
+      "first_seen_video_s": 3520.0,
+      "last_seen_video_s": 3690.0,
+      "representative_video_s": 3530,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 2
+        },
+        {
+          "product": "Hot Americano (0.5 Shot)",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se unieron lecturas OCR fragmentadas del mismo panel; productos y cantidades revisados visualmente."
+      ]
+    },
+    {
+      "first_seen_video_s": 3700.0,
+      "last_seen_video_s": 3800.0,
+      "representative_video_s": 3800,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Americano (Decaf)",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Latte (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se unieron lecturas OCR fragmentadas del mismo panel; productos y cantidades revisados visualmente."
+      ]
+    },
+    {
+      "first_seen_video_s": 3810.0,
+      "last_seen_video_s": 3860.0,
+      "representative_video_s": 3840,
+      "items": [
+        {
+          "product": "Iced Americano (1 Shot)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3870.0,
+      "last_seen_video_s": 3910.0,
+      "representative_video_s": 3890,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3920.0,
+      "last_seen_video_s": 3970.0,
+      "representative_video_s": 3950,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 3980.0,
+      "last_seen_video_s": 4010.0,
+      "representative_video_s": 4000,
+      "items": [
+        {
+          "product": "Iced Flat White (Decaf)",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4030.0,
+      "last_seen_video_s": 4140.0,
+      "representative_video_s": 4090,
+      "items": [
+        {
+          "product": "Hot Latte",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4150.0,
+      "last_seen_video_s": 4230.0,
+      "representative_video_s": 4190,
+      "items": [
+        {
+          "product": "Iced Latte",
+          "quantity": 2
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4240.0,
+      "last_seen_video_s": 4470.0,
+      "representative_video_s": 4260,
+      "items": [
+        {
+          "product": "Iced Latte",
+          "quantity": 2
+        },
+        {
+          "product": "Hot Vanilla Latte",
+          "quantity": 2
+        }
+      ],
+      "notes": [
+        "Se unieron lecturas OCR fragmentadas del mismo panel; productos y cantidades revisados visualmente."
+      ]
+    },
+    {
+      "first_seen_video_s": 4480.0,
+      "last_seen_video_s": 4530.0,
+      "representative_video_s": 4510,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4540.0,
+      "last_seen_video_s": 4680.0,
+      "representative_video_s": 4560,
+      "items": [
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Affogato",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": [
+        "Se unieron lecturas OCR fragmentadas del mismo panel; productos y cantidades revisados visualmente."
+      ]
+    },
+    {
+      "first_seen_video_s": 4690.0,
+      "last_seen_video_s": 4810.0,
+      "representative_video_s": 4750,
+      "items": [
+        {
+          "product": "Black Sesame Cream Latte",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Chocolate Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4820.0,
+      "last_seen_video_s": 4900.0,
+      "representative_video_s": 4860,
+      "items": [
+        {
+          "product": "Hot Ginger Latte",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    },
+    {
+      "first_seen_video_s": 4910.0,
+      "last_seen_video_s": 5010.0,
+      "representative_video_s": 4960,
+      "items": [
+        {
+          "product": "Hot Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Iced Americano",
+          "quantity": 1
+        },
+        {
+          "product": "Hot Green Tangerine Tea",
+          "quantity": 1
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "blank_frames_visually_checked": [
+    0,
+    630,
+    780,
+    860,
+    940,
+    2130,
+    3410,
+    3510,
+    4020,
+    5020
+  ],
+  "blank_evidence": "analisis/sin_ocr_01.jpg",
+  "boundary_evidence": [
+    "analisis/transiciones_con_productos_repetidos_01.jpg",
+    "analisis/transiciones_con_productos_repetidos_02.jpg"
+  ]
+}
