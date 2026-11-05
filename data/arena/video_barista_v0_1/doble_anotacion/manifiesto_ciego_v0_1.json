@@ -1,0 +1,35 @@
+{
+  "schema": "igc-arena-video-double-annotation-admin-manifest/0.1",
+  "source_video_sha256": "cd37c9d3f231f4d307c4f3353ce1dc096fad4185bbdf6ffab06266b9d41290c5",
+  "windows_video_s": {
+    "A": [
+      2350,
+      2470
+    ],
+    "B": [
+      3750,
+      3870
+    ]
+  },
+  "sample_interval_video_s": 2,
+  "samples_per_window": 61,
+  "total_samples": 122,
+  "reviewer_packages_sha256": {
+    "A": "83993e1615be5da6610ff4b6efa897eb47467a2a86c55d3b52db9cd3aa7013f4",
+    "B": "74f77259fb5610ea49f744b9a80904269070773c553d98fd5a6791dfb052db30"
+  },
+  "clips_sha256": {
+    "A": "49201da4f159f5ad9237e18712a5cff55115a61c493b8632dcfd39a9cd1968ef",
+    "B": "33a3c5925ac80296589b7792a91ce91ca74e3f2554db6139cecf7363b34c18c5"
+  },
+  "samples_manifest_sha256": "10480714e08ac3c9b30e322b975cf85438ca9a6b6bbade3e28e158febd9e1195",
+  "public_repository_media_included": false,
+  "blind_reviews_received": 0,
+  "independent_agreement_run": false,
+  "status": "PREPARED_NOT_EXECUTED",
+  "clock_physical_verified": false,
+  "notes": [
+    "Hashes de los ZIP guardados fuera del repositorio. No publicar clips ni fotogramas en GitHub.",
+    "Las zonas negras son evidencia excluida/oculta, nunca vacío físico."
+  ]
+}
