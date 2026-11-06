@@ -111,10 +111,38 @@ jobs:
             'Buffalo_live':'NOT_EXECUTED_IN_THIS_JOB'
           },indent=2)+'\n')
           PY
+      - name: E02 construct D/M comparison with own descriptive feedback and scoped temporal memory
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_continuity_round.py' -v
+          python -m scripts.arena_cafe.continuity_round \
+            --o0 artifacts/e01/public/O0_VISIBLE.json \
+            --o1 artifacts/e01/public/O1_VISIBLE.json \
+            --d-dir artifacts/e01/d --m-dir artifacts/e01/m \
+            --out artifacts/e01/e02
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/e01/e02/report.json")
+          r=json.loads(p.read_text())
+          assert r["status"]=="E02_PARTIAL_B_NOT_RUN_D_M_POLICY_REVIEW_RECORDED"
+          assert r["Buffalo"]["provider_calls"]==0
+          assert r["OpenModelica_new_invocations"]==0
+          assert r["OpenModelica_G2_reused"]==12
+          assert all(r["conditions"][c][a]["candidate_count"]==6
+                     for c in ("O0","O1") for a in ("D","M"))
+          assert all(r["conditions"][c][a]["decision"]["second_decision"]["status"]==
+                     "RATIFY_UNRESOLVED_FULL_SET_WITH_EXPLICIT_LIMITS"
+                     for c in ("O0","O1") for a in ("D","M"))
+          print("E02_DM_DEVELOPMENT_DESCRIPTIVE_REVIEW_B_NOT_RUN")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: arena-continuity-e01-reused-historical-g2
-          path: artifacts/e01/reports/*.json
+          path: |
+            artifacts/e01/reports/*.json
+            artifacts/e01/e02/report.json
+            artifacts/e01/e02/e02_ledger.sqlite
           if-no-files-found: error
   b-original-offline-transport:
     runs-on: ubuntu-24.04
