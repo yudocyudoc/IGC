@@ -1,0 +1,31 @@
+{
+  "schema": "igc-arena-rf02-g2-nominal-fixture/0.1",
+  "scope": "NON_EMPIRICAL_OPENMODELICA_CONFORMANCE_ONLY",
+  "not_ev01_empirical_estimate": true,
+  "parameters": {
+    "capacity": {
+      "value": 1.23,
+      "unit": "orders/minute",
+      "status": "ASSUMED",
+      "actor": "INVESTIGATOR",
+      "source_kind": "EXPLICIT_UNVALIDATED_ASSUMPTION",
+      "source_ref": "RF02G-G2-ENGINEERING-FIXTURE-ONLY"
+    },
+    "response_time": {
+      "value": 2.7,
+      "unit": "minute",
+      "status": "ASSUMED",
+      "actor": "INVESTIGATOR",
+      "source_kind": "EXPLICIT_UNVALIDATED_ASSUMPTION",
+      "source_ref": "RF02G-G2-ENGINEERING-FIXTURE-ONLY"
+    },
+    "loss_time": {
+      "value": 8.1,
+      "unit": "minute",
+      "status": "ASSUMED",
+      "actor": "INVESTIGATOR",
+      "source_kind": "EXPLICIT_UNVALIDATED_ASSUMPTION",
+      "source_ref": "RF02G-G2-ENGINEERING-FIXTURE-ONLY"
+    }
+  }
+}
