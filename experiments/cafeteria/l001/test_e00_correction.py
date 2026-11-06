@@ -26,6 +26,8 @@ class TestE00(unittest.TestCase):
         a,b=constraints(read_metrics())
         candidate=np.array([42.0,45.5,47.4,48.585])
         self.assertTrue(np.any(a@candidate>b+1e-8))
+        old_a,old_b=constraints(read_metrics(),direct=False)
+        self.assertLessEqual(float((old_a@np.array([42.0,45.392,47.197,48.585])-old_b).max()),1e-6)
         result=execute()
         self.assertGreaterEqual(result["ranges_relative_H01_video_s"]["H07"][0],48.986-1e-6)
         self.assertLessEqual(result["ranges_relative_H01_video_s"]["H07"][1],49.988+1e-6)
