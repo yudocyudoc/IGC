@@ -11,6 +11,8 @@ permissions:
   actions: read
 jobs:
   producer:
+    # Frozen source/known-control execution only on its authored head.
+    if: ${{ github.event.pull_request.head.sha == 'aa4fc7f89488b4b30f2979f8621eaba0084d01a2' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
