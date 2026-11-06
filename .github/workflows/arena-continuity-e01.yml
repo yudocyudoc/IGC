@@ -1,0 +1,175 @@
+name: Arena continuity E01 — pinned native integration and historical G2 reuse
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/**'
+      - 'scripts/arena_event_observability.py'
+      - 'tests/test_arena_cafe_rf02_*.py'
+      - 'tests/fixtures/rf02_g2_fixture_nominals.json'
+      - '.github/workflows/arena-continuity-e01.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  d-m-pinned-g2-reuse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Obtain frozen A1 public envelopes O0 O1
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/public
+      - name: Obtain same-source D G2 historical solver outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/d
+      - name: Obtain original E1 M G2 historical solver outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          run-id: 41591727790
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/m
+      - name: R2 source, grammar, causal kernel and non-counterfeit G2 tests
+        env:
+          RF02_PUBLIC_DIR: artifacts/e01/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_observational_contracts.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_pos_signal.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_m_six_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Execute both contracts with identical original A1 inputs
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/e01/reports
+          for c in O0 O1; do
+            python -m scripts.arena_cafe.r2_observational_contracts \
+              --input "artifacts/e01/public/${c}_VISIBLE.json" --condition "$c" \
+              --out "artifacts/e01/reports/${c}_CONTRACT.json"
+            python -m scripts.arena_cafe.r2_causal_pos_signal \
+              --input "artifacts/e01/public/${c}_VISIBLE.json" --condition "$c" \
+              --out "artifacts/e01/reports/${c}_SIGNAL.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a,b=[json.loads(Path('artifacts/e01/reports/'+c+'_SIGNAL.json').read_text()) for c in ('O0','O1')]
+          assert a['signal']==b['signal']
+          assert a['signal']['policy']=='CAUSAL_RIGHT_RECTANGULAR_EVENT_KERNEL/0.1'
+          x=[json.loads(Path('artifacts/e01/reports/'+c+'_CONTRACT.json').read_text()) for c in ('O0','O1')]
+          assert all(t['D']['candidate_count']==6 and t['M']['graph_count']==6 for t in x)
+          print('E01_SAME_SIGNAL_ALL_SIX_NATIVE_STRUCTURES_NO_HIDDEN_SELECTION')
+          PY
+      - name: Validate original 12 G2 CSVs by identity without new solver calls
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_causal_g2 verify \
+            --visible artifacts/e01/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/e01/d --out artifacts/e01/reports/D_G2_REUSED.json
+          python -m scripts.arena_cafe.r2_m_six_causal_g2 verify \
+            --visible artifacts/e01/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/e01/m --out artifacts/e01/reports/M_G2_REUSED.json
+          python -m scripts.arena_cafe.r2_hj_parameter_gate \
+            --visible artifacts/e01/public/O0_VISIBLE.json \
+            --d-native-dir artifacts/e01/d --m-native-dir artifacts/e01/m \
+            --out artifacts/e01/reports/HJ_PROVENANCE.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('artifacts/e01/reports')
+          d=json.loads((r/'D_G2_REUSED.json').read_text())
+          m=json.loads((r/'M_G2_REUSED.json').read_text())
+          h=json.loads((r/'HJ_PROVENANCE.json').read_text())
+          assert d['G2']==m['G2']=='PASS_REAL_OMC_ENGINEERING_ONLY'
+          assert d['candidate_count']==m['candidate_count']==6
+          assert h['candidate_count']==12 and h['gates']['G3']=='NOT_RUN'
+          assert d['signal_sha256']==m['same_causal_signal_hash_as_D']
+          (r/'E01_INTEGRATION_STATUS.json').write_text(json.dumps({
+            'E01':'SOURCE_AND_HISTORICAL_G2_REUSE_VERIFIED',
+            'provenance':'HISTORICAL_REPRODUCTION_NOT_NEW_SIMULATIONS',
+            'original_D_G2_run':41589895721,
+            'original_M_G2_run':41591727790,
+            'original_public_run':41575917332,
+            'D_candidates':6,'M_ast':6,
+            'openmodelica_new_invocations':0,
+            'scientific_adequacy':'NOT_ESTABLISHED',
+            'Buffalo_live':'NOT_EXECUTED_IN_THIS_JOB'
+          },indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-continuity-e01-reused-historical-g2
+          path: artifacts/e01/reports/*.json
+          if-no-files-found: error
+  b-original-offline-transport:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-O0
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/public
+      - name: Export authorized public input only for B
+        run: |
+          python -m scripts.arena_cafe.native_handoff \
+            --input artifacts/e01/public/O0_VISIBLE.json \
+            --condition O0 --arm B --out artifacts/e01/scoped
+      - name: Fetch original pinned Buffalo source and dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout -q --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Execute original Engine.generate in mock transport ONLY
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/scoped/visible.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native
+          BUFFALO_MODE: mock
+        run: |
+          node scripts/arena_b_native_runner.mjs
+          node --test tests/test_arena_b_cf_protocol_adapter.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e01/b-native/receipt.json').read_text())
+          assert r['provider_calls']==0 and r['model_returned']
+          assert r['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          print('E01_BUFFALO_UPSTREAM_METHOD_MOCK_TRANSPORT_ONLY')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-continuity-e01-buffalo-offline-transport
+          path: artifacts/e01/b-native
+          if-no-files-found: error
