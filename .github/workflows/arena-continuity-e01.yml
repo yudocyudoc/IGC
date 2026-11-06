@@ -5,6 +5,7 @@ on:
       - 'scripts/arena_cafe/**'
       - 'scripts/arena_event_observability.py'
       - 'tests/test_arena_cafe_rf02_*.py'
+      - 'tests/test_arena_cafe_continuity_round.py'
       - 'tests/fixtures/rf02_g2_fixture_nominals.json'
       - '.github/workflows/arena-continuity-e01.yml'
   workflow_dispatch:
