@@ -1,0 +1,10 @@
+﻿id,metric,lower,upper,unit,source_events,kind,sample_size_batches,usable_as_service_distribution,interpretation
+F01,ancla_par_visible_hasta_fin_recogida,41.598,42.986,s_video,"[""H01"",""H04""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F02,fin_recogida_hasta_primera_recepcion,2.406,4.396,s_video,"[""H04"",""H05""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F03,fin_recogida_hasta_segunda_recepcion,4.211,6.0,s_video,"[""H04"",""H06""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F04,separacion_entre_recepciones,1.203,2.206,s_video,"[""H05"",""H06""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F05,segunda_recepcion_hasta_contacto_pase,1.388,2.791,s_video,"[""H06"",""H07""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F06,fin_recogida_hasta_contacto_pase,6.0,8.39,s_video,"[""H04"",""H07""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F07,ancla_par_visible_hasta_primera_recepcion,45.392,45.994,s_video,"[""H01"",""H05""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F08,ancla_par_visible_hasta_segunda_recepcion,47.197,47.598,s_video,"[""H01"",""H06""]",intervalo_entre_hitos,1,false,Cotas de medición de un lote. No son mínimo/máximo de una población ni parámetros de UNIF/TRIA.
+F09,area_cohorte_pendiente_de_recepcion,92.589,93.592,recipiente*s_video,"[""H01"",""H05"",""H06""]",integral_cohorte,1,false,"Integral de pendientes 2→1→0 de este lote desde primera observación, bajo su asociación contextual. No es inventario total ni prueba de régimen estacionario."
