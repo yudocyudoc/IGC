@@ -15,6 +15,7 @@ from scripts.arena_m_short_e1 import prepare as short_e1_prepare
 from scripts.arena_atms import ATMS, Rule
 from scripts.ledger import Ledger
 from experiments.cafeteria.l001.reference import execute as reference_execute, read_metrics, HERE
+from experiments.cafeteria.l001.observation_operator import native_projection_gate
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -127,6 +128,7 @@ def perform():
         "selected_hypotheses":0, "comparison_with_physical_reference":"NOT_YET_POSSIBLE",
         "reference_case":"L001; two-receptacle bounded transfer, not café-level demand",
         "legacy_warning":"UNRECONCILED_NONOVERLAPPING_BOUNDS",
+        "observation_operator_gate":"ALL_THREE_NOT_SCORABLE_UNTIL_NATIVES_PROJECT_INDIVIDUAL_RECEIPTS",
     }
     return report,reference,evidence,outputs,support
 
@@ -134,10 +136,12 @@ def write_artifacts(out:Path):
     if out.exists():
         raise ValueError("OUTPUT_DIRECTORY_EXISTS")
     report,ref,evidence,outputs,support=perform()
+    operator_gates=native_projection_gate(outputs,evidence)
     out.mkdir(parents=True)
     for name,data in (
         ("00_reference.json",ref),("01_common_evidence.json",evidence),
         ("03_ATMS.json",support),
+        ("05_observation_operator_gates.json",operator_gates),
     ):
         (out/name).write_bytes(canonical(data)+b"\n")
     ledger=Ledger(out/"L001_ledger.sqlite",ROOT/"migrations/0001_ledger.sql")

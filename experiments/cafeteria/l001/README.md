@@ -46,3 +46,17 @@ python -m experiments.cafeteria.l001.three_arms --out artifacts/caf-l001
 \`\`\`
 
 La CI publica \`00_reference.json\`, \`01_common_evidence.json\`, \`02_{D,B,M}_native.json\`, \`03_ATMS.json\`, \`04_report.json\` y \`L001_ledger.sqlite\` como artefactos de GitHub Actions.
+
+## Segunda fase: operador de hitos, sin inventar tiempos ni productores
+
+El archivo observation_operator.py contrasta CONJUNTAMENTE los intervalos F01–F09 para un candidato que prediga H04, H05, H06 y H07 con cotas respecto del ancla visual H01. No se convierte ninguna curva acumulada en dos recepciones individuales sin una regla de observación y procedencia declaradas. La continuidad del tiempo físico sigue sin verificarse.
+
+El operador admite COMPATIBLE_ROBUST (todo el conjunto predicho cabe en las cotas), COMPATIBLE_EXISTENTIAL_ONLY (al menos un vector predicho cabe, sin probar identificación), INCOMPATIBLE_JOINT_CONSTRAINTS (ningún vector compatible) e INVALID_MODEL_INTERNAL_ORDER (el modelo no permite ni la cronología básica).
+
+La intersección usa todas las restricciones juntas, incluidas las dependencias. F09 se calcula desde F07/F08: NO se cuenta como una novena observación independiente ni se suman pérdidas entre métricas correlacionadas. Se informa además si los intervalos del candidato cubren la región observacional entera: un pronóstico deliberadamente amplio no debe considerarse una victoria.
+
+Doce pruebas adversativas usan controles numéricos sintéticos EXCLUSIVAMENTE para verificar el software. Esos controles no son pronósticos D/B/M. En la ejecución real, el archivo 05_observation_operator_gates.json conserva D, B y M como NOT_SCORABLE con razones propias: D carece del mapeo a eventos de recepción individual, B aún no tiene propuesta nativa de proveedor y M dispone de un catálogo de ingeniería sin selección ni operador de esos eventos. **Ninguna ruta del caso obtiene todavía un puntaje competitivo G3.**
+
+Requisito para un contraste posterior: hipótesis nativa seleccionada, simulación Modelica verificable, operador físicamente defendible hacia H04/H05/H06/H07, correspondencia explícita con el reloj de video y predicción fijada antes de contrastar. La mera ejecución del evaluador NO concede esa condición.
+
+El workflow de GitHub Actions ejecuta ambas suites y conserva el nuevo archivo de compuertas en el artefacto del mismo PR.
