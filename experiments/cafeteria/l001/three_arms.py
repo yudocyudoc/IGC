@@ -26,7 +26,7 @@ def common(reference, metrics):
         "metrics_source_sha256":reference["source_sha256"],
         "metrics":[{"id":k,**v} for k,v in sorted(metrics.items())],
         "observation_limits":reference["nonclaims"],
-        "legacy_status":"UNRECONCILED_NONOVERLAPPING_BOUNDS",
+        "legacy_status":"DOCUMENTED_REVISION_V1_TO_V2_PRIMARY_SOURCE_PENDING",
     }
     payload={
         "schema":INPUT_SCHEMA, "investigation_id":"CAF_L001",
@@ -127,7 +127,7 @@ def perform():
         "B_provider_calls":0,"OpenModelica_runs":0,
         "selected_hypotheses":0, "comparison_with_physical_reference":"NOT_YET_POSSIBLE",
         "reference_case":"L001; two-receptacle bounded transfer, not café-level demand",
-        "legacy_warning":"UNRECONCILED_NONOVERLAPPING_BOUNDS",
+        "legacy_warning":"DOCUMENTED_REVISION_V1_TO_V2_PRIMARY_SOURCE_PENDING",
         "observation_operator_gate":"ALL_THREE_NOT_SCORABLE_UNTIL_NATIVES_PROJECT_INDIVIDUAL_RECEIPTS",
     }
     return report,reference,evidence,outputs,support

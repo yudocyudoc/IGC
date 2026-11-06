@@ -1,9 +1,10 @@
 {
-  "schema": "igc-caf-l001-legacy-comparison/0.1",
+  "schema": "igc-caf-l001-master-revision/0.2",
   "full_original_maestro_sha256": "2ab597aea3b381cccdd8b7bc06bb696c518977847130daf444b8aedb4866f958",
-  "source_type": "transcribed_exact_two_relevant_rows_from_prior_eventos_maestro; full original CSV not in this PR",
+  "source_type": "master_v1_two_rows_in_PR170; master_v2_rows_transcribed_from_plan_not_independently_verified",
   "claims": [
-    "UNRECONCILED_NONOVERLAPPING_BOUNDS",
+    "MASTER_V1_TO_V2_REVISION_DOCUMENTED",
+    "PRIMARY_MASTER_V2_CONTENT_PENDING",
     "NO_AUTOMATIC_ANCHOR_MATCH_H01_H07_TO_E132_E136"
   ],
   "comparisons": [
@@ -22,7 +23,9 @@
         41.598,
         42.986
       ],
-      "overlap": false
+      "overlap": false,
+      "relation": "REVISION_NOT_INDEPENDENT_OBSERVATION",
+      "v2_matches_F_metric_as_documented": true
     },
     {
       "master_id": "MD-M002",
@@ -39,7 +42,10 @@
         47.197,
         47.598
       ],
-      "overlap": false
+      "overlap": false,
+      "relation": "REVISION_NOT_INDEPENDENT_OBSERVATION",
+      "v2_matches_F_metric_as_documented": true
     }
-  ]
+  ],
+  "full_revised_maestro_sha256": "1e81b5464d871cb621e18dd8880a99ccb33be714e458785e25cb345099336d72"
 }

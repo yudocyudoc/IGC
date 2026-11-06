@@ -60,3 +60,19 @@ Doce pruebas adversativas usan controles numéricos sintéticos EXCLUSIVAMENTE p
 Requisito para un contraste posterior: hipótesis nativa seleccionada, simulación Modelica verificable, operador físicamente defendible hacia H04/H05/H06/H07, correspondencia explícita con el reloj de video y predicción fijada antes de contrastar. La mera ejecución del evaluador NO concede esa condición.
 
 El workflow de GitHub Actions ejecuta ambas suites y conserva el nuevo archivo de compuertas en el artefacto del mismo PR.
+
+## E00 (2026-11-06) — revisión documental y límites directos
+
+Se conserva por blob exacto el CSV original. `hitos_directos_lineage.json` transcribe
+las cotas H01/H04/H05/H06/H07 documentadas en el plan v4.0 y la hoja de ruta v3.0.
+`reference.constraints()` intersecta las cotas directas con F01–F09; el testigo
+H07=48.585 ya no es admisible. MD-M001/MD-M002 se tratan como revisión
+v1→v2 del anclaje, **no** como dos mediciones independientes contradictorias.
+
+**Límite verificable:** el maestro v2 completo y `eventos_detallados.csv`
+no están en este árbol; se fijaron sus hashes declarados pero no se revalidó
+visualmente el video ni se comprobó el contenido primario de v2.
+Estado E00: `LINEAGE_PATCHED_PRIMARY_SOURCE_PENDING`. El tiempo de anotación
+original no se confunde con el tiempo de ingestión de las revisiones.
+El test de memoria usa el ledger F1a y ATMS existentes y demuestra consultas
+antes/después sin convertir el soporte lógico en verdad empírica.

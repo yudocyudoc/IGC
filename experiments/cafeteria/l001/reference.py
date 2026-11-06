@@ -57,7 +57,7 @@ def coefficient(metric):
             c[NODES.index(end)] += 1
     return c
 
-def constraints(metrics):
+def constraints(metrics, *, direct=True):
     a,b = [], []
     for m in metrics.values():
         c = coefficient(m)
@@ -71,6 +71,11 @@ def constraints(metrics):
         c[NODES.index(last)] -= 1
         a.append(c)
         b.append(0)
+    if direct:
+        from experiments.cafeteria.l001.e00_correction import direct_constraint_rows
+        da, db = direct_constraint_rows()
+        a.extend(da)
+        b.extend(db)
     return np.asarray(a), np.asarray(b)
 
 def solve(objective,a,b):
@@ -80,15 +85,8 @@ def solve(objective,a,b):
     return ans
 
 def compare_legacy(metrics):
-    comparison=json.loads((HERE/"maestro_contrastes.json").read_text(encoding="utf-8"))
-    rows=comparison["comparisons"]
-    if len(rows)!=2 or [r["new_metric"] for r in rows]!=["F01","F08"]:
-        raise ValueError("LEGACY_COMPARISON_CHANGED")
-    for r in rows:
-        old,new=r["old_bounds_s_video"],metrics[r["new_metric"]]["bounds"]
-        if not old[1]<new[0] or r["overlap"] is not False:
-            raise ValueError("LEGACY_CONFLICT_NO_LONGER_CONFIRMED")
-    return comparison
+    from experiments.cafeteria.l001.e00_correction import check_lineage
+    return check_lineage(metrics)
 
 def execute(path=METRICS, *, pin=True):
     metrics=read_metrics(path,pin=pin)

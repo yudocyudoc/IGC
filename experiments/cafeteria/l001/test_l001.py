@@ -69,7 +69,7 @@ class TestL001(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out=Path(tmp)/"output"
             report=write_artifacts(out)
-            self.assertEqual(report["ledger_revisions"],3)
+            self.assertEqual(report["ledger_revisions"],8)
             self.assertEqual(len(list(out.glob("02_*_native.json"))),3)
             self.assertTrue((out/"L001_ledger.sqlite").exists())
             self.assertTrue((out/"03_ATMS.json").exists())
