@@ -56,8 +56,12 @@ def _evaluate_one(visible, arm, condition, rows, native_dir):
     for item in rows:
         native_id=item["candidate_id"] if arm=="D" else item["canonical_sha256"]
         csv=Path(native_dir)/(item["csv_prefix"]+"_res.csv")
+        # E1's enumerator exports a 64-hex canonical key; H_j's original
+        # candidate wrapper requires the prefixed canonical digest. Converting
+        # its representation does NOT change the AST, family, or parameters.
         graph=({"ast":item["original_ast"],
-                "canonical_sha256":item["canonical_sha256"]} if arm=="M" else None)
+                "canonical_sha256":"sha256:"+item["canonical_sha256"]}
+                if arm=="M" else None)
         try:
             ev=oe.evaluate(visible,port,trace_csv=csv,candidate=graph,
                            registry=REGISTRY if arm=="M" else None)
