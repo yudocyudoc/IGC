@@ -154,7 +154,11 @@ def write_artifacts(out:Path):
             idempotency_key="CAF_L001-"+arm+"-"+digest(payload["submission"]),
             payload={"submission":payload["submission"],"event":payload["event"]},
             recorded_at=stamp,created_at=stamp,access_policy="lane:"+arm)
-    report["ledger_revisions"]=3
+    from experiments.cafeteria.l001.e00_correction import write_temporal_revision
+    e00 = write_temporal_revision(ledger, stamp)
+    (out/"06_e00_temporal_revision.json").write_bytes(canonical(e00)+b"\n")
+    report["ledger_revisions"] = 3 + e00["new_ledger_revisions"]
+    report["e00_status"] = e00["status"]
     (out/"04_report.json").write_bytes(canonical(report)+b"\n")
     return report
 
