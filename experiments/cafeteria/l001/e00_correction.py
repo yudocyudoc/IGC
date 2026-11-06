@@ -94,6 +94,7 @@ def check_lineage(metrics, data=None):
         "master_v1_sha256":d["master_v1_sha256"],
         "master_v2_sha256":d["master_v2_sha256"],
         "revisions":d["master_revisions"],
+        "comparisons":[{**row,"overlap":False} for row in d["master_revisions"]],
         "primary_source_verification":"PENDING_PRIMARY_MASTER_AND_EVENT_EXPORT",
         "H07_relative_H01_video_s":relative_direct_bounds(d)["H07"],
     }
