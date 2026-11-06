@@ -8,6 +8,9 @@ permissions:
   actions: read
 jobs:
   external-grid:
+    # This historical recovery is a one-time execution. PR paths are cumulative
+    # across the base diff, so an unrelated later commit otherwise reruns 81 OMC.
+    if: ${{ github.event.pull_request.head.sha == 'c6c181311fdb47f8888dbc61e971cc07fa155661' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 80
     strategy:
