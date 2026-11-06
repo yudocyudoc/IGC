@@ -1,0 +1,194 @@
+name: Arena E03 recovery D-only - reuse M original run 42314268694
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/arena-continuity-e03-recovery.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  external-grid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        arm: [D]
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.26.5-minimal
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Frozen public EV-01 development input (no private generator)
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-O0
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e03/public
+      - name: Get original six M real-G2 traces only for exact baseline reuse
+        if: matrix.arm == 'M'
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          run-id: 41591727790
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e03/historical-m
+      - name: Verify fixed finite grids, original sources and negative gates
+        env:
+          E03_PUBLIC: artifacts/e03/public/O0_VISIBLE.json
+          E03_M_HIST: artifacts/e03/historical-m
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e03_cal_grid.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Emit strictly capped native G0/G1 Modelica sources (no fit or selection)
+        env:
+          ARM: ${{ matrix.arm }}
+        run: |
+          set -euo pipefail
+          if [ "$ARM" = D ]; then
+            python -m scripts.arena_cafe.e03_cal_grid prepare-d \
+              --public artifacts/e03/public/O0_VISIBLE.json \
+              --root artifacts/e03/native-D
+            test "$(grep -c 'simulate(' artifacts/e03/native-D/simulate.mos)" -eq 81
+          else
+            python -m scripts.arena_cafe.e03_cal_grid prepare-m \
+              --public artifacts/e03/public/O0_VISIBLE.json \
+              --historical-m artifacts/e03/historical-m \
+              --root artifacts/e03/native-M
+            test "$(grep -c 'simulate(' artifacts/e03/native-M/simulate.mos)" -eq 48
+            test "$(find artifacts/e03/native-M -name '*_res.csv' | wc -l)" -eq 6
+          fi
+      - name: Pin original E1 solver libraries for M variants
+        if: matrix.arm == 'M'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e03-libs" "$RUNNER_TEMP/e03-home"
+          git clone -q --depth 1 --branch v4.0.0 \
+            https://github.com/modelica/ModelicaStandardLibrary.git \
+            "$RUNNER_TEMP/e03-libs/msl"
+          git clone -q --depth 1 --branch v2.1.2 \
+            https://github.com/modelica-3rdparty/SystemDynamics.git \
+            "$RUNNER_TEMP/e03-libs/systemdynamics"
+          test -s "$RUNNER_TEMP/e03-libs/msl/LICENSE"
+          test -s "$RUNNER_TEMP/e03-libs/systemdynamics/LICENSE"
+      - name: Real OpenModelica engineering run, exact single finite E03 grid
+        env:
+          ARM: ${{ matrix.arm }}
+        run: |
+          set -euo pipefail
+          root="artifacts/e03/native-$ARM"
+          docker pull "$OMC_IMAGE"
+          docker image inspect "$OMC_IMAGE" --format '{{json .RepoDigests}}' > "$root/image-digests.json"
+          mkdir -p "$RUNNER_TEMP/e03-home"
+          printf 'INVOCATION_STARTED\n' > "$root/INVOCATION_STARTED"
+          set +e
+          if [ "$ARM" = M ]; then
+            docker run --rm -v "$PWD:/repo" -w "/repo/$root" \
+              -v "$RUNNER_TEMP/e03-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e03-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              "$OMC_IMAGE" omc simulate.mos > "$root/omc.log" 2>&1
+          else
+            docker run --rm -v "$PWD:/repo" -w "/repo/$root" \
+              -v "$RUNNER_TEMP/e03-home:/omhome" -e HOME=/omhome \
+              "$OMC_IMAGE" omc simulate.mos > "$root/omc.log" 2>&1
+          fi
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > "$root/exit_code.txt"
+          sudo chown -R "$(id -u):$(id -g)" "$root"
+          if [ "$rc" -ne 0 ] || grep -Eq 'Error:|Failed to build model|Simulation execution failed|Failed to load' "$root/omc.log"; then
+            tail -100 "$root/omc.log"
+            exit 1
+          fi
+          expected=81
+          if [ "$ARM" = M ]; then expected=54; fi
+          got=$(find "$root" -maxdepth 1 -name '*_res.csv' | wc -l)
+          test "$got" -eq "$expected"
+      - name: Score each full parameterization, preserve all failed/noncomparable rows
+        env:
+          ARM: ${{ matrix.arm }}
+        run: |
+          set -euo pipefail
+          if [ "$ARM" = D ]; then subcommand=score-d; else subcommand=score-m; fi
+          python -m scripts.arena_cafe.e03_cal_grid "$subcommand" \
+            --public artifacts/e03/public/O0_VISIBLE.json \
+            --root "artifacts/e03/native-$ARM"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          arm=os.environ['ARM']
+          root=Path('artifacts/e03/native-'+arm)
+          report=json.loads((root/'scores.json').read_text())
+          assert report['candidate_count']=={'D':81,'M':54}[arm]
+          assert report['comparable_count']+report['not_comparable_count']==report['candidate_count']
+          assert report['no_best_only_selection'] and report['no_marginal_envelope_combination']
+          assert all(len(report['compatible_sets'][b])<=report['comparable_count'] for b in ('0','1','2'))
+          assert set(report['compatible_sets']['0']).issubset(report['compatible_sets']['1'])
+          assert set(report['compatible_sets']['1']).issubset(report['compatible_sets']['2'])
+          print('E03_GRID_COMPLETE_WITH_ALL_ROWS_RETAINED',arm,
+                report['comparable_count'],report['not_comparable_count'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-e03-external-grid-${{ matrix.arm }}
+          path: artifacts/e03/native-${{ matrix.arm }}/
+          retention-days: 75
+          if-no-files-found: warn
+  joint-report:
+    runs-on: ubuntu-24.04
+    needs: external-grid
+    if: ${{ needs.external-grid.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-D
+          path: artifacts/e03/native-D
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-M
+          run-id: 42314268694
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e03/native-M
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-continuity-e01-reused-historical-g2
+          run-id: 42312673890
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e03/e02
+      - name: Compare frozen E02 original nominals to E03 external finite sets
+        run: |
+          python -m scripts.arena_cafe.e03_cal_grid combine \
+            --d-score artifacts/e03/native-D/scores.json \
+            --m-score artifacts/e03/native-M/scores.json \
+            --e02 artifacts/e03/e02/e02/report.json \
+            --out artifacts/e03/joint-summary.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=json.loads(Path('artifacts/e03/joint-summary.json').read_text())
+          assert p['budget']['new_OMC']==129 and p['budget']['historical_reused']==6
+          assert p['budget']['new_OMC']<=p['budget']['max_new_OMC']==135
+          assert all(p['calibration'][arm]['candidate_count']==count
+                     for arm,count in [('D',81),('M',54)])
+          assert p['G4']==p['G5']=='NOT_RUN'
+          print('E03_FINITE_GRID_REPORT',p['status'],p['budget'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e03-final-joint-report
+          path: artifacts/e03/joint-summary.json
+          if-no-files-found: error

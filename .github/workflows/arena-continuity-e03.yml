@@ -1,10 +1,5 @@
 name: Arena E03 - frozen external D 81 M 54 finite parameter grids
 on:
-  pull_request:
-    paths:
-      - 'scripts/arena_cafe/e03_cal_grid.py'
-      - 'tests/test_arena_cafe_e03_cal_grid.py'
-      - '.github/workflows/arena-continuity-e03.yml'
   workflow_dispatch:
 permissions:
   contents: read

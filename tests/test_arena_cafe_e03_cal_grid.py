@@ -52,8 +52,8 @@ class E03Grid(unittest.TestCase):
 
     def test_m_only_six_exact_baseline_reused(self):
         p=os.environ.get('E03_M_HIST')
-        if not p:
-            self.skipTest('Requires original native M G2 artifact')
+        if not p or not (Path(p)/'manifest.json').is_file():
+            self.skipTest('Requires original native M G2 artifact; D job has none')
         with TemporaryDirectory() as tmp:
             m=e.prepare_m(self.visible,Path(tmp)/'m',Path(p))
             self.assertEqual(m['candidate_count'],54)
