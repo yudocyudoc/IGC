@@ -16,6 +16,9 @@ on:
       - 'scripts/arena_cafe/e03_execution_reconcile.py'
       - 'experiments/cafeteria/E03_RECONCILED_OPERATIONAL_ACCOUNTING.json'
       - 'tests/test_arena_cafe_e04_action.py'
+      - 'scripts/arena_cafe/e06_video2_fitness.py'
+      - 'tests/test_arena_cafe_e06_video2_fitness.py'
+      - 'experiments/cafeteria/E06_VIDEO2_SOURCE_FITNESS_2026-11-06.json'
       - '.github/workflows/arena-pr171-regressions.yml'
 permissions:
   contents: read
@@ -65,6 +68,22 @@ jobs:
           python -m unittest discover -s tests -p 'test_arena_cafe_e02_memory_bound.py' -v
           python -m unittest discover -s tests -p 'test_arena_cafe_e02_b_feedback.py' -v
           python -m unittest discover -s tests -p 'test_arena_cafe_continuity_round.py' -v
+      - name: E06 bounded observational source-fitness rules, OFFLINE (raw private ZIP not mounted)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e06_video2_fitness.py' -v
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('experiments/cafeteria/E06_VIDEO2_SOURCE_FITNESS_2026-11-06.json').read_text())
+          assert x['schema']=='igc-arena-e06-video2-observational-fitness/0.1'
+          assert x['status']=='SOURCE_NOT_FIT_FOR_THIS_QUESTION'
+          assert x['E07']=='NOT_TRIGGERED_NO_NEW_OBSERVED_INCREMENTAL_PROCESS_REGULARITY'
+          assert x['source']['video_original_present_in_archive'] is False
+          assert x['models_D_B_M_not_run_on_video2']
+          assert x['no_new_pm_des_omc_provider']
+          print('E06_RULES_TESTED_REAL_SOURCE_VERIFIED_ONLY_LOCALLY_NOT_REEXECUTED_IN_CI')
+          PY
       - name: Cheap E03 native source and fixed grid guards
         run: |
           set -euo pipefail

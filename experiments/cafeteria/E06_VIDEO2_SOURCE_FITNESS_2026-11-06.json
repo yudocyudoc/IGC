@@ -1,0 +1,113 @@
+{
+  "E07": "NOT_TRIGGERED_NO_NEW_OBSERVED_INCREMENTAL_PROCESS_REGULARITY",
+  "censoring": {
+    "derived_integral_F09": "SHARED_SOURCE_NOT_NEW_SAMPLE",
+    "entry_of_first_observed_removed_request": "LEFT_CENSORED_BEFORE_VIDEO_START",
+    "time_intervals": "BOUNDED_NOT_MIDPOINTS",
+    "unobserved_transitions": "UNKNOWN_NOT_ZERO",
+    "window_end_with_missing_unit_identity": "RIGHT_CENSORED_OR_UNKNOWN_NEVER_IMPUTED"
+  },
+  "evidence_spans_crossing_fixed_cuts": {
+    "300": 2,
+    "600": 0
+  },
+  "experiment": "E06",
+  "l001_evidence": {
+    "confirmed_receptions_in_first_window": 2,
+    "contextual_lot_not_individual_request_to_delivery_link": true,
+    "pickup_and_pass_not_service_start_or_customer_arrival": true,
+    "reception_transition_intervals_video_s": [
+      [
+        "223.806",
+        "224.408"
+      ],
+      [
+        "225.611",
+        "226.012"
+      ]
+    ],
+    "two_receptions_not_four": true
+  },
+  "missing_measurements": [
+    "SAME_PHYSICAL_UNIT_IDENTIFIER_ACROSS_PLACEMENT_PREPARATION_AND_RECEPTION",
+    "OBSERVED_INPUT_AND_OUTPUT_AT_ONE_DECLARED_BOUNDARY_FOR_THE_SAME_UNIT",
+    "INITIAL_WIP_AND_CENSORSHIP_FOR_EACH_5_MINUTE_WINDOW",
+    "VALIDATED_SEGMENT_CONTINUITY_AND_PHYSICAL_CLOCK_FOR_RATES_OR_SERVICE_TIME",
+    "COMPLETE_SERVICE_START_AND_FINISH_EVENTS_IF_SERVICE_DURATION_IS_ASKED"
+  ],
+  "models_D_B_M_not_run_on_video2": true,
+  "no_new_pm_des_omc_provider": true,
+  "physical_capacity_or_productivity_not_inferred": true,
+  "question": "Can a validated material unit cross the same request-cup-placement to physical-reception boundary in both 5-minute windows, with known censoring?",
+  "raw_annotations_or_person_records_embedded": false,
+  "schema": "igc-arena-e06-video2-observational-fitness/0.1",
+  "scope": "VIDEO2_EXISTING_ANNOTATIONS_DEVELOPMENT_ONLY_NO_NEW_OBSERVATIONS",
+  "secondary_observation": "TWO_CONTEXTUAL_LOT_RECEPTIONS_IN_VIDEO_TIME_ONLY",
+  "source": {
+    "archive_sha256": "sha256:eb1c619de072a5790182cd7eb060f9d8b0c6a163acdfd6c18e0af3986fec23e8",
+    "l001_hitos_sha256": "sha256:4bcbeeaa732dcb6f6d3f217e1f2ce3efe9bdba98079f79e02a1bde197a1b7165",
+    "manifest_sha256": "sha256:ea17cdffc1a458bee65426e33f69e468ce38d5ba8bf59683df57de118b011bf1",
+    "master_v1_sha256": "sha256:2ab597aea3b381cccdd8b7bc06bb696c518977847130daf444b8aedb4866f958",
+    "master_v2_sha256": "sha256:1e81b5464d871cb621e18dd8880a99ccb33be714e458785e25cb345099336d72",
+    "physical_clock_verified": false,
+    "recording_continuity_verified": false,
+    "source_family": "ONE_VIDEO_HD_NO_INDEPENDENT_REPLICATION",
+    "video_hd_sha256_declared_not_rehashed": "sha256:bdf725f004a0d39929a2a0f4fdc6d7d3d066e225cdcb14b81b82384eec34169e",
+    "video_original_present_in_archive": false
+  },
+  "status": "SOURCE_NOT_FIT_FOR_THIS_QUESTION",
+  "unit_boundary": {
+    "candidate_unit": "individual solicitud-associated vessel/beverage; order equivalence NOT established",
+    "complete_input_output_pairs": 0,
+    "end_observable": "confirmed physical entrega_receptor of same unit",
+    "known_initial_population": "UNKNOWN_WITH_LEFT_CENSORING",
+    "same_unit_identity": "NOT_VALIDATED",
+    "start_observable": "colocacion_solicitud at machine (not customer arrival)",
+    "video_seconds_are_physical_seconds": false
+  },
+  "version_reconciliation": {
+    "l001_derivatives_are_not_independent_observations": true,
+    "master_v1_rows": 280,
+    "master_v2_rows": 288,
+    "v1_v2_same_video_source": true,
+    "v2_added_derived_interval_rows": 7,
+    "v2_added_event_rows": 1,
+    "v2_existing_rows_revised": 7
+  },
+  "windows": [
+    {
+      "complete_per_unit_input_output_pairs_validated": 0,
+      "confirmed_L001_receptions_not_linked_to_placements": 2,
+      "coverage_interpretation": "NONEXHAUSTIVE_OVERLAPPING_RECORDS_NOT_EVENT_COUNTS_OR_ARRIVAL_RATES",
+      "master_records_with_evidence_span_intersecting_window": 124,
+      "observed_placement_transitions_not_linked_to_deliveries": 3,
+      "record_types_overlapping": {
+        "conteo_visual": 10,
+        "evento": 88,
+        "intervalo_derivado": 9,
+        "medicion_temporizador": 17
+      },
+      "video_seconds_left_closed_right_open": [
+        0,
+        300
+      ]
+    },
+    {
+      "complete_per_unit_input_output_pairs_validated": 0,
+      "confirmed_L001_receptions_not_linked_to_placements": 0,
+      "coverage_interpretation": "NONEXHAUSTIVE_OVERLAPPING_RECORDS_NOT_EVENT_COUNTS_OR_ARRIVAL_RATES",
+      "master_records_with_evidence_span_intersecting_window": 72,
+      "observed_placement_transitions_not_linked_to_deliveries": 2,
+      "record_types_overlapping": {
+        "conteo_visual": 10,
+        "evento": 54,
+        "intervalo_derivado": 0,
+        "medicion_temporizador": 8
+      },
+      "video_seconds_left_closed_right_open": [
+        300,
+        600
+      ]
+    }
+  ]
+}
