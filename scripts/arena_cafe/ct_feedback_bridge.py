@@ -245,7 +245,13 @@ def b_review_envelope(db, context, *, original_native, authenticated_receipt=Non
             or not isinstance(receipt.get("result_sha256"), str)):
         return {"status": "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT",
                 "provider_calls": 0}
-    parent_hash = digest(original_native)
+    from scripts.arena_cafe.e02_b_feedback import _model_sha
+    parent_hash = _model_sha(original_native)
+    if receipt.get("result_sha256") != parent_hash or\
+       receipt.get("case_id") != "CT-03" or\
+       receipt.get("status") != "ORIGINAL_ENGINE_LIVE_OUTPUT_RETURNED":
+        return {"status": "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT",
+                "provider_calls": 0}
     memory = recover_feedback(db, context, parent_hash=parent_hash,
                               as_known_at=as_known_at)
     return {"status": "READY_NOT_SENT_RECEIPT_REQUIRES_EXTERNAL_BYTE_VERIFICATION",
