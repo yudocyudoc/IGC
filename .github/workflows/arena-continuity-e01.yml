@@ -260,14 +260,34 @@ jobs:
           assert receipt['case_id']=='CT-03' and receipt['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
           assert receipt['provider_calls']==0 and receipt['proxy_requests']==1
           assert receipt['horizon_matches_case'] is True and receipt['output_horizon_hours']==8
+          # Python -> SQLite ledger/ATMS retrieval -> canonical bytes -> JS.
+          # This is synthetic/mock contract evidence, never scientific G2/G3.
+          import base64
+          from scripts.arena_cafe.ct_feedback_bridge import (
+              make_context,record_feedback,recover_feedback)
+          from scripts.arena_v0_contract import canonical
+          source='sha256:'+'a'*64
+          ctx=make_context(experiment='CT03',world='W1',round_id='R0',
+                  arm='B',condition='C0',source_hash=source)
+          parent=receipt['result_sha256']
+          diag={'arm':'B','condition':'C0','source_hash':source,
+                'parent_hash':parent,'evidence':'G1','observations':[],
+                'own_evidence_only':True,'no_future_truth':True,
+                'diagnostic_origin':'MOCK_CI_PROTOCOL_ONLY_NOT_EMPIRICAL'}
+          db=root/'mock-only-ledger.sqlite'
+          record_feedback(db,ctx,parent_hash=parent,diagnostic=diag,
+                          recorded_at='2026-11-07T12:00:00+00:00')
+          memory=recover_feedback(db,ctx,parent_hash=parent,
+                          as_known_at='2026-11-07T12:00:01+00:00')
           feedback={'schema':'igc-ct03-b-own-feedback/1.0','arm':'B',
-             'world_public_id':'W1','condition_id':'C0','source_snapshot_hash':'sha256:'+'a'*64,
-             'parent_result_sha256':receipt['result_sha256'],
-             'own_diagnostic_sha256':'sha256:'+'b'*64,
-             'retrieved_before_policy':{'item_id':'MOCK_ONLY_NOT_LEDGER_EVIDENCE',
-                                        'projection_hash':'sha256:'+'c'*64},
-             'own_diagnostic':{'status':'MOCK_ONLY_NOT_SCIENTIFIC_FEEDBACK'}}
-          (root/'mock-feedback.json').write_text(json.dumps(feedback))
+             'world_public_id':'W1','condition_id':'C0','source_snapshot_hash':source,
+             'parent_result_sha256':parent,
+             'own_diagnostic_sha256':memory['diagnostic_hash'],
+             'own_diagnostic_canonical_base64':base64.b64encode(
+                 canonical(memory['diagnostic'])).decode('ascii'),
+             'retrieved_before_policy':memory['retrieval'],
+             'own_diagnostic':memory['diagnostic']}
+          (root/'mock-feedback.json').write_bytes(canonical(feedback)+b'\n')
           PY
           BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/ct03-b/revision.json" \
             BUFFALO_PARENT_NATIVE="$PWD/artifacts/e01/ct03-b/native-initial/native-engine-result.json" \
