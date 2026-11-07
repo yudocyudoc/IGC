@@ -29,6 +29,7 @@ class BProducerFreezeHandoffTests(unittest.TestCase):
     def test_thirteen_own_slots_are_exactly_five_public_freeze_inputs(self):
         with TemporaryDirectory(dir=".") as tmp:
             root=Path(tmp).relative_to(Path.cwd())
+            (root/"source").mkdir()
             d12,b13,d,m=fixture(root/"source")
             target=root/"bundle"
             result=pack(dm_projection=d12,b_projection=b13,
@@ -50,6 +51,7 @@ class BProducerFreezeHandoffTests(unittest.TestCase):
     def test_wrong_protocol_missing_slot_and_overwrite_refused(self):
         with TemporaryDirectory(dir=".") as tmp:
             root=Path(tmp).relative_to(Path.cwd())
+            (root/"source").mkdir()
             d12,b13,d,m=fixture(root/"source")
             args=dict(dm_projection=d12,b_projection=b13,construction=public(),
                       commitment=commitment(),d_manifest=d,m_manifest=m,
