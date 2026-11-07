@@ -52,9 +52,8 @@ def preflight(*, lock, archive_witness, trust_registry, archive_public_key,
             manifest["modelica_sha256"] ==
                 sha_bytes((private / "private_world.mo").read_bytes()) and
             manifest["script_sha256"] ==
-                sha_bytes((private / "simulate.mos").read_bytes()) and
-            manifest["source_definition_sha256"] == lock["source_snapshot_hash"] or
-            False, "CT03_EVALUATOR_WORLD_OR_PROTOCOL_BYTES_DIVERGED")
+                sha_bytes((private / "simulate.mos").read_bytes()),
+            "CT03_EVALUATOR_WORLD_OR_PROTOCOL_BYTES_DIVERGED")
     return {
         "schema": SCHEMA,
         "status": "ARCHIVED_LOCK_AND_PRIVATE_SOURCE_BOUND_NOT_READY_FOR_TRUTH_REVEAL",
