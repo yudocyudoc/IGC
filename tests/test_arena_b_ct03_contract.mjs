@@ -101,6 +101,14 @@ test("F172-02 rejects edited bytes, t6, empty retrieval and forged inner provena
   const v=visible("revision");
   const verify=f=>validateCt03Revision({native,receipt,feedback:f,visible:v,mode:"mock"});
   assert.equal(verify(original).feedback.own_diagnostic.observations[0].residual,.3);
+  // Original ATMS project() returns 64 hex without the sha256: prefix.
+  assert.equal(verify({...original,retrieved_before_policy:{
+    ...original.retrieved_before_policy,
+    projection_hash:"c".repeat(64)}}).feedback.own_diagnostic.arm,"B");
+  assert.throws(()=>verify({...original,retrieved_before_policy:{
+    ...original.retrieved_before_policy,
+    item_id:"ct-CT03-W2-R0-B-C0-parent-"+receipt.result_sha256.slice(7)+":FEEDBACK"
+  }}),/LEDGER_RETRIEVAL_METADATA_INVALID/);
   assert.throws(()=>verify({...original,own_diagnostic:{
     ...original.own_diagnostic,observations:[{time:2,residual:999},{time:4,residual:.4}]
   }}),/BODY_NOT_EXPORTED/);
