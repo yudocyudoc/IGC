@@ -15,7 +15,7 @@ from scripts.arena_cafe.ct02_minimal_batch import prepare, verify
 class CT02TwoOnly(unittest.TestCase):
     def test_preparation_is_exactly_original_d0_and_short_e1_m_with_no_solver(self):
         with TemporaryDirectory(dir=".") as tmp:
-            out=Path(tmp)/"two"
+            out=Path(tmp).relative_to(Path.cwd())/"two"
             x=prepare(out)
             self.assertEqual(x["planned_omc_runs"],2)
             self.assertEqual(x["actual_omc_runs"],0)
@@ -40,7 +40,7 @@ class CT02TwoOnly(unittest.TestCase):
 
     def test_missing_real_native_csv_and_log_fail_closed(self):
         with TemporaryDirectory(dir=".") as tmp:
-            out=Path(tmp)/"two"
+            out=Path(tmp).relative_to(Path.cwd())/"two"
             prepare(out)
             with self.assertRaisesRegex(ValueError,"NO_ACTUAL_TRACE_OR_SOLVER_LOG"):
                 verify(out,git_sha="a"*40,run_id="12345678")
@@ -48,7 +48,7 @@ class CT02TwoOnly(unittest.TestCase):
 
     def test_tampered_script_prevents_verification_even_with_forged_log(self):
         with TemporaryDirectory(dir=".") as tmp:
-            out=Path(tmp)/"two"
+            out=Path(tmp).relative_to(Path.cwd())/"two"
             prepare(out)
             (out/"D-single.mos").write_text(
                 (out/"D-single.mos").read_text()+"\nsimulate(FORGED);\n")
@@ -60,7 +60,7 @@ class CT02TwoOnly(unittest.TestCase):
         with TemporaryDirectory(dir=".") as tmp:
             with self.assertRaisesRegex(ValueError,"RELATIVE_ARTIFACT_PATH"):
                 prepare(Path(tmp).resolve()/"two")
-            out=Path(tmp)/"two"
+            out=Path(tmp).relative_to(Path.cwd())/"two"
             prepare(out)
             with self.assertRaisesRegex(ValueError,"FROZEN_SHA_REQUIRED"):
                 verify(out,git_sha="NOT_A_SHA",run_id="123")
