@@ -113,7 +113,7 @@ function verifyLedgerDiagnostic(feedback, receipt, check) {
      typeof retrieval.item_id!=="string" || !retrieval.item_id.trim() ||
      !hash.test(retrieval.projection_hash??"") ||
      typeof retrieval.as_known_at!=="string" ||
-     !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(retrieval.as_known_at) ||
+     !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(retrieval.as_known_at) ||
      !Number.isFinite(Date.parse(retrieval.as_known_at)))
     fail("CT03_B_LEDGER_RETRIEVAL_METADATA_INVALID");
   return parsed;
