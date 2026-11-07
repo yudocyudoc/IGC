@@ -22,3 +22,35 @@ PUBLIC_INPUT = {
     "construction_times": [0, 1, 2, 4],
     "reserved_times": [6, 8],
 }
+
+OBS_SCHEMA = "igc-ct03-public-construction-observations/1.0"
+
+
+def validate_construction(context, construction):
+    """Common source data only, no D/B/M model, no evaluator or future truth."""
+    import math
+    if not (type(construction) is dict and
+            construction.get("schema") == OBS_SCHEMA and
+            construction.get("source_snapshot_hash") == context["source_hash"] and
+            construction.get("world_public_id") == context["world"] and
+            construction.get("condition_id") == context["condition"] and
+            construction.get("time_unit") == "hours" and
+            construction.get("observable") == "cumulative_delivered"):
+        raise ValueError("CT02_M_WRONG_CONSTRUCTION_SCOPE")
+    if set(construction) != {
+        "schema", "source_snapshot_hash", "world_public_id", "condition_id",
+        "time_unit", "observable", "observations"
+    }:
+        raise ValueError("CT02_M_EXTRA_FIELDS_IN_CONSTRUCTION")
+    points = construction["observations"]
+    if not (type(points) is list and len(points) == 4 and
+            [x.get("time") for x in points if type(x) is dict] == [0, 1, 2, 4]):
+        raise ValueError("CT02_M_FOUR_CONSTRUCTION_CUTS_REQUIRED")
+    previous = -1.
+    for x in points:
+        v = x.get("delivered")
+        if not (type(v) in (int,float) and math.isfinite(v) and
+                previous <= v <= 3.4 + 1e-8):
+            raise ValueError("CT02_M_INVALID_OBSERVED_DELIVERY")
+        previous = v
+    return points
