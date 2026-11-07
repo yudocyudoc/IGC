@@ -104,7 +104,10 @@ class BoundMemoryTest(unittest.TestCase):
             m,_=project(events_from_ledger(other),as_known_at=later.isoformat(),
                         lane="M",investigation_id="E02-M-O1")
             self.assertTrue(m.explain("E02-M-O1:RETAINED_AMBIGUITY")["supported"])
-            self.assertEqual(len(prior)+1,len(newest))
+            self.assertEqual(len(prior),len(newest))
+            self.assertNotEqual(
+                next(x.integrity_hash for x in prior if x.entity_id==diag),
+                next(x.integrity_hash for x in newest if x.entity_id==diag))
 
     def test_unattributed_feedback_or_cross_case_ignored(self):
         with TemporaryDirectory() as tmp:
