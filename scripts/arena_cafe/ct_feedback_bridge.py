@@ -238,10 +238,17 @@ def b_review_envelope(db, context, *, original_native, authenticated_receipt=Non
             or not isinstance(receipt, dict)
             or receipt.get("model_returned") is not True
             or receipt.get("round_kind") != "initial"
+            or receipt.get("world_public_id") != context["world"]
             or receipt.get("condition_id") != context["condition"]
             or receipt.get("source_snapshot_hash") != context["source_hash"]
             or receipt.get("provider_calls") != 1
             or receipt.get("mode") != "live"
+            or receipt.get("upstream_sha") != "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc"
+            or receipt.get("transport") != "CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA"
+            or receipt.get("proxy_requests") != 1
+            or receipt.get("horizon_matches_case") is not True
+            or receipt.get("output_horizon_hours") != 8
+            or receipt.get("upstream_source_modified") is not False
             or not isinstance(receipt.get("result_sha256"), str)):
         return {"status": "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT",
                 "provider_calls": 0}
@@ -259,6 +266,16 @@ def b_review_envelope(db, context, *, original_native, authenticated_receipt=Non
             "route": "OPEN_ROUTER_SDK_CLOUDFLARE_PROTOCOL_REUSE",
             "currentModel": model,
             "own_feedback": memory["diagnostic"],
+            "revision_feedback_packet": {
+                "schema": "igc-ct03-b-own-feedback/1.0",
+                "arm": "B", "world_public_id": context["world"],
+                "condition_id": context["condition"],
+                "source_snapshot_hash": context["source_hash"],
+                "parent_result_sha256": parent_hash,
+                "own_diagnostic_sha256": memory["diagnostic_hash"],
+                "retrieved_before_policy": memory["retrieval"],
+                "own_diagnostic": memory["diagnostic"],
+            },
             "parent_hash": parent_hash,
             "provider_receipt_result_sha256": receipt["result_sha256"],
             "retrieved_before_policy": memory["retrieval"],
