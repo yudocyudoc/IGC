@@ -4,11 +4,11 @@
   "governing_roadmap": "ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md",
   "purpose": "Pareado por brazo: efecto de su propio feedback sobre error reservado, no prueba de intervención FIFO ni de D2",
   "prerequisite": [
-    "CT00 cheap and physical gate verified",
-    "CT01 source and archive availability checked",
-    "CT02 ledger retrieval-to-policy verified",
-    "independent method/operator/custody review",
-    "explicit CT03 live authorization"
+    "CT00 cheap numerical gate verified; inherited physical-m3 job not rerun",
+    "CT01 source identity and archive availability checked",
+    "CT02 preparatory producer-feedback-ledger-policy links verified offline, plus exactly two original D/M numerical conformity OMC checks completed; the CT03 prospective cycle is NOT a CT02 prerequisite",
+    "CT03 actual producer and custodian permissions/mounts verified for procedural separation before live world selection; external archive/RSA authorities optional",
+    "one complete CT03 live batch and stopping rules explicitly authorized at its own milestone"
   ],
   "world": {
     "domain": "abstract conserved items",
@@ -125,5 +125,5 @@
     "no scoring using unavailable future truth"
   ],
   "freeze_status": "NOT_LOCKED_NO_WORLD_GENERATED",
-  "note": "This is a specification/preparation artifact only. It does not claim CT02 is accepted or a custodian/isolated executor already exists."
+  "note": "Protocol is prepared, not frozen to a CT03 world or authorized. CT02 preparatory linkage is accepted with two real original native technical conformities, run 42409210062, and no requirement to know prospective t6/t8 results. CT03 remains an independent batch: custodian separation, genuine producer run, own feedback/revision, lock and score pending. No scientific t6/t8 has been opened."
 }
