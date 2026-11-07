@@ -54,8 +54,10 @@ def verify_receipt(receipt,*,run_id,git_sha,construction=None):
                 construction.get("world_public_id")==receipt["world_public_id"] and
                 construction.get("source_snapshot_hash")==receipt["source_snapshot_hash"] and
                 construction.get("condition_id")=="C0" and
-                set(construction.get("observations",[])[i]["time"]
-                    for i in range(4))=={0,1,2,4},
+                type(construction.get("observations")) is list and
+                len(construction["observations"])==4 and
+                all(type(x) is dict and x.get("time")==t
+                    for x,t in zip(construction["observations"],(0,1,2,4))),
                 "CT03_LOT_B_OTHER_WORLD_OR_PUBLIC_SOURCE_MISMATCH")
     return 11+receipt["m_revision_omc_attempts"]
 
