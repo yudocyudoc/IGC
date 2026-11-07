@@ -249,6 +249,31 @@ jobs:
           assert r['horizon_matches_case'] is True
           print('E01_B_REVIEW_PARENT_CHAIN_EXECUTED_MOCK_ONLY_NO_SCIENTIFIC_CLAIM')
           PY
+      - name: Reject cross-condition Buffalo revision before upstream inference
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+          BUFFALO_ROUND_KIND: revision
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/b-stage-O0-revision/b-visible.json
+          BUFFALO_PARENT_NATIVE: ${{ github.workspace }}/artifacts/e01/b-native-O1/native-engine-result.json
+          BUFFALO_PARENT_RECEIPT: ${{ github.workspace }}/artifacts/e01/b-native-O1/receipt.json
+          BUFFALO_OWN_FEEDBACK: ${{ github.workspace }}/artifacts/e01/b-feedback-O0-offline.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native-cross-condition-rejected
+        run: |
+          set -euo pipefail
+          if node scripts/arena_b_ev01_native_runner.mjs; then
+            echo 'CROSS_CONDITION_NATIVE_PARENT_WRONGLY_ACCEPTED' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e01/b-native-cross-condition-rejected/receipt.json').read_text())
+          assert r['runner_error']=='EV01_PARENT_NOT_OWN_AUTHENTIC_NATIVE_MODEL'
+          assert r['provider_calls']==0 and r['model_returned'] is False
+          assert r['proxy_requests']==0
+          print('B_EV01_CROSS_CONDITION_REVIEW_REJECTED_BEFORE_UPSTREAM')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: arena-continuity-e01-buffalo-ev01-original-offline-chain
