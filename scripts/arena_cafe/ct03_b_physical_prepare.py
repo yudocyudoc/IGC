@@ -94,6 +94,10 @@ def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path)
             port=operator(native)
         except (TranslationBlocked,ValueError) as exc:
             block=str(exc)
+            # The translated Modelica may be valid yet the native delivery
+            # observable remains unresolved. Never stage an executable MOS
+            # without the separately grounded observation operator.
+            model,translated,port=None,None,None
         require((block is not None)==(translated is None),
                 "CT03_B_PHYSICAL_NO_UNCONTROLLED_NATIVE_FALLBACK")
     result={
