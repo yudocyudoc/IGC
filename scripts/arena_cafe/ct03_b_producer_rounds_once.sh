@@ -79,7 +79,11 @@ r=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 assert r["case_id"]=="CT-03" and r["round_kind"]=="initial"
 assert r["mode"]=="live" and type(r["provider_calls"]) is int
 assert r["provider_calls"] in (0,1)
-if r["model_returned"]:
+if r["model_returned"] and r["status"]=="CT03_NATIVE_HORIZON_MISMATCH":
+    assert int(sys.argv[2])!=0 and r["provider_calls"]==1
+    assert r["horizon_matches_case"] is False
+    print("invalid-horizon")
+elif r["model_returned"]:
     assert int(sys.argv[2])==0
     assert r["provider_calls"]==1 and r["status"]=="ORIGINAL_ENGINE_LIVE_OUTPUT_RETURNED"
     print("yes")
@@ -92,12 +96,22 @@ PY
 )"
 
 if [[ "$NATIVE" = no ]]; then
-  # NO_NATIVE is an occupied denominator, never a synthetic zero or
-  # a second POST to force a valid result.
+  # NO_NATIVE occupies the denominator, without a synthetic model or retry.
   python -m scripts.arena_cafe.ct03_b_lock_projection \
     --construction "$PUBLIC" --initial-receipt "$RECEIPT" \
     --out "$RESULT"
   echo CT03_B_ORIGINAL_NO_NATIVE_NO_SECOND_PROVIDER
+  exit 0
+fi
+if [[ "$NATIVE" = invalid-horizon ]]; then
+  # An ORIGINAL native exists but violates the frozen 8h horizon.
+  # Preserve its real SHA/receipt as G0_REJECTED; never feed it to G1/OMC.
+  python -m scripts.arena_cafe.ct03_b_lock_projection \
+    --construction "$PUBLIC" --initial-receipt "$RECEIPT" \
+    --original-native "$ORIGINAL" --out "$RESULT"
+  test -s "$RESULT"
+  test "$(wc -l < "$LEDGER")" = 1
+  echo CT03_B_ORIGINAL_G0_HORIZON_REJECTED_NO_SECOND_PROVIDER
   exit 0
 fi
 
@@ -169,11 +183,17 @@ r=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 assert r["case_id"]=="CT-03" and r["round_kind"]=="revision"
 assert r["mode"]=="live" and type(r["provider_calls"]) is int
 assert r["provider_calls"] in (0,1)
-if r["model_returned"]:
+if r["model_returned"] and r["status"]=="CT03_NATIVE_HORIZON_MISMATCH":
+    assert int(sys.argv[2])!=0 and r["provider_calls"]==1
+    assert r["horizon_matches_case"] is False
+    print("invalid-horizon")
+elif r["model_returned"]:
     assert int(sys.argv[2])==0 and r["provider_calls"]==1
     assert r["status"]=="ORIGINAL_ENGINE_LIVE_OUTPUT_RETURNED"
     print("yes")
 else:
+    assert r["status"] in ("CT03_PROVIDER_ATTEMPT_NO_NATIVE",
+                            "CT03_PREPROVIDER_NO_NATIVE")
     print("no")
 PY
 )"
@@ -190,7 +210,12 @@ if [[ "$UPDATED" = "$ROOT/B-physical-feedback" && -e "$UPDATED/status.json" ]]; 
          --review-packet "$REVIEW_PACKET")
 fi
 if [[ "$REVIEW_NATIVE" = no ]]; then
-  ARGS+=(--stop-reason B_PROVIDER_REVISION_NOT_AVAILABLE_STOP)
+  # F172-10: the failed second runner has its OWN receipt. A consumed
+  # POST is not the same as a never-launched review.
+  ARGS+=(--revision-receipt "$REV_RECEIPT")
+elif [[ "$REVIEW_NATIVE" = invalid-horizon ]]; then
+  # F172-11: keep the native and receipt, but no translation/OMC.
+  ARGS+=(--revision-native "$REV_NATIVE" --revision-receipt "$REV_RECEIPT")
 else
   ARGS+=(--revision-native "$REV_NATIVE" --revision-receipt "$REV_RECEIPT")
   python -m scripts.arena_cafe.ct03_b_physical_prepare \
