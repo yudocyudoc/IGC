@@ -82,7 +82,7 @@ class LotBudgetTests(unittest.TestCase):
     def test_other_run_missing_attempt_or_unsanctioned_m_revision_stops(self):
         with TemporaryDirectory() as t:
             root=Path(t);dm,rev=fake(1);orig,mrev=logs(root,1)
-            with self.assertRaisesRegex(ValueError,"TEN_INITIALS_ONE_SAME_RUN"):
+            with self.assertRaisesRegex(ValueError,"DM_OR_M_REVISED_REPORT_MISMATCH"):
                 issue(dm_report=dm,revisions=rev,initial_attempt_log=orig,
                       m_revision_attempt_log=mrev,run_id="9999",git_sha=SHA)
             mrev.write_text("M4 attempted; GitHub run "+RUN+"; code "+SHA+"\n")
