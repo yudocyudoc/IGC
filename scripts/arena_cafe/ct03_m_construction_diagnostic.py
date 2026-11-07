@@ -210,6 +210,7 @@ def main():
     result = build(get(args.context), manifest=get(args.manifest),
                    parent=get(args.parent), construction=get(args.construction),
                    receipt=get(args.receipt), modelica_file=args.native,
+                   simulate_script_file=args.simulate_script,
                    trace_csv=args.csv)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_bytes(canonical(result) + b"\n")
