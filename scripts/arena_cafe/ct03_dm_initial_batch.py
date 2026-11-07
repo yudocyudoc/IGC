@@ -8,7 +8,9 @@ ledger replay or synthetic physical receipt.
 """
 from __future__ import annotations
 import argparse
+import csv
 import json
+import math
 from pathlib import Path
 
 from scripts.arena_v0_contract import canonical, digest
@@ -120,6 +122,49 @@ def prepare(out:Path,reuse:dict):
     (out/"plan.json").write_bytes(canonical(plan)+b"\n")
     return plan
 
+def _m_material_conservation(csv_path:Path,parent:dict,*,tolerance=0.008):
+    """Existing original E1 material stocks, not report/derivative variables.
+
+    The actual original E1 native types expose .waiting for bounded queues
+    (preparation, dispatch and optional transit) plus deliveredTotal. This is
+    the same boundary and pulse as the verified CT02 original M0. No model
+    repair, dynamics change or inferred capacity is introduced.
+    """
+    stocks=[
+        x["id"]+".waiting" for x in parent["original_ast"]["instances"]
+        if x["role"] in ("preparation","dispatch","transit")
+    ]
+    require(len(stocks) in (2,3,4) and
+            len(stocks)==len(set(stocks)),
+            "CT03_DM_M_ORIGINAL_MATERIAL_STOCK_IDENTITIES_REQUIRED")
+    with csv_path.open(encoding="utf-8-sig",newline="") as f:
+        reader=csv.DictReader(f)
+        names=reader.fieldnames
+        require(names is not None and
+                all(names.count(c)==1 for c in ("time","deliveredTotal",*stocks)),
+                "CT03_DM_M_ORIGINAL_MATERIAL_STOCK_CSV_COLUMNS_MISSING")
+        count=0
+        maximum=0.
+        for r in reader:
+            t=float(r["time"])
+            values=[float(r[c]) for c in stocks]
+            delivered=float(r["deliveredTotal"])
+            require(math.isfinite(t) and
+                    all(math.isfinite(v) for v in (*values,delivered)) and
+                    all(v>=-tolerance for v in (*values,delivered)),
+                    "CT03_DM_M_NONFINITE_OR_NEGATIVE_MATERIAL")
+            arrived=1.7*min(max(t,0),2)
+            residual=abs(sum(values)+delivered-arrived)
+            maximum=max(maximum,residual)
+            require(residual<=tolerance,
+                    "CT03_DM_M_ORIGINAL_CONSERVATION_FAILED")
+            count+=1
+    require(count>=65,"CT03_DM_M_MATERIAL_TRACE_TOO_SHORT")
+    return {"status":"ORIGINAL_E1_MASS_BALANCE_PASS_NOT_HELDOUT_G3",
+            "max_abs_balance":maximum,"stock_columns":stocks,
+            "count":count}
+
+
 def verify_one(out:Path, *, arm:str, index:int, run_id:str, git_sha:str):
     out=Path(out)
     require(arm in ("D","M") and type(index) is int and index in range(1,6),
@@ -174,6 +219,9 @@ def verify_one(out:Path, *, arm:str, index:int, run_id:str, git_sha:str):
         samples,total=_sample(csv_path.read_bytes(),"deliveredTotal")
         require(total==count and set(samples)=={0.,1.,2.,4.},
                 "CT03_DM_M_MISSING_CONSTRUCTION_CUTS")
+        checked=_m_material_conservation(csv_path,parent)
+        require(checked["count"]==count,
+                "CT03_DM_M_MASS_ROWS_DIFFER_FROM_FORECAST")
     result={
         "schema":RESULT,"status":"ONE_REAL_ORIGINAL_INITIAL_NATIVE_CHECKED_NOT_SCORED",
         "arm":arm,"index":index,"candidate_id":row["candidate_id"],
@@ -184,6 +232,9 @@ def verify_one(out:Path, *, arm:str, index:int, run_id:str, git_sha:str):
         "run_id":run_id,"git_sha":git_sha,
         "csv_rows":count,"output_column":row["output_column"],
         "forecast":[{"time":t,"delivered":points[t]} for t in (6,8)],
+        "G2_material_conservation_status":checked["status"],
+        "G2_material_max_residual":(checked.get("max_abs_balance")
+                                   if arm=="M" else None),
         "construction_residuals_not_yet_built":True,
         "feedback_or_revision_executed":False,
         "new_omc_by_this_verifier":0,"provider_calls":0,
