@@ -10,8 +10,10 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
+import base64
+import math
 
-from scripts.arena_v0_contract import digest
+from scripts.arena_v0_contract import digest, canonical
 from scripts.arena_atms import events_from_ledger, project
 from scripts.arena_memory import load_events_from_ledger, retrieve
 from scripts.ledger import Ledger
@@ -95,10 +97,11 @@ def record_feedback(db, context, *, parent_hash, diagnostic, recorded_at):
             diagnostic.get("own_evidence_only") is True,
             "CT02_FUTURE_OR_RIVAL_EVIDENCE_NOT_ALLOWED")
     obs = diagnostic.get("observations", [])
-    require(isinstance(obs, list) and all(isinstance(p, dict) and
-            isinstance(p.get("time"), (int, float)) and
+    require(isinstance(obs, list) and all(type(p) is dict and
+            type(p.get("time")) in (int, float) and math.isfinite(p["time"]) and
             0 <= p["time"] <= 4 and
-            isinstance(p.get("residual"), (int, float)) for p in obs),
+            type(p.get("residual")) in (int, float) and math.isfinite(p["residual"])
+            for p in obs),
             "CT02_DIAGNOSTIC_OUTSIDE_CONSTRUCTION")
     require(diagnostic.get("evidence") == "G1" or _sha(diagnostic.get("trace_sha256")),
             "CT02_G2_G3_REQUIRES_TRACE_HASH")
@@ -290,6 +293,10 @@ def b_review_envelope(db, context, *, original_native, authenticated_receipt=Non
                 "source_snapshot_hash": context["source_hash"],
                 "parent_result_sha256": parent_hash,
                 "own_diagnostic_sha256": memory["diagnostic_hash"],
+                # Canonical Python bytes and hash travel together. JS checks
+                # these exact bytes, their hash, and the transmitted object.
+                "own_diagnostic_canonical_base64": base64.b64encode(
+                    canonical(memory["diagnostic"])).decode("ascii"),
                 "retrieved_before_policy": memory["retrieval"],
                 "own_diagnostic": memory["diagnostic"],
             },
