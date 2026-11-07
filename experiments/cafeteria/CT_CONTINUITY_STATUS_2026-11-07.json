@@ -24,7 +24,9 @@
     "ct03_two_initial_reuse_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42411052819",
     "ct03_two_initial_reuse_artifact_id": 13589342812,
     "ct03_two_initial_reuse_status": "REUSABLE_CONSEQUENCES_TWO_ORIGINALS_NOT_FEEDBACK_OR_SCORES",
-    "recovered_offline_after_reuse": "https://github.com/yudocyudoc/IGC/actions/runs/42411052826"
+    "recovered_offline_after_reuse": "https://github.com/yudocyudoc/IGC/actions/runs/42411052826",
+    "ct03_producer_advance_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
+    "ct03_producer_advance_scope": "ALL_NEW_D_M_B_BRIDGE_TESTS_OFFLINE_ONLY_NO_NEW_OMC"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -327,7 +329,7 @@
     }
   },
   "CT03": {
-    "status": "CT02_PREPARATION_ACCEPTED_CT03_LIVE_PRODUCER_AND_CUSTODY_STILL_NOT_READY_OR_AUTHORIZED",
+    "status": "CT03_PRODUCER_D_M_TEN_AND_FEEDBACK_LINK_IMPLEMENTED_OFFLINE_B_G1_OWN_LEDGER_LINK_PREPARED_FULL_LIVE_LOT_NOT_CONNECTED_OR_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -391,12 +393,88 @@
       "reserved_truth_read": false
     },
     "remaining_operational_gates": [
-      "One actual CT03 custodian with separate account/workspace + inaccessible credentials; private config and y6/y8 cannot enter producer jobs.",
-      "Concrete CT03 producer job for remaining D1..D5 M1..M5 original native OMC, initial B original Engine.generate via existing Cloudflare transport; no new physical without CT03 batch authorization.",
-      "Own diagnostic from actual new construction t0/1/2/4, supported ledger retrieval before M six-parent own_policy / D fixed disposition / B currentModel; genuine revised M/B runs only when applicable, all failures retained.",
-      "Real 13-slot initial/final entries tied to native traces/decisions, archive prospective lock before private t6/y8 reveal; evaluate MAE and baselines only afterward.",
-      "CT03 separate authorized lot with exact stop rules and counts, no RSA required; max 21 new OMC / 2 Buffalo proposed (at most 19 OMC if two proven reuses remain eligible)."
-    ]
+      "Actual custodian separate account/credential isolation and one frozen true-world OMC before public construction release, without any private mount in producer CI.",
+      "One authorized and frozen CT03 workflow wiring original B initial+review calls (max 2), the ten D/M original OMC attempts, B native translation/output operator and physical solve, conditional M/B revisions and global OMC budget; staged ten-only script is NOT full runnable CT03 batch.",
+      "Native B numerical observable must be bound to true cumulative deliveries or classified missing/G1/G2 failure; do not repair original output to fit.",
+      "Final B original slot with real provider/native/receipts and physical outcome/failure; integrate with twelve D/M rows into 13-slot lock, archive in GitHub before evaluator opens t6,t8.",
+      "Run scoring only after procedural custodian has verified lock and producer access is disabled. No CT03 live run currently authorized."
+    ],
+    "d_m_producer_link": {
+      "status": "TEN_INITIAL_NEW_ORIGINALS_STAGED_ZERO_EXECUTED_AND_TWELVE_OWN_POLICIES_CONNECTED_OFFLINE",
+      "source_models": "D original six structures, M original six complete ASTs (not material-equivalent by assumption)",
+      "already_reusable_initial": [
+        "D0",
+        "M0"
+      ],
+      "new_original_attempts_planned": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5"
+      ],
+      "scripts": [
+        "scripts/arena_cafe/ct03_dm_initial_batch.py",
+        "scripts/arena_cafe/ct03_dm_execute_ten_once.sh",
+        "scripts/arena_cafe/ct03_dm_feedback_round.py",
+        "scripts/arena_cafe/ct03_dm_lock_projection.py"
+      ],
+      "exact_single_attempts_if_authorized": 10,
+      "actual_attempts_ct03": 0,
+      "production_shell_default": "DENIES_UNLESS_MANUAL_CT03_BATCH_AUTH_AND_GITHUB_REF_SHA_FIRST_ATTEMPT_19_LIMIT_AND_WORLD_ATTEMPT_ONE",
+      "numerical_gates": "Original D verify_csv and original M E1 queue waiting stocks + deliveredTotal material conservation",
+      "failure_path": "G2_FAILED_NATIVE_ATTEMPT_NO_FORECAST, actual attempt log once, no retry or fake zero; next candidates may continue",
+      "feedback_path": "12 parent-scoped D/M diagnostics only on t0,1,2,4; ledger->ATMS retrieval before D fixed and original M2 own_policy per full AST; only when physical initial succeeded",
+      "revisions": "M modelica rendered only on original own_policy REVISED; separate real OMC required before final lock rows",
+      "lock_projection": "12 D/M strict lock rows only; B missing, no seal, preserve G2 failed denominator",
+      "no_ct03_world_or_truth_selected": true,
+      "real_omc": 0,
+      "real_provider_posts": 0,
+      "CI_test_scope": "All new D/M tests synthetic fixture; real Bash replay against local fake Docker not real execution",
+      "verified_code_sha": "80ec5b95dce38cc355db1667c4fbff9748492ab0",
+      "verified_CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
+        "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188"
+      }
+    },
+    "b_producer_link": {
+      "status": "ORIGINAL_B_NATIVE_TO_G1_OWN_LEDGER_AND_REVISION_PACKET_IMPLEMENTED_NO_LIVE_B",
+      "files": [
+        "scripts/arena_cafe/ct03_b_own_feedback.py",
+        "tests/test_arena_ct03_b_own_feedback.py"
+      ],
+      "original_engine": "scripts/arena_b_ct03_native_runner.mjs",
+      "original_converter": "scripts/arena_b_native_to_modelica.py",
+      "proof_limit": "Requires real B original live native+receipt. Offline tests use synthetic live-shaped fixtures, not proof of provider call.",
+      "translation_failures": "G1_TRANSLATION_BLOCKED preserved and supported in B own ledger; no automatic engine repair",
+      "B_native_output_operator": "NOT_YET_AUTHENTICATED_AS_CUMULATIVE_DELIVERED",
+      "provider_calls_new": 0
+    },
+    "new_code_increment": {
+      "files": [
+        "scripts/arena_cafe/ct03_dm_initial_batch.py",
+        "scripts/arena_cafe/ct03_dm_execute_ten_once.sh",
+        "scripts/arena_cafe/ct03_dm_feedback_round.py",
+        "scripts/arena_cafe/ct03_dm_lock_projection.py",
+        "scripts/arena_cafe/ct03_b_own_feedback.py",
+        "tests/test_arena_ct03_dm_initial_batch.py",
+        "tests/test_arena_ct03_dm_execute_script.py",
+        "tests/test_arena_ct03_dm_feedback_round.py",
+        "tests/test_arena_ct03_dm_lock_projection.py",
+        "tests/test_arena_ct03_b_own_feedback.py",
+        "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md"
+      ],
+      "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
+      "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
+      "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
+      "consumes_no_omc_or_provider_by_tests": true
+    },
+    "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19
   },
   "unchanged": [
     "D/B/M and original equations",
