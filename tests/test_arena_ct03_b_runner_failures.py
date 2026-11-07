@@ -15,10 +15,11 @@ from scripts.arena_cafe.ct03_b_lock_projection import (
     project, project_invalid_horizon_initial
 )
 from scripts.arena_cafe.ct03_assemble_entries import assemble
-from scripts.arena_cafe.ct03_prospective_lock import validate_row
+from scripts.arena_cafe.ct03_prospective_lock import validate_row,seal
 from test_arena_ct03_b_own_feedback import public,fixture as b_fixture
 from test_arena_ct03_b_lock_projection import prepare_fixture,review_receipt
 from test_arena_ct03_assemble_entries import fixture as dm_fixture
+from test_arena_ct03_producer_freeze_handoff import commitment
 
 def invalid(native,receipt,round_kind="initial",packet=None):
     model=copy.deepcopy(native)
@@ -105,6 +106,7 @@ class BuffaloFailedRunnerLifecycleTests(unittest.TestCase):
             dm,b,d,m=dm_fixture(Path(tmp).relative_to(Path.cwd()))
             entries=assemble(dm,result,public(),d,m)
             self.assertEqual(len(entries["rows"]),13)
+            self.assertEqual(seal(public(),commitment(),d,m,entries)["candidate_count"],13)
 
     def test_revised_wrong_horizon_keeps_initial_and_revision_native_failed(self):
         with TemporaryDirectory(dir=".") as tmp:
@@ -127,6 +129,7 @@ class BuffaloFailedRunnerLifecycleTests(unittest.TestCase):
             dm,b,d,m=dm_fixture(root/"dm")
             entries=assemble(dm,r,public(),d,m)
             self.assertEqual(len(entries["rows"]),13)
+            self.assertEqual(seal(public(),commitment(),d,m,entries)["candidate_count"],13)
 
     def test_wrong_parent_source_or_status_still_stops_both_failed_paths(self):
         with TemporaryDirectory(dir=".") as tmp:
