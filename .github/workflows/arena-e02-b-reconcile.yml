@@ -1,0 +1,80 @@
+name: Arena E02-B genuine-attempt reconciliation (no provider / no solver)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/e02_b_attempt_reconcile.py'
+      - 'scripts/arena_b_ev01_status.mjs'
+      - 'scripts/arena_b_ev01_native_runner.mjs'
+      - 'tests/test_arena_cafe_e02_b_attempt_reconcile.py'
+      - 'tests/test_arena_b_ev01_status.mjs'
+      - '.github/workflows/arena-e02-b-reconcile.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  archive-and-validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download immutable original O0 failure archive
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-O0-original-native
+          run-id: 42319874751
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02b/O0
+      - name: Download immutable original O1 failure archive
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-O1-original-native
+          run-id: 42319874751
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02b/O1
+      - name: Verify status classifier and negative controls WITHOUT upstream invocation
+        run: |
+          set -euo pipefail
+          node --test tests/test_arena_b_ev01_status.mjs
+      - name: Verify two archived attempts, tamper and case-isolated ATMS tests
+        env:
+          E02_B_ORIGINAL_O0: artifacts/e02b/O0
+          E02_B_ORIGINAL_O1: artifacts/e02b/O1
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_b_attempt_reconcile.py' -v
+      - name: Regenerate report and append-only SQLite with actual artifact hashes
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e02_b_attempt_reconcile \
+            --o0 artifacts/e02b/O0 --o1 artifacts/e02b/O1 \
+            --out artifacts/e02b/reconciliation \
+            --recorded-at '2026-11-07T00:50:00+00:00'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e02b/reconciliation/reconciliation.json').read_text())
+          assert r['attempted_provider_calls']==2
+          assert r['native_models_returned']==0
+          assert r['revision_calls_attempted']==0
+          assert r['actual_provider_billing']=='UNKNOWN'
+          assert r['experiment_status']=='E02_B_TWO_LIVE_ATTEMPTS_FAILED_TRANSPORT_NO_NATIVE_PARENTS'
+          assert all(r['memory'][c]['snapshots'][1]['no_native_evaluable'] for c in ('O0','O1'))
+          print('E02_B_ORIGINAL_TWO_TIMEOUTS_ARCHIVED_NO_FAKE_SECOND_DECISION')
+          PY
+      - name: Preserve full F1a/ATMS reconciliation and original artifact identities
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-e02-b-actual-attempt-reconciliation
+          path: |
+            artifacts/e02b/reconciliation/reconciliation.json
+            artifacts/e02b/reconciliation/ledger.sqlite
+          retention-days: 90
+          if-no-files-found: error

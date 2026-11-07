@@ -12,6 +12,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { classifyEv01NativeResult } from "./arena_b_ev01_status.mjs";
 
 const ORIGIN="UB-IAD/sd-ai";
 const PIN="5199f7b45f3a7ae4a773cb0dd8542940aabe9edc";
@@ -218,8 +219,9 @@ try {
   results.horizon_matches_case=(isEV01?
       Math.abs(results.output_horizon_hours-1/6)<1e-8:
       null);
-  if(isEV01 && !results.horizon_matches_case){
-    // Never rewrite upstream model output to force the desired horizon.
+  // Do not interpret MISSING native as native returned with WRONG horizon.
+  // A transport timeout must remain a generation failure, not a mismatch.
+  if(isEV01 && results.model_returned && !results.horizon_matches_case){
     results.status="EV01_NATIVE_HORIZON_NOT_COMPARABLE";
   }
   results.upstream_source_modified=false;
@@ -230,6 +232,10 @@ try {
   if(results.status==="STARTED")results.status="RUNNER_FAILURE";
 }finally{
   if(server)await new Promise(done=>server.close(done));
+  if(results.case_id==="EV-01"){
+    // Pure interpretation on the actual provider receipt. No retries.
+    Object.assign(results,classifyEv01NativeResult(results));
+  }
   await save("receipt.json",results);
   console.log(JSON.stringify({status:results.status,mode:results.mode,
     model_returned:results.model_returned,quant_schema_seen:results.quant_schema_seen,
