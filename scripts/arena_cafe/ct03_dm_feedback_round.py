@@ -94,22 +94,48 @@ def _validate_frozen_initials(ten_root,ct02_root,reuse):
                 prefix=candidate["csv_prefix"]
                 trace=ten_root/arm/(prefix+"_res.csv")
                 receipt=ten_root/arm/(prefix+"-result.json")
-                require(receipt.is_file() and trace.is_file(),
+                require(receipt.is_file(),
                         "CT03_DM_FEEDBACK_MISSING_REAL_INITIAL_RUN:"+
                         arm+str(index))
                 result=_load(receipt)
                 require(result.get("schema")==ONE_SCHEMA and
-                        result.get("status")==
-                            "ONE_REAL_ORIGINAL_INITIAL_NATIVE_CHECKED_NOT_SCORED" and
                         result.get("arm")==arm and result.get("index")==index and
                         result.get("candidate_id")==planned["candidate_id"]==cid and
                         result.get("parent_hash")==planned["parent_hash"]==parent and
                         result.get("model_sha256")==planned["model_sha256"] and
                         result.get("script_sha256")==planned["script_sha256"] and
-                        result.get("csv_sha256")==sha_bytes(trace.read_bytes()) and
-                        result.get("solver_log_sha256")==
-                          sha_bytes((ten_root/arm/(prefix+"-omc.log")).read_bytes()) and
                         result.get("run_id") and result.get("git_sha") and
+                        result.get("solver_log_sha256")==
+                          sha_bytes((ten_root/arm/(prefix+"-omc.log")).read_bytes()),
+                        "CT03_DM_FEEDBACK_NATIVE_RESULT_PROVENANCE_MISMATCH")
+                if result.get("status")=="G2_FAILED_NATIVE_ATTEMPT_NO_FORECAST":
+                    require(result.get("trace_sha256") is None and
+                            result.get("forecast") is None and
+                            result.get("not_a_synthetic_zero") is True and
+                            result.get("attempt_log_entry")==
+                              arm+str(index)+" attempted; GitHub run "+
+                                result["run_id"]+"; code "+result["git_sha"],
+                            "CT03_DM_FEEDBACK_FAILED_ATTEMPT_NOT_AUTHENTIC")
+                    initial={"status":"G2_FAILED",
+                             "native_sha256":planned["model_sha256"],
+                             "trace_sha256":None,"receipt_sha256":digest(result),
+                             "forecast":None}
+                    records[(arm,index)]={
+                        "arm":arm,"index":index,"candidate_id":cid,
+                        "parent_hash":parent,
+                        "material_group":(candidate["structure_hash"] if arm=="D"
+                              else candidate["material_only_projection_sha256"]),
+                        "initial":initial,
+                        "trace":None,"column":planned["output_column"],
+                        "parent_graph":candidate.get("original_ast"),
+                        "parent":candidate,"manifest":manifest,
+                        "failed_reason":result["failure_class"]
+                    }
+                    continue
+                require(result.get("status")==
+                            "ONE_REAL_ORIGINAL_INITIAL_NATIVE_CHECKED_NOT_SCORED" and
+                        trace.is_file() and
+                        result.get("csv_sha256")==sha_bytes(trace.read_bytes()) and
                         result.get("construction_residuals_not_yet_built") is True and
                         result.get("feedback_or_revision_executed") is False,
                         "CT03_DM_FEEDBACK_NATIVE_RESULT_PROVENANCE_MISMATCH")
@@ -163,6 +189,30 @@ def build(*,ten_root:Path,ct02_root:Path,reuse:dict,
     for arm in ("D","M"):
         for index in range(6):
             item=records[(arm,index)]
+            if item["initial"]["status"]=="G2_FAILED":
+                rows.append({
+                    "arm":arm,"index":index,
+                    "candidate_id":item["candidate_id"],
+                    "parent_hash":item["parent_hash"],
+                    "material_group":item["material_group"],
+                    "initial":item["initial"],
+                    "own_construction_diagnostic":None,
+                    "own_diagnostic_sha256":None,
+                    "decision":{
+                        "status":"NOT_EXECUTED",
+                        "policy":("D-CT03-EXPLICIT-FIXED-SET/1.0" if arm=="D"
+                                  else "M-E1-OWN-FEEDBACK-SET/1.0"),
+                        "feedback_hash":None,
+                        "retrieved_before_policy":None,
+                        "new_model_sha256":None,
+                    },
+                    "retrieved_before_policy":None,
+                    "revision_native_manifest":None,
+                    "final_state":"FAILED_INITIAL_NO_OWN_POLICY",
+                    "failure_reason":item["failed_reason"],
+                    "world_private_read":False,
+                })
+                continue
             ctx=make_context(experiment="CT03",world=world,round_id="R0",
                              arm=arm,condition="C0",source_hash=source)
             samples=construction_samples(item["trace"],item["column"])
@@ -228,6 +278,9 @@ def build(*,ten_root:Path,ct02_root:Path,reuse:dict,
         "M_ratified_or_abstained_count":sum(r["arm"]=="M" and
                             r["decision"]["status"] in ("RATIFIED","ABSTAINED")
                             for r in rows),
+        "failed_initial_count":sum(r["initial"]["status"]=="G2_FAILED"
+                                   for r in rows),
+        "no_feedback_for_failed_initials":True,
         "new_omc_executed_by_this_module":0,
         "new_provider_calls":0,
         "B_initial_and_revision":"NOT_EXECUTED_BY_THIS_MODULE",
