@@ -124,6 +124,8 @@ def evaluate(*, lock, archive, construction, commitment, producer_root,
     require(any(x["initial"]["status"]=="PREDICTED" or
                 x["final"]["status"]=="PREDICTED" for x in lock["rows"]),
             "CT03_SCORE_ZERO_ADMISSIBLE_PREDICTIONS_STOP")
+    # Fail before any private truth read when a result already exists.
+    require(not Path(out).exists(),"CT03_SCORE_REFUSE_OVERWRITE")
     private=distinct(producer_root,private_dir,out)
     manifest=json.loads((private/"private-manifest.json").read_text(encoding="utf-8"))
     require(manifest.get("schema")==PRIVATE_SCHEMA and
