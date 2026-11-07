@@ -114,6 +114,56 @@ class DMOwnFeedbackRoundTests(unittest.TestCase):
                       recorded_at=T,out=root/"compile-invalid")
             self.assertFalse((root/"compile-invalid").exists())
 
+    def test_one_failed_M_keeps_its_slot_without_feedback_or_fake_zero(self):
+        from scripts.arena_cafe.ct03_dm_initial_batch import record_failure
+        from scripts.arena_cafe.ct03_dm_lock_projection import project
+        with TemporaryDirectory(dir=".") as tmp:
+            root=Path(tmp).relative_to(Path.cwd())
+            source,planned,reused=make_all_twelve(root)
+            # A physical attempt in the synthetic fixture reported a G2 error.
+            # It has no scientific prediction and may not be silently retried.
+            (planned/"M/m04-result.json").unlink()
+            exact="M4 attempted; GitHub run 87654321; code "+"b"*40
+            (planned/"attempts.log").write_text(exact+"\n")
+            failure=record_failure(planned,arm="M",index=4,
+                run_id="87654321",git_sha="b"*40,
+                failure_class="G2_CHECK_FAILED",omc_exit_code=0)
+            self.assertEqual(failure["forecast"],None)
+            self.assertTrue(failure["not_a_synthetic_zero"])
+            report=build(ten_root=planned,ct02_root=source,reuse=reused,
+                         construction=input_construction(),
+                         recorded_at=T,out=root/"dm")
+            self.assertEqual(report["failed_initial_count"],1)
+            self.assertEqual(len(report["rows"]),12)
+            row=next(x for x in report["rows"]
+                     if x["arm"]=="M" and x["index"]==4)
+            self.assertEqual(row["initial"]["status"],"G2_FAILED")
+            self.assertIsNone(row["initial"]["forecast"])
+            self.assertIsNone(row["own_construction_diagnostic"])
+            self.assertIsNone(row["retrieved_before_policy"])
+            self.assertEqual(row["decision"]["status"],"NOT_EXECUTED")
+            d=json.loads((planned/"D/manifest.json").read_text())
+            m=json.loads((planned/"M/manifest.json").read_text())
+            projected=project(report,d,m,{})
+            blocked=next(x for x in projected["rows"]
+                         if x["arm"]=="M" and x["candidate_id"]==row["candidate_id"])
+            self.assertEqual(blocked["initial"],blocked["final"])
+            self.assertEqual(blocked["initial"]["status"],"G2_FAILED")
+            self.assertEqual(projected["candidate_count"],12)
+
+    def test_failure_without_logged_attempt_is_not_promoted_to_G2_failure(self):
+        from scripts.arena_cafe.ct03_dm_initial_batch import record_failure
+        with TemporaryDirectory(dir=".") as tmp:
+            root=Path(tmp).relative_to(Path.cwd())
+            source,planned,reused=make_all_twelve(root)
+            (planned/"M/m04-result.json").unlink()
+            (planned/"attempts.log").write_text("")
+            with self.assertRaisesRegex(ValueError,"ONE_ATTEMPT_LOGGED_REQUIRED"):
+                record_failure(planned,arm="M",index=4,
+                    run_id="87654321",git_sha="b"*40,
+                    failure_class="G2_CHECK_FAILED",omc_exit_code=0)
+            self.assertFalse((planned/"M/m04-result.json").exists())
+
     def test_no_reserved_construction_cut_allowed(self):
         with TemporaryDirectory(dir=".") as tmp:
             root=Path(tmp).relative_to(Path.cwd())
