@@ -97,7 +97,8 @@ jobs:
             test_arena_ct03_evaluator_preflight.py \
             test_arena_ct03_prediction_attestation.py \
             test_arena_ct03_dm_initial_batch.py \
-            test_arena_ct03_dm_feedback_round.py; do
+            test_arena_ct03_dm_feedback_round.py \
+            test_arena_ct03_b_own_feedback.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: CT-03 produce six D and six M native Modelica sources (script only)
