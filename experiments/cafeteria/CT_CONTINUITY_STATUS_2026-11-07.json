@@ -329,7 +329,7 @@
     }
   },
   "CT03": {
-    "status": "CT03_PRODUCER_D_M_TEN_AND_FEEDBACK_LINK_IMPLEMENTED_OFFLINE_B_G1_OWN_LEDGER_LINK_PREPARED_FULL_LIVE_LOT_NOT_CONNECTED_OR_AUTHORIZED",
+    "status": "REVIEW_V4_CONFORMANT_B_ORIGINAL_NATIVE_OUTPUT_AND_POSTRUN_G2_PLANNING_ADDED_OFFLINE_CT03_FULL_LOT_NOT_READY_OR_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -393,11 +393,11 @@
       "reserved_truth_read": false
     },
     "remaining_operational_gates": [
-      "Actual custodian separate account/credential isolation and one frozen true-world OMC before public construction release, without any private mount in producer CI.",
-      "One authorized and frozen CT03 workflow wiring original B initial+review calls (max 2), the ten D/M original OMC attempts, B native translation/output operator and physical solve, conditional M/B revisions and global OMC budget; staged ten-only script is NOT full runnable CT03 batch.",
-      "Native B numerical observable must be bound to true cumulative deliveries or classified missing/G1/G2 failure; do not repair original output to fit.",
-      "Final B original slot with real provider/native/receipts and physical outcome/failure; integrate with twelve D/M rows into 13-slot lock, archive in GitHub before evaluator opens t6,t8.",
-      "Run scoring only after procedural custodian has verified lock and producer access is disabled. No CT03 live run currently authorized."
+      "Actual custodian separate account/credential isolation and one frozen true-world OMC before public construction release, without private mounts in producer CI.",
+      "One authorized and frozen CT03 workflow wiring original B initial+review calls (max 2), ten D/M original attempts, B conditional physical solve, six possible M and one B physical revisions, with shared <=19 actual new OMC budget if D0/M0 reused. Default is denied; NO live CT03 currently authorized.",
+      "B original native producer call with real provider receipt, output observable: unique terminal delivery stock can now be prepared and later checked physically; ambiguous port is explicitly UNRESOLVED (not G1), and native G1 translation blockers are distinct. Real B initial and revised source/physics not yet run.",
+      "Separate M-revision physical execution+receipts, B own currentModel revision+physical receipt and B prospective slot with failures retained. Integrate with 12 D/M into 13-slot prediction lock archived BEFORE revealing t6/t8.",
+      "Run evaluator only after human custodian verifies frozen lock and disables producer access. No CT03 world selected, reserved truth read or score computed."
     ],
     "d_m_producer_link": {
       "status": "TEN_INITIAL_NEW_ORIGINALS_STAGED_ZERO_EXECUTED_AND_TWELVE_OWN_POLICIES_CONNECTED_OFFLINE",
@@ -467,14 +467,54 @@
         "tests/test_arena_ct03_dm_feedback_round.py",
         "tests/test_arena_ct03_dm_lock_projection.py",
         "tests/test_arena_ct03_b_own_feedback.py",
-        "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md"
+        "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
+        "scripts/arena_cafe/ct03_b_physical_prepare.py",
+        "scripts/arena_cafe/ct03_b_physical_result.py",
+        "tests/test_arena_ct03_b_physical_prepare.py",
+        "tests/test_arena_ct03_b_physical_result.py"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
       "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
       "consumes_no_omc_or_provider_by_tests": true
     },
-    "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19
+    "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
+    "review_received": {
+      "title": "REVISION_PR172_INTEGRACION_CT03_06347B6_2026-11-07.md",
+      "reviewed_commit": "06347b62c7c9484480860f2367cf50fadc8398cf",
+      "verdict": "ADVANCE_CONFORMANT_TO_V4_INTEGRATION_PARTIAL_NO_NEW_REPRODUCED_DEFECT",
+      "reviewer_ci": [
+        "https://github.com/yudocyudoc/IGC/actions/runs/42413905423",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42413905419"
+      ],
+      "required_next_hinge": "B original physical observable and solve, own revisions, 13-slot archive, actual custodian environment and one authorized CT03 lot",
+      "new_general_audit_required": false,
+      "additional_CT02_OMC_needed": false
+    },
+    "b_physical_initial_link": {
+      "status": "B_INITIAL_ORIGINAL_NATIVE_PHYSICAL_SCRIPT_AND_POSTRUN_G2_GATE_PREPARED_OFFLINE_NOT_EXECUTED",
+      "implementation": [
+        "scripts/arena_cafe/ct03_b_physical_prepare.py",
+        "scripts/arena_cafe/ct03_b_physical_result.py"
+      ],
+      "offline_tests": [
+        "tests/test_arena_ct03_b_physical_prepare.py",
+        "tests/test_arena_ct03_b_physical_result.py"
+      ],
+      "no_change_to_original_buffalo_engine_or_translator": true,
+      "observable_method": "single native explicitly-delivered terminal stock, zero initial, one material input, no outflows, item units, no alternate material sink; conservative identification only",
+      "unrecognized_observable_status": "B_OBSERVABLE_UNRESOLVED_NO_OMC_NOT_AN_INTRINSIC_G1_FAILURE",
+      "intrinsic_G1_translation_fail_status": "B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC",
+      "conditional_numerical_check": "one OMC 1.26.5 Euler 0..8 dt0.125 if and only if plan is grounded; original material stocks sum to 3.4 input, delivered stock CSV t6/t8 and raw log",
+      "independent_solver_runs_proven": false,
+      "original_B_live_posts_done": 0,
+      "new_B_OMC_done": 0,
+      "B_revision_native_and_second_OMC": "PENDING",
+      "exact_13_slot_final_lock": "PENDING",
+      "custody_mounted_separately": "NOT_ESTABLISHED",
+      "latest_test_code_sha": "d66cc91ac0f310262ee449d0e1c4696e0b15c82c",
+      "tested_with_synthetic_fixtures_only": true
+    }
   },
   "unchanged": [
     "D/B/M and original equations",
