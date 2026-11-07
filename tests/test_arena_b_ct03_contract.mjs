@@ -14,7 +14,7 @@ const fixtureDiagnostic=parent=>({
   observations:[{time:2,residual:0.3},{time:4,residual:0.4}]
 });
 const canonical=x=>JSON.stringify(Object.fromEntries(
-  Object.entries(x).sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>
+  Object.entries(x).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,value])=>
     [key,Array.isArray(value)?value.map(v=>typeof v==="object"?
       Object.fromEntries(Object.entries(v).sort()):v):value])));
 const fixtureFeedback=(parent)=>{
