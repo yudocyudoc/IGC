@@ -21,7 +21,7 @@ from scripts.arena_cafe.ct03_world_custody import PUBLIC_SCHEMA as WORLD_SCHEMA
 
 SCHEMA = "igc-ct03-prospective-prediction-lock/1.0"
 INPUT_SCHEMA = "igc-ct03-prospective-entries/1.0"
-STATES = frozenset(("PREDICTED", "G1_BLOCKED", "G2_FAILED", "NO_NATIVE", "NOT_EXECUTED"))
+STATES = frozenset(("PREDICTED", "G0_REJECTED", "G1_BLOCKED", "G2_FAILED", "NO_NATIVE", "NOT_EXECUTED"))
 DECISIONS = {"D": ("RATIFIED", "NOT_EXECUTED"),
              "M": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED"),
              "B": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED")}
@@ -109,9 +109,12 @@ def validate_state(state, role):
                 (state["native_sha256"] is None or sha(state["native_sha256"])) and
                 (state["receipt_sha256"] is None or sha(state["receipt_sha256"])),
                 "CT03_LOCK_MISSING_TRACE_MUST_NOT_BE_ZERO")
-        if state["status"] in ("G1_BLOCKED", "G2_FAILED"):
+        if state["status"] in ("G0_REJECTED", "G1_BLOCKED", "G2_FAILED"):
             require(sha(state["receipt_sha256"]),
                     "CT03_LOCK_FAILED_RUN_REQUIRES_OWN_RECEIPT")
+        if state["status"] == "G0_REJECTED":
+            require(sha(state["native_sha256"]),
+                    "CT03_LOCK_G0_REJECTED_REQUIRES_EXISTING_NATIVE")
         if state["status"] in ("NO_NATIVE", "NOT_EXECUTED"):
             require(state["native_sha256"] is None,
                     "CT03_LOCK_NO_NATIVE_MUST_BE_EXPLICIT")
@@ -160,6 +163,10 @@ def validate_row(row, expected, world):
         require(decision["new_model_sha256"] is None and
                 row["final"] == row["initial"],
                 "CT03_LOCK_UNREVISED_CANDIDATE_MUST_REUSE_TRACE")
+    if arm != "B":
+        require(row["initial"]["status"] != "G0_REJECTED" and
+                row["final"]["status"] != "G0_REJECTED",
+                "CT03_LOCK_G0_HORIZON_ONLY_BUFFALO")
     if arm == "D":
         require(decision["policy"] == "D-CT03-EXPLICIT-FIXED-SET/1.0",
                 "CT03_LOCK_D2_CANNOT_BE_USED")
