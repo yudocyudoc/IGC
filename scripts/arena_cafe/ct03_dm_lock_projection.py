@@ -36,18 +36,32 @@ def project(dm:dict,d_manifest:dict,m_manifest:dict,revisions:dict):
                 "CT03_DM_LOCK_WRONG_CANDIDATE_OR_PARENT")
         seen.add((arm,cid))
         initial=r["initial"]
-        require(initial["status"]=="PREDICTED" and
-                initial.get("trace_sha256") and initial.get("receipt_sha256"),
-                "CT03_DM_LOCK_REQUIRES_REAL_INITIAL_PREDICTION")
+        require(initial["status"] in ("PREDICTED","G2_FAILED") and
+                initial.get("receipt_sha256") and
+                (initial.get("trace_sha256") is not None
+                 if initial["status"]=="PREDICTED" else
+                 initial.get("trace_sha256") is None and
+                 initial.get("forecast") is None),
+                "CT03_DM_LOCK_REQUIRES_REAL_INITIAL_OR_FAILED_ATTEMPT")
         raw=r["decision"]
         decision={
             "status":raw["status"],
             "policy":raw["policy"],
             "feedback_hash":raw["feedback_hash"],
-            "retrieved_item_id":r["retrieved_before_policy"]["item_id"],
+            "retrieved_item_id":(r["retrieved_before_policy"]["item_id"]
+                                 if r["retrieved_before_policy"] else None),
             "new_model_sha256":None
         }
-        if raw["status"]=="REVISED":
+        if initial["status"]=="G2_FAILED":
+            require(raw["status"]=="NOT_EXECUTED" and
+                    raw["feedback_hash"] is None and
+                    r["retrieved_before_policy"] is None and
+                    r["revision_native_manifest"] is None and
+                    cid not in revisions and
+                    r["final_state"]=="FAILED_INITIAL_NO_OWN_POLICY",
+                    "CT03_DM_LOCK_FAILED_INITIAL_CANNOT_INVENT_FEEDBACK")
+            final=initial
+        elif raw["status"]=="REVISED":
             require(arm=="M" and cid in revisions and
                     r["revision_native_manifest"] is not None,
                     "CT03_DM_LOCK_REVISED_M_MISSING_PHYSICAL_OUTCOME")
