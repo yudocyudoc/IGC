@@ -98,8 +98,11 @@ def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path)
                 "CT03_B_PHYSICAL_NO_UNCONTROLLED_NATIVE_FALLBACK")
     result={
         "schema":SCHEMA,
-        "status":("B_G1_OR_OBSERVABLE_BLOCKED_NO_OMC" if block else
-                  "B_NATIVE_PHYSICAL_PLANNED_NO_OMC"),
+        "status":(
+            "B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC"
+            if b_feedback["G1_status"]=="G1_TRANSLATION_BLOCKED_ORIGINAL_UNCHANGED"
+            else "B_OBSERVABLE_UNRESOLVED_NO_OMC"
+            if block else "B_NATIVE_PHYSICAL_PLANNED_NO_OMC"),
         "world_public_id":construction["world_public_id"],
         "source_snapshot_hash":construction["source_snapshot_hash"],
         "native_result_sha256":receipt["result_sha256"],
@@ -114,7 +117,10 @@ def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path)
         "provider_calls_by_this_step":0,
         "new_omc_by_this_step":0,
         "reserved_truth_read":False,
-        "model_repair_performed":False
+        "model_repair_performed":False,
+        "observable_scope":"Conservative native terminal stock recognition only; "
+                           "an unresolved port is NOT proof that the native lacks "
+                           "valid delivery semantics. No scoring or fit based selection."
     }
     out.mkdir(parents=True,exist_ok=False)
     if translated:
