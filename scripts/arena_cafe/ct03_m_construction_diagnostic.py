@@ -30,9 +30,9 @@ def sha_bytes(data: bytes):
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
-def _column(row, name):
+def _column(row, name, *, exact=False):
     matches = [v for k, v in row.items() if k == name or
-               (k is not None and k.endswith("." + name))]
+               (not exact and k is not None and k.endswith("." + name))]
     require(len(matches) == 1, "CT02_M_CSV_OUTPUT_MISSING_OR_AMBIGUOUS:" + name)
     try:
         x = float(matches[0])
@@ -74,17 +74,20 @@ def _check_receipt(receipt, parent, manifest, native_bytes, csv_bytes):
             receipt.get("stop_time") == 8 and
             receipt.get("number_of_intervals") == 64 and
             receipt.get("exit_code") == 0 and
-            receipt.get("output_role") == "deliveredTotal",
+            receipt.get("output_role") == "deliveredTotal" and
+            receipt.get("model_name") == "ArenaCT03M." + parent["class_name"] and
+            receipt.get("csv_prefix") == parent["csv_prefix"] and
+            receipt.get("csv_column") == receipt["model_name"] + ".deliveredTotal",
             "CT02_M_NATIVE_CSV_OR_RUNTIME_RECEIPT_MISMATCH")
     require(set(receipt) == {
         "schema", "candidate_canonical_sha256", "full_ast_sha256",
         "source_definition_sha256", "modelica_sha256", "csv_sha256",
         "solver", "start_time", "stop_time", "number_of_intervals",
-        "exit_code", "output_role",
+        "exit_code", "output_role", "model_name", "csv_prefix", "csv_column",
     }, "CT02_M_RECEIPT_CONTAINS_UNKNOWN_FIELDS")
 
 
-def _sample(csv_bytes):
+def _sample(csv_bytes, expected_column):
     try:
         content = csv_bytes.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
@@ -93,6 +96,10 @@ def _sample(csv_bytes):
     require(reader.fieldnames is not None and
             len(reader.fieldnames) == len(set(reader.fieldnames)),
             "CT02_M_DUPLICATE_OR_MISSING_CSV_COLUMNS")
+    require(reader.fieldnames.count(expected_column) == 1 and
+            all(name == expected_column or not name.endswith(".deliveredTotal")
+                for name in reader.fieldnames),
+            "CT02_M_WRONG_OR_AMBIGUOUS_CANDIDATE_CSV_COLUMN")
     sampled = {}
     seen = 0
     last_time = -math.inf
@@ -100,7 +107,7 @@ def _sample(csv_bytes):
     for row in reader:
         seen += 1
         t = _column(row, "time")
-        delivered = _column(row, "deliveredTotal")
+        delivered = _column(row, expected_column, exact=True)
         require(0 <= t <= 8 + 1e-8 and t >= last_time - 1e-9,
                 "CT02_M_UNSORTED_OR_OUTSIDE_HORIZON")
         require(delivered >= -1e-7 and
@@ -129,7 +136,7 @@ def build(context, *, manifest, parent, construction, receipt,
     modelica_bytes = Path(modelica_file).read_bytes()
     csv_bytes = Path(trace_csv).read_bytes()
     _check_receipt(receipt, parent, manifest, modelica_bytes, csv_bytes)
-    sample, count = _sample(csv_bytes)
+    sample, count = _sample(csv_bytes, receipt["csv_column"])
     points = [
         {"time": int(cut), "observed": float(obs["delivered"]),
          "simulated": sample[cut],
