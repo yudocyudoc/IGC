@@ -217,3 +217,50 @@ def verify_archive(*, lock, witness, trust_registry, public_key, producer_root):
         "operator_custody_independence": "NOT_ESTABLISHED_BY_SIGNATURE_ALONE",
         "reserved_truth_opened": False, "provider_calls": 0, "omc_executed": 0,
     }
+
+
+def main():
+    """Read-only verification CLI. Does not sign, run OMC or open withheld truth."""
+    import argparse
+    p = argparse.ArgumentParser()
+    sub = p.add_subparsers(dest="kind", required=True)
+    for name in ("runner", "archive"):
+        q = sub.add_parser(name)
+        for key in ("witness", "trust-registry", "public-key", "producer-root",
+                    "out"):
+            q.add_argument("--"+key, required=True, type=Path)
+        if name == "runner":
+            for key in ("manifest", "parent", "receipt", "native",
+                        "simulate-script", "csv", "solver-log"):
+                q.add_argument("--"+key, required=True, type=Path)
+        else:
+            q.add_argument("--lock", required=True, type=Path)
+    args = p.parse_args()
+    require(not args.out.exists(), "CT03_BOUNDARY_REFUSE_OVERWRITE")
+    def read(path):
+        return json.loads(path.read_text(encoding="utf-8"))
+    if args.kind == "runner":
+        report = verify_runner(
+            witness=read(args.witness),
+            trust_registry=args.trust_registry, public_key=args.public_key,
+            producer_root=args.producer_root,
+            manifest=read(args.manifest), parent=read(args.parent),
+            receipt=read(args.receipt),
+            modelica_file=args.native, script_file=args.simulate_script,
+            csv_file=args.csv, solver_log=args.solver_log)
+    else:
+        report = verify_archive(
+            lock=read(args.lock), witness=read(args.witness),
+            trust_registry=args.trust_registry, public_key=args.public_key,
+            producer_root=args.producer_root)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("x", encoding="utf-8") as stream:
+        stream.write(canonical(report).decode("utf-8") + "\n")
+    print(json.dumps({
+        "status": report["status"],
+        "provider_calls": 0, "new_omc": 0,
+        "reserved_truth_opened": False}))
+
+
+if __name__ == "__main__":
+    main()
