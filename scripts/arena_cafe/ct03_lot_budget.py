@@ -26,7 +26,7 @@ FIELDS={"schema","world_public_id","source_snapshot_hash","github_run_id",
         "dm_feedback_sha256","m_revision_outcomes_sha256","new_provider_posts",
         "reserved_truth_read","digest_sha256"}
 
-def verify_receipt(receipt,*,run_id,git_sha):
+def verify_receipt(receipt,*,run_id,git_sha,construction=None):
     require(type(receipt) is dict and set(receipt)==FIELDS and
             receipt.get("schema")==SCHEMA and
             type(run_id) is str and run_id.isdigit() and
@@ -49,6 +49,14 @@ def verify_receipt(receipt,*,run_id,git_sha):
             digest({k:v for k,v in receipt.items()
                     if k!="digest_sha256"})==receipt["digest_sha256"],
             "CT03_LOT_DM_COUNT_ONLY_BUDGET_INVALID_OR_CROSS_RUN")
+    if construction is not None:
+        require(type(construction) is dict and
+                construction.get("world_public_id")==receipt["world_public_id"] and
+                construction.get("source_snapshot_hash")==receipt["source_snapshot_hash"] and
+                construction.get("condition_id")=="C0" and
+                set(construction.get("observations",[])[i]["time"]
+                    for i in range(4))=={0,1,2,4},
+                "CT03_LOT_B_OTHER_WORLD_OR_PUBLIC_SOURCE_MISMATCH")
     return 11+receipt["m_revision_omc_attempts"]
 
 def issue(*,dm_report,revisions,initial_attempt_log,m_revision_attempt_log,
@@ -113,13 +121,16 @@ def main():
         gen.add_argument("--"+n,required=True,type=Path)
     val=sub.add_parser("verify")
     val.add_argument("--receipt",required=True,type=Path)
+    val.add_argument("--construction",required=True,type=Path)
     for x in (gen,val):
         x.add_argument("--run-id",required=True)
         x.add_argument("--git-sha",required=True)
     a=p.parse_args()
     if a.mode=="verify":
         r=json.loads(a.receipt.read_text(encoding="utf-8"))
-        before=verify_receipt(r,run_id=a.run_id,git_sha=a.git_sha)
+        construction=json.loads(a.construction.read_text(encoding="utf-8"))
+        before=verify_receipt(r,run_id=a.run_id,git_sha=a.git_sha,
+                              construction=construction)
         print(json.dumps({"status":"CT03_DM_COUNT_ONLY_BUDGET_VERIFIED",
                           "omc_before_B":before,"max_new_omc":19}))
         return
