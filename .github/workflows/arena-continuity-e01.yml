@@ -5,6 +5,8 @@ on:
       - 'scripts/arena_cafe/**'
       - 'scripts/arena_b_ev01_native_runner.mjs'
       - 'scripts/arena_b_ev01_cf_adapter.mjs'
+      - 'scripts/arena_b_native_g1_diagnostic.mjs'
+      - 'tests/test_arena_b_native_g1_diagnostic.mjs'
       - 'tests/test_arena_b_ev01_cf_adapter.mjs'
       - 'scripts/arena_event_observability.py'
       - 'tests/test_arena_cafe_rf02_*.py'
@@ -238,6 +240,7 @@ jobs:
           PY
           node scripts/arena_b_ev01_native_runner.mjs
           node --test tests/test_arena_b_cf_protocol_adapter.mjs
+          node --test tests/test_arena_b_native_g1_diagnostic.mjs
           node --test tests/test_arena_b_ev01_cf_adapter.mjs
           python - <<'PY'
           import json
