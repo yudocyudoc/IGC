@@ -109,10 +109,12 @@ function verifyLedgerDiagnostic(feedback, receipt, check) {
        finite(p.time) && p.time>=0 && p.time<=4 && finite(p.residual)))
     fail("CT03_B_DIAGNOSTIC_OUTSIDE_CONSTRUCTION");
   const retrieval=feedback.retrieved_before_policy;
+  const expectedItem="ct-CT03-"+check.world+"-R0-B-"+check.condition+
+    "-parent-"+receipt.result_sha256.slice(7)+":FEEDBACK";
   if(!retrieval || typeof retrieval!=="object" || Array.isArray(retrieval) ||
      Object.keys(retrieval).length!==3 ||
      !keys(retrieval,["item_id","projection_hash","as_known_at"]) ||
-     typeof retrieval.item_id!=="string" || !retrieval.item_id.trim() ||
+     retrieval.item_id!==expectedItem ||
      !projectionHash.test(retrieval.projection_hash??"") ||
      typeof retrieval.as_known_at!=="string" ||
      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(retrieval.as_known_at) ||
