@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba"
+    "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -107,7 +107,8 @@
       "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured.",
       "Minimal CT-02 manual-only physical workflow stages original D0+M0 without ranking; single simulate per D/M .mos; GitHub SHA gate + exact budget=2, no PR trigger, no Buffalo or hidden world; production OMC job NOT DISPATCHED.",
       "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
-      "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC."
+      "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC.",
+      "F172-07: exact-two CT02 workflow now checks each original arm's source/solver/CSV/horizon/conservation immediately after its OMC invocation, before proceeding D->M. Real workflow Bash replay with mock Docker verifies invalid D performs only D attempt and valid D performs D and M; no new solver/provider calls."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
@@ -188,7 +189,7 @@
       "ct02_currently_authorized_omc": 0,
       "ct02_attempted_omc": 0,
       "ct02_manual_dispatch_performed": false,
-      "cto2_stop": "one simulate per OMC command, D then M; stop on first solver/CSV/G2 technical check failure, no retry, upload originals including attempts/logs",
+      "cto2_stop": "D then immediate original per-arm native CSV/version/identity/horizon/mass check; no M attempt unless D passes; after M check M then aggregated final report, no retry.",
       "ct03_private_custody": "different operator account/runner required; config/private Modelica/CSV never mounted or uploaded to producer; local custody CLI rejects private paths in repo and incompatible frozen protocol",
       "ct03_public_release": "only t0,t1,t2,t4 and commitment; original private CSV plus t6,t8 kept with custodian",
       "ct03_prospective_lock": ".github/workflows/arena-ct03-freeze-predictions.yml manual dispatch after same SHA producer artifact, no secrets; prior existing 13-slot seal",
@@ -206,9 +207,9 @@
       "reserved_truth_opened": false,
       "special_simplification": "Existing RSA witness/archivist signing modules remain optional and are not imported or run by this minimal operation route",
       "isolation_limit": "Procedural only until custodian uses actual distinct account/workspace/credentials; same-account folders insufficient",
-      "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba",
-      "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
-      "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
+      "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+      "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
+      "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
       "real_omc_runs": 0,
       "provider_posts": 0,
       "des_runs": 0
@@ -288,6 +289,12 @@
         "priority": "P2",
         "status": "FIXED_TESTED",
         "scope": "Initial zero, monotonic nonnegative finite and exogenous arrival bound in Python and JS"
+      },
+      {
+        "id": "F172-07",
+        "priority": "P2",
+        "status": "FIXED_OFFLINE_TESTED",
+        "scope": "D physical conformity gate inside exact-two D/M execution loop before any M OMC attempt; Bash mock-Docker invalid-D one attempt test and valid-D two attempts test."
       }
     ],
     "verified_ci": [
@@ -342,6 +349,25 @@
         "physical_m3": "SKIPPED"
       },
       "scope": "Only caller wiring and offline CLI regression. F172-04 stays closed. No scientific CT02 end-to-end acceptance nor CT03 authorization."
+    },
+    "minimal_run_review": {
+      "review_file": "REVISION_PR172_RECORRIDO_MINIMO_8BC27E1_2026-11-07.md",
+      "reviewed_sha": "8bc27e1d03666823c1c506e2f08225202028cea8",
+      "finding": "F172-07 P2: D->M Bash loop checked only process exit/nonempty CSV; original physical conservation/identity checks occurred after both OMC runs.",
+      "status": "FIXED_OFFLINE_TESTED_NO_NEW_OMC",
+      "fix": "scripts/arena_cafe/ct02_minimal_batch.py exposes verify-arm with exact same per-arm checks used by aggregate verify. Physical workflow calls verify-arm immediately within loop after each OMC; set -euo pipefail stops before M if D fails.",
+      "test": "tests/test_arena_ct02_minimal_batch.py executes the actual YAML Bash step with temporary fake Docker (no physical runtime): bad D CSV with missing mass -> one D attempt and zero M; good D CSV -> both D/M attempts and successful final aggregate check.",
+      "operator_note": "workflow_dispatch must be registered on default branch; --ref experiment/arena-ct00-ct02-20261107 selects branch's SHA and no automatic merge of #171/#172 is implied.",
+      "code_sha_ci": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+      "verified_ci": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
+        "physical_m3": "SKIPPED"
+      },
+      "real_new_omc_simulations": 0,
+      "new_provider_posts": 0,
+      "new_des_simulations": 0,
+      "authorization": "NOT_GRANTED"
     }
   }
 }
