@@ -1,0 +1,121 @@
+name: Arena CT-02 | one-shot two-model numerical conformity
+run-name: CT02 technical two-run batch | ${{ inputs.freeze_sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      authorized:
+        description: 'Explicit batch authorization (not per file): yes only after protocol/code freeze'
+        required: true
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+      budget:
+        description: 'Exact CT-02 technical budget: 2 solver simulations, no retry'
+        type: number
+        required: true
+        default: 0
+      freeze_sha:
+        description: '40-char HEAD SHA of frozen protocol + adapters (must equal the dispatched commit)'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+concurrency:
+  group: arena-ct02-physical-once-at-a-time
+  cancel-in-progress: false
+
+jobs:
+  ct02-physical-two-only:
+    # Configure environment reviewers in GitHub Settings before authorizing.
+    # With no environment protection this is solely a procedural safeguard.
+    environment: arena-ct02-physical
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout frozen code without write credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Enforce one batch, frozen SHA, no PR/push trigger
+        shell: bash
+        env:
+          AUTH: ${{ inputs.authorized }}
+          MAX_RUNS: ${{ inputs.budget }}
+          FROZEN: ${{ inputs.freeze_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$AUTH" = yes
+          test "$MAX_RUNS" = 2
+          [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
+          test "$FROZEN" = "$GITHUB_SHA"
+          case "$GITHUB_REF_NAME" in
+            main|experiment/arena-ct00-ct02-20261107) ;;
+            *) echo 'CT02_UNAPPROVED_GIT_REF'; exit 1 ;;
+          esac
+          echo "CT02_EXACT_TWO_AUTHORIZED frozen=$FROZEN run=$GITHUB_RUN_ID"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare original D0 and Short E1 M only, before any OMC
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct02_minimal_batch prepare --out artifacts/ct02-exact-two
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path("artifacts/ct02-exact-two")
+          x=json.loads((p/"batch.json").read_text())
+          assert x["planned_omc_runs"]==2 and x["actual_omc_runs"]==0
+          assert [y["arm"] for y in x["items"]]==["D","M"]
+          assert all((p/(a+"-single.mos")).read_text().count("simulate(")==1 for a in ("D","M"))
+          print("CT02_TWO_DECLARED_BEFORE_EXECUTION")
+          PY
+      - name: Install same pinned Modelica libraries as inherited native route
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/e1-libs" "$RUNNER_TEMP/e1-home"
+          git clone --quiet --depth 1 --branch v4.0.0 https://github.com/modelica/ModelicaStandardLibrary.git "$RUNNER_TEMP/e1-libs/msl"
+          git clone --quiet --depth 1 --branch v2.1.2 https://github.com/modelica-3rdparty/SystemDynamics.git "$RUNNER_TEMP/e1-libs/systemdynamics"
+          docker pull openmodelica/openmodelica:v1.26.5-minimal
+          {
+            echo "github_sha=$GITHUB_SHA"
+            echo "github_run_id=$GITHUB_RUN_ID"
+            echo "msl_ref=$(git -C "$RUNNER_TEMP/e1-libs/msl" rev-parse HEAD)"
+            echo "systemdynamics_ref=$(git -C "$RUNNER_TEMP/e1-libs/systemdynamics" rev-parse HEAD)"
+            echo "image_digest=$(docker image inspect openmodelica/openmodelica:v1.26.5-minimal --format '{{index .RepoDigests 0}}')"
+          } > artifacts/ct02-exact-two/runtime-identity.txt
+      - name: Execute exactly one D then one M, no retry, preserve stdout/stderr
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=artifacts/ct02-exact-two
+          : > "$OUT/attempts.log"
+          for arm in D M; do
+            printf '%s attempted; GitHub run %s; code %s\n' "$arm" "$GITHUB_RUN_ID" "$GITHUB_SHA" >> "$OUT/attempts.log"
+            docker run --rm --network none \
+              --user "$(id -u):$(id -g)" \
+              -v "$PWD:/repo" -w /repo \
+              -v "$RUNNER_TEMP/e1-home:/omhome" -e HOME=/omhome \
+              -v "$RUNNER_TEMP/e1-libs:/thirdparty:ro" \
+              -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
+              openmodelica/openmodelica:v1.26.5-minimal \
+              omc "$OUT/$arm-single.mos" 2>&1 | tee "$OUT/$arm-omc.log"
+            test -s "$OUT/$(test "$arm" = D && echo d00_res.csv || echo m00_res.csv)"
+          done
+      - name: Verify native originals, delivered outputs and conserved mass
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct02_minimal_batch verify \
+            --out artifacts/ct02-exact-two --git-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
+      - name: Preserve original scripts, source, CSV, solver logs and failure count
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-ct02-technical-attempt-${{ github.run_id }}
+          path: artifacts/ct02-exact-two/
+          retention-days: 60
+          if-no-files-found: warn
