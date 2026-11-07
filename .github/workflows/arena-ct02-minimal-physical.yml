@@ -103,7 +103,10 @@ jobs:
               -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
               openmodelica/openmodelica:v1.26.5-minimal \
               omc "$OUT/$arm-single.mos" 2>&1 | tee "$OUT/$arm-omc.log"
-            test -s "$OUT/$(test "$arm" = D && echo d00_res.csv || echo m00_res.csv)"
+            # Enforce D's native identity, horizon and conservation BEFORE running M.
+            # One failed arm ends this single-shot batch; no retry.
+            python -m scripts.arena_cafe.ct02_minimal_batch verify-arm \
+              --arm "$arm" --out "$OUT" --git-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
           done
       - name: Verify native originals, delivered outputs and conserved mass
         shell: bash
