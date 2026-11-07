@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from scripts.arena_cafe.native_handoff import need, validate_a1_visible
-from scripts.arena_cafe.native_pos_scenario import bins_from_pos
+from scripts.arena_cafe import r2_causal_pos_signal as causal
 from scripts.arena_v0_contract import INPUT_SCHEMA, canonical, digest, validate_visible_input
 
 SCHEMA="igc-a3-buffalo-ev01-public-construction-preflight/0.1"
@@ -29,11 +29,13 @@ MAX_COMPLETION_TOKENS=3500
 def stage(visible,condition):
     validate_a1_visible(visible,condition)
     need(condition in ("O0","O1"),"A3_B_BAD_CONDITION")
-    bins=bins_from_pos(visible,condition)
+    kernel=causal.from_visible(visible,condition)
+    rate=kernel['signal']
     series=visible["construction"]["observation_series"]
     public_event=visible["construction"]["pos_arrival_events"]
-    need(len(public_event)==15 and len(bins)==20 and
-         sum(x["orders"] for x in bins)==15,
+    need(len(public_event)==15 and rate["events_count"]==15 and
+         Q(rate["total_event_mass_orders_exact"])==15 and
+         rate["policy"]==causal.POLICY,
          "A3_B_POS_MASS_OR_KNOWN_CONTROL_DRIFT")
     need([x["t_minutes_exact"] for x in series]==
          ["0","2","4","6","8","10"],"A3_B_GRID_DRIFT")
@@ -47,20 +49,29 @@ def stage(visible,condition):
            "delivered_cumulative":x["delivered_cumulative"]
       } for x in series],
       "declared_input_reconstruction":{
-           "policy":"UNIFORM_MASS_PER_HALF_MINUTE_BIN_NOT_OBSERVED_RATE",
-           "bin_width_minutes_exact":"1/2",
+           "policy":rate["policy"],
+           "signal_sha256":rate["event_rate_signal_sha256"],
+           "events_hash":kernel["events_hash"],
+           "width_minutes_exact":rate["width_minutes_exact"],
+           "cutoff_minutes_exact":rate["cutoff_minutes_exact"],
+           "support_end_minutes_exact":rate["support_end_minutes_exact"],
+           "total_event_mass_orders_exact":rate["total_event_mass_orders_exact"],
+           "mass_before_cutoff_orders_exact":rate["mass_before_cutoff_orders_exact"],
+           "mass_deferred_after_cutoff_orders_exact":rate["mass_deferred_after_cutoff_orders_exact"],
+           "event_times_minutes_exact":rate["event_times_minutes_exact"],
            "time_unit_for_buffalo":"hour",
            "rate_unit_for_buffalo":"orders/hour",
-           "piecewise_constant_bins":[{
+           "piecewise_constant_segments":[{
                "start_hours_exact":str(Q(b["start_minutes_exact"])/60),
                "end_hours_exact":str(Q(b["end_minutes_exact"])/60),
-               "rate_orders_per_hour_exact":str(
-                   Q(b["rate_orders_per_minute_exact"])*60),
-               "orders_integrated":b["orders"]
-           } for b in bins],
+               "rate_orders_per_hour_exact":str(Q(b["rate_orders_per_minute_exact"])*60),
+               "mass_orders_exact":b["mass_orders_exact"],
+           } for b in rate["segments"]],
            "source":"PUBLIC_POS_CREATION_TIMES",
-           "total_orders":15,
            "not_an_observed_instantaneous_rate":True,
+           "mass_not_moved_before_event":True,
+           "tail_not_truncated_or_moved_before_event":True,
+           "no_delivery_data_used_to_generate_stimulus":True,
       },
       "initial_conditions":{"orders_in_process":0,"orders_delivered":0},
       "known_material_accounting":"A(t)=P(t)+D(t); no cancellations or losses in this declared synthetic control",
@@ -84,9 +95,10 @@ def stage(visible,condition):
       "observed cumulative output. Use hours for time, orders for stocks and "
       "orders/hour for flows. Simulate construction [0,1/6] hours from zero "
       "initial stocks. The public exact POS event times are supplied, together "
-      "with an explicitly ASSUMED piecewise-constant half-minute reconstruction "
-      "of 15 incoming orders; that reconstruction is not a measured instantaneous "
-      "rate. Do not substitute a constant or invented pulse for the declared "
+      "with an explicitly ASSUMED CAUSAL right-hand event kernel "
+      "on [event_t,event_t+0.5 min), converted exactly to hours; it is not a measured instantaneous "
+      "rate. Do not move input mass before each event, truncate support after cutoff, " 
+      "or substitute a constant or invented pulse for the declared "
       "piecewise input without explicitly marking a limitation. Propose your "
       "OWN mechanism; no D or molecular candidates are supplied. Include only "
       "mechanistically motivated assumptions; don't claim unique causal "
@@ -142,7 +154,11 @@ def stage(visible,condition):
         "buffalo_visible_hash":digest(result),
         "model":MODEL,"native_original_engine":ORIGINAL_ENGINE,
         "provider_calls":0,"possible_later_max_provider_calls":MAX_PROVIDER_CALLS,
-        "max_output_tokens_existing_frozen_bridge":MAX_COMPLETION_TOKENS,
+        "historical_bridge_token_cap_not_ev01_config":MAX_COMPLETION_TOKENS,
+        "ev01_original_engine_max_tokens_opt_in":16000,
+        "native_model_horizon_hours_exact":"1/6",
+        "b_live_authorized":False,
+        "arrival_signal_sha256":rate["event_rate_signal_sha256"],
         "original_engine_unchanged":True,
         "public_pos_orders":15,
         "input_reconstruction_is_declared_assumption":True,
