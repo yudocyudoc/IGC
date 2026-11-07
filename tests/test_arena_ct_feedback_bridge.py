@@ -6,7 +6,7 @@ import unittest
 
 from scripts.arena_v0_contract import digest
 from scripts.arena_cafe.ct_feedback_bridge import (
-    make_context, record_feedback, recover_feedback, retract_feedback,
+    make_context, record_feedback, recover_feedback, retract_feedback, _parent_scope,
     own_m_decision, d_fixed_decision, b_review_envelope, persist_disposition,
 )
 
@@ -84,7 +84,7 @@ class CT02Test(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "CT02_WITHDRAWN_OR_MISMATCHED_FEEDBACK"):
                 recover_feedback(db, ctx, parent_hash="sha256:" + "c" * 64,
                                  as_known_at=when)
-            retract_feedback(db, ctx, at=(TIME + timedelta(seconds=2)).isoformat())
+            retract_feedback(db, ctx, parent_hash=digest(graph), at=(TIME + timedelta(seconds=2)).isoformat())
             with self.assertRaisesRegex(ValueError, "CT02_WITHDRAWN_OR_MISMATCHED_FEEDBACK"):
                 recover_feedback(db, ctx, parent_hash=digest(graph),
                                  as_known_at=(TIME + timedelta(seconds=3)).isoformat())
@@ -122,17 +122,18 @@ class CT02Test(unittest.TestCase):
             cut = (TIME + timedelta(seconds=2)).isoformat()
             saved = persist_disposition(db, ctx, decision=decision, recorded_at=cut)
             self.assertEqual(saved["model_change_count"], 1)
+            scoped = _parent_scope(ctx, digest(graph))
             ledger = Ledger(db, MIGRATION)
             old, _ = project(events_from_ledger(ledger.snapshot(
-                case_id=ctx["case_id"], as_known_at=cut)), as_known_at=cut,
-                lane="M", investigation_id=ctx["case_id"])
-            target = ctx["case_id"] + ":DECISION"
+                case_id=scoped["case_id"], as_known_at=cut)), as_known_at=cut,
+                lane="M", investigation_id=scoped["case_id"])
+            target = scoped["case_id"] + ":DECISION"
             self.assertTrue(old.explain(target)["supported"])
-            retract_feedback(db, ctx, at=(TIME + timedelta(seconds=3)).isoformat())
+            retract_feedback(db, ctx, parent_hash=digest(graph), at=(TIME + timedelta(seconds=3)).isoformat())
             later = (TIME + timedelta(seconds=4)).isoformat()
             new, _ = project(events_from_ledger(ledger.snapshot(
-                case_id=ctx["case_id"], as_known_at=later)), as_known_at=later,
-                lane="M", investigation_id=ctx["case_id"])
+                case_id=scoped["case_id"], as_known_at=later)), as_known_at=later,
+                lane="M", investigation_id=scoped["case_id"])
             self.assertFalse(new.explain(target)["supported"])
             self.assertTrue(old.explain(target)["supported"])
 
@@ -191,6 +192,52 @@ class CT02Test(unittest.TestCase):
             self.assertEqual(b_review_envelope(db, ctx, original_native=altered,
                       authenticated_receipt=receipt, as_known_at=later)["status"],
                       "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT")
+
+
+    def test_all_six_m_parents_coexist_revise_independently_and_retract(self):
+        """F172-01: six distinct originals under one W1/R0/M/C0; time-travel stable."""
+        from scripts.arena_cafe.ct03_m_prepare import generated
+        rows, groups, _, _ = generated()
+        self.assertEqual(len(rows), 6)
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "six.sqlite"
+            ctx = context()
+            hashes = []
+            case_ids = []
+            for row in rows:
+                graph = row["original_ast"]
+                h = digest(graph)
+                hashes.append(h)
+                stored = record_feedback(db, ctx, parent_hash=h,
+                    diagnostic=diag(ctx, h), recorded_at=TIME.isoformat())
+                case_ids.append(stored["case_id"])
+            self.assertEqual(len(set(hashes)), 6)
+            self.assertEqual(len(set(case_ids)), 6)
+            self.assertTrue(all(s.startswith(ctx["case_id"]+"-parent-") for s in case_ids))
+            cut1=(TIME + timedelta(seconds=1)).isoformat()
+            cut2=(TIME + timedelta(seconds=2)).isoformat()
+            for graph_row, h in zip(rows, hashes):
+                retrieved = recover_feedback(db, ctx, parent_hash=h, as_known_at=cut1)
+                self.assertEqual(retrieved["parent_hash"], h)
+                choice = own_m_decision(db, ctx, parent_graph=graph_row["original_ast"],
+                    as_known_at=cut1)
+                self.assertIn(choice["status"], ("REVISED", "RATIFIED", "ABSTAINED"))
+                self.assertEqual(choice["parent_hash"], h)
+                saved = persist_disposition(db, ctx, decision=choice, recorded_at=cut2)
+                self.assertEqual(saved["case_id"], _parent_scope(ctx, h)["case_id"])
+            retract_feedback(db, ctx, parent_hash=hashes[2],
+                             at=(TIME + timedelta(seconds=3)).isoformat())
+            cut3=(TIME + timedelta(seconds=4)).isoformat()
+            with self.assertRaisesRegex(ValueError, "CT02_WITHDRAWN_OR_MISMATCHED_FEEDBACK"):
+                recover_feedback(db, ctx, parent_hash=hashes[2], as_known_at=cut3)
+            for i,h in enumerate(hashes):
+                self.assertEqual(recover_feedback(db, ctx, parent_hash=h,
+                    as_known_at=cut1)["parent_hash"],h)
+                if i != 2:
+                    self.assertEqual(recover_feedback(db, ctx, parent_hash=h,
+                        as_known_at=cut3)["parent_hash"],h)
+            with self.assertRaises(TypeError):
+                retract_feedback(db,ctx,at=cut3)
 
 
 if __name__ == "__main__":
