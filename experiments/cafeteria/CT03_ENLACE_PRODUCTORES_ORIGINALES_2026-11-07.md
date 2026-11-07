@@ -267,3 +267,26 @@ archivar el lock en Actions y luego permitir que el custodio lea t6/t8.
 CT-03 sigue en **0 OMC nuevos, 0 POST Buffalo, 0 DES**;
 CT-02 conserva sus dos simulaciones históricas consumidas.
 No se habilita este piloto por un push, CI verde o el presente documento.
+
+
+## CT-03 · Productor único preparado por workflow manual (continuidad posterior a Astra d3cc94a)
+
+**Alcance:** se cerró F172-09 offline, sin un defecto nuevo reproducido en la revisión independiente. Esta continuación prepara el productor global **sin dispararlo**. Continúa vigente la hoja v4.0 y el protocolo CT-03: no se amplían motores, métodos, mundo, parámetros, presupuesto ni métrica.
+
+### Dos fronteras y una contabilidad compartida
+
+- `.github/workflows/arena-ct03-public-intake.yml` es una **recepción manual** de los únicos tres JSON ya liberados por el custodio externo: `construction.json`, `world-commitment.json`, `release-status.json`. Recibe únicamente sus bytes base64 públicos, exige SHA40 de código congelado, rechaza la reserva y coteja los cuatro cortes, hashes y protocolo mediante `ct03_public_intake.py`. **No selecciona, ejecuta ni acredita por sí mismo la independencia del custodio.** Este último tiene que elegir y simular su único mundo bajo cuenta/credenciales privadas **antes** del intake; no debe aportar modelo, semilla ni CSV íntegro.
+- `.github/workflows/arena-ct03-producer.yml` define un **lote único manual**, con aprobación de SHA, run anterior de intake, `authorized=yes`, máximos `max_new_omc=19` y `max_provider_posts=2`, primer intento, rama congelada y aprobación adicional en variables `CT03_APPROVED_FREEZE_SHA`, `CT03_APPROVED_RELEASE_RUN_ID`, `CT03_EXTERNAL_CUSTODIAN_ACK=external_private_world_attempted_once`. El nombre de un environment **no garantiza** required reviewers: se deben configurar efectivamente. Una segunda ejecución manual se rechaza conservadoramente hasta adjudicación de incidentes, pues la primera podría haber consumido presupuesto.
+- El job D/M reutiliza D0/M0 del run físico CT-02 **sin nuevas simulaciones**; ejecutaría únicamente D1–D5, M1–M5, feedback propio y revisiones M2 seleccionadas. El job B recibe sólo el paquete público y `dm-budget.json` de `ct03_lot_budget.py`: **no monta modelos, CSV ni ledger D/M**. El recibo cuenta mundo 1 + originales 10 + revisiones M 0–6; B puede gastar 0–2 OMC, sin rebasar 19. Exige mismo GitHub run, SHA, mundo y hash de fuente pública, incluso antes del primer POST.
+- B original ejecutaría la ruta existente `arena_b_ct03_native_runner.mjs` máximo una vez; conservaría `NO_NATIVE`, G1 bloqueado, G2 fallido o G3, con feedback propio F1a/ATMS y una revisión real `Engine.generate(currentModel)` máximo una vez. `ct03_b_producer_rounds_once.sh` orquesta ambas fases y el ejecutor B físico existente. Un error irreversible detiene el lote; no hay retries, reparación automática ni proveedor de respaldo.
+- El job de cierre une las doce plazas D/M con la única B y emite **sólo** los cinco archivos autorizados `arena-ct03-producer-public-and-forecasts`. No dispone de parámetros/CSV del mundo verdadero. El workflow separado `arena-ct03-freeze-predictions.yml` ahora exige origen exacto: productor manual exitoso, mismo SHA, primer intento, rama y ruta de workflow, y genera el archivo prospectivo **en otro run**. Antes de ese archivo no se abre la reserva del evaluador.
+
+### Rectificación de interoperabilidad B
+
+En el runner original CT-03, `own_feedback_sha256` del recibo se calculaba con `JSON.stringify` de JavaScript; la proyección Python exigía `digest(packet)` de bytes canónicos ordenados. No son hashes equivalentes en general. El runner de caso ahora registra SHA-256 de los **bytes canónicos UTF-8 del paquete exportado por Python**, quitando exactamente el LF final exigido, sin resintetizar el contenido JS ni alterar el motor original. La integración mock real del runner verifica igualdad exacta con `digest(packet)`. Es un arreglo de procedencia de la segunda llamada, no otro método predictivo.
+
+### Cuándo puede intentarse un lote real
+
+Esta preparación **no autoriza** lanzar intake, productor, Buffalo, OMC ni un lock. Antes de hacerlo faltan: custodio externo separado realmente desplegado con su único intento privado; revisión humana del congelado, aprobación efectiva de environments/variables y credenciales por rol; registro de los workflows manuales en la rama por defecto para permitir `workflow_dispatch` **sin fusionar automáticamente PR #171/#172**; evidencia pública válida; y una autorización explícita del lote completo. Ni el intake ni el productor deben obtener claves del custodio. Cualquier fallo o ejecución parcial queda para adjudicación, no se despacha un nuevo run automáticamente.
+
+**Costos a la fecha de esta preparación:** CT-02 = 2/2 OMC históricos técnicos; CT-03 = **0 OMC, 0 POST Buffalo, 0 DES**. Mundo no seleccionado, verdad reservada no abierta, trece predicciones reales no selladas. CI y fixtures no son un resultado G3 ni prueba de acceso aislado. Ningún evaluador ni scoring se ejecuta en los nuevos workflows.
