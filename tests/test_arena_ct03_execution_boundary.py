@@ -8,6 +8,7 @@ import copy
 import json
 from pathlib import Path
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -200,6 +201,76 @@ class IndependentWitnessContractTest(unittest.TestCase):
                                public_key=archive_public,producer_root=producer)
             self.assertEqual(out["status"],
                              "LOCK_ARCHIVE_SIGNATURE_AND_BYTES_VERIFIED_NO_TRUTH_READ")
+
+
+    def test_real_runner_and_archivist_cli_refuse_tamper_and_overwrite(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            _,secret,public,registry,arch_secret,arch_public=credentials(root)
+            producer,manifest,parent,receipt,mo,csv,log,statement=runner_fixture(root)
+            witness=signed(root,statement,"PHYSICAL_OMC","TEST_RUNNER",secret)
+            for name,obj in (("runner-witness",witness),("manifest",manifest),
+                             ("parent",parent),("receipt",receipt)):
+                (root/(name+".json")).write_text(json.dumps(obj))
+            output=root/"runner-report.json"
+            base=[sys.executable,"-m","scripts.arena_cafe.ct03_execution_boundary"]
+            cli=base+["runner",
+              "--witness",str(root/"runner-witness.json"),
+              "--trust-registry",str(registry),
+              "--public-key",str(public),
+              "--producer-root",str(producer),
+              "--manifest",str(root/"manifest.json"),
+              "--parent",str(root/"parent.json"),
+              "--receipt",str(root/"receipt.json"),
+              "--native",str(mo),
+              "--simulate-script",str(mo.parent/"simulate.mos"),
+              "--csv",str(csv),
+              "--solver-log",str(log),
+              "--out",str(output)]
+            repo=Path(__file__).resolve().parents[1]
+            pass_result=subprocess.run(cli,cwd=repo,capture_output=True,
+                                       text=True,timeout=30)
+            self.assertEqual(pass_result.returncode,0,pass_result.stderr)
+            self.assertTrue(output.exists())
+            self.assertFalse(json.loads(output.read_text())["authentic_solver_execution_proven"])
+            overwrite=subprocess.run(cli,cwd=repo,capture_output=True,
+                                     text=True,timeout=30)
+            self.assertNotEqual(overwrite.returncode,0)
+            self.assertIn("CT03_BOUNDARY_REFUSE_OVERWRITE",overwrite.stderr)
+            log.write_bytes(log.read_bytes()+b"TAMPER\n")
+            rejected=root/"runner-rejected.json"
+            bad=subprocess.run(cli[:-1]+[str(rejected)],cwd=repo,
+                               capture_output=True,text=True,timeout=30)
+            self.assertNotEqual(bad.returncode,0)
+            self.assertIn("SIGNED_COMMAND_LOG_OR_PARENT_MISMATCH",bad.stderr)
+            self.assertFalse(rejected.exists())
+            # Independent archive-only invocation (synthetic all-absent lock).
+            consumer=root/"lock-producer"
+            consumer.mkdir()
+            c,w,d,m,entries=lock_fixture(consumer)
+            lock=seal(c,w,d,m,entries)
+            archived={
+                "case_id":"CT-03","world_public_id":"W1",
+                "lock_sha256":lock["lock_sha256"],
+                "protocol_sha256":lock["protocol_sha256"],
+                "world_commitment_sha256":lock["world_commitment_sha256"],
+                "archive_id":"TEST_ARCHIVE_78910",
+                "archived_before_evaluator_access":True}
+            witness=signed(root,archived,"LOCK_ARCHIVE","TEST_ARCHIVER",arch_secret)
+            (root/"lock.json").write_text(json.dumps(lock))
+            (root/"archive-witness.json").write_text(json.dumps(witness))
+            archive_output=root/"archive-report.json"
+            archive_cli=base+["archive",
+              "--witness",str(root/"archive-witness.json"),
+              "--trust-registry",str(registry),
+              "--public-key",str(arch_public),
+              "--producer-root",str(consumer),
+              "--lock",str(root/"lock.json"),
+              "--out",str(archive_output)]
+            success=subprocess.run(archive_cli,cwd=repo,capture_output=True,
+                                   text=True,timeout=30)
+            self.assertEqual(success.returncode,0,success.stderr)
+            self.assertFalse(json.loads(archive_output.read_text())["reserved_truth_opened"])
 
 
 if __name__=="__main__":
