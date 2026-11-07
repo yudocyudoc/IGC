@@ -190,10 +190,10 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
                 ["time","deliveredTotal",foreign],
                 ["time","deliveredTotal",own_prefixed],
             ):
-                csv_path.write_text(",".join(columns)+"\\n"+
-                    "\\n".join(",".join([line.split(",")[0]]+
+                csv_path.write_text(",".join(columns)+"\n"+
+                    "\n".join(",".join([line.split(",")[0]]+
                         [line.split(",")[1]]*(len(columns)-1))
-                        for line in root_header[1:])+"\\n")
+                        for line in root_header[1:])+"\n")
                 bound = {**r, "csv_sha256": sha_bytes(csv_path.read_bytes())}
                 with self.subTest(columns=columns), self.assertRaisesRegex(
                         ValueError,"WRONG_OR_AMBIGUOUS_CANDIDATE_CSV_COLUMN"):
