@@ -1,0 +1,82 @@
+{
+  "schema": "igc-ct-post-audit-implementation-status/1.0",
+  "updated_at": "2026-11-07",
+  "roadmap": "ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md",
+  "base_audited": "2d7678c985270eaaa9eb7ba8f6d63a80ddc43656",
+  "branch": "experiment/arena-ct00-ct02-20261107",
+  "draft_pr": 172,
+  "evidence": {
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42346959826",
+    "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
+    "archived_feedback": "PASS",
+    "offline_tests": "PASS",
+    "provider_new_calls": 0,
+    "scientific_omc_new_simulations": 0,
+    "des_new_simulations": 0
+  },
+  "CT00": {
+    "status": "NUMERICAL_IDENTITY_GATE_IMPLEMENTED_AND_CI_VERIFIED",
+    "files": [
+      "scripts/arena_ct_numeric_gate.py",
+      "tests/test_arena_ct_numeric_gate.py",
+      ".github/workflows/arena-recovered-capabilities.yml"
+    ],
+    "result": "14 inherited M3 solver executions skipped when numerical dependencies/runtime identical to archived reference; actual changed dependency fails closed without explicit 14-run budget",
+    "limitation": "Conservative closed dependency list; must review closure if original physical job adopts new imports or runtime components."
+  },
+  "CT01": {
+    "status": "FOUR_SOURCE_BLOBS_VERIFIED_AND_SIX_ARCHIVE_DOWNLOADS_HASHED_WITH_SELECTED_INTERNAL_BYTES",
+    "files": [
+      "experiments/cafeteria/CT01_HISTORICAL_CAPABILITIES_2026-11-07.json",
+      "experiments/cafeteria/CT01_VERIFIED_ARCHIVE_DIGESTS_2026-11-07.json",
+      "scripts/arena_cafe/ct_capabilities.py",
+      "scripts/arena_cafe/ct_artifact_verify.py",
+      "tests/test_arena_ct_capabilities.py",
+      "tests/test_arena_ct_artifact_verify.py"
+    ],
+    "result": "D2/M2/B5/R4 source identity checked, six GitHub Actions ZIP and selected inner entry SHA256 recorded and locally verified; no historical rerun",
+    "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
+  },
+  "CT02": {
+    "status": "OFFLINE_FEEDBACK_BRIDGE_AND_UNIT_TESTS_PASS_NOT_END_TO_END_COMPLETE",
+    "files": [
+      "scripts/arena_cafe/ct_feedback_bridge.py",
+      "tests/test_arena_ct_feedback_bridge.py"
+    ],
+    "verified": [
+      "ledger append-only source/diagnostic/rule/knowledge",
+      "retrieve supported own feedback before own_policy",
+      "original M2 own_policy invoked on authenticated-shaped parent fixture",
+      "late overshoot changes parameters only",
+      "sign mismatch retains",
+      "retraction removes later support without rewriting prior cut",
+      "cross-case and cross-arm access denied",
+      "B staging blocked without authentic parent/receipt",
+      "disposition supported by actual feedback dependency"
+    ],
+    "blockers": [
+      "End-to-end new-case producer export and G2/G3 authenticity handoff not exercised",
+      "B 0-8h adapter to original Cloudflare live runner not yet implemented or byte-verified for CT03",
+      "six M parent render/conformity and actual new-case simulation not executed",
+      "CT03 world custodian and inaccessible future boundary not demonstrated"
+    ],
+    "provider_new_calls": 0,
+    "omc_new_simulations": 0
+  },
+  "CT03": {
+    "status": "PROTOCOL_PREPARED_NO_WORLD_LOCK_NO_LIVE_AUTHORIZATION",
+    "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
+    "current_provider_budget_authorized": 0,
+    "current_omc_budget_authorized": 0,
+    "proposed_ceiling_new_provider_calls": 2,
+    "proposed_ceiling_new_omc_simulations": 21
+  },
+  "unchanged": [
+    "D/B/M and original equations",
+    "historical D2/M2/B5/R4",
+    "E03 closed",
+    "E04/E05 action blocked",
+    "E06 observed-source scope",
+    "E07 conditional process mining"
+  ]
+}
