@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from scripts.arena_v0_contract import canonical
-from scripts.arena_cafe.ct03_m_construction_diagnostic import _check_public
+from scripts.arena_cafe.ct03_public import validate_construction as _check_public
 from scripts.arena_cafe.ct_feedback_bridge import make_context, require
 
 SCHEMA = "igc-ct03-b-visible/1.0"
