@@ -42,6 +42,16 @@
       "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318",
       "code_sha": "75dd7eea5a6372c3eb584c62480fa627fe5c160d",
       "scope": "F172-09 offline mock-only B initial/revision G2 failure, missing/tampered attempt rejection, 13-entry assembly; no provider or solver call"
+    },
+    "ct03_b_physical_own_feedback_and_freeze_handoff": {
+      "reviewed_code_sha": "0cdf91970acc9b0b9b2de2f90307f824a436ce2a",
+      "recovered_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42422819276",
+      "integration_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42422819259",
+      "result": "PASS_OFFLINE_WITH_SYNTHETIC_PROVIDER_AND_SOLVER_FIXTURES_NOT_CT03_LIVE",
+      "physical_m3": "SKIPPED",
+      "new_ct03_omc": 0,
+      "new_ct03_provider_posts": 0,
+      "new_ct03_des": 0
     }
   },
   "CT00": {
@@ -345,7 +355,7 @@
     }
   },
   "CT03": {
-    "status": "TWELVE_DM_REVISIONS_AND_B_THIRTEENTH_SLOT_JOIN_PREPARED_OFFLINE_THIRTEEN_ENTRIES_NOT_ARCHIVED_CT03_NOT_AUTHORIZED",
+    "status": "B_G1_TO_OWN_PHYSICAL_G2_G3_FEEDBACK_AND_FIVE_FILE_PRODUCER_HANDOFF_PREPARED_OFFLINE_NO_CT03_LIVE_OR_ARCHIVED_LOCK",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -496,16 +506,24 @@
         "tests/test_arena_ct03_b_lock_projection.py",
         "tests/test_arena_ct03_assemble_entries.py",
         "scripts/arena_cafe/ct03_b_physical_outcome.py",
-        "tests/test_arena_ct03_b_physical_outcome.py"
+        "tests/test_arena_ct03_b_physical_outcome.py",
+        "scripts/arena_cafe/ct03_b_physical_feedback.py",
+        "scripts/arena_cafe/ct03_b_physical_execute_once.sh",
+        "scripts/arena_cafe/ct03_producer_freeze_handoff.py",
+        "tests/test_arena_ct03_b_physical_feedback.py",
+        "tests/test_arena_ct03_b_physical_execute_script.py",
+        "tests/test_arena_ct03_producer_freeze_handoff.py",
+        "scripts/arena_b_ct03_contract.mjs",
+        "tests/test_arena_b_ct03_contract.mjs"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
       "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
       "consumes_no_omc_or_provider_by_tests": true,
-      "last_tested_code_sha": "7e655b8922f8420d77a107cb079e5a0fea34ec13",
+      "last_tested_code_sha": "0cdf91970acc9b0b9b2de2f90307f824a436ce2a",
       "last_verified_CI": {
-        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42418374711",
-        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42418374710"
+        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42422819276",
+        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42422819259"
       }
     },
     "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
@@ -661,6 +679,40 @@
         "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42421388320",
         "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318"
       }
+    },
+    "own_physical_feedback_link": {
+      "status": "PREPARED_AND_CI_TESTED_SYNTHETIC_ONLY",
+      "module": "scripts/arena_cafe/ct03_b_physical_feedback.py",
+      "source": "Original G1 parent-scoped ledger and exact B own physical attempt replay",
+      "success": "G3 diagnostic with four residuals at t0,t1,t2,t4, own CSV hash, initial G1 preserved in earlier ledger cut",
+      "failure": "G2 attempted-run diagnostic with no trace or fabricated forecasts, reason and attempt receipt, own parent/source",
+      "second_decision": "Buffalo currentModel can consume G1+G2/G3 packet, cross-language canonical diagnostic bytes checked by JS",
+      "original_engine_or_solver_changed": false,
+      "actual_second_B_provider_post": false,
+      "new_omc": 0,
+      "new_provider_posts": 0
+    },
+    "b_physical_one_shot_runner": {
+      "status": "DEFAULT_DENY_MANUAL_ONLY_SCRIPT_PREPARED_NOT_DISPATCHED",
+      "path": "scripts/arena_cafe/ct03_b_physical_execute_once.sh",
+      "preflight": "scripts/arena_cafe/ct03_b_physical_outcome.py --preflight-only",
+      "requires": "manual workflow_dispatch, frozen SHA, first run attempt, lot auth, same GitHub run, public producer path, original plan/native/script, shared attempt ceiling 19",
+      "caveat": "Checks on local prior attempt logs alone do not establish independent custodian or external solver authenticity",
+      "has_not_executed_solver": true
+    },
+    "public_freeze_handoff": {
+      "status": "FIVE_FILES_PACKAGED_IN_SYNTHETIC_TEST_ONLY_NOT_UPLOADED_OR_SEALED",
+      "module": "scripts/arena_cafe/ct03_producer_freeze_handoff.py",
+      "exact_files": [
+        "construction.json",
+        "world-commitment.json",
+        "D/manifest.json",
+        "M/manifest.json",
+        "entries.json"
+      ],
+      "freezes_via_existing_workflow": ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "actual_archive_run_id": null,
+      "reserved_truth_opened": false
     }
   },
   "unchanged": [
