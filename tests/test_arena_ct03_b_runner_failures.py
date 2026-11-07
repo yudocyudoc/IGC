@@ -102,7 +102,7 @@ class BuffaloFailedRunnerLifecycleTests(unittest.TestCase):
         self.assertFalse(result["second_B_provider_post_observed"])
         self.assertEqual(result["row"]["decision"]["status"],"NOT_EXECUTED")
         with TemporaryDirectory(dir=".") as tmp:
-            dm,b,d,m=dm_fixture(Path(tmp))
+            dm,b,d,m=dm_fixture(Path(tmp).relative_to(Path.cwd()))
             entries=assemble(dm,result,public(),d,m)
             self.assertEqual(len(entries["rows"]),13)
 
