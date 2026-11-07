@@ -85,11 +85,19 @@ class TenInitialCT03(unittest.TestCase):
             root=Path(temp).relative_to(Path.cwd())
             out,plan=local_setup(root)
             item=next(x for x in plan["rows"] if x["arm"]=="M" and x["index"]==1)
+            from scripts.arena_cafe.ct03_dm_initial_batch import _m_material_conservation
+            import json
+            parent=json.loads((out/"M/manifest.json").read_text())["candidates"][1]
+            stock_ids=[x["id"]+".waiting" for x in parent["original_ast"]["instances"]
+                       if x["role"] in ("preparation","dispatch","transit")]
             with Path(item["csv_file"]).open("w",encoding="utf-8",newline="") as f:
-                writer=csv.writer(f);writer.writerow(["time","deliveredTotal"])
+                writer=csv.writer(f)
+                writer.writerow(["time","deliveredTotal",*stock_ids])
                 for i in range(65):
                     t=i/8
-                    writer.writerow([t, .2*t])
+                    delivered=.2*t
+                    remaining=1.7*min(t,2)-delivered
+                    writer.writerow([t,delivered,remaining,*([0.]*(len(stock_ids)-1))])
             Path(item["solver_log_file"]).write_text(
                 "OpenModelica 1.26.5\nCheck of "+item["model_name"]+
                 " completed successfully.\nLOG_SUCCESS SYNTHETIC ONLY\n"+
@@ -102,6 +110,8 @@ class TenInitialCT03(unittest.TestCase):
             self.assertEqual([p["time"] for p in result["forecast"]],[6,8])
             self.assertAlmostEqual(result["forecast"][0]["delivered"],1.2)
             self.assertAlmostEqual(result["forecast"][1]["delivered"],1.6)
+            self.assertEqual(result["G2_material_conservation_status"],
+                             "ORIGINAL_E1_MASS_BALANCE_PASS_NOT_HELDOUT_G3")
             self.assertTrue(result["construction_residuals_not_yet_built"])
             self.assertFalse(result["feedback_or_revision_executed"])
             with self.assertRaisesRegex(ValueError,"RESULT_REFUSE_OVERWRITE"):
