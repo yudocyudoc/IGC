@@ -115,6 +115,47 @@ def project(dm:dict,d_manifest:dict,m_manifest:dict,revisions:dict):
         "rows":rows,
     }
 
+def project_from_revision_report(dm,d_manifest,m_manifest,report):
+    """Bind actual one-attempt M physical receipt hashes before 12-slot output.
+
+    Do not manually extract a naked outcomes dict and lose attempt provenance.
+    The CI tests use synthetic JSON; the live workflow must still verify its
+    origin artifact before invoking this routine.
+    """
+    from scripts.arena_cafe.ct03_m_revision_physical import SCHEMA as R_SCHEMA
+    require(type(report) is dict and report.get("schema")==R_SCHEMA and
+            report.get("status")==
+              "ORIGINAL_M_REVISIONS_CHECKED_NOT_PROSPECTIVELY_SCORED" and
+            report.get("world_public_id")==dm["world_public_id"] and
+            report.get("source_snapshot_hash")==dm["source_snapshot_hash"] and
+            report.get("dm_feedback_sha256")==digest(dm) and
+            report.get("reserved_truth_read") is False and
+            report.get("provider_posts")==0 and
+            type(report.get("outcomes")) is dict and
+            type(report.get("receipts")) is dict and
+            set(report["outcomes"])==set(report["receipts"]) and
+            report.get("revised_count")==len(report["outcomes"])<=6 and
+            report.get("predicted_count")+report.get("failed_count")==
+                report["revised_count"],
+            "CT03_DM_LOCK_REVISION_REPORT_SCOPE_OR_ACCOUNTING_MISMATCH")
+    for cid,state in report["outcomes"].items():
+        receipt=report["receipts"][cid]
+        require(type(receipt) is dict and receipt.get("arm")=="M" and
+                receipt.get("candidate_id")==cid and
+                receipt.get("run_id")==report["run_id"] and
+                receipt.get("git_sha")==report["git_sha"] and
+                digest(receipt)==state.get("receipt_sha256") and
+                ((state["status"]=="PREDICTED" and
+                  receipt.get("failure") is None and
+                  receipt.get("csv_sha256")==state["trace_sha256"])
+                 or (state["status"]=="G2_FAILED" and
+                     receipt.get("failure") and
+                     state["trace_sha256"] is None and
+                     state["forecast"] is None)),
+                "CT03_DM_LOCK_REVISION_ATTEMPT_RECEIPT_MISMATCH")
+    return project(dm,d_manifest,m_manifest,report["outcomes"])
+
+
 def main():
     p=argparse.ArgumentParser()
     for key in ("dm-feedback","d-manifest","m-manifest","revision-outcomes","out"):
@@ -122,8 +163,13 @@ def main():
     a=p.parse_args()
     require(not a.out.exists(),"CT03_DM_LOCK_PROJECTION_REFUSE_OVERWRITE")
     def read(x):return json.loads(x.read_text(encoding="utf-8"))
-    report=project(read(a.dm_feedback),read(a.d_manifest),
-                   read(a.m_manifest),read(a.revision_outcomes))
+    dm=read(a.dm_feedback)
+    d,m=read(a.d_manifest),read(a.m_manifest)
+    revisions=read(a.revision_outcomes)
+    report=(project_from_revision_report(dm,d,m,revisions)
+            if revisions.get("schema")==
+                "igc-ct03-m-revisions-original-physical-outcomes/1.0"
+            else project(dm,d,m,revisions))
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_bytes(canonical(report)+b"\n")
     print(json.dumps({"status":report["status"],"rows":12,
