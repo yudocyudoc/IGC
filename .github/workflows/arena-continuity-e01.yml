@@ -37,7 +37,8 @@ jobs:
             test_arena_ct_artifact_verify.py \
             test_arena_ct_feedback_bridge.py \
             test_arena_ct03_m_prepare.py \
-            test_arena_ct03_m_construction_diagnostic.py; do
+            test_arena_ct03_m_construction_diagnostic.py \
+            test_arena_ct03_b_visible.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: Obtain frozen A1 public envelopes O0 O1
@@ -198,6 +199,68 @@ jobs:
           git checkout -q --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
           npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: CT-03 original Buffalo engine mock initial + mock own-parent revision (NO provider)
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+        run: |
+          set -euo pipefail
+          node --test tests/test_arena_b_ct03_contract.mjs
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.arena_cafe.ct03_b_visible import view
+          from scripts.arena_cafe.ct03_m_construction_diagnostic import OBS_SCHEMA
+          from scripts.arena_v0_contract import canonical
+          root=Path('artifacts/e01/ct03-b')
+          root.mkdir()
+          public={'schema':OBS_SCHEMA,'source_snapshot_hash':'sha256:'+'a'*64,
+                  'world_public_id':'W1','condition_id':'C0',
+                  'time_unit':'hours','observable':'cumulative_delivered',
+                  'observations':[{'time':t,'delivered':v}
+                                  for t,v in ((0,0),(1,.1),(2,.2),(4,.4))]}
+          for round_kind in ('initial','revision'):
+              (root/(round_kind+'.json')).write_bytes(
+                  canonical(view(public,world='W1',round_kind=round_kind))+b'\n')
+          PY
+          BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/ct03-b/initial.json" \
+            BUFFALO_OUTPUT="$PWD/artifacts/e01/ct03-b/native-initial" \
+            BUFFALO_ROUND_KIND=initial node scripts/arena_b_ct03_native_runner.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/e01/ct03-b')
+          receipt=json.loads((root/'native-initial/receipt.json').read_text())
+          assert receipt['case_id']=='CT-03' and receipt['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          assert receipt['provider_calls']==0 and receipt['proxy_requests']==1
+          assert receipt['horizon_matches_case'] is True and receipt['output_horizon_hours']==8
+          feedback={'schema':'igc-ct03-b-own-feedback/1.0','arm':'B',
+             'world_public_id':'W1','condition_id':'C0','source_snapshot_hash':'sha256:'+'a'*64,
+             'parent_result_sha256':receipt['result_sha256'],
+             'own_diagnostic_sha256':'sha256:'+'b'*64,
+             'retrieved_before_policy':{'item_id':'MOCK_ONLY_NOT_LEDGER_EVIDENCE',
+                                        'projection_hash':'sha256:'+'c'*64},
+             'own_diagnostic':{'status':'MOCK_ONLY_NOT_SCIENTIFIC_FEEDBACK'}}
+          (root/'mock-feedback.json').write_text(json.dumps(feedback))
+          PY
+          BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/ct03-b/revision.json" \
+            BUFFALO_PARENT_NATIVE="$PWD/artifacts/e01/ct03-b/native-initial/native-engine-result.json" \
+            BUFFALO_PARENT_RECEIPT="$PWD/artifacts/e01/ct03-b/native-initial/receipt.json" \
+            BUFFALO_OWN_FEEDBACK="$PWD/artifacts/e01/ct03-b/mock-feedback.json" \
+            BUFFALO_OUTPUT="$PWD/artifacts/e01/ct03-b/native-revision" \
+            BUFFALO_ROUND_KIND=revision node scripts/arena_b_ct03_native_runner.mjs
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('artifacts/e01/ct03-b')
+          initial=json.loads((root/'native-initial/receipt.json').read_text())
+          final=json.loads((root/'native-revision/receipt.json').read_text())
+          assert final['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          assert final['provider_calls']==0 and final['proxy_requests']==1
+          assert final['parent_native_sha256']==initial['result_sha256']
+          assert final['parent_as_original_currentModel'] is True
+          assert final['own_feedback_sha256'] and final['request_sha256']!=initial['request_sha256']
+          print('CT03_B_ORIGINAL_ENGINE_MOCK_REQUEST_EFFECTIVE_ZERO_PROVIDER')
+          PY
       - name: Call ORIGINAL Engine.generate separately for both inputs with mock transport
         env:
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
