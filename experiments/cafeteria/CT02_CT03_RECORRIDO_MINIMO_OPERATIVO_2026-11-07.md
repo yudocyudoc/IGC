@@ -1,6 +1,6 @@
 # Arena IGC · Recorrido operativo mínimo CT-02 → CT-03
 
-**Estado (2026-11-07):** implementación de la ruta, **no autorización ni ejecución científica**. Basado en la hoja vigente `ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md`, sin cambiar métodos, métricas ni límites. El antiguo conjunto de firmas/atestaciones RSA es **opcional y no se invoca** en esta ruta piloto. Se conserva el PR #172 en Draft y el protocolo CT-03 actual.
+**Estado (2026-11-07, posterior al run 42409210062):** **CT-02 aceptado como preparación y conformidad técnica acotada de D0/M0** (2 de 2 OMC consumidos, sin reintento). **CT-03 aún no autorizado ni ejecutado**; no hay mundo elegido, llamadas Buffalo, predicciones selladas, evaluación reservada ni resultado científico prospectivo. Basado en la hoja vigente `ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md`, sin cambiar métodos, métricas ni límites. El antiguo conjunto de firmas/atestaciones RSA es **opcional y no se invoca** en esta ruta piloto. Se conserva el PR #172 en Draft y el protocolo CT-03 actual.
 
 ## 1. Congelar una única versión y habilitar un lote, no cada archivo
 
@@ -12,7 +12,7 @@ Los workflows manuales nuevos deberán estar incorporados a la **rama por defect
 
 Candidatos fijados antes de ver datos: D inicial #0 de la gramática original y M inicial #0 del compositor Short E1. **No son candidatos seleccionados por error.** D produce `delivered`; M produce la variable raíz `deliveredTotal`. Los otros diez candidatos no se simulan en este lote. No hay mundo CT-03 ni datos reservados.
 
-Una vez habilitado el lote y congelado un commit `<SHA40>`, el operador ejecuta **una sola vez**:
+**Lote YA EJECUTADO; no volver a dispararlo.** El único comando autorizado que se usó, registrado históricamente para reproducibilidad (NO ejecutar nuevamente), es:
 
 ```bash
 gh workflow run arena-ct02-minimal-physical.yml \
@@ -39,6 +39,19 @@ docker run --rm --network none --user "$(id -u):$(id -g)" \
 Los scripts tienen **un `simulate(...)` cada uno** y conservan los Modelica/AST completos. No hay retry. Antes de cada llamada se añade una línea a `attempts.log`. El artefacto `arena-ct02-technical-attempt-<run_id>` conserva siempre que existan: `D/M-single.mos`, `D/M-omc.log`, `d00_res.csv`, `m00_res.csv`, fuentes, manifiestos, `attempts.log`, `runtime-identity.txt` y `conformity.json` solo si ambas pruebas pasan.
 
 **Parada:** inmediatamente después de ejecutar D, `verify-arm --arm D` comprueba versión, fuente, script, horizonte y **balance material** antes de consumir M; tras M aplica el mismo chequeo específico, y solo si ambos pasan produce el reporte agregado. Si la primera falla, la segunda no se ejecuta; un fallo cuenta como intento consumido. Si falta cualquier CSV o log, el solver/versión/columna difiere, no hay 0–8 h completos, el balance material D no cierra o falta un corte nativo M, no declarar aceptación técnica ni correr repeticiones para «arreglar» datos. El presupuesto **máximo 2**, no una obligación de gastarlo. Dejar `physical-m3` sin ejecutar. Ninguna llamada al proveedor.
+
+
+### Reutilización sin repetir CT-02: D0 y M0 como consecuencias iniciales de CT-03
+
+La implementación `scripts/arena_cafe/ct03_reuse_ct02.py` y el job **sin OMC** `ct03-reuse-authentic-ct02-originals` de `.github/workflows/arena-continuity-e01.yml` recuperan el archivo auténtico del [run 42409210062](https://github.com/yudocyudoc/IGC/actions/runs/42409210062), artefacto GitHub **13588621967**, y verifican en GitHub su procedencia (run/SHA/evento/intento/ID/digest), los dos manifiestos, fuente D/M original recién generada, modelo, script, runtime (OpenModelica 1.26.5, MSL/SystemDynamics, imagen Docker), logs y CSV. No inventan recibos de proveedor ni ejecutan otro solver.
+
+**Resultado confirmado:** D inicial índice 0 y M inicial índice 0 son **elegibles para reutilizar su consecuencia numérica** con el mismo pulso, estado inicial, parámetros, horizonte, biblioteca, solver y operador. Sus pronósticos propios t6/t8 son D=(3.379100198824965, 3.39753242195592) y M=(3.398933866844736, 3.399984796863248). Estos números **no son y6/y8 reservados**, no se han puntuado contra el mundo ni prueban feedback. No se reutilizan observaciones del mundo, decisiones, diagnósticos, ledger o feedback: se calcularán para el caso CT-03 nuevo, después de liberar solamente t0/t1/t2/t4. Reutilizar consecuencia numérica no permite saltarse la decisión inicial/final ni el lock.
+
+El plan CT-03 mantiene **techo 21 OMC y 2 POST B**, no ya gastados ni autorizados. Si se conservan las identidades comprobadas, las dos iniciales reutilizadas reducen el **máximo gasto OMC nuevo del mismo lote a 19**, sin alterar sus 13 slots (1 mundo + 5 D restantes + 5 M restantes + 1 B inicial + hasta 6 revisiones M + 1 B revisión). Si la identidad se pierde, la ruta se **detiene** y el coste adicional necesita su aprobación correspondiente; no repetir silenciosamente D0/M0.
+
+**Hito siguiente real:** completar el job productor único que realiza el resto del recorrido: proponer D/M originales y B inicial con el adaptador Cloudflare, registrar fallos/consecuencias originales, construir *su* feedback con observaciones de CT-03, recuperarlo mediante ATMS antes de políticas M/D/B, ejecutar únicamente las revisiones disparadas por política, emitir predicciones iniciales/finales de los trece slots y cerrar lock de Actions antes del evaluador. Los adaptadores y tests aislados existen; **la conexión live integral aún no existe**. El custodio real debe demostrar inaccesibilidad de secretos/CSV privado al job productor, no solo rutas disjuntas. Este requisito de operación es una compuerta CT-03, no repetir el ciclo prospectivo como supuesto requisito CT-02.
+
+La hoja vigente es el documento rector: no añadir otra auditoría general, RSA obligatoria, grilla, selección de mundo por acierto ni física extra para «probar» el primer piloto.
 
 ## 2. Custodio del mundo CT-03: entorno y cuenta separados
 
@@ -142,7 +155,7 @@ La evaluación abre **solo en ese paso** t6/t8 del mundo. Aplica MAE inicial/fin
 | Fase | Máximo OMC nuevo | Máximo POST Buffalo | Se detiene cuando |
 |---|---:|---:|---|
 | Preparación de código + tests | 0 | 0 | Sin protocolo/commit congelable o contrato roto |
-| CT-02 lote técnico manual | **2** | **0** | Primer fallo no reparable, script/runtime/CSV incompatible o cuota agotada |
+| CT-02 lote técnico manual **consumido** | **2/2 ejecutadas** | **0** | Completo; no repetir D0/M0 |
 | CT-03 una instancia, **otro lote** | **21** | **2** | Filtración al productor, falta de evidencia propia, error G1/G2, fin de cuota; fallos por candidato bloquean su ruta, no todos los brazos necesariamente |
 | Evaluación posterior al lock | **0** | **0** | No existe archivo de lock verificado, cambia el mundo/código/scope, cero predicciones admisibles o falta reserva |
 
