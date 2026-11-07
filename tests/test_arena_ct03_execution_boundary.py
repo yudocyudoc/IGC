@@ -134,6 +134,13 @@ class IndependentWitnessContractTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"SIGNATURE_BASE64_INVALID"):
                 check(w=malformed)
             badreg = json.loads(registry.read_text())
+            badreg["authorities"][1]["public_key_sha256"] = (
+                badreg["authorities"][0]["public_key_sha256"])
+            registry.write_text(json.dumps(badreg))
+            with self.assertRaisesRegex(ValueError, "RUNNER_AND_ARCHIVIST_SHARE_SIGNING_KEY"):
+                check()
+            badreg["authorities"][1]["public_key_sha256"] = sha_bytes(
+                archive_public.read_bytes())
             badreg["authorities"][0]["public_key_sha256"]="sha256:"+"e"*64
             registry.write_text(json.dumps(badreg))
             with self.assertRaisesRegex(ValueError,"PUBLIC_KEY_NOT_PINNED"):
