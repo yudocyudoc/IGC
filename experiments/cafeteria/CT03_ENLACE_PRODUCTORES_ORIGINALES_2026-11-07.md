@@ -125,13 +125,13 @@ python -m scripts.arena_cafe.ct03_m_revision_physical \
   --run-id <RUN_REAL> --git-sha <SHA_CONGELADO> \
   --out artifacts/ct03-producer/dm-feedback/producer-12/m-revision-outcomes.json
 
-# Extraer SOLO el mapa outcomes de ese reporte (la proyección de
-# doce filas no acepta un reporte arbitrario como sustituto de resultados):
+# Consumir directamente el reporte completo de revisiones M; se
+# comprueban identidad del caso, conteos y hashes de recibos por padre:
 python -m scripts.arena_cafe.ct03_dm_lock_projection \
   --dm-feedback artifacts/ct03-producer/dm-feedback/producer-12/dm-feedback-report.json \
   --d-manifest artifacts/ct03-producer/dm-ten/D/manifest.json \
   --m-manifest artifacts/ct03-producer/dm-ten/M/manifest.json \
-  --revision-outcomes artifacts/ct03-producer/m-revision-outcomes-map.json \
+  --revision-outcomes artifacts/ct03-producer/dm-feedback/producer-12/m-revision-outcomes.json \
   --out artifacts/ct03-producer/dm-twelve-lock-rows.json
 
 # Solo después del B original y revisión verdaderos o parada documentada:
