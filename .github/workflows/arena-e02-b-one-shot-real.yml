@@ -14,7 +14,7 @@ jobs:
   authorization:
     runs-on: ubuntu-24.04
     outputs:
-      permit: \${{ steps.gate.outputs.permit }}
+      permit: ${{ steps.gate.outputs.permit }}
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 2, persist-credentials: false}
@@ -52,7 +52,7 @@ jobs:
           echo 'permit=true' >> "$GITHUB_OUTPUT"
   real-native:
     needs: authorization
-    if: \${{ needs.authorization.outputs.permit == 'true' && github.run_attempt == 1 }}
+    if: ${{ needs.authorization.outputs.permit == 'true' && github.run_attempt == 1 }}
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +75,7 @@ jobs:
           path: artifacts/e02/public
       - name: Prepare original upstream bytes and exact per-condition B visible source
         env:
-          COND: \${{ matrix.condition }}
+          COND: ${{ matrix.condition }}
         run: |
           set -euo pipefail
           mkdir -p "artifacts/e02/$COND" upstream/sd-ai
@@ -91,14 +91,14 @@ jobs:
           npm ci --prefix upstream/sd-ai --ignore-scripts --omit=optional --no-audit --no-fund
       - name: Make exactly one REAL Cloudflare initial call - no retry
         env:
-          COND: \${{ matrix.condition }}
+          COND: ${{ matrix.condition }}
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
           BUFFALO_MODE: live
           BUFFALO_LIVE_AUTH: ONE_UPSTREAM_CALL
           BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
           BUFFALO_ROUND_KIND: initial
-          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: \${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: ${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
         run: |
           set -euo pipefail
           export BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e02/$COND/stage-initial/b-visible.json"
@@ -113,14 +113,14 @@ jobs:
           test -s "artifacts/e02/$COND/initial/receipt.json"
       - name: If and only if REAL native parent exists, send ONE own-G0 feedback review
         env:
-          COND: \${{ matrix.condition }}
+          COND: ${{ matrix.condition }}
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
           BUFFALO_MODE: live
           BUFFALO_LIVE_AUTH: ONE_UPSTREAM_CALL
           BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
           BUFFALO_ROUND_KIND: revision
-          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: \${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: ${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
         run: |
           set -euo pipefail
           ROOT="$PWD/artifacts/e02/$COND"
@@ -157,7 +157,7 @@ jobs:
       - name: Final scientific/non-scientific outcome and budget reconciliation
         if: always()
         env:
-          COND: \${{ matrix.condition }}
+          COND: ${{ matrix.condition }}
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -202,7 +202,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: arena-e02-b-real-\${{ matrix.condition }}-original-native
-          path: artifacts/e02/\${{ matrix.condition }}/
+          name: arena-e02-b-real-${{ matrix.condition }}-original-native
+          path: artifacts/e02/${{ matrix.condition }}/
           retention-days: 60
           if-no-files-found: error
