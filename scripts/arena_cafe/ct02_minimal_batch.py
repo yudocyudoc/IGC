@@ -221,7 +221,8 @@ def main():
                             git_sha=args.git_sha, run_id=args.run_id)
     else:
         report = verify(args.out, git_sha=args.git_sha, run_id=args.run_id)
-    print(json.dumps({"status": report.get("status", report.get("purpose")),
+    print(json.dumps({"status": report.get("status", report.get("purpose",
+                        report.get("technical_status"))),
                       "planned_omc": 2, "executed_here": 0, "provider_posts": 0}))
 
 
