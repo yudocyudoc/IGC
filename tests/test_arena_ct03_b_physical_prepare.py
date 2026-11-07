@@ -43,7 +43,7 @@ class BPhysicsPreparationTests(unittest.TestCase):
             feedback=build(original=native,receipt=receipt,construction=public(),
                            recorded_at=T,out=root/"G1")
             r=prepare(native,receipt,public(),feedback,root/"B-physical")
-            self.assertEqual(r["status"],"B_G1_OR_OBSERVABLE_BLOCKED_NO_OMC")
+            self.assertEqual(r["status"],"B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC")
             self.assertIn("UNSUPPORTED_NATIVE_VARIABLE_FIELD",r["blocked_reason"])
             self.assertIsNone(r["observation_operator"])
             self.assertFalse((root/"B-physical/initial.mos").exists())
@@ -70,6 +70,24 @@ class BPhysicsPreparationTests(unittest.TestCase):
         })
         with self.assertRaisesRegex(ValueError,"MISSING_OR_AMBIGUOUS"):
             operator(extra)
+
+    def test_semantically_unresolved_port_is_not_native_G1_failure(self):
+        with TemporaryDirectory(dir=".") as tmp:
+            root=Path(tmp).relative_to(Path.cwd())
+            native,receipt=fixture()
+            sink=next(v for v in native["model"]["variables"]
+                      if v["name"]=="delivered work")
+            sink["name"]="completed output"
+            receipt["result_sha256"]=_model_sha(native)
+            feedback=build(original=native,receipt=receipt,construction=public(),
+                           recorded_at=T,out=root/"G1")
+            self.assertEqual(feedback["G1_status"],
+                             "NATIVE_TRANSLATION_CONDITIONAL_NEEDS_G2_AND_OBSERVABLE")
+            report=prepare(native,receipt,public(),feedback,root/"B-physical")
+            self.assertEqual(report["status"],"B_OBSERVABLE_UNRESOLVED_NO_OMC")
+            self.assertIsNone(report["observation_operator"])
+            self.assertFalse((root/"B-physical/initial.mos").exists())
+            self.assertIn("NOT proof",report["observable_scope"])
 
     def test_receipt_and_world_tamper_fails_before_output(self):
         with TemporaryDirectory(dir=".") as tmp:
