@@ -11,6 +11,7 @@ import unittest
 from scripts.arena_cafe.ct03_m_prepare import prepare, PUBLIC_INPUT
 from scripts.arena_cafe.ct03_m_construction_diagnostic import (
     build, sha_bytes, RECEIPT_SCHEMA, OBS_SCHEMA,
+    _expected_simulation_command,
 )
 from scripts.arena_cafe.ct_feedback_bridge import (
     make_context, record_feedback, own_m_decision, persist_disposition,
@@ -35,7 +36,7 @@ def make_example(root: Path):
     csv_path = root / "m00_res.csv"
     with csv_path.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["time", "ArenaCT03M." + parent["class_name"] + ".deliveredTotal"])
+        writer.writerow(["time", "deliveredTotal"])
         for i in range(65):
             t = i / 8
             writer.writerow([t, .3 * t])
@@ -50,7 +51,10 @@ def make_example(root: Path):
         "output_role": "deliveredTotal",
         "model_name": "ArenaCT03M." + parent["class_name"],
         "csv_prefix": parent["csv_prefix"],
-        "csv_column": "ArenaCT03M." + parent["class_name"] + ".deliveredTotal"}
+        "csv_column": "deliveredTotal",
+        "simulate_script_sha256": sha_bytes((target / "simulate.mos").read_bytes()),
+        "simulation_command": _expected_simulation_command(parent),
+        "csv_filename": csv_path.name}
     return manifest, parent, context, observed, receipt, target / "native.mo", csv_path
 
 
@@ -61,11 +65,16 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             manifest, parent, ctx, public, receipt, native, csv_path = make_example(root)
             diag = build(ctx, manifest=manifest, parent=parent,
                 construction=public, receipt=receipt,
-                modelica_file=native, trace_csv=csv_path)
+                modelica_file=native, simulate_script_file=native.parent / "simulate.mos",
+                trace_csv=csv_path)
             self.assertEqual(diag["observations"][2]["residual"], .6 - .2)
             self.assertEqual(diag["G3"], "CONSTRUCTION_RESIDUALS_ONLY_NO_HELDOUT")
             self.assertTrue(diag["no_future_truth"])
             self.assertEqual(diag["native_samples"], 65)
+            self.assertEqual(diag["native_output_column"], "deliveredTotal")
+            self.assertEqual(diag["native_output_filename"], "m00_res.csv")
+            self.assertEqual(csv_path.read_text().splitlines()[0],
+                             "time,deliveredTotal")
             db = root / "ct.sqlite"
             record_feedback(db, ctx, parent_hash=diag["parent_hash"],
                 diagnostic=diag, recorded_at=STAMP.isoformat())
@@ -85,7 +94,7 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             o["observations"][3]["time"] = 6
             with self.assertRaisesRegex(ValueError, "FOUR_CONSTRUCTION_CUTS_REQUIRED"):
                 build(c, manifest=m, parent=p, construction=o, receipt=r,
-                      modelica_file=n, trace_csv=s)
+                      modelica_file=n, simulate_script_file=n.parent / "simulate.mos", trace_csv=s)
 
     def test_changed_csv_and_parent_is_rejected(self):
         with TemporaryDirectory() as tmp:
@@ -94,10 +103,10 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             changed["csv_sha256"] = "sha256:" + "f"*64
             with self.assertRaisesRegex(ValueError, "RECEIPT_MISMATCH"):
                 build(c, manifest=m, parent=p, construction=o, receipt=changed,
-                      modelica_file=n, trace_csv=s)
+                      modelica_file=n, simulate_script_file=n.parent / "simulate.mos", trace_csv=s)
             with self.assertRaisesRegex(ValueError, "PARENT_NOT_FROM_THE_SIX"):
                 build(c, manifest=m, parent={**m["candidates"][1], "spurious": True},
-                      construction=o, receipt=r, modelica_file=n, trace_csv=s)
+                      construction=o, receipt=r, modelica_file=n, simulate_script_file=n.parent / "simulate.mos", trace_csv=s)
 
     def test_missing_exact_time_is_not_zero_or_interpolated(self):
         with TemporaryDirectory() as tmp:
@@ -108,7 +117,7 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             r["csv_sha256"]=sha_bytes(s.read_bytes())
             with self.assertRaisesRegex(ValueError, "EXACT_CONSTRUCTION"):
                 build(c, manifest=m, parent=p, construction=o, receipt=r,
-                      modelica_file=n, trace_csv=s)
+                      modelica_file=n, simulate_script_file=n.parent / "simulate.mos", trace_csv=s)
 
     def test_extra_evaluator_truth_rejected(self):
         with TemporaryDirectory() as tmp:
@@ -116,7 +125,7 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             o["heldout_t8"] = 2.9
             with self.assertRaisesRegex(ValueError, "EXTRA_FIELDS_IN_CONSTRUCTION"):
                 build(c, manifest=m, parent=p, construction=o, receipt=r,
-                      modelica_file=n, trace_csv=s)
+                      modelica_file=n, simulate_script_file=n.parent / "simulate.mos", trace_csv=s)
 
 
     def test_csv_of_another_original_m_candidate_rejected_even_with_updated_sha(self):
@@ -133,11 +142,64 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             r["csv_sha256"] = sha_bytes(csv_path.read_bytes())
             with self.assertRaisesRegex(ValueError, "WRONG_OR_AMBIGUOUS_CANDIDATE_CSV_COLUMN"):
                 build(c,manifest=m,parent=p,construction=o,receipt=r,
-                      modelica_file=n,trace_csv=csv_path)
+                      modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
+                      trace_csv=csv_path)
             r["csv_column"] = new_col
             with self.assertRaisesRegex(ValueError, "NATIVE_CSV_OR_RUNTIME_RECEIPT_MISMATCH"):
                 build(c,manifest=m,parent=p,construction=o,receipt=r,
-                      modelica_file=n,trace_csv=csv_path)
+                      modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
+                      trace_csv=csv_path)
+
+
+    def test_native_root_column_and_source_command_are_bound_to_this_parent(self):
+        """Accept actual OpenModelica variable naming; reject false provenance."""
+        with TemporaryDirectory() as tmp:
+            m,p,c,o,r,n,csv_path = make_example(Path(tmp))
+            # A true native header does NOT include the class name.
+            ok = build(c,manifest=m,parent=p,construction=o,receipt=r,
+                       modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
+                       trace_csv=csv_path)
+            self.assertEqual(ok["native_output_column"], "deliveredTotal")
+            self.assertEqual(ok["native_output_filename"], csv_path.name)
+            variants = [
+                ("csv_prefix", "m04"),
+                ("csv_filename", "m04_res.csv"),
+                ("simulate_script_sha256", "sha256:"+"f"*64),
+                ("simulation_command", r["simulation_command"].replace("m00", "m04")),
+            ]
+            for field, fake in variants:
+                forged = {**r, field: fake}
+                with self.subTest(field=field),self.assertRaisesRegex(
+                        ValueError,"NATIVE_CSV_OR_RUNTIME_RECEIPT_MISMATCH"):
+                    build(c,manifest=m,parent=p,construction=o,receipt=forged,
+                          modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
+                          trace_csv=csv_path)
+
+    def test_reject_prefixed_self_column_ambiguous_root_and_dotted_output(self):
+        with TemporaryDirectory() as tmp:
+            m,p,c,o,r,n,csv_path = make_example(Path(tmp))
+            root_header = csv_path.read_text().splitlines()
+            own_prefixed = "ArenaCT03M."+p["class_name"]+".deliveredTotal"
+            other = next(x for x in m["candidates"]
+                         if x["material_only_projection_sha256"] !=
+                            p["material_only_projection_sha256"])
+            foreign = "ArenaCT03M."+other["class_name"]+".deliveredTotal"
+            for columns in (
+                ["time",own_prefixed],
+                ["time",foreign],
+                ["time","deliveredTotal",foreign],
+                ["time","deliveredTotal",own_prefixed],
+            ):
+                csv_path.write_text(",".join(columns)+"\\n"+
+                    "\\n".join(",".join([line.split(",")[0]]+
+                        [line.split(",")[1]]*(len(columns)-1))
+                        for line in root_header[1:])+"\\n")
+                bound = {**r, "csv_sha256": sha_bytes(csv_path.read_bytes())}
+                with self.subTest(columns=columns), self.assertRaisesRegex(
+                        ValueError,"WRONG_OR_AMBIGUOUS_CANDIDATE_CSV_COLUMN"):
+                    build(c,manifest=m,parent=p,construction=o,receipt=bound,
+                          modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
+                          trace_csv=csv_path)
 
 
 if __name__ == "__main__":
