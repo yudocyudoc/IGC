@@ -71,7 +71,7 @@ def _no_native_second(receipt,construction,original_receipt,packet):
                 else "CT03_PREPROVIDER_NO_NATIVE") and
             receipt.get("parent_native_sha256")==original_receipt["result_sha256"] and
             receipt.get("own_feedback_sha256")==digest(packet) and
-            receipt.get("result_sha256") is None or False,
+            (receipt.get("native_model_available") in (None,False)),
             "CT03_B_REVISION_FAILURE_NOT_OWN_CURRENTMODEL")
     return receipt["provider_calls"]
 
@@ -305,8 +305,9 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
             initial_plan["round_kind"]=="initial" and
             initial_plan["original_G1_feedback_sha256"]==digest(b_feedback),
             "CT03_B_LOCK_INITIAL_PLAN_NOT_OWN_CASE")
-    rev_inputs=(revision_native,revision_receipt,revision_plan)
-    if all(x is None for x in rev_inputs):
+    if revision_native is None and revision_receipt is None and revision_plan is None:
+        # The review was never launched. Distinct from a consumed second
+        # provider attempt without a usable model.
         require(revision_physical is None and stop_reason in STOP_REASONS,
                 "CT03_B_LOCK_REVIEW_MISSING_NEEDS_EXPLICIT_STOP_REASON")
         status="NOT_EXECUTED"
@@ -315,9 +316,36 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
         feedback_sha=None
         item_id=None
         reason="NO_SECOND_PROVIDER_POST:"+stop_reason
+    elif revision_native is None and revision_receipt is not None and revision_plan is None:
+        # Failed second Engine.generate(currentModel), with original receipt.
+        require(revision_physical is None and stop_reason is None,
+                "CT03_B_LOCK_FAILED_REVISION_CANNOT_HAVE_PHYSICAL_OR_STOP")
+        posts=_no_native_second(revision_receipt,construction,initial_receipt,
+                                revised_packet)
+        status="NOT_EXECUTED"
+        final=initial
+        new_model=None
+        feedback_sha=None
+        item_id=None
+        reason=("SECOND_PROVIDER_POST_NO_NATIVE:" if posts else
+                "SECOND_REVIEW_RUNNER_STOP_BEFORE_PROVIDER_POST:")+revision_receipt["status"]
+    elif revision_native is not None and revision_receipt is not None and revision_plan is None:
+        # A native arrived, but its own horizon is wrong: G0, not G1/G2.
+        require(revision_physical is None and stop_reason is None,
+                "CT03_B_LOCK_INADMISSIBLE_HORIZON_NO_OMC")
+        final=_invalid_horizon(revision_native,revision_receipt,construction,
+                               "revision",original_receipt=initial_receipt,
+                               packet=revised_packet)
+        require(final["native_sha256"]!=origin,
+                "CT03_B_LOCK_REVISED_G0_MUST_NOT_EQUAL_VALID_PARENT")
+        status="REVISED"
+        new_model=final["native_sha256"]
+        feedback_sha=revised_feedback["own_diagnostic_sha256"]
+        item_id=revised_feedback["retrieved_before_policy"]["item_id"]
+        reason="SECOND_PROVIDER_POST_RETURNED_NATIVE_HORIZON_MISMATCH"
     else:
-        require(all(x is not None for x in rev_inputs) and
-                stop_reason is None,
+        require(revision_native is not None and revision_receipt is not None and
+                revision_plan is not None and stop_reason is None,
                 "CT03_B_LOCK_PARTIAL_REVISION_NOT_ALLOWED")
         validate_revision_live(
             revision_native,revision_receipt,construction,revised_feedback,
@@ -330,10 +358,6 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
                     digest(revised_feedback),
                 "CT03_B_LOCK_REVISED_NATIVE_NOT_OWN_CURRENT_MODEL")
         if revised==origin:
-            # The second Buffalo provider call returned the SAME native.
-            # No second physical attempt is necessary or permitted; preserve
-            # original consequence, after confirming the same observable and
-            # original Modelica hash (the script path itself may differ).
             require(revision_physical is None and
                     revision_plan["status"]==initial_plan["status"] and
                     revision_plan["observation_operator"]==
@@ -347,7 +371,7 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
             reason="NATIVE_UNCHANGED_AFTER_REAL_CURRENTMODEL_REVIEW"
         else:
             final=_state(revised,revision_plan,
-                          revision_physical,revision_receipt)
+                         revision_physical,revision_receipt)
             status="REVISED"
             new_model=revised
             reason="NATIVE_CHANGED_AFTER_REAL_CURRENTMODEL_REVIEW"
@@ -373,11 +397,18 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
         "original_provider_receipt_sha256":digest(initial_receipt),
         "own_feedback_report_sha256":digest(b_feedback),
         "own_revision_packet_sha256":digest(packet),
-        "second_B_provider_post_observed":revision_receipt is not None,
+        "second_B_provider_post_observed":(
+            revision_receipt is not None and revision_receipt.get("provider_calls")==1),
+        "second_B_provider_receipt_sha256":(
+            digest(revision_receipt) if revision_receipt is not None else None),
+        "second_B_own_feedback_packet_sha256":(
+            digest(revised_packet) if revision_receipt is not None else None),
         "revision_stop_or_disposition":reason,
         "initial_native_G1_or_observable_status":initial_plan["status"],
         "final_native_G1_or_observable_status":(
-            revision_plan["status"] if revision_plan is not None else None),
+            revision_plan["status"] if revision_plan is not None else
+            "G0_HORIZON_REJECTED_NOT_G1" if final["status"]=="G0_REJECTED" else
+            "NO_NATIVE_SECOND_PROVIDER" if revision_receipt is not None else None),
         "reserved_truth_read":False,
         "new_omc_by_projection":0,"new_provider_calls":0,
         "actual_provider_or_solver_source_verified_outside_process":False,
@@ -442,6 +473,7 @@ def project_no_native(initial_receipt,construction):
         "original_provider_receipt_sha256":digest(initial_receipt),
         "own_feedback_report_sha256":None,"own_revision_packet_sha256":None,
         "second_B_provider_post_observed":False,
+        "second_B_provider_receipt_sha256":None,
         "revision_stop_or_disposition":"NO_AUTHENTIC_ORIGINAL_B_NATIVE",
         "initial_native_G1_or_observable_status":"NO_NATIVE",
         "final_native_G1_or_observable_status":None,
@@ -478,8 +510,22 @@ def main():
     else:
         require(a.b_feedback and a.packet and a.initial_plan,
                 "CT03_B_NATIVE_MUST_HAVE_OWN_FEEDBACK_AND_G1_PLAN")
-        result=project(
-            original_native=read(a.original_native),
+        original=read(a.original_native)
+        initial_receipt=read(a.initial_receipt)
+        if initial_receipt.get("status")=="CT03_NATIVE_HORIZON_MISMATCH":
+            require(all(x is None for x in (
+                a.b_feedback,a.packet,a.initial_plan,a.initial_physical,
+                a.revision_native,a.revision_receipt,a.revision_plan,
+                a.revision_physical,a.stop_reason,
+                a.review_feedback,a.review_packet)),
+                "CT03_B_G0_CANNOT_INVENT_G1_OR_SECOND_POST")
+            result=project_invalid_horizon_initial(
+                original,initial_receipt,read(a.construction))
+        else:
+            require(a.b_feedback and a.packet and a.initial_plan,
+                    "CT03_B_NATIVE_MUST_HAVE_OWN_FEEDBACK_AND_G1_PLAN")
+            result=project(
+            original_native=original,
             initial_receipt=read(a.initial_receipt),
             construction=read(a.construction),
             b_feedback=read(a.b_feedback),packet=read(a.packet),
