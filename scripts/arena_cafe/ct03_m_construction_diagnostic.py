@@ -15,7 +15,8 @@ import math
 from pathlib import Path
 
 from scripts.arena_v0_contract import canonical, digest
-from scripts.arena_cafe.ct03_m_prepare import SCHEMA as M_PREP_SCHEMA, PUBLIC_INPUT
+from scripts.arena_cafe.ct03_m_prepare import SCHEMA as M_PREP_SCHEMA
+from scripts.arena_cafe.ct03_public import PUBLIC_INPUT, validate_construction as _check_public
 from scripts.arena_cafe.ct_feedback_bridge import require, _sha
 
 SCHEMA = "igc-ct02-m-native-construction-diagnostic/1.0"
@@ -39,32 +40,6 @@ def _column(row, name):
         raise ValueError("CT02_M_CSV_OUTPUT_NOT_NUMERIC") from error
     require(math.isfinite(x), "CT02_M_CSV_NONFINITE")
     return x
-
-
-def _check_public(context, construction):
-    require(type(construction) is dict and
-            construction.get("schema") == OBS_SCHEMA and
-            construction.get("source_snapshot_hash") == context["source_hash"] and
-            construction.get("world_public_id") == context["world"] and
-            construction.get("condition_id") == context["condition"] and
-            construction.get("time_unit") == "hours" and
-            construction.get("observable") == "cumulative_delivered",
-            "CT02_M_WRONG_CONSTRUCTION_SCOPE")
-    require(set(construction) == {
-        "schema", "source_snapshot_hash", "world_public_id", "condition_id",
-        "time_unit", "observable", "observations",
-    }, "CT02_M_EXTRA_FIELDS_IN_CONSTRUCTION")
-    points = construction["observations"]
-    require(type(points) is list and len(points) == 4 and
-            [x.get("time") for x in points if type(x) is dict] == [0, 1, 2, 4],
-            "CT02_M_FOUR_CONSTRUCTION_CUTS_REQUIRED")
-    past = -1.0
-    for x in points:
-        v = x.get("delivered")
-        require(type(v) in (int, float) and math.isfinite(v) and
-                past <= v <= 3.4 + 1e-8, "CT02_M_INVALID_OBSERVED_DELIVERY")
-        past = v
-    return points
 
 
 def _check_manifest(manifest, parent):
