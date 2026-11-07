@@ -85,39 +85,44 @@ def assess_one(row,dm_root,original,*,run_id,git_sha):
     csv=dir/"mrev_res.csv"
     parentsha=row["revision_native_manifest"]["native_modelica_sha256"]
     if meta["exit_code"]==0:
-        require("OpenModelica 1.26.5" in text and
-                "Check of "+model+" completed successfully" in text and
-                "LOG_SUCCESS" in text and "mrev_res.csv" in text and csv.is_file(),
-                "CT03_M_REVISION_SOLVER_LOG_OR_TRACE_FAILED")
-        try:
-            pts,n=_points(csv,"deliveredTotal")
-            cuts,c=_sample(csv.read_bytes(),"deliveredTotal")
-            require(c==n and set(cuts)=={0.,1.,2.,4.},
-                    "CT03_M_REVISION_CONSTRUCTION_CUTS_MISSING")
-            mass=_m_material_conservation(csv,original)
-            require(mass["count"]==n,
-                    "CT03_M_REVISION_MATERIAL_ROW_COUNT_MISMATCH")
-        except ValueError as exc:
-            failure=str(exc)
+        solver_ok=("OpenModelica 1.26.5" in text and
+                   "Check of "+model+" completed successfully" in text and
+                   "LOG_SUCCESS" in text and "mrev_res.csv" in text and
+                   csv.is_file())
+        if not solver_ok:
+            # OMC occasionally exits zero while failing the model or leaving
+            # no CSV. This is a failed candidate, NOT an executable receipt.
+            failure="G2_SOLVER_LOG_OR_TRACE_FAILED"
         else:
-            state={
-                "status":"PREDICTED",
-                "native_sha256":parentsha,
-                "trace_sha256":sha_bytes(csv.read_bytes()),
-                "receipt_sha256":None,
-                "forecast":[{"time":t,"delivered":pts[t]} for t in (6,8)],
-            }
-            record_receipt={
-                "schema":SCHEMA,"arm":"M","candidate_id":row["candidate_id"],
-                "parent_hash":row["parent_hash"],"run_id":run_id,"git_sha":git_sha,
-                "exit_code":0,"failure":None,"solver_log_sha256":logsha,
-                "script_sha256":row["revision_native_manifest"]["simulate_script_sha256"],
-                "csv_sha256":state["trace_sha256"],
-                "native_sha256":parentsha,
-                "model_name":model,"mass_max_residual":mass["max_abs_balance"],
-            }
-            state["receipt_sha256"]=digest(record_receipt)
-            return state,record_receipt
+            try:
+                pts,n=_points(csv,"deliveredTotal")
+                cuts,c=_sample(csv.read_bytes(),"deliveredTotal")
+                require(c==n and set(cuts)=={0.,1.,2.,4.},
+                        "CT03_M_REVISION_CONSTRUCTION_CUTS_MISSING")
+                mass=_m_material_conservation(csv,original)
+                require(mass["count"]==n,
+                        "CT03_M_REVISION_MATERIAL_ROW_COUNT_MISMATCH")
+            except ValueError as exc:
+                failure=str(exc)
+            else:
+                state={
+                    "status":"PREDICTED",
+                    "native_sha256":parentsha,
+                    "trace_sha256":sha_bytes(csv.read_bytes()),
+                    "receipt_sha256":None,
+                    "forecast":[{"time":t,"delivered":pts[t]} for t in (6,8)],
+                }
+                record_receipt={
+                    "schema":SCHEMA,"arm":"M","candidate_id":row["candidate_id"],
+                    "parent_hash":row["parent_hash"],"run_id":run_id,"git_sha":git_sha,
+                    "exit_code":0,"failure":None,"solver_log_sha256":logsha,
+                    "script_sha256":row["revision_native_manifest"]["simulate_script_sha256"],
+                    "csv_sha256":state["trace_sha256"],
+                    "native_sha256":parentsha,
+                    "model_name":model,"mass_max_residual":mass["max_abs_balance"],
+                }
+                state["receipt_sha256"]=digest(record_receipt)
+                return state,record_receipt
     else:
         failure="OMC_EXIT_NONZERO:"+str(meta["exit_code"])
     receipt={
