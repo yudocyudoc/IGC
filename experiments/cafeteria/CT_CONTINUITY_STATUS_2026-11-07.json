@@ -26,7 +26,11 @@
     "ct03_two_initial_reuse_status": "REUSABLE_CONSEQUENCES_TWO_ORIGINALS_NOT_FEEDBACK_OR_SCORES",
     "recovered_offline_after_reuse": "https://github.com/yudocyudoc/IGC/actions/runs/42411052826",
     "ct03_producer_advance_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
-    "ct03_producer_advance_scope": "ALL_NEW_D_M_B_BRIDGE_TESTS_OFFLINE_ONLY_NO_NEW_OMC"
+    "ct03_producer_advance_scope": "ALL_NEW_D_M_B_BRIDGE_TESTS_OFFLINE_ONLY_NO_NEW_OMC",
+    "ct03_B_F172_08_ci": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+      "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+    }
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -329,7 +333,7 @@
     }
   },
   "CT03": {
-    "status": "REVIEW_V4_CONFORMANT_B_ORIGINAL_NATIVE_OUTPUT_AND_POSTRUN_G2_PLANNING_ADDED_OFFLINE_CT03_FULL_LOT_NOT_READY_OR_AUTHORIZED",
+    "status": "B_NATIVE_FULL_CUMULATIVE_MONOTONICITY_FIXED_TESTED_OFFLINE_F172_08_CT03_LIVE_B_AND_REVISIONS_CUSTODY_UNWIRED_AND_UNAUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -512,8 +516,40 @@
       "B_revision_native_and_second_OMC": "PENDING",
       "exact_13_slot_final_lock": "PENDING",
       "custody_mounted_separately": "NOT_ESTABLISHED",
-      "latest_test_code_sha": "d66cc91ac0f310262ee449d0e1c4696e0b15c82c",
-      "tested_with_synthetic_fixtures_only": true
+      "latest_test_code_sha": "a30b0c6e412350ba11855d39381958659bf51810",
+      "tested_with_synthetic_fixtures_only": true,
+      "cumulative_trace_gate": {
+        "status": "FIXED_F172_08",
+        "absolute_monotonicity_tolerance_items": 1e-8,
+        "event_duplicate_timestamp_tolerance_hours": 1e-9,
+        "event_duplicate_delivered_tolerance_items": 1e-8,
+        "comparison": "every CSV row, never only t6,t8; fail if delta delivered < -1e-8 or duplicate event values differ by >1e-8",
+        "mass_balance_tolerance_items_unchanged": 0.008,
+        "negative_example": "synthetic t=2.875 y=0.2875 then t=3.0 y=0.25 then t=3.125 y=0.3125; pending stock adjusted to keep mass and y6,y8 unchanged",
+        "no_native_repair_or_smoothing": true,
+        "independent_solver_run_proof": false
+      },
+      "ci_checked": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+      }
+    },
+    "review_received_latest": {
+      "review_file": "REVISION_PR172_B_FISICO_9C3A8EC_2026-11-07.md",
+      "reviewed_head": "9c3a8ec55fd12a37f9373f4c89c5c8c08dce841b",
+      "verdict": "ADVANCE_ON_PATH_WITH_ONE_LOCAL_P2_REPRODUCED",
+      "finding": "F172-08: midtrace t=3 B delivered cumulative decline accepted when t6,t8 and mass remain valid",
+      "correction": "scripts/arena_cafe/ct03_b_physical_result.py full-row consecutive cumulative checks with abs epsilon 1e-8 items and consistency for identical timestamps",
+      "regression": "tests/test_arena_ct03_b_physical_result.py mass conserving artificial drop at t3 rejected; valid CSV accepted; duplicated event timestamp small numeric rounding allowed, inconsistent duplicate increase rejected",
+      "code_sha": "a30b0c6e412350ba11855d39381958659bf51810",
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+      },
+      "new_omc": 0,
+      "new_buffalo_posts": 0,
+      "new_des": 0,
+      "CT03_authorized": false
     }
   },
   "unchanged": [
@@ -563,6 +599,12 @@
         "priority": "P2",
         "status": "FIXED_OFFLINE_TESTED",
         "scope": "D physical conformity gate inside exact-two D/M execution loop before any M OMC attempt; Bash mock-Docker invalid-D one attempt test and valid-D two attempts test."
+      },
+      {
+        "id": "F172-08",
+        "priority": "P2",
+        "status": "FIXED_TESTED_OFFLINE",
+        "scope": "B native physical cumulative delivery monotonicity checked at EVERY CSV row, independent of material mass, fixed abs tolerance 1e-8 items; consistent event-time duplicates accepted, inconsistent rejected; no smoothing, native model edits, new OMC or provider."
       }
     ],
     "verified_ci": [
