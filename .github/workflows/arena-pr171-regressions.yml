@@ -10,6 +10,9 @@ on:
       - 'tests/test_arena_cafe_buffalo_ev01_visible.py'
       - 'tests/test_arena_cafe_e02_memory_bound.py'
       - 'tests/test_arena_cafe_e03_cal_grid.py'
+      - 'tests/test_arena_cafe_e03_accounting.py'
+      - 'scripts/arena_cafe/e03_execution_reconcile.py'
+      - 'experiments/cafeteria/E03_RECONCILED_OPERATIONAL_ACCOUNTING.json'
       - 'tests/test_arena_cafe_e04_action.py'
       - '.github/workflows/arena-pr171-regressions.yml'
 permissions:
@@ -68,4 +71,97 @@ jobs:
           assert len(e.D_GRID['capacity_orders_min'])*len(e.D_GRID['response_minutes'])==9
           assert len(e.M_GRID['maxThroughput_orders_hour'])*len(e.M_GRID['responseTime_hours'])==9
           print('E03_STATIC_PARAMETER_BUDGET_CHECK_NO_OMC')
+          PY
+          python -m unittest discover -s tests -p 'test_arena_cafe_e03_accounting.py' -v
+
+  e04-producer-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Reuse frozen D81 original outputs, no solver
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-D
+          run-id: 42314519861
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/D
+      - name: Reuse frozen M54 original outputs, no solver
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-M
+          run-id: 42314268694
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/M
+      - name: Re-execute E04 source/action tests on CURRENT HEAD
+        env:
+          E04_D_DIR: artifacts/e04/D
+          E04_M_DIR: artifacts/e04/M
+          E04_F4_MOUNT: artifacts/e04/F4
+        run: |
+          set -euo pipefail
+          test ! -e artifacts/e04/F4
+          python -m unittest discover -s tests -p 'test_arena_cafe_e04_action.py' -v
+          python -m scripts.arena_cafe.e04_action_capability \
+            --d-manifest artifacts/e04/D/manifest.json \
+            --m-manifest artifacts/e04/M/manifest.json \
+            --d-score artifacts/e04/D/scores.json \
+            --m-score artifacts/e04/M/scores.json \
+            --out artifacts/e04/producer.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path('artifacts/e04/producer.json').read_text())
+          assert doc['arms']['D']['not_representable']==81
+          assert doc['arms']['M']['not_representable']==54
+          assert doc['B']['status']=='NATIVE_NOT_EXECUTED'
+          assert doc['E05_gate']=='BLOCKED_NO_ADMISSIBLE_LOCAL_ACTION_PREDICTION'
+          assert doc['new_OMC_runs']==doc['new_provider_calls']==0
+          print('E04_CHEAP_HEAD_REGRESSION_NO_NEW_OMC')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-pr171-e04-cheap-producer
+          path: artifacts/e04/producer.json
+          if-no-files-found: error
+
+  e04-evaluator-regression:
+    needs: e04-producer-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-pr171-e04-cheap-producer
+          path: artifacts/e04/producer
+      - name: F4 known truth mounted ONLY in evaluator regression job
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-latent-downstream-symmetry-known-development
+          run-id: 41745340151
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/F4
+      - name: Test evaluator identity and honest E05 block on CURRENT HEAD
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e04_evaluator \
+            --producer artifacts/e04/producer/producer.json \
+            --f4 artifacts/e04/F4/F4_LATENT_SYMMETRY_DEVELOPMENT.json \
+            --out artifacts/e04/evaluator.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e04/evaluator.json').read_text())
+          assert r['status']=='KNOWN_F4_PAIR_VERIFIED_E04_REPRESENTATION_GAP_PARTIAL'
+          assert r['G4']==r['G5']=='NOT_RUN'
+          assert r['E05_gate']=='BLOCKED_NO_ADMISSIBLE_LOCAL_ACTION_PREDICTION'
+          assert r['known_difference_t10_orders']==2
+          print('E04_CHEAP_EVALUATOR_REGRESSION_NO_NEW_DES')
           PY
