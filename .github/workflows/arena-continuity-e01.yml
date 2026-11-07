@@ -109,7 +109,10 @@ jobs:
             test_arena_ct03_m_revision_physical.py \
             test_arena_ct03_b_lock_projection.py \
             test_arena_ct03_assemble_entries.py \
-            test_arena_ct03_producer_freeze_handoff.py; do
+            test_arena_ct03_producer_freeze_handoff.py \
+            test_arena_ct03_lot_budget.py \
+            test_arena_ct03_public_intake.py \
+            test_arena_ct03_global_workflow.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: CT-03 produce six D and six M native Modelica sources (script only)
@@ -373,8 +376,11 @@ jobs:
           assert final['provider_calls']==0 and final['proxy_requests']==1
           assert final['parent_native_sha256']==initial['result_sha256']
           assert final['parent_as_original_currentModel'] is True
-          assert final['own_feedback_sha256'] and final['request_sha256']!=initial['request_sha256']
-          print('CT03_B_ORIGINAL_ENGINE_MOCK_REQUEST_EFFECTIVE_ZERO_PROVIDER')
+          from scripts.arena_v0_contract import digest
+          packet=json.loads((root/'mock-feedback.json').read_text())
+          assert final['own_feedback_sha256']==digest(packet)
+          assert final['request_sha256']!=initial['request_sha256']
+          print('CT03_B_ORIGINAL_ENGINE_MOCK_CANONICAL_PYTHON_PACKET_HASH_VERIFIED_ZERO_PROVIDER')
           PY
       - name: CT-03 reject unapproved Buffalo LIVE before upstream or provider
         env:
