@@ -60,8 +60,9 @@ class MinimalScoringTests(unittest.TestCase):
             self.assertEqual(report["candidate_denominator"],13)
             self.assertEqual(report["paired_available"],1)
             self.assertEqual(report["failures_kept_in_denominator"],12)
-            self.assertEqual(report["true_reserved"],[
-                {"time":6,"delivered":1.8},{"time":8,"delivered":2.4}])
+            self.assertEqual([p["time"] for p in report["true_reserved"]],[6,8])
+            self.assertAlmostEqual(report["true_reserved"][0]["delivered"],1.8)
+            self.assertAlmostEqual(report["true_reserved"][1]["delivered"],2.4)
             self.assertAlmostEqual(report["baselines"]["persist_y4"]["mae"],0.9)
             m=next(row for row in report["rows"] if row["pair_comparable"])
             self.assertEqual(m["arm"],"M")
