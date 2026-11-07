@@ -46,10 +46,10 @@ def physical_runtime_contract(workflow: str) -> dict:
     Git origins/refs, container images, environment and executable versions
     are. Unknown physical-job syntax blocks instead of authorizing reuse.
     """
-    parts = re.split(r"(?m)^  physical-m3:\\s*$", workflow)
+    parts = re.split(r"(?m)^  physical-m3:\s*$", workflow)
     if len(parts) != 2:
         raise ValueError("CT00_PHYSICAL_JOB_MISSING_OR_DUPLICATED")
-    block = re.split(r"(?m)^  [A-Za-z0-9_-]+:\\s*$", parts[1], maxsplit=1)[0]
+    block = re.split(r"(?m)^  [A-Za-z0-9_-]+:\s*$", parts[1], maxsplit=1)[0]
     lines = block.splitlines()
     runners = [x.strip() for x in lines if re.match(r"^    runs-on:", x)]
     if len(runners) != 1 or not any(x.strip() == "steps:" for x in lines):
