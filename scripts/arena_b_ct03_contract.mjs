@@ -16,7 +16,15 @@ const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const stable=x=>Array.isArray(x)?x.map(stable):
   (x&&typeof x==="object")?Object.fromEntries(Object.entries(x).sort().map(([k,v])=>[k,stable(v)])):x;
 const same=(a,b)=>JSON.stringify(stable(a))===JSON.stringify(stable(b));
-const unsafe=/holdout|gold|truth|private|rival|secret|future_observation|t6|t8|evaluator/i;
+const unsafe=/holdout|gold|private|rival|secret|future_observation|evaluator/i;
+// Legitimate diagnostics can explicitly say no_future_truth=true; forbid
+// actual hidden fields, not negative assertions of the absence of truth.
+const forbiddenKey=/^(heldout|gold|hidden_world|true_world|true_parameters|private_des|rival_outputs|evaluator|reserved_truth|future_observation|t6|t8)$/i;
+function forbiddenFields(value){
+  if(!value || typeof value!=="object")return false;
+  if(Array.isArray(value))return value.some(forbiddenFields);
+  return Object.entries(value).some(([k,v])=>forbiddenKey.test(k)||forbiddenFields(v));
+}
 
 export function validateCt03Visible(v,round) {
   if(!v||typeof v!=="object"||Array.isArray(v) ||
@@ -79,7 +87,7 @@ export function validateCt03Revision({native,receipt,feedback,visible,mode}){
      !hash.test(feedback.own_diagnostic_sha256??"") ||
      !feedback.retrieved_before_policy || typeof feedback.own_diagnostic!=="object" ||
      feedback.own_diagnostic===null ||
-     unsafe.test(JSON.stringify(feedback)))
+     forbiddenFields(feedback))
     fail("CT03_B_FEEDBACK_NOT_OWN_OR_MISSING_LEDGER_RETRIEVAL");
   return {model:native.model,feedback,source:check};
 }
