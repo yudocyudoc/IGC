@@ -1,0 +1,86 @@
+{
+  "schema": "igc-ct01-authentic-actions-artifact-digests/1.0",
+  "verified_on": "2026-11-07",
+  "origin": "GitHub Actions artifact download, authentic repo yudocyudoc/IGC; stored SHA256 computed over downloaded ZIP and selected uncompressed entries, without replay or provider",
+  "limitations": [
+    "This verifies downloaded artifact bytes and selected entries at this retrieval. It does not independently reexecute any historical experiment.",
+    "Not all 322 total archive entries are individually attested in this compact index; full ZIP hashes cover the downloaded container bytes.",
+    "R4 private truth contents never copied to repository; only digest recorded.",
+    "Archive availability can expire. If unavailable, keep previously verified digest record but do not claim a new download."
+  ],
+  "archives": [
+    {
+      "capability": "D2",
+      "artifact_id": 12619352557,
+      "run_id": 40248817463,
+      "zip_sha256": "05780ca1c0a6e8e94437af55fbc842670364bd84582d1318d70e3534628f04eb",
+      "entry_count": 34,
+      "entries": {
+        "d2-revision.json": "a0d63faf208d1b0aadd5a2b9ffc928ca633866c668f1f26249f5c109666651b6",
+        "screen.json": "c2c7df809fd1520cbad4eb4354f5d0371682ae250866ea9e8bee7c37d0d83c46",
+        "d2-trial-visible.json": "e2d27b7419055b1963e6c9268ec6a90076d3ea701874760a2eeb7d4edb2e5e5d",
+        "arena-d-atms-ledger.sqlite": "28b33a1f43bfdae14775ecf03f8ccb19d7182d9e3024166407e610a2c46832d0"
+      }
+    },
+    {
+      "capability": "D2",
+      "artifact_id": 12619202899,
+      "run_id": 40248817463,
+      "zip_sha256": "9e6bb9c5239fa962fba97f9748c20de6558805548761fcb6d23e5947271a872d",
+      "entry_count": 62,
+      "entries": {
+        "D2IndependentWorld_res.csv": "88f479085ddce6c12e34a253ff82452e0867ac46943d03a30e0aef426dc8f746"
+      }
+    },
+    {
+      "capability": "M2",
+      "artifact_id": 12628124619,
+      "run_id": 40273515543,
+      "zip_sha256": "14aae142aa8f16b80ef2f74ee592001509f490c79175d94ce2ffdf14993b36a6",
+      "entry_count": 67,
+      "entries": {
+        "native-graph.json": "1eee16d8c209209fe98fcf2bfc05e4a592ac30dd8b946d9fd41a68be36aa98a2",
+        "feedback.json": "3a25b42eee8302c6896dfb0c5a58a783291a83a8e6d230c47b513dfb089e242c",
+        "m2-visible_res.csv": "3babc3156dc2e55d30220994030ee323174039ba89bba2a3449046056e3fc724",
+        "real-comparison.json": "5a9b1a68e2463197a9b3766fc4eb614f9586bd220d00e8d45b0d31ffa382ddad"
+      }
+    },
+    {
+      "capability": "B5",
+      "artifact_id": 12696426738,
+      "run_id": 40419170895,
+      "zip_sha256": "86091aa72e7a767fd271e048f1e0c7dfb34b214cf8e07ca0d345b99f4bbee35c",
+      "entry_count": 11,
+      "entries": {
+        "b5-live/native-output.json": "ddb92a7cb3c73f6f9861282addce948dcf67587a50f12b3c2140a8fda8231dec",
+        "b5-live/receipt.json": "444b884f28138c9ccaaaa29feeef80a3f8e0effa69bac3cc10b971c9002123e6",
+        "b5-feedback.json": "e2ccab0654ae4ef73d43e89cd55b4020a974fe1fca4e5ed87906bbdc8b975598"
+      }
+    },
+    {
+      "capability": "B5",
+      "artifact_id": 12696416795,
+      "run_id": 40419170895,
+      "zip_sha256": "04de0805fd67a7f1a997b8f9b4b88d983006e1be83018601c4af2bf28de06892",
+      "entry_count": 82,
+      "entries": {
+        "b5-adjudication/adjudication.json": "acd1412f139b0e8a253b9d9c9030cf045845eb63d58b7a3e0c7ba7c153dfbed4",
+        "b5-adjudication/BuffaloNative_998b911a9789_res.csv": "040695cd9065eb26c124496839ffd2899c17460bf1b015a43ba36bc4719296fd",
+        "b5-live/native-output.json": "ddb92a7cb3c73f6f9861282addce948dcf67587a50f12b3c2140a8fda8231dec"
+      }
+    },
+    {
+      "capability": "R4",
+      "artifact_id": 12785878357,
+      "run_id": 40618493022,
+      "zip_sha256": "ec27b4bab2e395a385b684277952c8e910fafde4b6a814b0956172cde1c4c273",
+      "entry_count": 66,
+      "entries": {
+        "locked-scoring-result.json": "4dd2f24f819c82d853127713046b09350469bcd8e1c3ed9bfcc4c75741344e86",
+        "one-new-physical-observation.json": "a9dcb3d89be01f7eb1cf313cfb3747e95d805354f9948d276acec778c1fd6ac6",
+        "post-selection-adjudication.json": "865f06dc95a6de10b4ca812392eedf57ef997da2377d016654dc90092c8b0ed2",
+        "new-world/r4_t2_res.csv": "41e1f65ef3003db1ff6e511be052cd7448b378444d886191c661dba2546ce755"
+      }
+    }
+  ]
+}
