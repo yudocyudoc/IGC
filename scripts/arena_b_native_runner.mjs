@@ -38,71 +38,10 @@ try {
   if(Object.keys(visible).some(k=>/holdout|gold|other.arm/i.test(k)))fail("FORBIDDEN_VISIBLE_FIELDS");
   if(Object.keys(visible.construction??{}).some(k=>/holdout|gold|other.arm/i.test(k)))fail("FORBIDDEN_CONSTRUCTION");
   if(visible.schema!=="igc-arena-visible-input/0.1")fail("INVALID_VISIBLE_INPUT");
-  const isEV01=visible.investigation_id==="cafeteria-known-control-a3-b";
-  const roundKind=process.env.BUFFALO_ROUND_KIND??"initial";
-  if(!["initial","revision"].includes(roundKind))fail("INVALID_ROUND_KIND");
-  if(!isEV01&&roundKind!=="initial")fail("LEGACY_REVISION_MODE_FORBIDDEN");
-  let ownParent=null, ownFeedback=null;
-  if(isEV01){
-    const c=visible.construction?.declared_input_reconstruction;
-    const cond=visible.observability?.condition_id;
-    if(!["O0","O1"].includes(cond) ||
-       visible.round_id!=="a3-"+cond.toLowerCase()+"-buffalo-"+roundKind ||
-       visible.observability.public_cutoff_minutes_exact!=="10" ||
-       c?.policy!=="CAUSAL_RIGHT_RECTANGULAR_EVENT_KERNEL/0.1" ||
-       !/^sha256:[a-f0-9]{64}$/.test(c?.signal_sha256??"") ||
-       c?.width_minutes_exact!=="1/2" ||
-       !Array.isArray(c?.piecewise_constant_segments) ||
-       !Array.isArray(c?.event_times_minutes_exact) ||
-       c.event_times_minutes_exact.length!==15 ||
-       c.mass_not_moved_before_event!==true ||
-       c.no_delivery_data_used_to_generate_stimulus!==true)
-      fail("EV01_PUBLIC_CAUSAL_INPUT_CONTRACT_MISMATCH");
-    results.case_id="EV-01";
-    results.condition_id=cond;
-    results.round_kind=roundKind;
-    results.source_snapshot_hash=visible.source_snapshot_hash;
-    results.arrival_signal_sha256=c.signal_sha256;
-    results.expected_horizon_hours=1/6;
-    results.original_engine_max_tokens=16000;
-    if(mode==="live"&&process.env.BUFFALO_EV01_LIVE_AUTH!=="EV01_ONE_ROUND_EXPRESS_AUTH")
-      fail("EV01_LIVE_REQUIRES_SEPARATE_AUTHORIZATION");
-    if(roundKind==="revision"){
-      const parentFile=process.env.BUFFALO_PARENT_NATIVE;
-      const receiptFile=process.env.BUFFALO_PARENT_RECEIPT;
-      const feedbackFile=process.env.BUFFALO_OWN_FEEDBACK;
-      if(!parentFile||!receiptFile||!feedbackFile)fail("EV01_REVISION_PARENT_FEEDBACK_REQUIRED");
-      const parent=JSON.parse(await readFile(resolve(parentFile),"utf8"));
-      const receipt=JSON.parse(await readFile(resolve(receiptFile),"utf8"));
-      const feedback=JSON.parse(await readFile(resolve(feedbackFile),"utf8"));
-      const native=parent?.model;
-      if(!Array.isArray(native?.variables)||!Array.isArray(native?.relationships) ||
-         receipt?.case_id!=="EV-01"||receipt?.condition_id!==cond||
-         receipt?.round_kind!=="initial"||
-         receipt?.source_snapshot_hash!==visible.source_snapshot_hash||
-         receipt?.result_sha256!==sha(parent)||receipt?.model_returned!==true||
-         (mode==="live" && (receipt.mode!=="live"||receipt.provider_calls!==1)))
-         fail("EV01_PARENT_NOT_OWN_AUTHENTIC_NATIVE_MODEL");
-      if(feedback?.schema!=="igc-e02-b-own-feedback/0.1"||
-         feedback?.arm!=="B"||feedback?.condition_id!==cond||
-         feedback?.source_snapshot_hash!==visible.source_snapshot_hash||
-         feedback?.parent_result_sha256!==receipt.result_sha256||
-         typeof feedback?.diagnostic!=="object"||feedback.diagnostic===null||
-         Object.keys(feedback).some(k=>/holdout|gold|other.arm|private.des/i.test(k)))
-         fail("EV01_NOT_OWN_DIAGNOSTIC_FEEDBACK");
-      ownParent=parent;
-      ownFeedback=feedback;
-      results.parent_native_sha256=receipt.result_sha256;
-      results.own_feedback_sha256=sha(feedback);
-    }
-  }else{
-    results.original_engine_max_tokens=8000;
-    results.round_kind="historical-initial";
-  }
   const {default: Engine}=await import(pathToFileURL(join(root,"engines/quantitative/engine.js")).href);
   const {LLMWrapper}=await import(pathToFileURL(join(root,"utilities/LLMWrapper.js")).href);
   const stub={success:true,model:{
-    specs:{startTime:0,stopTime:isEV01?1/6:8,dt:isEV01?0.005:0.1,timeUnits:"Hour",integrationMethod:"Euler"},
+    specs:{startTime:0,stopTime:8,dt:0.1,timeUnits:"Hour",integrationMethod:"Euler"},
     variables:[
       {name:"Arrivals",type:"flow",units:"items/hour",inflows:[],outflows:[],
        equation:"1.7",uniflow:true,graphicalFunction:{points:[]},documentation:"New items."},
@@ -142,9 +81,7 @@ try {
         schema_type:body.response_format.type,
         request_sha256:results.request_sha256,
         prompt_hashes:body.messages.map(m=>({role:m.role,sha256:sha(m.content)})),
-        schema_sha256:sha(desc),original_alias_model:body.model,
-        requested_engine_max_tokens:results.original_engine_max_tokens,
-        case_id:results.case_id??"LEGACY",round_kind:results.round_kind
+        schema_sha256:sha(desc),original_alias_model:body.model
       });
       let raw;
       if(mode==="mock"){
@@ -188,13 +125,10 @@ try {
     supportsSubTypes:false,mentorMode:false,
     problemStatement:visible.question,
     backgroundKnowledge:JSON.stringify({construction:visible.construction,
-                                         observability:visible.observability,
-                                         own_feedback:ownFeedback?ownFeedback.diagnostic:null}),
-    maxTokens:results.original_engine_max_tokens,timeoutMinutes:3
+                                         observability:visible.observability}),
+    maxTokens:8000,timeoutMinutes:3
   };
-  // Upstream Engine.generate receives its OWN native model on revision.
-  // Never substitute another arm's or the evaluator's structure.
-  const currentModel=ownParent?ownParent.model:{variables:[],relationships:[]};
+  const currentModel={variables:[],relationships:[]};
   const output=await instance.generate(visible.question,currentModel,parameters);
   await save("native-engine-result.json",output);
   results.result_sha256=sha(output);
@@ -211,14 +145,6 @@ try {
     results.status="ORIGINAL_ENGINE_NO_NATIVE_MODEL";
   }
   results.llm_wrapper_schema_was_sent=results.quant_schema_seen;
-  results.output_horizon_hours=output?.model?.specs?.stopTime??null;
-  results.horizon_matches_case=(isEV01?
-      Math.abs(results.output_horizon_hours-1/6)<1e-8:
-      null);
-  if(isEV01 && !results.horizon_matches_case){
-    // Never rewrite upstream model output to force the desired horizon.
-    results.status="EV01_NATIVE_HORIZON_NOT_COMPARABLE";
-  }
   results.upstream_source_modified=false;
   if(mode==="mock" && !results.inferred_inflow_by_buffalo?.includes("Arrivals"))
     fail("BUFFALO_ORIGINAL_POSTPROCESS_NOT_EXERCISED");
@@ -233,5 +159,5 @@ try {
     provider_calls:results.provider_calls,variable_count:results.variable_count,
     native_error:results.native_error,runner_error:results.runner_error,
     bridge_error:results.bridge_error,provider_http_status:results.http_status}));
-  if(!results.model_returned||results.runner_error||results.status==='EV01_NATIVE_HORIZON_NOT_COMPARABLE')process.exitCode=1;
+  if(!results.model_returned||results.runner_error)process.exitCode=1;
 }

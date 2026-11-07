@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/**'
-      - 'scripts/arena_b_native_runner.mjs'
+      - 'scripts/arena_b_ev01_native_runner.mjs'
       - 'scripts/arena_event_observability.py'
       - 'tests/test_arena_cafe_rf02_*.py'
       - 'tests/test_arena_cafe_continuity_round.py'
@@ -191,7 +191,7 @@ jobs:
           for c in O0 O1; do
             BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/b-stage-$c/b-visible.json" \
               BUFFALO_OUTPUT="$PWD/artifacts/e01/b-native-$c" \
-              BUFFALO_ROUND_KIND=initial node scripts/arena_b_native_runner.mjs
+              BUFFALO_ROUND_KIND=initial node scripts/arena_b_ev01_native_runner.mjs
           done
           python - <<'PY'
           import json
@@ -234,7 +234,7 @@ jobs:
                           'no_empirical_score':True}
           },open('artifacts/e01/b-feedback-O0-offline.json','w'))
           PY
-          node scripts/arena_b_native_runner.mjs
+          node scripts/arena_b_ev01_native_runner.mjs
           node --test tests/test_arena_b_cf_protocol_adapter.mjs
           python - <<'PY'
           import json
