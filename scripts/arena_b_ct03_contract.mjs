@@ -11,6 +11,8 @@ export const CT03_INPUT={pulse_rate:1.7,pulse_start:0,pulse_end:2,
                          total_mass:3.4,unit:"items/hour",horizon_hours:8,
                          integration_step_hours:0.125};
 const hash=/^sha256:[0-9a-f]{64}$/;
+// Existing ATMS project() returns a bare 64-hex report digest, unlike arena_v0_contract.digest.
+const projectionHash=/^(?:sha256:)?[0-9a-f]{64}$/;
 const fail=code=>{throw Error(code);};
 const keys=(obj,allowed)=>Object.keys(obj).every(k=>allowed.includes(k));
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
@@ -111,7 +113,7 @@ function verifyLedgerDiagnostic(feedback, receipt, check) {
      Object.keys(retrieval).length!==3 ||
      !keys(retrieval,["item_id","projection_hash","as_known_at"]) ||
      typeof retrieval.item_id!=="string" || !retrieval.item_id.trim() ||
-     !hash.test(retrieval.projection_hash??"") ||
+     !projectionHash.test(retrieval.projection_hash??"") ||
      typeof retrieval.as_known_at!=="string" ||
      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(retrieval.as_known_at) ||
      !Number.isFinite(Date.parse(retrieval.as_known_at)))
