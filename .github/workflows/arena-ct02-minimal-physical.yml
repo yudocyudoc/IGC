@@ -1,0 +1,39 @@
+# CT-02 workflow registry on the default branch ONLY.
+# The authorized physical two-model implementation is frozen on
+# experiment/arena-ct00-ct02-20261107 and must be dispatched with --ref that
+# exact branch + its matching SHA. Never run a numerical solver from main.
+name: Arena CT-02 | one-shot two-model numerical conformity
+run-name: CT02 technical two-run batch | ${{ inputs.freeze_sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      authorized:
+        description: 'Explicit batch authorization; no simulation on main'
+        required: true
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+      budget:
+        description: 'Exactly two OMC simulations on authorized experimental ref'
+        required: true
+        type: number
+        default: 0
+      freeze_sha:
+        description: '40-character SHA of experimental ref at dispatch'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  registry-only-no-physical-execution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Fail closed; select experimental ref for real CT-02 workflow
+        run: |
+          echo 'CT02_DEFAULT_BRANCH_REGISTRATION_ONLY'
+          echo 'No solver, provider or DES can be executed by this main-branch stub.'
+          echo 'Dispatch with --ref experiment/arena-ct00-ct02-20261107 and its exact SHA.'
+          exit 1
