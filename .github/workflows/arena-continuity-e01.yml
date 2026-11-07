@@ -108,7 +108,8 @@ jobs:
             test_arena_ct03_b_physical_execute_script.py \
             test_arena_ct03_m_revision_physical.py \
             test_arena_ct03_b_lock_projection.py \
-            test_arena_ct03_assemble_entries.py; do
+            test_arena_ct03_assemble_entries.py \
+            test_arena_ct03_producer_freeze_handoff.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: CT-03 produce six D and six M native Modelica sources (script only)
