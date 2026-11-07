@@ -255,6 +255,7 @@ jobs:
           test -s artifacts/ct03-budget/dm-budget.json
           python -m scripts.arena_cafe.ct03_lot_budget verify \
             --receipt artifacts/ct03-budget/dm-budget.json \
+            --construction artifacts/ct03-public/construction.json \
             --run-id "$GITHUB_RUN_ID" --git-sha "$GITHUB_SHA"
           test ! -e artifacts/ct03-producer/dm-ten
           test ! -e artifacts/ct03-producer/dm-feedback
