@@ -16,26 +16,10 @@ from scripts.arena_v0_contract import canonical, digest
 from scripts.arena_m_visible_pulse import ROOT, REGISTRY, composer, backend, stimulus_only_replace
 from scripts.arena_cafe import r2_observational_contracts as r2
 from scripts.arena_cafe import r2_m_six_causal_g2 as provenance
+from scripts.arena_cafe.ct03_public import PUBLIC_INPUT
 
 SCHEMA = "igc-ct03-m-original-six-initial-preparation/1.0"
-PUBLIC_INPUT = {
-    "schema": "igc-ct03-fixed-aggregate-input/1.0",
-    "quantity_unit": "items",
-    "time_unit": "hours",
-    "rate_unit": "items/hour",
-    "pulse_rate": 1.7,
-    "pulse_start": 0,
-    "pulse_end": 2,
-    "after_rate": 0,
-    "continuous_requested_mass": 3.4,
-    "initial_stock": 0,
-    "start_time": 0,
-    "stop_time": 8,
-    "solver": "euler",
-    "dt": 0.125,
-    "construction_times": [0, 1, 2, 4],
-    "reserved_times": [6, 8],
-}
+
 
 
 def require(ok, reason):
