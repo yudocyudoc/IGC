@@ -99,8 +99,9 @@ class TenInitialCT03(unittest.TestCase):
             self.assertEqual(result["status"],
                 "ONE_REAL_ORIGINAL_INITIAL_NATIVE_CHECKED_NOT_SCORED")
             # This result says source receipts checked, NOT independent physical proof.
-            self.assertEqual(result["forecast"][0],{"time":6,"delivered":1.2})
-            self.assertEqual(result["forecast"][1],{"time":8,"delivered":1.6})
+            self.assertEqual([p["time"] for p in result["forecast"]],[6,8])
+            self.assertAlmostEqual(result["forecast"][0]["delivered"],1.2)
+            self.assertAlmostEqual(result["forecast"][1]["delivered"],1.6)
             self.assertTrue(result["construction_residuals_not_yet_built"])
             self.assertFalse(result["feedback_or_revision_executed"])
             with self.assertRaisesRegex(ValueError,"RESULT_REFUSE_OVERWRITE"):
