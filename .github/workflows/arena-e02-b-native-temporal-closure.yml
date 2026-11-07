@@ -4,6 +4,8 @@ on:
     paths:
       - 'scripts/arena_cafe/e02_b_native_close.py'
       - 'tests/test_arena_cafe_e02_b_native_close.py'
+      - 'scripts/arena_cafe/e07_existing_evidence_gate.py'
+      - 'tests/test_arena_cafe_e07_existing_evidence_gate.py'
       - 'experiments/cafeteria/E02_B_G1_V02_ADJUDICATION_2026-11-06.json'
       - '.github/workflows/arena-e02-b-native-temporal-closure.yml'
 permissions:
@@ -53,6 +55,13 @@ jobs:
           run-id: 42335080421
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/e02-closure/g1-new
+      - name: Reuse original F3 PM increment already evaluated against physical B1/B2 (no PM4Py)
+        uses: actions/download-artifact@v4
+        with:
+          name: f3-pm-existing-evidence-incremental-value
+          run-id: 41730131596
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/f3-original
       - name: Test pinned raw bytes, true timestamps, previous snapshots and case isolation
         env:
           B_CLOSURE_BASELINE: artifacts/e02-closure/base
@@ -87,11 +96,35 @@ jobs:
           assert all(x['conditions'][c]['memory']['snapshots'][-1]['g2_blocked_current_native'] for c in ('O0','O1'))
           print('E02_B_TWO_REAL_NATIVES_APPENDED_AFTER_TIMEOUT_WITH_UPSTREAM_G1_V02_BLOCKERS')
           PY
+      - name: Verify original F3 and canonical D/M/B source identity; adjudicate E07 conditional entry
+        env:
+          E07_ORIGINAL_F3: artifacts/e02-closure/f3-original/F3_PM_INFORMATION_INCREMENT.json
+          E07_CANONICAL_LEDGER: artifacts/e02-closure/final/combined_ledger_v2.sqlite
+          E07_B_CLOSURE_REPORT: artifacts/e02-closure/final/adjudication_report.json
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e07_existing_evidence_gate.py' -v
+          python -m scripts.arena_cafe.e07_existing_evidence_gate \
+            --f3 "$E07_ORIGINAL_F3" \
+            --ledger "$E07_CANONICAL_LEDGER" \
+            --b-report "$E07_B_CLOSURE_REPORT" \
+            --out artifacts/e02-closure/final/E07_EXISTING_EVIDENCE_ENTRY.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('artifacts/e02-closure/final/E07_EXISTING_EVIDENCE_ENTRY.json').read_text())
+          assert x['status']=='E07_NOT_ACTIVATED_NO_INCREMENTAL_VARIATION_IN_EXISTING_EV01'
+          assert x['pm_new_execution'] is False and x['new_B_provider_calls']==0
+          assert x['e06_real_video2_source_fitness']=='NOT_EVALUATED_NO_VIDEO2_WINDOWS_IN_THIS_EVIDENCE_PACKAGE'
+          assert all(x['same_public_events_verified_for_all_three_arms'][c]['same_D_M_B_source'] for c in ('O0','O1'))
+          print('F3_ORIGINAL_PM_B1_B2_E02_ALL_THREE_ARMS_SAME_EVIDENCE_E07_CONDITIONAL_NOT_TRIGGERED')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: arena-e02-b-real-native-append-only-f1a-atms-closure
           path: |
             artifacts/e02-closure/final/adjudication_report.json
             artifacts/e02-closure/final/combined_ledger_v2.sqlite
+            artifacts/e02-closure/final/E07_EXISTING_EVIDENCE_ENTRY.json
           retention-days: 90
           if-no-files-found: error
