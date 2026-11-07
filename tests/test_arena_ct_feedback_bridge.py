@@ -146,5 +146,47 @@ class CT02Test(unittest.TestCase):
                 "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT")
 
 
+    def test_b_native_receipt_to_supported_own_review_packet_no_provider(self):
+        from scripts.arena_cafe.e02_b_feedback import _model_sha
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "ledger.sqlite"
+            ctx = context(arm="B")
+            original = {"model": {"specs": {"startTime": 0, "stopTime": 8,
+                           "dt": .125, "integrationMethod": "Euler"},
+                           "variables": [], "relationships": []}}
+            parent_sha = _model_sha(original)
+            record_feedback(db, ctx, parent_hash=parent_sha,
+                            diagnostic=diag(ctx, parent_sha),
+                            recorded_at=TIME.isoformat())
+            receipt = {"case_id": "CT-03", "world_public_id": "W1",
+                "condition_id": "C0", "round_kind": "initial",
+                "source_snapshot_hash": SRC, "mode": "live", "provider_calls": 1,
+                "proxy_requests": 1, "model_returned": True,
+                "result_sha256": parent_sha,
+                "status": "ORIGINAL_ENGINE_LIVE_OUTPUT_RETURNED",
+                "horizon_matches_case": True, "output_horizon_hours": 8,
+                "upstream_source_modified": False,
+                "upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+                "transport": "CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA"}
+            later = (TIME + timedelta(seconds=1)).isoformat()
+            result = b_review_envelope(db, ctx, original_native=original,
+                                       authenticated_receipt=receipt, as_known_at=later)
+            self.assertEqual(result["status"],
+                "READY_NOT_SENT_RECEIPT_REQUIRES_EXTERNAL_BYTE_VERIFICATION")
+            self.assertIs(result["currentModel"], original["model"])
+            self.assertEqual(result["revision_feedback_packet"]["parent_result_sha256"],
+                             parent_sha)
+            self.assertEqual(result["revision_feedback_packet"]["source_snapshot_hash"], SRC)
+            self.assertEqual(result["provider_calls"], 0)
+            bad = {**receipt, "world_public_id": "W2"}
+            self.assertEqual(b_review_envelope(db, ctx, original_native=original,
+                      authenticated_receipt=bad, as_known_at=later)["status"],
+                      "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT")
+            altered = {"model": {**original["model"], "specs": {"stopTime": 6}}}
+            self.assertEqual(b_review_envelope(db, ctx, original_native=altered,
+                      authenticated_receipt=receipt, as_known_at=later)["status"],
+                      "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT")
+
+
 if __name__ == "__main__":
     unittest.main()
