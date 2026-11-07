@@ -39,7 +39,8 @@ jobs:
             test_arena_ct03_m_prepare.py \
             test_arena_ct03_m_construction_diagnostic.py \
             test_arena_ct03_b_visible.py \
-            test_arena_ct03_d_prepare.py; do
+            test_arena_ct03_d_prepare.py \
+            test_arena_ct03_m_revision_prepare.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: Obtain frozen A1 public envelopes O0 O1
