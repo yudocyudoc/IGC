@@ -41,7 +41,7 @@ PREFIXES = ("src/modelica/",)
 RUNTIME_PATTERNS = (
     r"openmodelica/openmodelica:v[0-9.]+-minimal",
     r"--branch v[0-9.]+",
-    r"method=\\\"[A-Za-z0-9]+\\\"",
+    r'method="[A-Za-z0-9]+"',
     r"tolerance=[0-9.eE-]+",
     r"stopTime=[0-9.]+",
     r"numberOfIntervals=[0-9]+",
