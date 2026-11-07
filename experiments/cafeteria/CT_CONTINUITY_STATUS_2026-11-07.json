@@ -42,7 +42,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "PREPARACION_MINIMA_CI_VERIFICADA_LOTE_FISICO_CT02_AUN_NO_AUTORIZADO",
+    "status": "CT02_USER_AUTHORIZED_EXACTLY_TWO_TECHNICAL_OMC_PENDING_MANUAL_DISPATCH_NOT_EXECUTED",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -116,7 +116,7 @@
       "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
       "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
       "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement.",
-      "Manual CT02 OMC technical batch not authorized/attempted (maximum two). Default branch must include workflow before workflow_dispatch. CT03 live producer integration still pending separately; no scientific CT02 acceptance yet."
+      "CT02 maximum two OMC now user-authorized, but the actual manual workflow has not been dispatched: GitHub integration has no dispatch action; artifact and scientific conformity not yet available."
     ],
     "provider_new_calls": 0,
     "omc_new_simulations": 0,
@@ -186,7 +186,7 @@
       "ct02_manual_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
       "ct02_selected_technical_candidates": "original D initial index 0 and original M full-AST initial index 0, fixed before seeing outputs; no ranking",
       "ct02_exact_budget_omc": 2,
-      "ct02_currently_authorized_omc": 0,
+      "ct02_currently_authorized_omc": 2,
       "ct02_attempted_omc": 0,
       "ct02_manual_dispatch_performed": false,
       "cto2_stop": "D then immediate original per-arm native CSV/version/identity/horizon/mass check; no M attempt unless D passes; after M check M then aggregated final report, no retry.",
@@ -212,7 +212,30 @@
       "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
       "real_omc_runs": 0,
       "provider_posts": 0,
-      "des_runs": 0
+      "des_runs": 0,
+      "ct02_batch_authorization": {
+        "status": "USER_AUTHORIZED_ONCE_PENDING_GITHUB_WORKFLOW_DISPATCH",
+        "approved_technical_ceiling_new_omc": 2,
+        "permitted_candidates": [
+          "D index 0 original",
+          "M index 0 full E1 AST original"
+        ],
+        "no_retries": true,
+        "stop_after_first_failed_arm": true,
+        "forbidden": [
+          "Buffalo provider POST",
+          "DES",
+          "CT03 world generation",
+          "CT03 live candidate runs",
+          "physical-m3 inherited 14-run job"
+        ],
+        "registered_entry_on_main": "2cef5f2f8a168e2b850371cf490798f8f2758575",
+        "main_entry_is_no_physics_fail_closed": true,
+        "execution_ref": "experiment/arena-ct00-ct02-20261107",
+        "dispatch_performed": false,
+        "dispatch_blocker": "Current GitHub connector lacks workflow_dispatch write action. Only operator-initiated GitHub Actions Run workflow / gh workflow run with freeze SHA can start batch.",
+        "use_github_run_artifact_for_actual_provenance": true
+      }
     }
   },
   "CT03": {
