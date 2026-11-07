@@ -37,7 +37,7 @@ def make_example(root: Path):
     with csv_path.open("w", newline="") as f:
         # OpenModelica native CSV convention (also seen in archived M2 CSV):
         # quoted names, with ROOT name not class-prefixed.
-        f.write('"time","deliveredTotal"\\n')
+        f.write('"time","deliveredTotal"\n')
         writer = csv.writer(f)
         for i in range(65):
             t = i / 8
