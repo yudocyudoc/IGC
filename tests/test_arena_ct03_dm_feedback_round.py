@@ -37,17 +37,22 @@ def make_all_twelve(root):
         manifest=(d if arm=="D" else m)
         candidate=manifest["candidates"][index]
         n=len(candidate["structure"]["stocks"]) if arm=="D" else 0
+        m_stocks=([x["id"]+".waiting" for x in
+                  candidate["original_ast"]["instances"]
+                  if x["role"] in ("preparation","dispatch","transit")]
+                  if arm=="M" else [])
         with Path(row["csv_file"]).open("w",newline="",encoding="utf-8") as stream:
             writer=csv.writer(stream)
             writer.writerow(["time","delivered","lost"]+
                             ["s"+str(i+1) for i in range(n)] if arm=="D"
-                            else ["time","deliveredTotal"])
+                            else ["time","deliveredTotal",*m_stocks])
             for i in range(65):
                 t=i/8
                 mass=1.7*min(t,2)
                 delivered=.1*t
                 writer.writerow([t,delivered,0,mass-delivered]+[0]*(n-1)
-                                if arm=="D" else [t,delivered])
+                                if arm=="D" else
+                                [t,delivered,mass-delivered]+[0]*(len(m_stocks)-1))
         Path(row["solver_log_file"]).write_text(
             "OpenModelica 1.26.5\n"+
             "Check of "+row["model_name"]+" completed successfully.\n"+
