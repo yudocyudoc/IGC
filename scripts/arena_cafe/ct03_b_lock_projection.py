@@ -198,11 +198,79 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
     }
 
 
+def project_no_native(initial_receipt,construction):
+    """A failed provider attempt still occupies B's thirteenth denominator slot.
+
+    Requires a real native-runner failure receipt; no fabricated B parent,
+    feedback, revision, zero prediction or fake provider/model success.
+    """
+    world=construction["world_public_id"]
+    source=construction["source_snapshot_hash"]
+    require(type(initial_receipt) is dict and
+            initial_receipt.get("case_id")=="CT-03" and
+            initial_receipt.get("world_public_id")==world and
+            initial_receipt.get("condition_id")=="C0" and
+            initial_receipt.get("source_snapshot_hash")==source and
+            initial_receipt.get("round_kind")=="initial" and
+            initial_receipt.get("mode")=="live" and
+            initial_receipt.get("model_returned") is False and
+            initial_receipt.get("status") in (
+                "CT03_PROVIDER_ATTEMPT_NO_NATIVE",
+                "CT03_PREPROVIDER_NO_NATIVE",
+                "ORIGINAL_ENGINE_NO_NATIVE_MODEL",
+                "RUNNER_FAILURE"
+            ) and
+            initial_receipt.get("upstream_source_modified") is False and
+            initial_receipt.get("upstream_sha")==
+              "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc" and
+            initial_receipt.get("transport")==
+              "CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA" and
+            type(initial_receipt.get("provider_calls")) is int and
+            initial_receipt["provider_calls"] in (0,1),
+            "CT03_B_NO_NATIVE_NEEDS_REAL_ORIGINAL_FAILURE_RECEIPT")
+    state={
+        "status":"NO_NATIVE","native_sha256":None,
+        "trace_sha256":None,
+        "receipt_sha256":digest(initial_receipt),
+        "forecast":None
+    }
+    row={
+        "arm":"B","candidate_id":"B-original",
+        "parent_hash":None,"material_group":"B-original",
+        "initial":state,
+        "decision":{
+            "status":"NOT_EXECUTED",
+            "policy":"UB-IAD/sd-ai::Engine.generate",
+            "feedback_hash":None,
+            "retrieved_item_id":None,
+            "new_model_sha256":None
+        },
+        "final":state
+    }
+    validate_row(row,{("B","B-original"):
+                    {"parent_hash":None,"group":"B-original"}},world)
+    return {
+        "schema":SCHEMA,"status":"B_THIRTEENTH_SLOT_VALID_NOT_ARCHIVED_OR_SCORED",
+        "world_public_id":world,"source_snapshot_hash":source,
+        "original_provider_receipt_sha256":digest(initial_receipt),
+        "own_feedback_report_sha256":None,"own_revision_packet_sha256":None,
+        "second_B_provider_post_observed":False,
+        "revision_stop_or_disposition":"NO_AUTHENTIC_ORIGINAL_B_NATIVE",
+        "initial_native_G1_or_observable_status":"NO_NATIVE",
+        "final_native_G1_or_observable_status":None,
+        "reserved_truth_read":False,
+        "new_omc_by_projection":0,"new_provider_calls":0,
+        "actual_provider_or_solver_source_verified_outside_process":False,
+        "row":row
+    }
+
+
 def main():
     p=argparse.ArgumentParser()
-    for flag in ("original-native","initial-receipt","construction","b-feedback",
-                 "packet","initial-plan","out"):
+    for flag in ("initial-receipt","construction","out"):
         p.add_argument("--"+flag,required=True,type=Path)
+    for flag in ("original-native","b-feedback","packet","initial-plan"):
+        p.add_argument("--"+flag,type=Path)
     for flag in ("initial-physical","revision-native","revision-receipt",
                  "revision-plan","revision-physical"):
         p.add_argument("--"+flag,type=Path)
@@ -210,17 +278,27 @@ def main():
     a=p.parse_args()
     require(not a.out.exists(),"CT03_B_LOCK_REFUSE_OVERWRITE")
     def read(path):return json.loads(path.read_text(encoding="utf-8")) if path else None
-    result=project(
-        original_native=read(a.original_native),
-        initial_receipt=read(a.initial_receipt),
-        construction=read(a.construction),
-        b_feedback=read(a.b_feedback),packet=read(a.packet),
-        initial_plan=read(a.initial_plan),
-        initial_physical=read(a.initial_physical),
-        revision_native=read(a.revision_native),
-        revision_receipt=read(a.revision_receipt),
-        revision_plan=read(a.revision_plan),
-        revision_physical=read(a.revision_physical),stop_reason=a.stop_reason)
+    if a.original_native is None:
+        require(all(x is None for x in (
+            a.b_feedback,a.packet,a.initial_plan,a.initial_physical,
+            a.revision_native,a.revision_receipt,a.revision_plan,
+            a.revision_physical,a.stop_reason)),
+            "CT03_B_NO_NATIVE_CANNOT_INVENT_REVISION_OR_PHYSICAL")
+        result=project_no_native(read(a.initial_receipt),read(a.construction))
+    else:
+        require(a.b_feedback and a.packet and a.initial_plan,
+                "CT03_B_NATIVE_MUST_HAVE_OWN_FEEDBACK_AND_G1_PLAN")
+        result=project(
+            original_native=read(a.original_native),
+            initial_receipt=read(a.initial_receipt),
+            construction=read(a.construction),
+            b_feedback=read(a.b_feedback),packet=read(a.packet),
+            initial_plan=read(a.initial_plan),
+            initial_physical=read(a.initial_physical),
+            revision_native=read(a.revision_native),
+            revision_receipt=read(a.revision_receipt),
+            revision_plan=read(a.revision_plan),
+            revision_physical=read(a.revision_physical),stop_reason=a.stop_reason)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_bytes(canonical(result)+b"\n")
     print(json.dumps({"status":result["status"],"B":1,
