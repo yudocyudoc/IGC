@@ -6,25 +6,26 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42349359023",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42352059559",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42349359236",
-    "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED"
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42352059474",
+    "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
+    "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3"
   },
   "CT00": {
-    "status": "NUMERICAL_IDENTITY_GATE_IMPLEMENTED_AND_CI_VERIFIED",
+    "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
     "files": [
       "scripts/arena_ct_numeric_gate.py",
       "tests/test_arena_ct_numeric_gate.py",
       ".github/workflows/arena-recovered-capabilities.yml"
     ],
-    "result": "14 inherited M3 solver executions skipped when numerical dependencies/runtime identical to archived reference; actual changed dependency fails closed without explicit 14-run budget",
-    "limitation": "Conservative closed dependency list; must review closure if original physical job adopts new imports or runtime components."
+    "result": "Physical job effective shell+inline Python, original library remote URLs and refs, container image and invocation config are fingerprinted; changes to startTime or SystemDynamics origin block without exact budget; cosmetic workflow step names/artifact retention and tests/docs do not trigger physical reruns.",
+    "limitation": "This is an explicit fail-closed fingerprint of the current physical-m3 job. Changes in its grammar must trigger conservative review. No OMC run newly authorized."
   },
   "CT01": {
     "status": "FOUR_SOURCE_BLOBS_VERIFIED_AND_SIX_ARCHIVE_DOWNLOADS_HASHED_WITH_SELECTED_INTERNAL_BYTES",
@@ -40,7 +41,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "OFFLINE_THREE_ARM_PREPARATION_AND_B_ORIGINAL_ENGINE_MOCK_VERIFIED_NOT_LIVE_END_TO_END",
+    "status": "F172_01_02_04_05_FIXES_VERIFIED_OFFLINE_NOT_FULL_SCIENTIFIC_ACCEPTANCE",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -72,7 +73,11 @@
       "Buffalo CT03 original Engine.generate executes mock initial + mock own-currentModel revision through actual OpenRouter SDK request and effective Cloudflare schema adapter; no HTTP POST to provider.",
       "New B revision packet is derived from scoped ledger feedback and exact own-native/receipt, with cross-world, altered parent and unauthorized live rejection.",
       "Evaluator-only world source factory uses existing Short E1 classes and fixed pulse, two or three stages; only synthetic test fixtures were selected, never the actual CT03 world.",
-      "Existing cheap CI shows success; inherited M3 physical job is skipped."
+      "Existing cheap CI shows success; inherited M3 physical job is skipped.",
+      "F172-01: all six original M full AST parents coexist under one world/round/condition with parent-hash typed ledger subcase; individual own_policy dispositions, per-parent retraction, and earlier time cuts are tested.",
+      "F172-02: Python canonical diagnostic bytes cross JS boundary as exact base64; digest, JSON content, own inner arm/condition/source/parent, construction times and exact ATMS item_id/temporal retrieval checked before original Buffalo SDK; mock Python-ledger-ATMS-to-B chain CI passed.",
+      "F172-04: exact native M class, CSV column, prefix, full AST and solver receipt checked; swapped-column adversarial candidate with recomputed CSV hash is rejected.",
+      "F172-05: Python/JS construction validators reject +/- 0.5 at t0, excessive 3.0 at t1, and negative or unsupported cumulative delivery; valid four public cuts still accepted."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
@@ -85,7 +90,7 @@
     "omc_new_simulations": 0
   },
   "CT03": {
-    "status": "METHOD_AND_PRIVATE_WORLD_FACTORIES_PREPARED_WORLD_UNSELECTED_NO_AUTHORIZATION",
+    "status": "PREPARED_UNSELECTED_NOT_AUTHORIZED_NOT_RUN_AFTER_F172_CORRECTIONS",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -110,5 +115,46 @@
     "E04/E05 action blocked",
     "E06 observed-source scope",
     "E07 conditional process mining"
-  ]
+  ],
+  "revision_pr172": {
+    "source_review": "REVISION_PR172_CONFORMIDAD_HOJA_V4_BB9CA2B_2026-11-07.md",
+    "reviewed_sha": "bb9ca2bfc1634cf34ce6e1242981937c6121e32b",
+    "fixes": [
+      {
+        "id": "F172-01",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "One full-parent-hash typed subcase per original M graph; six-coexistence and retraction regression"
+      },
+      {
+        "id": "F172-02",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "Python canonical bytes and JS byte/hash/inner-scope/retrieval verification; altered content/t6/empty retrieval rejected"
+      },
+      {
+        "id": "F172-03",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Full physical job numerical runtime contract; real local Git tests detect initial time and library origin"
+      },
+      {
+        "id": "F172-04",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Exact selected M CSV model name/column/prefix; cross-candidate spoof rejected"
+      },
+      {
+        "id": "F172-05",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Initial zero, monotonic nonnegative finite and exogenous arrival bound in Python and JS"
+      }
+    ],
+    "verified_ci": [
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059559",
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059474"
+    ],
+    "limitations": "No new CT03 world, producer/evaluator isolated deployment, authenticated new native solver CSV, live Buffalo or sealed prospective scoring. Passing offline regressions does not scientifically complete CT02 or activate CT03."
+  }
 }
