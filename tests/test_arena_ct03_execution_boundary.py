@@ -31,18 +31,20 @@ def shell(*args):
 def credentials(root):
     trust = root / "independent-key-fixture"
     trust.mkdir()
-    secret, public = trust / "key.pem", trust / "public.pem"
-    shell("genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048",
-          "-out", secret)
-    shell("pkey", "-in", secret, "-pubout", "-out", public)
+    secret, public = trust / "runner-key.pem", trust / "runner-public.pem"
+    archive_secret, archive_public = trust / "archivist-key.pem", trust / "archivist-public.pem"
+    for private, pub in ((secret, public), (archive_secret, archive_public)):
+        shell("genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048",
+              "-out", private)
+        shell("pkey", "-in", private, "-pubout", "-out", pub)
     registry = trust / "registry.json"
     registry.write_text(json.dumps({"schema": REGISTRY, "authorities": [
         {"id": "TEST_RUNNER", "purpose": "PHYSICAL_OMC",
          "public_key_sha256": sha_bytes(public.read_bytes())},
         {"id": "TEST_ARCHIVER", "purpose": "LOCK_ARCHIVE",
-         "public_key_sha256": sha_bytes(public.read_bytes())},
+         "public_key_sha256": sha_bytes(archive_public.read_bytes())},
     ]}))
-    return trust, secret, public, registry
+    return trust, secret, public, registry, archive_secret, archive_public
 
 
 def signed(root, statement, purpose, authority, secret):
@@ -93,7 +95,7 @@ class IndependentWitnessContractTest(unittest.TestCase):
     def test_signed_synthetic_runner_bytes_pass_without_claiming_g2(self):
         with TemporaryDirectory() as tmp:
             root=Path(tmp)
-            _, secret, public, registry=credentials(root)
+            _, secret, public, registry, archive_secret, archive_public=credentials(root)
             producer, m,p,r,mo,csv,log,statement=runner_fixture(root)
             witness=signed(root,statement,"PHYSICAL_OMC","TEST_RUNNER",secret)
             result=verify_run(root,statement,signature=witness,public=public,
@@ -107,7 +109,7 @@ class IndependentWitnessContractTest(unittest.TestCase):
     def test_mutations_signature_key_role_and_model_are_rejected(self):
         with TemporaryDirectory() as tmp:
             root=Path(tmp)
-            _, secret, public, registry=credentials(root)
+            _, secret, public, registry, archive_secret, archive_public=credentials(root)
             producer,m,p,r,mo,csv,log,statement=runner_fixture(root)
             witness=signed(root,statement,"PHYSICAL_OMC","TEST_RUNNER",secret)
             def check(w=witness,**kwargs):
@@ -140,7 +142,7 @@ class IndependentWitnessContractTest(unittest.TestCase):
     def test_signed_log_cannot_override_changed_output_or_self_supplied_trust(self):
         with TemporaryDirectory() as tmp:
             root=Path(tmp)
-            trust,secret,public,registry=credentials(root)
+            trust,secret,public,registry,archive_secret,archive_public=credentials(root)
             producer,m,p,r,mo,csv,log,statement=runner_fixture(root)
             witness=signed(root,statement,"PHYSICAL_OMC","TEST_RUNNER",secret)
             log.write_bytes(log.read_bytes()+b"TAMPER\n")
@@ -160,7 +162,7 @@ class IndependentWitnessContractTest(unittest.TestCase):
     def test_archive_signature_is_required_before_any_evaluator_release(self):
         with TemporaryDirectory() as tmp:
             root=Path(tmp)
-            _, secret, public, registry=credentials(root)
+            _, secret, public, registry, archive_secret, archive_public=credentials(root)
             producer=root/"producer"
             producer.mkdir()
             c, world, d, m, entries=lock_fixture(producer)
@@ -174,21 +176,21 @@ class IndependentWitnessContractTest(unittest.TestCase):
                 "archive_id":"FIXTURE_ARCHIVE_123",
                 "archived_before_evaluator_access":True,
             }
-            witness=signed(root,statement,"LOCK_ARCHIVE","TEST_ARCHIVER",secret)
+            witness=signed(root,statement,"LOCK_ARCHIVE","TEST_ARCHIVER",archive_secret)
             out=verify_archive(lock=lock,witness=witness,trust_registry=registry,
-                               public_key=public,producer_root=producer)
+                               public_key=archive_public,producer_root=producer)
             self.assertFalse(out["reserved_truth_opened"])
             self.assertEqual(out["lock_sha256"],lock["lock_sha256"])
             different=copy.deepcopy(lock)
             different["rows"][0]["parent_hash"]="sha256:"+"f"*64
             with self.assertRaisesRegex(ValueError,"SEAL_TAMPERED"):
                 verify_archive(lock=different,witness=witness,trust_registry=registry,
-                               public_key=public,producer_root=producer)
+                               public_key=archive_public,producer_root=producer)
             wrong=signed(root,{**statement,"lock_sha256":"sha256:"+"e"*64},
-                         "LOCK_ARCHIVE","TEST_ARCHIVER",secret)
+                         "LOCK_ARCHIVE","TEST_ARCHIVER",archive_secret)
             with self.assertRaisesRegex(ValueError,"ARCHIVE_SIGNED_LOCK_MISMATCH"):
                 verify_archive(lock=lock,witness=wrong,trust_registry=registry,
-                               public_key=public,producer_root=producer)
+                               public_key=archive_public,producer_root=producer)
             self.assertEqual(out["status"],
                              "LOCK_ARCHIVE_SIGNATURE_AND_BYTES_VERIFIED_NO_TRUTH_READ")
 
