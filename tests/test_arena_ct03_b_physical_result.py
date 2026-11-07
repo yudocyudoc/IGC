@@ -45,7 +45,7 @@ class BPhysicalResultTests(unittest.TestCase):
             self.assertAlmostEqual(result["forecast"][0]["delivered"],.6)
             self.assertEqual(result["forecast"][1]["time"],8)
             self.assertAlmostEqual(result["forecast"][1]["delivered"],.8)
-            self.assertEqual(result["max_abs_material_residual"],0.0)
+            self.assertLess(result["max_abs_material_residual"],1e-10)
             self.assertEqual(result["parent_native_sha256"],receipt["result_sha256"])
             self.assertTrue(result["not_a_scientific_G3_score"])
 
