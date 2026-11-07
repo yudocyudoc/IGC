@@ -60,6 +60,10 @@ def make_all_twelve(root):
             row["csv_file"]+"\n")
         verify_one(planned,arm=arm,index=index,
                    run_id="87654321",git_sha="b"*40)
+    (planned/"attempts.log").write_text(
+        "".join(r["arm"]+str(r["index"])+
+                " attempted; GitHub run 87654321; code "+"b"*40+"\n"
+                for r in plan["rows"]))
     return source,planned,reused
 
 
@@ -124,7 +128,7 @@ class DMOwnFeedbackRoundTests(unittest.TestCase):
             # It has no scientific prediction and may not be silently retried.
             (planned/"M/m04-result.json").unlink()
             exact="M4 attempted; GitHub run 87654321; code "+"b"*40
-            (planned/"attempts.log").write_text(exact+"\n")
+            self.assertEqual((planned/"attempts.log").read_text().count(exact),1)
             failure=record_failure(planned,arm="M",index=4,
                 run_id="87654321",git_sha="b"*40,
                 failure_class="G2_CHECK_FAILED",omc_exit_code=0)
