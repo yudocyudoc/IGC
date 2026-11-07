@@ -81,7 +81,9 @@ class CT02Test(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "CT02_NO_CURRENT_FEEDBACK"):
                 recover_feedback(db, context(arm="D"),
                                  parent_hash=digest(graph), as_known_at=when)
-            with self.assertRaisesRegex(ValueError, "CT02_WITHDRAWN_OR_MISMATCHED_FEEDBACK"):
+            # A different parent is now a DIFFERENT subcase, not a
+            # mismatched revision of the first parent's diagnostic.
+            with self.assertRaisesRegex(ValueError, "CT02_NO_CURRENT_FEEDBACK"):
                 recover_feedback(db, ctx, parent_hash="sha256:" + "c" * 64,
                                  as_known_at=when)
             retract_feedback(db, ctx, parent_hash=digest(graph), at=(TIME + timedelta(seconds=2)).isoformat())
