@@ -28,6 +28,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: CT-00/01/02 cheap tests, six native M preparation and own feedback (zero OMC/provider)
+        run: |
+          set -euo pipefail
+          for test in \
+            test_arena_ct_numeric_gate.py \
+            test_arena_ct_capabilities.py \
+            test_arena_ct_artifact_verify.py \
+            test_arena_ct_feedback_bridge.py \
+            test_arena_ct03_m_prepare.py \
+            test_arena_ct03_m_construction_diagnostic.py; do
+            python -m unittest discover -s tests -p "$test" -v
+          done
       - name: Obtain frozen A1 public envelopes O0 O1
         uses: actions/download-artifact@v4
         with:
