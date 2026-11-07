@@ -13,6 +13,9 @@ const hash=/^sha256:[0-9a-f]{64}$/;
 const fail=code=>{throw Error(code);};
 const keys=(obj,allowed)=>Object.keys(obj).every(k=>allowed.includes(k));
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
+const stable=x=>Array.isArray(x)?x.map(stable):
+  (x&&typeof x==="object")?Object.fromEntries(Object.entries(x).sort().map(([k,v])=>[k,stable(v)])):x;
+const same=(a,b)=>JSON.stringify(stable(a))===JSON.stringify(stable(b));
 const unsafe=/holdout|gold|truth|private|rival|secret|future_observation|t6|t8|evaluator/i;
 
 export function validateCt03Visible(v,round) {
@@ -32,12 +35,12 @@ export function validateCt03Visible(v,round) {
      !keys(v.observability,["quantity_unit","time_unit","observable",
                              "construction_times_hours","horizon_hours"]))
     fail("CT03_B_WRONG_OBSERVATION_SURFACE");
-  if(JSON.stringify(v.construction.input)!==JSON.stringify(CT03_INPUT)||
-     JSON.stringify(v.observability)!==JSON.stringify({
+  if(!same(v.construction.input,CT03_INPUT)||
+     !same(v.observability,{
        quantity_unit:"items",time_unit:"hours",observable:"cumulative_delivered",
        construction_times_hours:[0,1,2,4],horizon_hours:8
      }) ||
-     JSON.stringify(v.construction.observation_times_hours)!==JSON.stringify([0,1,2,4]))
+     !same(v.construction.observation_times_hours,[0,1,2,4]))
     fail("CT03_B_INPUT_PULSE_OR_CUTS_CHANGED");
   if(!Array.isArray(v.construction.observations) || v.construction.observations.length!==4)
     fail("CT03_B_FOUR_CONSTRUCTION_OBSERVATIONS_REQUIRED");
