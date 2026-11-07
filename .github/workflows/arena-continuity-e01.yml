@@ -43,6 +43,30 @@ jobs:
             test_arena_ct03_m_revision_prepare.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
+      - name: CT-03 produce six D and six M native Modelica sources (script only)
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct03_d_prepare --out artifacts/ct03-prepared/D
+          python -m scripts.arena_cafe.ct03_m_prepare --out artifacts/ct03-prepared/M
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/ct03-prepared')
+          d=json.loads((root/'D/manifest.json').read_text())
+          m=json.loads((root/'M/manifest.json').read_text())
+          assert d['candidate_count']==m['candidate_count']==6
+          assert d['planned_new_omc']==m['planned_new_omc']==6
+          assert d['executed_new_omc']==m['executed_new_omc']==0
+          assert d['provider_calls']==m['provider_calls']==0
+          assert d['D2']=='NOT_APPLICABLE_MISSING_RESET_TRIAL'
+          assert len(m['material_projection_groups'])==3
+          print('CT03_DM_NATIVE_12_MODELS_PREPARED_NOT_SIMULATED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-dm-native-preparation-no-omc
+          path: artifacts/ct03-prepared/
+          if-no-files-found: error
       - name: Obtain frozen A1 public envelopes O0 O1
         uses: actions/download-artifact@v4
         with:
@@ -263,6 +287,32 @@ jobs:
           assert final['own_feedback_sha256'] and final['request_sha256']!=initial['request_sha256']
           print('CT03_B_ORIGINAL_ENGINE_MOCK_REQUEST_EFFECTIVE_ZERO_PROVIDER')
           PY
+      - name: CT-03 reject unapproved Buffalo LIVE before upstream or provider
+        env:
+          BUFFALO_MODE: live
+          BUFFALO_ROUND_KIND: initial
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/ct03-b/initial.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/ct03-b/live-denied
+        run: |
+          set -euo pipefail
+          if node scripts/arena_b_ct03_native_runner.mjs; then
+            echo 'CT03_UNAUTHORIZED_PROVIDER_PATH_WRONGLY_ACCEPTED' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt=json.loads(Path('artifacts/e01/ct03-b/live-denied/receipt.json').read_text())
+          assert receipt['runner_error']=='CT03_LIVE_ONE_ROUND_AUTH_REQUIRED'
+          assert receipt['provider_calls']==receipt['proxy_requests']==0
+          assert not receipt['model_returned']
+          print('CT03_LIVE_UNAUTHORIZED_FAIL_CLOSED_ZERO_POST')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-b-original-engine-mock-contract
+          path: artifacts/e01/ct03-b/
+          if-no-files-found: error
       - name: Call ORIGINAL Engine.generate separately for both inputs with mock transport
         env:
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
