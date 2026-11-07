@@ -94,6 +94,20 @@ function verifyLedgerDiagnostic(feedback, receipt, check) {
   if(!parsed || typeof parsed!=="object" || Array.isArray(parsed) ||
      !same(parsed,feedback.own_diagnostic))
     fail("CT03_B_DIAGNOSTIC_BODY_NOT_EXPORTED_LEDGER_BYTES");
+  // A consumed G2 failure has an attempt receipt but no admissible CSV.
+  // Do not require a fabricated trace, and do not accept a mere null.
+  const consumedG2Failure=parsed.evidence==="G2" &&
+    parsed.trace_sha256===null &&
+    parsed.no_valid_trajectory_or_forecast===true &&
+    hash.test(parsed.attempt_record_sha256??"") &&
+    hash.test(parsed.own_physical_outcome_sha256??"") &&
+    typeof parsed.physical_failure_class==="string" &&
+    ["OMC_EXIT_NONZERO","G2_PHYSICAL_CHECK_FAILED"].includes(
+      parsed.physical_failure_class) &&
+    typeof parsed.physical_failure_reason==="string" &&
+    parsed.physical_failure_reason.length>0 &&
+    Array.isArray(parsed.observations) &&
+    parsed.observations.length===0;
   // Authenticated body is the decoded source, not an untrusted duplicate.
   if(parsed.arm!=="B" ||
      parsed.condition!==check.condition ||
@@ -101,7 +115,8 @@ function verifyLedgerDiagnostic(feedback, receipt, check) {
      parsed.parent_hash!==receipt.result_sha256 ||
      parsed.own_evidence_only!==true || parsed.no_future_truth!==true ||
      !["G1","G2","G3"].includes(parsed.evidence) ||
-     (parsed.evidence!=="G1" && !hash.test(parsed.trace_sha256??"")) ||
+     (parsed.evidence!=="G1" &&
+       !hash.test(parsed.trace_sha256??"") && !consumedG2Failure) ||
      forbiddenFields(parsed))
     fail("CT03_B_DIAGNOSTIC_OWN_SCOPE_OR_PROVENANCE");
   if(!Array.isArray(parsed.observations) ||
