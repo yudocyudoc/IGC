@@ -1,0 +1,340 @@
+name: Arena continuity E01 — pinned native integration and historical G2 reuse
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/**'
+      - 'scripts/arena_b_ev01_native_runner.mjs'
+      - 'scripts/arena_b_ev01_cf_adapter.mjs'
+      - 'scripts/arena_b_native_g1_diagnostic.mjs'
+      - 'tests/test_arena_b_native_g1_diagnostic.mjs'
+      - 'tests/test_arena_b_ev01_cf_adapter.mjs'
+      - 'scripts/arena_event_observability.py'
+      - 'tests/test_arena_cafe_rf02_*.py'
+      - 'tests/test_arena_cafe_continuity_round.py'
+      - 'tests/fixtures/rf02_g2_fixture_nominals.json'
+      - '.github/workflows/arena-continuity-e01.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  d-m-pinned-g2-reuse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Obtain frozen A1 public envelopes O0 O1
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/public
+      - name: Obtain same-source D G2 historical solver outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02g-six-causal-original-D-engineering-traces
+          run-id: 41589895721
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/d
+      - name: Obtain original E1 M G2 historical solver outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: rf02m-original-e1-six-causal-real-omc-g2
+          run-id: 41591727790
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/m
+      - name: R2 source, grammar, causal kernel and non-counterfeit G2 tests
+        env:
+          RF02_PUBLIC_DIR: artifacts/e01/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_observational_contracts.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_pos_signal.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_rf02_m_six_causal_g2.py' -v
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+      - name: Execute both contracts with identical original A1 inputs
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/e01/reports
+          for c in O0 O1; do
+            python -m scripts.arena_cafe.r2_observational_contracts \
+              --input "artifacts/e01/public/${c}_VISIBLE.json" --condition "$c" \
+              --out "artifacts/e01/reports/${c}_CONTRACT.json"
+            python -m scripts.arena_cafe.r2_causal_pos_signal \
+              --input "artifacts/e01/public/${c}_VISIBLE.json" --condition "$c" \
+              --out "artifacts/e01/reports/${c}_SIGNAL.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a,b=[json.loads(Path('artifacts/e01/reports/'+c+'_SIGNAL.json').read_text()) for c in ('O0','O1')]
+          assert a['signal']==b['signal']
+          assert a['signal']['policy']=='CAUSAL_RIGHT_RECTANGULAR_EVENT_KERNEL/0.1'
+          x=[json.loads(Path('artifacts/e01/reports/'+c+'_CONTRACT.json').read_text()) for c in ('O0','O1')]
+          assert all(t['D']['candidate_count']==6 and t['M']['graph_count']==6 for t in x)
+          print('E01_SAME_SIGNAL_ALL_SIX_NATIVE_STRUCTURES_NO_HIDDEN_SELECTION')
+          PY
+      - name: Validate original 12 G2 CSVs by identity without new solver calls
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.r2_causal_g2 verify \
+            --visible artifacts/e01/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/e01/d --out artifacts/e01/reports/D_G2_REUSED.json
+          python -m scripts.arena_cafe.r2_m_six_causal_g2 verify \
+            --visible artifacts/e01/public/O0_VISIBLE.json --condition O0 \
+            --native-dir artifacts/e01/m --out artifacts/e01/reports/M_G2_REUSED.json
+          python -m scripts.arena_cafe.r2_hj_parameter_gate \
+            --visible artifacts/e01/public/O0_VISIBLE.json \
+            --d-native-dir artifacts/e01/d --m-native-dir artifacts/e01/m \
+            --out artifacts/e01/reports/HJ_PROVENANCE.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('artifacts/e01/reports')
+          d=json.loads((r/'D_G2_REUSED.json').read_text())
+          m=json.loads((r/'M_G2_REUSED.json').read_text())
+          h=json.loads((r/'HJ_PROVENANCE.json').read_text())
+          assert d['G2']==m['G2']=='PASS_REAL_OMC_ENGINEERING_ONLY'
+          assert d['candidate_count']==m['candidate_count']==6
+          assert h['candidate_count']==12 and h['gates']['G3']=='NOT_RUN'
+          assert d['signal_sha256']==m['same_causal_signal_hash_as_D']
+          (r/'E01_INTEGRATION_STATUS.json').write_text(json.dumps({
+            'E01':'SOURCE_AND_HISTORICAL_G2_REUSE_VERIFIED',
+            'provenance':'HISTORICAL_REPRODUCTION_NOT_NEW_SIMULATIONS',
+            'original_D_G2_run':41589895721,
+            'original_M_G2_run':41591727790,
+            'original_public_run':41575917332,
+            'D_candidates':6,'M_ast':6,
+            'openmodelica_new_invocations':0,
+            'scientific_adequacy':'NOT_ESTABLISHED',
+            'Buffalo_live':'NOT_EXECUTED_IN_THIS_JOB'
+          },indent=2)+'\n')
+          PY
+      - name: E02 construct D/M comparison with own descriptive feedback and scoped temporal memory
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_continuity_round.py' -v
+          python -m scripts.arena_cafe.continuity_round \
+            --o0 artifacts/e01/public/O0_VISIBLE.json \
+            --o1 artifacts/e01/public/O1_VISIBLE.json \
+            --d-dir artifacts/e01/d --m-dir artifacts/e01/m \
+            --out artifacts/e01/e02
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/e01/e02/report.json")
+          r=json.loads(p.read_text())
+          assert r["status"]=="E02_PARTIAL_B_NOT_RUN_D_M_POLICY_REVIEW_RECORDED"
+          assert r["Buffalo"]["provider_calls"]==0
+          assert r["OpenModelica_new_invocations"]==0
+          assert r["OpenModelica_G2_reused"]==12
+          assert all(r["conditions"][c][a]["candidate_count"]==6
+                     for c in ("O0","O1") for a in ("D","M"))
+          assert all(r["conditions"][c][a]["decision"]["second_decision"]["status"]==
+                     "RATIFY_UNRESOLVED_FULL_SET_WITH_EXPLICIT_LIMITS"
+                     for c in ("O0","O1") for a in ("D","M"))
+          print("E02_DM_DEVELOPMENT_DESCRIPTIVE_REVIEW_B_NOT_RUN")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-continuity-e01-reused-historical-g2
+          path: |
+            artifacts/e01/reports/*.json
+            artifacts/e01/e02/report.json
+            artifacts/e01/e02/e02_ledger.sqlite
+          if-no-files-found: error
+  b-original-offline-transport:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e01/public
+      - name: Stage B from actual causal O0/O1 evidence, no source extrapolation
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O0_VISIBLE.json --condition O0 --out artifacts/e01/b-stage-O0
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O1_VISIBLE.json --condition O1 --out artifacts/e01/b-stage-O1
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O0_VISIBLE.json --condition O0 --kind revision --out artifacts/e01/b-stage-O0-revision
+      - name: Fetch original pinned Buffalo source and dependencies (read-only)
+        run: |
+          set -euo pipefail
+          mkdir -p upstream/sd-ai
+          cd upstream/sd-ai
+          git init -q
+          git remote add origin https://github.com/UB-IAD/sd-ai.git
+          git fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git checkout -q --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Call ORIGINAL Engine.generate separately for both inputs with mock transport
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+        run: |
+          set -euo pipefail
+          for c in O0 O1; do
+            BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/b-stage-$c/b-visible.json" \
+              BUFFALO_OUTPUT="$PWD/artifacts/e01/b-native-$c" \
+              BUFFALO_ROUND_KIND=initial node scripts/arena_b_ev01_native_runner.mjs
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x={}
+          for c in ('O0','O1'):
+              r=json.loads((Path('artifacts/e01/b-native-'+c)/'receipt.json').read_text())
+              x[c]=r
+              assert r['provider_calls']==0 and r['mode']=='mock'
+              assert r['model_returned'] and r['quant_schema_seen']
+              assert r['horizon_matches_case'] is True
+              assert r['original_engine_max_tokens']==16000
+              assert r['round_kind']=='initial' and r['condition_id']==c
+              assert r['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          assert x['O0']['arrival_signal_sha256']==x['O1']['arrival_signal_sha256']
+          print('E01_B_REAL_ORIGINAL_METHOD_MOCK_TRANSPORT_FOR_BOTH_VIEWS')
+          PY
+      - name: Test original Engine revision path with MOCK parent and MOCK feedback only
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+          BUFFALO_ROUND_KIND: revision
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/b-stage-O0-revision/b-visible.json
+          BUFFALO_PARENT_NATIVE: ${{ github.workspace }}/artifacts/e01/b-native-O0/native-engine-result.json
+          BUFFALO_PARENT_RECEIPT: ${{ github.workspace }}/artifacts/e01/b-native-O0/receipt.json
+          BUFFALO_OWN_FEEDBACK: ${{ github.workspace }}/artifacts/e01/b-feedback-O0-offline.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native-O0-revision-mock
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt=json.loads(Path('artifacts/e01/b-native-O0/receipt.json').read_text())
+          json.dump({
+            'schema':'igc-e02-b-own-feedback/0.1',
+            'arm':'B','condition_id':'O0',
+            'source_snapshot_hash':receipt['source_snapshot_hash'],
+            'parent_result_sha256':receipt['result_sha256'],
+            'diagnostic':{'scope':'MOCK_TRANSPORT_ONLY_NOT_ENGINEERING_OR_SCIENTIFIC_FEEDBACK',
+                          'no_empirical_score':True}
+          },open('artifacts/e01/b-feedback-O0-offline.json','w'))
+          PY
+          node scripts/arena_b_ev01_native_runner.mjs
+          node --test tests/test_arena_b_cf_protocol_adapter.mjs
+          node --test tests/test_arena_b_native_g1_diagnostic.mjs
+          node --test tests/test_arena_b_ev01_cf_adapter.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          def get(path):return json.loads(Path(path).read_text())
+          a=get('artifacts/e01/b-native-O0/receipt.json')
+          r=get('artifacts/e01/b-native-O0-revision-mock/receipt.json')
+          assert r['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          assert r['round_kind']=='revision' and r['provider_calls']==0
+          assert r['parent_native_sha256']==a['result_sha256']
+          assert r['request_sha256']!=a['request_sha256']
+          assert r['horizon_matches_case'] is True
+          print('E01_B_REVIEW_PARENT_CHAIN_EXECUTED_MOCK_ONLY_NO_SCIENTIFIC_CLAIM')
+          PY
+      - name: Reject cross-condition Buffalo revision before upstream inference
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+          BUFFALO_ROUND_KIND: revision
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/b-stage-O0-revision/b-visible.json
+          BUFFALO_PARENT_NATIVE: ${{ github.workspace }}/artifacts/e01/b-native-O1/native-engine-result.json
+          BUFFALO_PARENT_RECEIPT: ${{ github.workspace }}/artifacts/e01/b-native-O1/receipt.json
+          BUFFALO_OWN_FEEDBACK: ${{ github.workspace }}/artifacts/e01/b-feedback-O0-offline.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native-cross-condition-rejected
+        run: |
+          set -euo pipefail
+          if node scripts/arena_b_ev01_native_runner.mjs; then
+            echo 'CROSS_CONDITION_NATIVE_PARENT_WRONGLY_ACCEPTED' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e01/b-native-cross-condition-rejected/receipt.json').read_text())
+          assert r['runner_error']=='EV01_PARENT_NOT_OWN_AUTHENTIC_NATIVE_MODEL'
+          assert r['provider_calls']==0 and r['model_returned'] is False
+          assert r['proxy_requests']==0
+          print('B_EV01_CROSS_CONDITION_REVIEW_REJECTED_BEFORE_UPSTREAM')
+          PY
+      - name: Assert actual upstream OpenRouter SDK and effective CF payload parity, zero provider
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from hashlib import sha256
+          root=Path('artifacts/e01')
+          out={}
+          for cond in ('O0','O1','O0-revision-mock'):
+              base=root/('b-native-'+cond)
+              req=json.loads((base/'cf-effective-request.json').read_text())
+              metadata=json.loads((base/'request-metadata.json').read_text())
+              receipt=json.loads((base/'receipt.json').read_text())
+              wire=req['body']
+              assert req['target_endpoint']=='Workers AI /ai/run/{model}'
+              assert req['actual_model']=='@cf/zai-org/glm-5.3-flash'
+              assert metadata['backend']=='OPEN_ROUTER'
+              assert metadata['original_alias_model']=='cloudflare/glm-5.3-flash'
+              assert receipt['transport']=='CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA'
+              assert receipt['provider_calls']==0
+              assert receipt['proxy_requests']==1
+              assert receipt['backend_alias']=='cloudflare/glm-5.3-flash'
+              assert receipt['original_engine_max_tokens']==16000
+              assert receipt['configured_http_timeout_ms']==360000
+              assert wire['max_completion_tokens']==16000
+              assert wire['reasoning_effort']=='low' and wire['stream'] is False
+              assert 'model' not in wire
+              assert wire['response_format']['type']=='json_schema'
+              schema=wire['response_format']['json_schema']
+              assert 'name' not in schema and 'strict' not in schema and 'schema' not in schema
+              assert 'variables' in schema['properties'] and 'relationships' in schema['properties']
+              assert len(wire['messages'])>=2
+              assert all(m['role'] in ('system','user','assistant') for m in wire['messages'])
+              digest='sha256:'+sha256(json.dumps(wire,separators=(',',':'),
+                        ensure_ascii=False).encode()).hexdigest()
+              assert digest==req['body_sha256']==receipt['translated_body_sha256']
+              assert receipt['model_returned'] is True
+              out[cond]=receipt
+          assert out['O0']['arrival_signal_sha256']==out['O1']['arrival_signal_sha256']
+          assert out['O0']['arrival_signal_sha256']==out['O0-revision-mock']['arrival_signal_sha256']
+          assert out['O0-revision-mock']['parent_as_original_currentModel'] is True
+          assert out['O0-revision-mock']['own_feedback_sha256']
+          assert out['O0-revision-mock']['request_sha256']!=out['O0']['request_sha256']
+          print('BUFFALO_EV01_PROVEN_R2_TRANSPORT_PAYLOAD_PARITY_OFFLINE_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-continuity-e01-buffalo-ev01-original-offline-chain
+          path: |
+            artifacts/e01/b-stage-O0/
+            artifacts/e01/b-stage-O1/
+            artifacts/e01/b-stage-O0-revision/
+            artifacts/e01/b-native-O0/
+            artifacts/e01/b-native-O1/
+            artifacts/e01/b-native-O0-revision-mock/
+            artifacts/e01/b-feedback-O0-offline.json
+          if-no-files-found: error

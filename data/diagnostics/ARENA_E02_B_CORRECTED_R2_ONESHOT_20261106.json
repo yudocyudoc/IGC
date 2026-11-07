@@ -1,0 +1,24 @@
+{
+  "schema": "igc-e02-b-corrected-r2-one-shot/0.1",
+  "authorization": "USER_EXECUTE_2026-11-06",
+  "reference_successful_run_id": 40490534985,
+  "previous_failed_run_id": 42319874751,
+  "previous_real_attempts": 2,
+  "max_new_attempts": 2,
+  "max_total_e02_b_attempts": 4,
+  "conditions": [
+    "O0",
+    "O1"
+  ],
+  "per_condition_new_attempts": 1,
+  "revisions": 0,
+  "retries": 0,
+  "provider_model": "@cf/zai-org/glm-5.3-flash",
+  "alias": "cloudflare/glm-5.3-flash",
+  "upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "max_completion_tokens": 16000,
+  "http_timeout_ms": 360000,
+  "no_other_arms_or_evaluator": true,
+  "no_new_omc": true,
+  "preserve_original_failures": true
+}

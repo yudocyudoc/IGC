@@ -1,0 +1,119 @@
+name: Arena E04 known FIFO pair - action representability and evaluator adjudication
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/e04_action_capability.py'
+      - 'scripts/arena_cafe/e04_evaluator.py'
+      - 'tests/test_arena_cafe_e04_action.py'
+      - '.github/workflows/arena-continuity-e04.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  producer:
+    # Frozen source/known-control execution only on its authored head.
+    if: ${{ github.event.pull_request.head.sha == 'aa4fc7f89488b4b30f2979f8621eaba0084d01a2' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recover original complete development E03 D grid
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-D
+          run-id: 42314519861
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/D
+      - name: Recover original complete development E03 M grid
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-M
+          run-id: 42314268694
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/M
+      - name: Require evaluator F4 unmounted and no fallback private generator
+        run: |
+          test ! -e artifacts/e04/F4
+          test ! -e scripts/arena_cafe/f4_latent_downstream_symmetry.py
+          test ! -e scripts/arena_cafe/ev01.py
+          test ! -e scripts/arena_physical/des_engine.py
+      - name: Audit every original D/M variant with native action semantics
+        env:
+          E04_D_DIR: artifacts/e04/D
+          E04_M_DIR: artifacts/e04/M
+          E04_F4_MOUNT: artifacts/e04/F4
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e04_action.py' -v
+          python -m scripts.arena_cafe.e04_action_capability \
+            --d-manifest artifacts/e04/D/manifest.json \
+            --m-manifest artifacts/e04/M/manifest.json \
+            --d-score artifacts/e04/D/scores.json \
+            --m-score artifacts/e04/M/scores.json \
+            --out artifacts/e04/producer.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e04/producer.json').read_text())
+          assert r['arms']['D']['not_representable']==81
+          assert r['arms']['M']['not_representable']==54
+          assert r['B']['status']=='NATIVE_NOT_EXECUTED'
+          assert not r['evaluator_truth_visible_to_producer']
+          assert r['new_OMC_runs']==r['new_provider_calls']==0
+          print('E04_PRODUCER_REPRESENTATION_GAP_WITHOUT_ORACLE')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e04-producer-action-capability-only
+          path: artifacts/e04/producer.json
+          if-no-files-found: error
+  evaluator:
+    needs: producer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-e04-producer-action-capability-only
+          path: artifacts/e04/producer
+      - name: F4 known reference mounted here only, not in producer job
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-latent-downstream-symmetry-known-development
+          run-id: 41745340151
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/F4
+      - name: Independently verify historic F4 identity against frozen producer limitation
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e04_evaluator \
+            --producer artifacts/e04/producer/producer.json \
+            --f4 artifacts/e04/F4/F4_LATENT_SYMMETRY_DEVELOPMENT.json \
+            --out artifacts/e04/evaluator.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e04/evaluator.json').read_text())
+          assert r['status']=='KNOWN_F4_PAIR_VERIFIED_E04_REPRESENTATION_GAP_PARTIAL'
+          assert r['G4']==r['G5']=='NOT_RUN'
+          assert r['known_difference_t10_orders']==2
+          assert r['E05_gate']=='BLOCKED_NO_ADMISSIBLE_LOCAL_ACTION_PREDICTION'
+          assert r['producer_environment']=='APPLICATION_PROCEDURAL_SEPARATION_NOT_NETWORK_ISOLATION'
+          print('E04_DEVELOPMENT_NEGATIVE_GATE_E05_NOT_UNLOCKED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e04-evaluator-known-pair-conclusion
+          path: artifacts/e04/evaluator.json
+          if-no-files-found: error

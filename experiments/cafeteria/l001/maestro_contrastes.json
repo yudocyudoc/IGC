@@ -1,0 +1,51 @@
+{
+  "schema": "igc-caf-l001-master-revision/0.2",
+  "full_original_maestro_sha256": "2ab597aea3b381cccdd8b7bc06bb696c518977847130daf444b8aedb4866f958",
+  "source_type": "master_v1_two_rows_in_PR170; master_v2_rows_transcribed_from_plan_not_independently_verified",
+  "claims": [
+    "MASTER_V1_TO_V2_REVISION_DOCUMENTED",
+    "PRIMARY_MASTER_V2_CONTENT_PENDING",
+    "NO_AUTOMATIC_ANCHOR_MATCH_H01_H07_TO_E132_E136"
+  ],
+  "comparisons": [
+    {
+      "master_id": "MD-M001",
+      "master_source_events": [
+        "E132",
+        "E134"
+      ],
+      "old_bounds_s_video": [
+        31.003,
+        38.006
+      ],
+      "new_metric": "F01",
+      "new_bounds_s_video": [
+        41.598,
+        42.986
+      ],
+      "overlap": false,
+      "relation": "REVISION_NOT_INDEPENDENT_OBSERVATION",
+      "v2_matches_F_metric_as_documented": true
+    },
+    {
+      "master_id": "MD-M002",
+      "master_source_events": [
+        "E132",
+        "E136"
+      ],
+      "old_bounds_s_video": [
+        33.995,
+        40.011
+      ],
+      "new_metric": "F08",
+      "new_bounds_s_video": [
+        47.197,
+        47.598
+      ],
+      "overlap": false,
+      "relation": "REVISION_NOT_INDEPENDENT_OBSERVATION",
+      "v2_matches_F_metric_as_documented": true
+    }
+  ],
+  "full_revised_maestro_sha256": "1e81b5464d871cb621e18dd8880a99ccb33be714e458785e25cb345099336d72"
+}

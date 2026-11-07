@@ -1,0 +1,87 @@
+{
+  "G4": "NOT_RUN",
+  "G5": "NOT_RUN",
+  "budget_semantics": {
+    "overrun": "physical - budget, no reinterpretation as scientific evidence",
+    "physical_invocations": "actual verified OMC simulation outputs including rerun",
+    "scientific_unique": "distinct candidate parameter signal combination"
+  },
+  "failed_D_preflight_zero_solver_run": 42314268694,
+  "historical_csv_reused": 6,
+  "historical_joint_summary_sha256": "sha256:89f2d7e44cd4474edee6e268e36e98aebcbe41bbe20ccf196c2ded8f53921ca6",
+  "no_new_scientific_candidates_from_duplicate": true,
+  "no_new_solver_calls_to_reconcile": true,
+  "original_budget_max_physical_simulations": 135,
+  "physical_budget_overrun": 75,
+  "physical_omc_redundant_invocations": 81,
+  "physical_omc_simulate_statements_executed": 210,
+  "provider_calls": 0,
+  "retrospective_historical_results_untouched": true,
+  "schema": "igc-arena-e03-operational-reconciliation/0.1",
+  "scientific_unique_candidate_variants": 135,
+  "scientific_unique_new_solver_targets": 129,
+  "source_runs": {
+    "D_FIRST": {
+      "artifact_id": 13550500454,
+      "candidate_count": 81,
+      "csv_count": 81,
+      "manifest_sha256": "sha256:0c6a5ac935fd7ec5e0afb64f42413f06d2e740d71f04c23e562fa330435b49eb",
+      "new_solver_targets": 81,
+      "omc_log_sha256": "sha256:2458b9b63c6ddba4a2e83d6ae8d98a861e8cadf553c50cc61c06b2297eecbd4a",
+      "reused_historical_csv": 0,
+      "run_id": 42314519861,
+      "scores_sha256": "sha256:820bcff036d3e1be89ada9436250123d6a5c2a146b29046035351a2a2409629a",
+      "sha256_zip": "sha256:768ee463187a3e715673512fbb4cb9135b50fda8029a5103f4624d0f195c6b81",
+      "signal_sha256": "sha256:10170292eafd1f751247f03986ef4c0cd36fb36a9f3d1597b9bee9df7672e204",
+      "solver_script_sha256": "sha256:8015dae985e88395a63559aea4e229cd3fb383ff30cba39881cd909db55295d3",
+      "source_snapshot_hash": "sha256:a5e59ea478b59eb27d777eddd468d092f7affcdb73c394061d134193dc69f31c",
+      "statuses": {
+        "G3": "DESCRIPTIVE_ON_DEVELOPMENT_NO_SCIENTIFIC_IDENTITY",
+        "G4": "NOT_RUN",
+        "G5": "NOT_RUN"
+      }
+    },
+    "D_REPEAT": {
+      "artifact_id": 13550202824,
+      "candidate_count": 81,
+      "csv_count": 81,
+      "manifest_sha256": "sha256:0c6a5ac935fd7ec5e0afb64f42413f06d2e740d71f04c23e562fa330435b49eb",
+      "new_solver_targets": 81,
+      "omc_log_sha256": "sha256:01e24cd1a378a0b070f56b346b544d771469d015f79b4c958d5c770a160c334c",
+      "reused_historical_csv": 0,
+      "run_id": 42315032070,
+      "scores_sha256": "sha256:820bcff036d3e1be89ada9436250123d6a5c2a146b29046035351a2a2409629a",
+      "sha256_zip": "sha256:7176da64c50043d4756d9756fc756ed8353e9367c82f81ce68897c9b1e31560c",
+      "signal_sha256": "sha256:10170292eafd1f751247f03986ef4c0cd36fb36a9f3d1597b9bee9df7672e204",
+      "solver_script_sha256": "sha256:8015dae985e88395a63559aea4e229cd3fb383ff30cba39881cd909db55295d3",
+      "source_snapshot_hash": "sha256:a5e59ea478b59eb27d777eddd468d092f7affcdb73c394061d134193dc69f31c",
+      "statuses": {
+        "G3": "DESCRIPTIVE_ON_DEVELOPMENT_NO_SCIENTIFIC_IDENTITY",
+        "G4": "NOT_RUN",
+        "G5": "NOT_RUN"
+      }
+    },
+    "M_INITIAL": {
+      "artifact_id": 13549599085,
+      "candidate_count": 54,
+      "csv_count": 54,
+      "manifest_sha256": "sha256:3345bcf8c04dd3fc7b96421bc808ee27c2175ffdd334a09a0b2958adaa24ba97",
+      "new_solver_targets": 48,
+      "omc_log_sha256": "sha256:2cc103402a1653fb8d96566e5dd6f6dd85061336b9eccda80830a90bd28ed982",
+      "reused_historical_csv": 6,
+      "run_id": 42314268694,
+      "scores_sha256": "sha256:9c17f01c94116f5c117c3bab756742b410c24fa6edf1338e52c11c490ba23dfa",
+      "sha256_zip": "sha256:16d4c5efa5e05058ec9791a59222800f33279ffeb8c949251e83caae05e4fc40",
+      "signal_sha256": "sha256:10170292eafd1f751247f03986ef4c0cd36fb36a9f3d1597b9bee9df7672e204",
+      "solver_script_sha256": "sha256:cd55158290c1bdedb168c9b06cf5a21af88f71ed203c502966517cd996956e7b",
+      "source_snapshot_hash": "sha256:a5e59ea478b59eb27d777eddd468d092f7affcdb73c394061d134193dc69f31c",
+      "statuses": {
+        "G3": "DESCRIPTIVE_ON_DEVELOPMENT_NO_SCIENTIFIC_IDENTITY",
+        "G4": "NOT_RUN",
+        "G5": "NOT_RUN"
+      }
+    }
+  },
+  "status": "RECONCILED_BUDGET_OVERRUN_PRESERVED",
+  "study": "EV-01_DEVELOPMENT_EXTERNAL_GRID_NOT_NEW_INDEPENDENT_WORLD"
+}

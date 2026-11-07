@@ -1,0 +1,77 @@
+name: Arena E02 three-arm evidence and canonical ledger (no new providers)
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/e02_three_arm_finalize.py'
+      - 'tests/test_arena_cafe_e02_three_arm_finalize.py'
+      - '.github/workflows/arena-e02-three-arm-final.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  combine-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Fetch CURRENT evidence-bound D/M prior report and F1a ledger
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-continuity-e01-reused-historical-g2
+          run-id: 42322151421
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02/dm
+      - name: Fetch actual original B O0 transport failure archive
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-O0-original-native
+          run-id: 42319874751
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02/B0
+      - name: Fetch actual original B O1 transport failure archive
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-O1-original-native
+          run-id: 42319874751
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02/B1
+      - name: Test six assignments, cross-case isolation and source invariants
+        env:
+          E02_DM_REPORT: artifacts/e02/dm/e02/report.json
+          E02_DM_LEDGER: artifacts/e02/dm/e02/e02_ledger.sqlite
+          E02_B_ORIGINAL_O0: artifacts/e02/B0
+          E02_B_ORIGINAL_O1: artifacts/e02/B1
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_three_arm_finalize.py' -v
+      - name: Build one append-only F1a ledger + per-condition D/B/M result matrix
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e02_three_arm_finalize \
+            --dm-report artifacts/e02/dm/e02/report.json \
+            --dm-ledger artifacts/e02/dm/e02/e02_ledger.sqlite \
+            --o0 artifacts/e02/B0 --o1 artifacts/e02/B1 \
+            --out artifacts/e02/combined
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e02/combined/three_arm_report.json').read_text())
+          assert r['producer_condition_attempts']==6
+          assert r['buffalo_actual_provider_calls_attempted']==2
+          assert r['buffalo_second_native_decisions']==0
+          assert r['status']=='E02_THREE_METHODS_ATTEMPTED_B_TIMEOUT_NO_NATIVE_MODEL_PARTIAL'
+          assert r['new_omc_simulations_by_this_combiner']==r['real_provider_calls_added_by_this_combiner']==0
+          print('E02_THREE_ARMS_ATTEMPTED_SINGLE_LEDGER_B_REAL_TIMEOUT_NOT_HIDDEN')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e02-three-arm-actual-evidence-ledger
+          path: |
+            artifacts/e02/combined/three_arm_report.json
+            artifacts/e02/combined/b_attempt_reconciliation.json
+            artifacts/e02/combined/combined_ledger.sqlite
+          retention-days: 90
+          if-no-files-found: error
