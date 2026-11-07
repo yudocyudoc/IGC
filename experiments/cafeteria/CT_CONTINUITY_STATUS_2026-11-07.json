@@ -1,0 +1,347 @@
+{
+  "schema": "igc-ct-post-audit-implementation-status/1.0",
+  "updated_at": "2026-11-07",
+  "roadmap": "ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md",
+  "base_audited": "2d7678c985270eaaa9eb7ba8f6d63a80ddc43656",
+  "branch": "experiment/arena-ct00-ct02-20261107",
+  "draft_pr": 172,
+  "evidence": {
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
+    "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
+    "archived_feedback": "PASS",
+    "offline_tests": "PASS",
+    "provider_new_calls": 0,
+    "scientific_omc_new_simulations": 0,
+    "des_new_simulations": 0,
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
+    "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
+    "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
+    "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba"
+  },
+  "CT00": {
+    "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
+    "files": [
+      "scripts/arena_ct_numeric_gate.py",
+      "tests/test_arena_ct_numeric_gate.py",
+      ".github/workflows/arena-recovered-capabilities.yml"
+    ],
+    "result": "Physical job effective shell+inline Python, original library remote URLs and refs, container image and invocation config are fingerprinted; changes to startTime or SystemDynamics origin block without exact budget; cosmetic workflow step names/artifact retention and tests/docs do not trigger physical reruns.",
+    "limitation": "This is an explicit fail-closed fingerprint of the current physical-m3 job. Changes in its grammar must trigger conservative review. No OMC run newly authorized."
+  },
+  "CT01": {
+    "status": "FOUR_SOURCE_BLOBS_VERIFIED_AND_SIX_ARCHIVE_DOWNLOADS_HASHED_WITH_SELECTED_INTERNAL_BYTES",
+    "files": [
+      "experiments/cafeteria/CT01_HISTORICAL_CAPABILITIES_2026-11-07.json",
+      "experiments/cafeteria/CT01_VERIFIED_ARCHIVE_DIGESTS_2026-11-07.json",
+      "scripts/arena_cafe/ct_capabilities.py",
+      "scripts/arena_cafe/ct_artifact_verify.py",
+      "tests/test_arena_ct_capabilities.py",
+      "tests/test_arena_ct_artifact_verify.py"
+    ],
+    "result": "D2/M2/B5/R4 source identity checked, six GitHub Actions ZIP and selected inner entry SHA256 recorded and locally verified; no historical rerun",
+    "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
+  },
+  "CT02": {
+    "status": "PREPARACION_MINIMA_CI_VERIFICADA_LOTE_FISICO_CT02_AUN_NO_AUTORIZADO",
+    "files": [
+      "scripts/arena_cafe/ct03_public.py",
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py",
+      "scripts/arena_cafe/ct03_m_construction_diagnostic.py",
+      "scripts/arena_cafe/ct03_m_revision_prepare.py",
+      "scripts/arena_cafe/ct03_b_visible.py",
+      "scripts/arena_cafe/ct03_b_review_export.py",
+      "scripts/arena_cafe/ct03_world_custody.py",
+      "scripts/arena_cafe/ct_feedback_bridge.py",
+      "scripts/arena_b_ct03_contract.mjs",
+      "scripts/arena_b_ct03_native_runner.mjs",
+      "tests/test_arena_ct_feedback_bridge.py",
+      "tests/test_arena_ct03_d_prepare.py",
+      "tests/test_arena_ct03_m_prepare.py",
+      "tests/test_arena_ct03_m_construction_diagnostic.py",
+      "tests/test_arena_ct03_m_revision_prepare.py",
+      "tests/test_arena_ct03_b_visible.py",
+      "tests/test_arena_b_ct03_contract.mjs",
+      "tests/test_arena_ct03_world_custody.py",
+      ".github/workflows/arena-continuity-e01.yml",
+      "scripts/arena_cafe/ct03_prospective_lock.py",
+      "tests/test_arena_ct03_prospective_lock.py",
+      "scripts/arena_cafe/ct03_execution_boundary.py",
+      "scripts/arena_cafe/ct03_evaluator_preflight.py",
+      "scripts/arena_cafe/ct03_prediction_attestation.py",
+      "tests/test_arena_ct03_execution_boundary.py",
+      "tests/test_arena_ct03_evaluator_preflight.py",
+      "tests/test_arena_ct03_prediction_attestation.py",
+      "scripts/arena_cafe/ct02_minimal_batch.py",
+      "scripts/arena_cafe/ct03_minimal_custody.py",
+      "scripts/arena_cafe/ct03_minimal_score.py",
+      "tests/test_arena_ct02_minimal_batch.py",
+      "tests/test_arena_ct03_minimal_custody.py",
+      "tests/test_arena_ct03_minimal_score.py",
+      ".github/workflows/arena-ct02-minimal-physical.yml",
+      ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md"
+    ],
+    "verified": [
+      "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
+      "Original Short E1 composer/renderer produces six full ASTs and three material projections, preserving all topology and information branches; Euler 0-8 h dt=.125 commands are generated but not run.",
+      "Construction-only M CSV diagnostic binds exact full AST, public source, native Modelica bytes, solver receipt and actual CSV bytes; fixtures test both valid and rejected paths, not real physical provenance.",
+      "Existing own_policy M2 consumes supported feedback retrieved from bitemporal ledger; one or zero bounded responseTime revisions and original native renderer produce a new version, not a second optimizer.",
+      "Subsequent retraction removes later ATMS decision support and preserves prior cuts and other case/arm isolation.",
+      "Buffalo CT03 original Engine.generate executes mock initial + mock own-currentModel revision through actual OpenRouter SDK request and effective Cloudflare schema adapter; no HTTP POST to provider.",
+      "New B revision packet is derived from scoped ledger feedback and exact own-native/receipt, with cross-world, altered parent and unauthorized live rejection.",
+      "Evaluator-only world source factory uses existing Short E1 classes and fixed pulse, two or three stages; only synthetic test fixtures were selected, never the actual CT03 world.",
+      "Existing cheap CI shows success; inherited M3 physical job is skipped.",
+      "F172-01: all six original M full AST parents coexist under one world/round/condition with parent-hash typed ledger subcase; individual own_policy dispositions, per-parent retraction, and earlier time cuts are tested.",
+      "F172-02: Python canonical diagnostic bytes cross JS boundary as exact base64; digest, JSON content, own inner arm/condition/source/parent, construction times and exact ATMS item_id/temporal retrieval checked before original Buffalo SDK; mock Python-ledger-ATMS-to-B chain CI passed.",
+      "F172-04 (amended by follow-up): CSV output class is NOT encoded in root field name; class identity belongs in candidate/command/runner receipt, root deliveredTotal remains unprefixed.",
+      "F172-05: Python/JS construction validators reject +/- 0.5 at t0, excessive 3.0 at t1, and negative or unsupported cumulative delivery; valid four public cuts still accepted.",
+      "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected.",
+      "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process.",
+      "CT03 prospective producer lock module now enforces all 13 original slots (6 D, 6 M, 1 B), six D and three M material groups; exact own-parent feedback retrieval, initial/final states PREDICTED vs G1/G2 failure vs NO_NATIVE vs NOT_EXECUTED, and only typed forecast predictions at t6/t8. Strictly rejects evaluator truth fields and swapped parents, multiple or missing slots, false zeros, tampered bytes and overwrite.",
+      "Locking binds public custody commitment to the current CT03 preexecution protocol canonical digest and no-run budgets; a wrong protocol commitment fails before sealing. Pure function and subprocess CLI regression are CI-tested; native physical execution and withheld truth were NOT used.",
+      "Signed witness verifier checks detached OpenSSL signatures against externally supplied pinned public-key fingerprints, exact original M AST/command/script/Modelica/CSV/log/receipt bytes and candidate scope. Runner claim and actual execution are NOT independently verified by a signature alone. No real trusted signer is configured.",
+      "Archival lock witness requires a separate signer ROLE and distinct key fingerprint from physical runner. A shared runner/archive key is rejected even under different authority names. Private trust registry/key and private world paths must be disjoint from producer workspace; full OS access isolation requires separately deployed jobs.",
+      "Evaluator preflight verifies detached lock signature BEFORE private-world manifest/source access, matches private manifest commitment, modelica/source and script hashes without opening reserved t6/t8. The CLI never exposes a truth-reveal or scoring command.",
+      "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs.",
+      "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured.",
+      "Minimal CT-02 manual-only physical workflow stages original D0+M0 without ranking; single simulate per D/M .mos; GitHub SHA gate + exact budget=2, no PR trigger, no Buffalo or hidden world; production OMC job NOT DISPATCHED.",
+      "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
+      "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC."
+    ],
+    "blockers": [
+      "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
+      "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
+      "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
+      "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
+      "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement.",
+      "Manual CT02 OMC technical batch not authorized/attempted (maximum two). Default branch must include workflow before workflow_dispatch. CT03 live producer integration still pending separately; no scientific CT02 acceptance yet."
+    ],
+    "provider_new_calls": 0,
+    "omc_new_simulations": 0,
+    "prospective_lock_increment": {
+      "code": "scripts/arena_cafe/ct03_prospective_lock.py",
+      "test": "tests/test_arena_ct03_prospective_lock.py",
+      "ci_code_sha": "23f4d460cc17683bb0ccff6b5be5348a7789a69a",
+      "ci_runs": [
+        "42358155539",
+        "42358155570"
+      ],
+      "status": "BYTE_SEAL_CODE_VERIFIED_NO_WORLD_NO_FORECASTS_NO_REAL_LOCK",
+      "blocked_next": "independently verifiable runner provenance, actual construction and forecasts, segregated custodian and evaluator-only reveal after immutable lock. No live/OMC budget currently authorized.",
+      "cost": {
+        "provider_calls": 0,
+        "new_omc": 0,
+        "new_des": 0
+      }
+    },
+    "external_boundary_increment": {
+      "code": [
+        "scripts/arena_cafe/ct03_execution_boundary.py",
+        "scripts/arena_cafe/ct03_evaluator_preflight.py",
+        "scripts/arena_cafe/ct03_prediction_attestation.py"
+      ],
+      "tests": [
+        "tests/test_arena_ct03_execution_boundary.py",
+        "tests/test_arena_ct03_evaluator_preflight.py",
+        "tests/test_arena_ct03_prediction_attestation.py"
+      ],
+      "ci_code_sha": "d70334fcb87d39a6a0ad812eacd3e8c2b87131ce",
+      "ci_runs": [
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628359",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628378"
+      ],
+      "status": "OFFLINE_SIGNATURE_AND_BYTES_TESTED_NO_TRUSTED_DEPLOYMENT_NO_PHYSICAL_G2",
+      "cryptography": "Detached RSA/SHA256 OpenSSL verification with two distinct public key fingerprints pinned in external trust registry; test keys disposable under temporary directories, no keys committed.",
+      "isolation": "Refuses trusted registry/public key or evaluator private world in producer root and verifies archive before private-file read; independent service/job/OS ACL not instantiated or certified.",
+      "model_binding": "Signature candidate/source/command/CSV/log/receipt -> M initial PREDICTED exact lock fields. D/B and revised M require separate original attestors.",
+      "provenance_limits": "GitHub-run URL, job ID and solver execution are signed CLAIMS; verifier does not independently interrogate Actions or witness live OMC. No G2/G3 or withheld score conferred.",
+      "actual_world_selected": false,
+      "real_signatures_present": false,
+      "real_lock_archived": false,
+      "physical_omc_calls": 0,
+      "provider_calls": 0,
+      "des_calls": 0,
+      "cli": {
+        "module": "python -m scripts.arena_cafe.ct03_execution_boundary",
+        "modes": [
+          "runner",
+          "archive"
+        ],
+        "negative_checks": [
+          "tampered solver log",
+          "tampered signed statement",
+          "wrong pinned key",
+          "shared runner and archive key",
+          "overwrite existing report"
+        ],
+        "status": "REAL_CLI_SYNTHETIC_FIXTURES_VERIFIED_NOT_CERTIFIED_RUNNER_OR_ARCHIVE",
+        "no_private_key_or_solver_operation": true
+      }
+    },
+    "minimal_operational_batch": {
+      "governing_doc": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+      "freeze_commit_on_manual_dispatch": true,
+      "ct02_manual_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
+      "ct02_selected_technical_candidates": "original D initial index 0 and original M full-AST initial index 0, fixed before seeing outputs; no ranking",
+      "ct02_exact_budget_omc": 2,
+      "ct02_currently_authorized_omc": 0,
+      "ct02_attempted_omc": 0,
+      "ct02_manual_dispatch_performed": false,
+      "cto2_stop": "one simulate per OMC command, D then M; stop on first solver/CSV/G2 technical check failure, no retry, upload originals including attempts/logs",
+      "ct03_private_custody": "different operator account/runner required; config/private Modelica/CSV never mounted or uploaded to producer; local custody CLI rejects private paths in repo and incompatible frozen protocol",
+      "ct03_public_release": "only t0,t1,t2,t4 and commitment; original private CSV plus t6,t8 kept with custodian",
+      "ct03_prospective_lock": ".github/workflows/arena-ct03-freeze-predictions.yml manual dispatch after same SHA producer artifact, no secrets; prior existing 13-slot seal",
+      "ct03_post_lock_evaluation": "scripts/arena_cafe/ct03_minimal_score.py; check procedural Github artifact ACK before private t6/t8, all failures remain denominator",
+      "ct03_actual_producer_live_runner": "NOT_YET_WIRED_UNTIL_CT02_ACCEPTANCE_AND_CT03_BATCH_AUTHORIZATION",
+      "ct03_budget_proposed": {
+        "new_omc": 21,
+        "buffalo_posts": 2
+      },
+      "ct03_budget_authorized": {
+        "new_omc": 0,
+        "buffalo_posts": 0
+      },
+      "ct03_world_selected": false,
+      "reserved_truth_opened": false,
+      "special_simplification": "Existing RSA witness/archivist signing modules remain optional and are not imported or run by this minimal operation route",
+      "isolation_limit": "Procedural only until custodian uses actual distinct account/workspace/credentials; same-account folders insufficient",
+      "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba",
+      "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
+      "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
+      "real_omc_runs": 0,
+      "provider_posts": 0,
+      "des_runs": 0
+    }
+  },
+  "CT03": {
+    "status": "MINIMAL_PROCEDURAL_CUSTODY_AND_EVALUATION_PREPARED_NO_WORLD_NO_LIVE",
+    "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
+    "current_provider_budget_authorized": 0,
+    "current_omc_budget_authorized": 0,
+    "proposed_ceiling_new_provider_calls": 2,
+    "proposed_ceiling_new_omc_simulations": 21,
+    "custody_source": "scripts/arena_cafe/ct03_world_custody.py",
+    "d_m_native_source": [
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py"
+    ],
+    "buffalo_original_runner": "scripts/arena_b_ct03_native_runner.mjs",
+    "private_world_selected": false,
+    "reserved_truth_opened": false,
+    "prospective_lock_performed": false,
+    "technical_omc_executed": 0,
+    "new_provider_posts": 0,
+    "prospective_lock_implementation": "scripts/arena_cafe/ct03_prospective_lock.py",
+    "prospective_lock_regression": "tests/test_arena_ct03_prospective_lock.py",
+    "prospective_lock_protocol_digest_bound": true,
+    "prospective_lock_13_slot_schema_tested": true,
+    "prospective_lock_real_seal_written": false,
+    "prospective_lock_status": "OFFLINE_CODE_AND_FIXTURE_TESTED_NO_REAL_FORECASTS_LOCKED",
+    "signed_runner_provenance_contract": "OFFLINE_VERIFIER_TESTED_NO_ACTUAL_TRUSTED_RUNNER",
+    "evaluator_private_preflight_contract": "OFFLINE_VERIFIER_TESTED_NO_TRUE_EVALUATOR_DEPLOYMENT",
+    "signed_own_prediction_mapping": "ORIGINAL_M_INITIAL_ONLY_NO_LIVE_FORECASTS",
+    "real_signed_solver_receipts": 0,
+    "real_external_trust_anchors_registered": false,
+    "actual_archived_lock_signatures": 0,
+    "minimal_runbook": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+    "live_producer_batch_connected": false
+  },
+  "unchanged": [
+    "D/B/M and original equations",
+    "historical D2/M2/B5/R4",
+    "E03 closed",
+    "E04/E05 action blocked",
+    "E06 observed-source scope",
+    "E07 conditional process mining"
+  ],
+  "revision_pr172": {
+    "source_review": "REVISION_PR172_CONFORMIDAD_HOJA_V4_BB9CA2B_2026-11-07.md",
+    "reviewed_sha": "bb9ca2bfc1634cf34ce6e1242981937c6121e32b",
+    "fixes": [
+      {
+        "id": "F172-01",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "One full-parent-hash typed subcase per original M graph; six-coexistence and retraction regression"
+      },
+      {
+        "id": "F172-02",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "Python canonical bytes and JS byte/hash/inner-scope/retrieval verification; altered content/t6/empty retrieval rejected"
+      },
+      {
+        "id": "F172-03",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Full physical job numerical runtime contract; real local Git tests detect initial time and library origin"
+      },
+      {
+        "id": "F172-04",
+        "priority": "P2",
+        "status": "NATIVE_CSV_ROOT_CORRECTED_AND_CI_TESTED",
+        "scope": "Accept native root deliveredTotal (quoted/unquoted) with exact parent Modelica class, full AST, original simulation command and script SHA, candidate csv_prefix, actual _res.csv filename, CSV SHA and runtime in receipt; reject prefixed foreign/self outputs and ambiguous roots. Self-consistent receipt is not independent proof of solver execution."
+      },
+      {
+        "id": "F172-05",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Initial zero, monotonic nonnegative finite and exogenous arrival bound in Python and JS"
+      }
+    ],
+    "verified_ci": [
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059559",
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059474"
+    ],
+    "limitations": "No new CT03 world, producer/evaluator isolated deployment, authenticated new native solver CSV, live Buffalo or sealed prospective scoring. Passing offline regressions does not scientifically complete CT02 or activate CT03.",
+    "followup": {
+      "review_file": "REVISION_PR172_CORRECCIONES_ACD7814_2026-11-07.md",
+      "reviewed_head": "acd781410897d892ce8395cc2bd29305def109f5",
+      "finding": "F172-04 P2 was partially corrected but rejected the native OpenModelica root field deliveredTotal.",
+      "correction": "Root variable read as deliveredTotal; exact class/model identity is bound to candidate manifest and generated simulation command, original simulate.mos SHA, csv_prefix, native output filename mXX_res.csv and receipt hashes.",
+      "historical_evidence": {
+        "artifact_id": 12628124619,
+        "artifact_name": "arena-m2-own-feedback-real-openmodelica",
+        "archive_sha256": "14aae142aa8f16b80ef2f74ee592001509f490c79175d94ce2ffdf14993b36a6",
+        "member": "m2-visible_res.csv",
+        "member_sha256": "3babc3156dc2e55d30220994030ee323174039ba89bba2a3449046056e3fc724",
+        "observed_header_fields": [
+          "time",
+          "dispatch0.stock.Integrator1.y",
+          "preparation0.stock.Integrator1.y",
+          "receipt0.deliveries.Integrator1.y"
+        ],
+        "interpretation": "Historical M2 CSV uses native root-relative field names, without prefix of the simulated class. It is an independent historical format check, not a CT03 physical run nor direct proof of deliveredTotal for CT03."
+      },
+      "new_regressions": [
+        "Accept quoted native root header time,deliveredTotal and unquoted root equivalent",
+        "Reject dotted same candidate and different-candidate deliveredTotal headers",
+        "Reject ambiguous root plus dotted output; reject wrong candidate prefix, changed native CSV/script hash, changed command and wrong output filename",
+        "Retain missing exact time and altered source/parent tests"
+      ],
+      "code_ci_head": "cf6a02bdb9cb6ecd61bb223eed569e6a394c9afc",
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42354612212",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42354612232",
+        "physical_m3": "SKIPPED"
+      },
+      "limits": "No actual new CT03 solver CSV exists. Command and receipt provenance are checked for internal consistency, not independently authenticated as a solver execution. Custody, isolation and prospective lock remain outstanding."
+    },
+    "cli_followup": {
+      "review_file": "REVISION_PR172_CIERRE_F172_04_2761160_2026-11-07.md",
+      "reviewed_head": "276116003b2dacdcb62f374f4289b69b4e4db23d",
+      "finding": "F172-06 P2: CLI required --simulate-script but did not forward simulate_script_file to build().",
+      "status": "CORRECTED_VERIFIED_OFFLINE",
+      "implementation": "scripts/arena_cafe/ct03_m_construction_diagnostic.py::main forwards simulate_script_file=args.simulate_script to build(), preserving the existing signature and strict receipt/script checks.",
+      "regression": "tests/test_arena_ct03_m_construction_diagnostic.py::test_cli_accepts_native_fixture_and_rejects_changed_script invokes python -m with all fixture files; asserts exit 0, written JSON equals direct build(), no provider/new OMC; changed simulate.mos rejects without output file.",
+      "code_ci_head": "0d272d069ad4c939f61eb7f47a279985b8e5e2ab",
+      "verified_ci": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42355793988",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42355793979",
+        "physical_m3": "SKIPPED"
+      },
+      "scope": "Only caller wiring and offline CLI regression. F172-04 stays closed. No scientific CT02 end-to-end acceptance nor CT03 authorization."
+    }
+  }
+}

@@ -1,16 +1,53 @@
 name: Arena recovered capabilities - no provider calls
 on:
   pull_request:
-    branches: [main]
-    paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', '.github/workflows/arena-recovered-capabilities.yml']
+    branches: [main, experiment/arena-continuity-e00-e01-20261106]
+    paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', 'data/synthetic/arena_v0_*', 'src/modelica/**', 'experiments/e1/**', 'experiments/e0/catalog.json', 'docs/**', '.github/workflows/arena-recovered-capabilities.yml']
   push:
     branches: [main]
     paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', '.github/workflows/arena-recovered-capabilities.yml']
   workflow_dispatch:
+    inputs:
+      run_physical:
+        description: 'Explicitly authorize the 14 historical M3 solver runs after numerical drift'
+        type: boolean
+        default: false
+      budget:
+        description: 'Exact new physical-simulation ceiling (must be 14 when authorized)'
+        type: number
+        default: 0
 permissions:
   contents: read
   actions: read
 jobs:
+  numerical-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      physical_authorized: ${{ steps.identity.outputs.physical_authorized }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - name: Check complete numerical identity and fail closed before inherited OMC
+        id: identity
+        env:
+          REQUESTED: ${{ github.event_name == 'workflow_dispatch' && inputs.run_physical || false }}
+          BUDGET: ${{ github.event_name == 'workflow_dispatch' && inputs.budget || 0 }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$REQUESTED" = "true" ]; then ARGS+=(--run-physical); fi
+          python -m scripts.arena_ct_numeric_gate --budget "$BUDGET" --report artifacts/ct00-numeric-gate.json "${ARGS[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-ct00-numeric-identity
+          path: artifacts/ct00-numeric-gate.json
+          if-no-files-found: warn
   offline:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -66,6 +103,8 @@ jobs:
           cp -r artifacts/b-physical-solver artifacts/b4-solver
           python -m unittest discover -s tests/replay -p 'test_*.py' -v
   physical-m3:
+    needs: numerical-gate
+    if: ${{ needs.numerical-gate.outputs.physical_authorized == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
