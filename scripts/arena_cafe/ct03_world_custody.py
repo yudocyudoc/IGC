@@ -153,11 +153,31 @@ def main():
     p.add_argument("--sealed-config",type=Path,required=True)
     p.add_argument("--private-out",type=Path,required=True)
     p.add_argument("--public-commitment",type=Path,required=True)
+    p.add_argument("--producer-root",type=Path,required=True)
     args=p.parse_args()
     require(os.environ.get("IGC_CT03_CUSTODIAN_AUTH")==AUTH,
             "CT03_WORLD_CUSTODY_NOT_AUTHORIZED")
     require(not args.public_commitment.exists(),"CT03_WORLD_PUBLIC_COMMITMENT_EXISTS")
+    # Fail BEFORE reading config or generating private source. Neither the
+    # executable checkout nor any producer workspace may contain secrets.
+    def overlaps(a, b):
+        return a == b or a in b.parents or b in a.parents
+    roots=(Path(__file__).resolve().parents[2],
+           args.producer_root.resolve(strict=True))
+    require(all(root.is_dir() for root in roots),
+            "CT03_WORLD_PRODUCER_ROOT_REQUIRED")
+    for path in (args.sealed_config.resolve(strict=True),
+                 args.private_out.resolve(strict=False)):
+        require(all(not overlaps(path, root) for root in roots),
+                "CT03_WORLD_PRIVATE_PATH_INSIDE_REPO_OR_PRODUCER")
+    require(not overlaps(args.private_out.resolve(strict=False),
+                         args.public_commitment.resolve(strict=False)),
+            "CT03_WORLD_PUBLIC_PRIVATE_PATHS_OVERLAP")
     config=json.loads(args.sealed_config.read_text(encoding="utf-8"))
+    from scripts.arena_cafe.ct03_prospective_lock import PROTOCOL
+    protocol=json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    require(config.get("protocol_sha256")==digest(protocol),
+            "CT03_WORLD_WRONG_FROZEN_PROTOCOL_DIGEST")
     summary=prepare_private(config,args.private_out)
     args.public_commitment.parent.mkdir(parents=True,exist_ok=True)
     args.public_commitment.write_bytes(canonical(summary)+b"\n")
