@@ -58,39 +58,30 @@ python -m scripts.arena_cafe.ct03_b_physical_outcome \
 # The budget is derived from retained consumed attempts, not an adjustable
 # numerical counter. Exactly ten original D/M attempts plus one custodian
 # world count and all M/B prior physical attempts share the 19-run ceiling.
-COUNT="$(python - "$MODE" <<'PY'
+: "${CT03_DM_COUNT_ONLY_BUDGET:?CT03_B_DM_COUNT_ONLY_RECEIPT_REQUIRED}"
+test -s "$CT03_DM_COUNT_ONLY_BUDGET"
+# The B job never mounts or reads D/M native sources, CSV, or feedback.
+python -m scripts.arena_cafe.ct03_lot_budget verify \
+  --receipt "$CT03_DM_COUNT_ONLY_BUDGET" \
+  --run-id "$GITHUB_RUN_ID" --git-sha "$GITHUB_SHA"
+COUNT="$(python - "$CT03_DM_COUNT_ONLY_BUDGET" "$MODE" <<'PY'
 from pathlib import Path
 import os,re,sys,json
-mode=sys.argv[1]
-base=Path("artifacts/ct03-producer")
-dm=base/"dm-ten/attempts.log"
-assert dm.is_file(), "CT03_B_MISSING_TEN_DM_ATTEMPTS"
-lines=dm.read_text().splitlines()
-expected=[f"{arm}{i}" for arm in "DM" for i in range(1,6)]
-assert len(lines)==10
-assert [x.split(" attempted; GitHub run ")[0] for x in lines]==expected
-sha=os.environ["GITHUB_SHA"];run=os.environ["GITHUB_RUN_ID"]
-assert all(x.endswith(f"; code {sha}") and
-           f"GitHub run {run};" in x for x in lines)
-mrev=base/"dm-feedback/producer-12/m-revision-attempts.log"
-rev=[] if not mrev.exists() else mrev.read_text().splitlines()
-assert len(rev)<=6 and len(set(rev))==len(rev)
-assert all(re.fullmatch(
-    rf"M[0-5] attempted; GitHub run {run}; code {sha}",line)
-    for line in rev)
-b=base/"b-physical-attempts.log"
-prior=[] if not b.exists() else b.read_text().splitlines()
+from scripts.arena_cafe.ct03_lot_budget import verify_receipt
+r=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+mode=sys.argv[2];run=os.environ["GITHUB_RUN_ID"];sha=os.environ["GITHUB_SHA"]
+before=verify_receipt(r,run_id=run,git_sha=sha)
+p=Path("artifacts/ct03-producer/b-physical-attempts.log")
+prior=[] if not p.exists() else p.read_text(encoding="utf-8").splitlines()
 assert len(prior)<=1
 assert all(re.fullmatch(
     rf"B-(initial|revision) attempted; GitHub run {run}; code {sha}",line)
     for line in prior)
 assert mode not in [x.split(" attempted;")[0].removeprefix("B-") for x in prior]
-# Prior B revision only counts once. Initial may have been G1-blocked and
-# therefore never physically attempted before a changed revision.
 assert not (mode=="initial" and prior)
-before=1+len(lines)+len(rev)+len(prior)
-assert before<19,"CT03_B_PHYSICAL_GLOBAL_19_OMC_EXHAUSTED"
-print(before)
+assert before+len(prior)<19, "CT03_B_PHYSICAL_GLOBAL_19_OMC_EXHAUSTED"
+assert len(prior)<2, "CT03_B_MORE_THAN_TWO_PHYSICAL_ATTEMPTS"
+print(before+len(prior))
 PY
 )"
 echo "CT03_B_PREVIOUS_ATTEMPTS_COUNT=$COUNT MAX=19"
