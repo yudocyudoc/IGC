@@ -36,6 +36,12 @@
       "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42418374710",
       "code_sha": "7e655b8922f8420d77a107cb079e5a0fea34ec13",
       "scope": "synthetic M revision receipt/projection, B native+review+physical-shaped 13th slot, 13-entry assembly only; no CT03 live resources"
+    },
+    "ct03_B_F172_09_ci": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42421388320",
+      "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318",
+      "code_sha": "75dd7eea5a6372c3eb584c62480fa627fe5c160d",
+      "scope": "F172-09 offline mock-only B initial/revision G2 failure, missing/tampered attempt rejection, 13-entry assembly; no provider or solver call"
     }
   },
   "CT00": {
@@ -488,7 +494,9 @@
         "scripts/arena_cafe/ct03_assemble_entries.py",
         "tests/test_arena_ct03_m_revision_physical.py",
         "tests/test_arena_ct03_b_lock_projection.py",
-        "tests/test_arena_ct03_assemble_entries.py"
+        "tests/test_arena_ct03_assemble_entries.py",
+        "scripts/arena_cafe/ct03_b_physical_outcome.py",
+        "tests/test_arena_ct03_b_physical_outcome.py"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
@@ -623,6 +631,36 @@
       "archived_lock_created": false,
       "source_dataset_world_selected": false,
       "scientifically_scored": false
+    },
+    "b_physical_failed_attempt_link": {
+      "status": "F172_09_CORRECTED_SYNTHETIC_REPLAY_ONLY_NOT_LIVE",
+      "collector": "scripts/arena_cafe/ct03_b_physical_outcome.py",
+      "projection": "scripts/arena_cafe/ct03_b_lock_projection.py",
+      "regression": "tests/test_arena_ct03_b_physical_outcome.py",
+      "evidence_required": "Original B native+plan+script/source identity; exact first-attempt omc-exit.json tied to GitHub run and phase; nonempty OMC log; CSV bytes if present; typed failure; no trace or forecast",
+      "dispositions": [
+        "G2_FAILED initial with native, NOT_EXECUTED second provider",
+        "G2_FAILED revised with changed B native, REVISED recorded",
+        "G2_FAILED nonzero solver exit with attempted log and no CSV",
+        "PREDICTED unchanged success"
+      ],
+      "negative_tests": [
+        "missing attempt receipt",
+        "wrong round",
+        "tampered Modelica script",
+        "missing physical without failure receipt"
+      ],
+      "thirteen_slots_assembled_with_failed_B_fixture": true,
+      "provider_posts_new": 0,
+      "omc_runs_new": 0,
+      "des_runs_new": 0,
+      "production_B_runner_or_global_workflow_connected": false,
+      "independent_physical_execution_proven": false,
+      "heldout_opened": false,
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42421388320",
+        "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318"
+      }
     }
   },
   "unchanged": [
