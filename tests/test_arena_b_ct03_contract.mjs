@@ -60,6 +60,20 @@ test("CT03 B rejects reserved truth, extra fields, wrong cuts, wrong pulse",()=>
   assert.throws(()=>validateCt03Visible(y,"initial"),/EVALUATOR_OR_RIVAL/);
 });
 
+
+test("F172-05 B rejects initial +/-0.5 and cumulative > arrived mass at t1",()=>{
+  for(const initial of [-.5,.5]){
+    const v=visible();
+    v.construction.observations[0].delivered=initial;
+    if(initial<0)for(const p of v.construction.observations.slice(1))p.delivered=.6;
+    assert.throws(()=>validateCt03Visible(v,"initial"),/INVALID_CONSTRUCTION_POINT/);
+  }
+  const x=visible();
+  [0,3,3.1,3.2].forEach((n,i)=>x.construction.observations[i].delivered=n);
+  assert.throws(()=>validateCt03Visible(x,"initial"),/INVALID_CONSTRUCTION_POINT/);
+  assert.equal(validateCt03Visible(visible(),"initial").condition,"C0");
+});
+
 test("CT03 B validates own currentModel parent exactly, never accepts other world",()=>{
   const native={model:{specs:{stopTime:8},variables:[],relationships:[]}};
   const receipt={case_id:"CT-03",world_public_id:"W1",condition_id:"C0",
