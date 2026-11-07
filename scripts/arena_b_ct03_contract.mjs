@@ -3,6 +3,7 @@
  * Cloudflare adapter are invoked ONLY by arena_b_ct03_native_runner.mjs.
  */
 import {digest} from "./arena_b_cf_protocol_adapter.mjs";
+import {createHash} from "node:crypto";
 
 export const CT03_SCHEMA="igc-ct03-b-visible/1.0";
 export const CT03_OWN_FEEDBACK_SCHEMA="igc-ct03-b-own-feedback/1.0";
@@ -73,6 +74,51 @@ export function validateCt03Visible(v,round) {
   return {condition:"C0",world:v.world_public_id,source_hash:v.source_snapshot_hash};
 }
 
+function verifyLedgerDiagnostic(feedback, receipt, check) {
+  // Python canonical() uses sorted keys, ensure_ascii=False, compact JSON.
+  // Do NOT rehash JS JSON.stringify: numerical spellings may differ.
+  const encoded=feedback.own_diagnostic_canonical_base64;
+  if(typeof encoded!=="string" || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded) ||
+     !encoded.length)fail("CT03_B_DIAGNOSTIC_CANONICAL_BYTES_MISSING");
+  const raw=Buffer.from(encoded,"base64");
+  const contents=raw.toString("utf8");
+  if(raw.toString("base64")!==encoded || !Buffer.from(contents,"utf8").equals(raw))
+    fail("CT03_B_DIAGNOSTIC_CANONICAL_BYTES_INVALID");
+  const sha="sha256:"+createHash("sha256").update(raw).digest("hex");
+  if(sha!==feedback.own_diagnostic_sha256)
+    fail("CT03_B_DIAGNOSTIC_BYTES_HASH_MISMATCH");
+  let parsed;
+  try{parsed=JSON.parse(contents);}catch{fail("CT03_B_DIAGNOSTIC_CANONICAL_INVALID_JSON");}
+  if(!parsed || typeof parsed!=="object" || Array.isArray(parsed) ||
+     !same(parsed,feedback.own_diagnostic))
+    fail("CT03_B_DIAGNOSTIC_BODY_NOT_EXPORTED_LEDGER_BYTES");
+  // Authenticated body is the decoded source, not an untrusted duplicate.
+  if(parsed.arm!=="B" ||
+     parsed.condition!==check.condition ||
+     parsed.source_hash!==check.source_hash ||
+     parsed.parent_hash!==receipt.result_sha256 ||
+     parsed.own_evidence_only!==true || parsed.no_future_truth!==true ||
+     !["G1","G2","G3"].includes(parsed.evidence) ||
+     (parsed.evidence!=="G1" && !hash.test(parsed.trace_sha256??"")) ||
+     forbiddenFields(parsed))
+    fail("CT03_B_DIAGNOSTIC_OWN_SCOPE_OR_PROVENANCE");
+  if(!Array.isArray(parsed.observations) ||
+     !parsed.observations.every(p=>p && typeof p==="object" && !Array.isArray(p) &&
+       finite(p.time) && p.time>=0 && p.time<=4 && finite(p.residual)))
+    fail("CT03_B_DIAGNOSTIC_OUTSIDE_CONSTRUCTION");
+  const retrieval=feedback.retrieved_before_policy;
+  if(!retrieval || typeof retrieval!=="object" || Array.isArray(retrieval) ||
+     Object.keys(retrieval).length!==3 ||
+     !keys(retrieval,["item_id","projection_hash","as_known_at"]) ||
+     typeof retrieval.item_id!=="string" || !retrieval.item_id.trim() ||
+     !hash.test(retrieval.projection_hash??"") ||
+     typeof retrieval.as_known_at!=="string" ||
+     !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(retrieval.as_known_at) ||
+     !Number.isFinite(Date.parse(retrieval.as_known_at)))
+    fail("CT03_B_LEDGER_RETRIEVAL_METADATA_INVALID");
+  return parsed;
+}
+
 export function validateCt03Revision({native,receipt,feedback,visible,mode}){
   const check=validateCt03Visible(visible,"revision");
   if(!native||!native.model||!Array.isArray(native.model.variables)||
@@ -96,7 +142,9 @@ export function validateCt03Revision({native,receipt,feedback,visible,mode}){
      feedback.own_diagnostic===null ||
      forbiddenFields(feedback))
     fail("CT03_B_FEEDBACK_NOT_OWN_OR_MISSING_LEDGER_RETRIEVAL");
-  return {model:native.model,feedback,source:check};
+  const authenticated=verifyLedgerDiagnostic(feedback,receipt,check);
+  return {model:native.model,
+          feedback:{...feedback,own_diagnostic:authenticated},source:check};
 }
 
 export function classifyCt03NativeResult(r){
