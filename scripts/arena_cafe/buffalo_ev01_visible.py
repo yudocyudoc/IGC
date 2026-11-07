@@ -26,7 +26,8 @@ MAX_MODEL_PROPOSALS=1
 MAX_COMPLETION_TOKENS=3500
 
 
-def stage(visible,condition):
+def stage(visible,condition,kind="initial"):
+    need(kind in ("initial","revision"),"A3_B_INVALID_ROUND_KIND")
     validate_a1_visible(visible,condition)
     need(condition in ("O0","O1"),"A3_B_BAD_CONDITION")
     kernel=causal.from_visible(visible,condition)
@@ -128,7 +129,7 @@ def stage(visible,condition):
     result={
         "schema":INPUT_SCHEMA,
         "investigation_id":"cafeteria-known-control-a3-b",
-        "round_id":"a3-"+condition.lower()+"-buffalo-initial",
+        "round_id":"a3-"+condition.lower()+"-buffalo-"+kind,
         "question":brief,
         "construction":construction,
         "observability":{
@@ -148,6 +149,7 @@ def stage(visible,condition):
     validate_visible_input(result)
     receipt={
         "schema":SCHEMA,"status":"B_NATIVE_INPUT_STAGED_ZERO_PROVIDER_CALLS",
+        "round_kind":kind,
         "arm":"B","condition":condition,
         "source_snapshot_hash":visible["source_snapshot_hash"],
         "source_visible_hash":digest(visible),
@@ -177,10 +179,11 @@ def main():
     p.add_argument("--input",type=Path,required=True)
     p.add_argument("--condition",choices=("O0","O1"),required=True)
     p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--kind",choices=("initial","revision"),default="initial")
     a=p.parse_args()
     need(not a.out.exists(),"A3_B_REFUSE_OVERWRITE")
     v=json.loads(a.input.read_text(encoding="utf-8"))
-    native,report=stage(v,a.condition)
+    native,report=stage(v,a.condition,a.kind)
     a.out.mkdir(parents=True,exist_ok=False)
     (a.out/"b-visible.json").write_bytes(canonical(native)+b"\n")
     (a.out/"staging-receipt.json").write_bytes(canonical(report)+b"\n")
