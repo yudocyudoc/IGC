@@ -47,7 +47,10 @@ def make_example(root: Path):
         "csv_sha256": sha_bytes(csv_path.read_bytes()),
         "solver": "euler", "start_time": 0, "stop_time": 8,
         "number_of_intervals": 64, "exit_code": 0,
-        "output_role": "deliveredTotal"}
+        "output_role": "deliveredTotal",
+        "model_name": "ArenaCT03M." + parent["class_name"],
+        "csv_prefix": parent["csv_prefix"],
+        "csv_column": "ArenaCT03M." + parent["class_name"] + ".deliveredTotal"}
     return manifest, parent, context, observed, receipt, target / "native.mo", csv_path
 
 
@@ -114,6 +117,27 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "EXTRA_FIELDS_IN_CONSTRUCTION"):
                 build(c, manifest=m, parent=p, construction=o, receipt=r,
                       modelica_file=n, trace_csv=s)
+
+
+    def test_csv_of_another_original_m_candidate_rejected_even_with_updated_sha(self):
+        with TemporaryDirectory() as tmp:
+            m,p,c,o,r,n,csv_path = make_example(Path(tmp))
+            other = next(x for x in m["candidates"] if
+                         x["material_only_projection_sha256"] !=
+                         p["material_only_projection_sha256"])
+            rows = csv_path.read_text().splitlines()
+            old_col = r["csv_column"]
+            new_col = "ArenaCT03M." + other["class_name"] + ".deliveredTotal"
+            rows[0] = rows[0].replace(old_col, new_col)
+            csv_path.write_text("\n".join(rows) + "\n")
+            r["csv_sha256"] = sha_bytes(csv_path.read_bytes())
+            with self.assertRaisesRegex(ValueError, "WRONG_OR_AMBIGUOUS_CANDIDATE_CSV_COLUMN"):
+                build(c,manifest=m,parent=p,construction=o,receipt=r,
+                      modelica_file=n,trace_csv=csv_path)
+            r["csv_column"] = new_col
+            with self.assertRaisesRegex(ValueError, "NATIVE_CSV_OR_RUNTIME_RECEIPT_MISMATCH"):
+                build(c,manifest=m,parent=p,construction=o,receipt=r,
+                      modelica_file=n,trace_csv=csv_path)
 
 
 if __name__ == "__main__":
