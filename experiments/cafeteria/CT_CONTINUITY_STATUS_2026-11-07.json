@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42358155539",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359398595",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42358155570",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359398583",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "23f4d460cc17683bb0ccff6b5be5348a7789a69a"
+    "verified_code_sha": "b34113fa821a267f5732df2d4d2cc565d92126d7"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -42,7 +42,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "F172_01_TO_06_OFFLINE_VERIFIED_PLUS_PROSPECTIVE_LOCK_PREPARED_NOT_EXPERIMENTALLY_ACCEPTED",
+    "status": "F172_01_TO_06_VERIFIED_PLUS_EXTERNAL_WITNESS_AND_EVALUATOR_BOUNDARY_CONTRACTS_CI_PASS_NOT_G2",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -65,7 +65,13 @@
       "tests/test_arena_ct03_world_custody.py",
       ".github/workflows/arena-continuity-e01.yml",
       "scripts/arena_cafe/ct03_prospective_lock.py",
-      "tests/test_arena_ct03_prospective_lock.py"
+      "tests/test_arena_ct03_prospective_lock.py",
+      "scripts/arena_cafe/ct03_execution_boundary.py",
+      "scripts/arena_cafe/ct03_evaluator_preflight.py",
+      "scripts/arena_cafe/ct03_prediction_attestation.py",
+      "tests/test_arena_ct03_execution_boundary.py",
+      "tests/test_arena_ct03_evaluator_preflight.py",
+      "tests/test_arena_ct03_prediction_attestation.py"
     ],
     "verified": [
       "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
@@ -84,12 +90,16 @@
       "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected.",
       "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process.",
       "CT03 prospective producer lock module now enforces all 13 original slots (6 D, 6 M, 1 B), six D and three M material groups; exact own-parent feedback retrieval, initial/final states PREDICTED vs G1/G2 failure vs NO_NATIVE vs NOT_EXECUTED, and only typed forecast predictions at t6/t8. Strictly rejects evaluator truth fields and swapped parents, multiple or missing slots, false zeros, tampered bytes and overwrite.",
-      "Locking binds public custody commitment to the current CT03 preexecution protocol canonical digest and no-run budgets; a wrong protocol commitment fails before sealing. Pure function and subprocess CLI regression are CI-tested; native physical execution and withheld truth were NOT used."
+      "Locking binds public custody commitment to the current CT03 preexecution protocol canonical digest and no-run budgets; a wrong protocol commitment fails before sealing. Pure function and subprocess CLI regression are CI-tested; native physical execution and withheld truth were NOT used.",
+      "Signed witness verifier checks detached OpenSSL signatures against externally supplied pinned public-key fingerprints, exact original M AST/command/script/Modelica/CSV/log/receipt bytes and candidate scope. Runner claim and actual execution are NOT independently verified by a signature alone. No real trusted signer is configured.",
+      "Archival lock witness requires a separate signer ROLE and distinct key fingerprint from physical runner. A shared runner/archive key is rejected even under different authority names. Private trust registry/key and private world paths must be disjoint from producer workspace; full OS access isolation requires separately deployed jobs.",
+      "Evaluator preflight verifies detached lock signature BEFORE private-world manifest/source access, matches private manifest commitment, modelica/source and script hashes without opening reserved t6/t8. The CLI never exposes a truth-reveal or scoring command.",
+      "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
       "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
-      "Prospective producer lock code and 13-slot fixture/CLI tests exist; a REAL forecast lock, independently authenticated G2 receipts and evaluator-only reserved reveal are still missing. Custody isolation remains procedural, not OS-level proof.",
+      "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
       "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
       "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement."
     ],
@@ -110,10 +120,38 @@
         "new_omc": 0,
         "new_des": 0
       }
+    },
+    "external_boundary_increment": {
+      "code": [
+        "scripts/arena_cafe/ct03_execution_boundary.py",
+        "scripts/arena_cafe/ct03_evaluator_preflight.py",
+        "scripts/arena_cafe/ct03_prediction_attestation.py"
+      ],
+      "tests": [
+        "tests/test_arena_ct03_execution_boundary.py",
+        "tests/test_arena_ct03_evaluator_preflight.py",
+        "tests/test_arena_ct03_prediction_attestation.py"
+      ],
+      "ci_code_sha": "b34113fa821a267f5732df2d4d2cc565d92126d7",
+      "ci_runs": [
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359398583",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359398595"
+      ],
+      "status": "OFFLINE_SIGNATURE_AND_BYTES_TESTED_NO_TRUSTED_DEPLOYMENT_NO_PHYSICAL_G2",
+      "cryptography": "Detached RSA/SHA256 OpenSSL verification with two distinct public key fingerprints pinned in external trust registry; test keys disposable under temporary directories, no keys committed.",
+      "isolation": "Refuses trusted registry/public key or evaluator private world in producer root and verifies archive before private-file read; independent service/job/OS ACL not instantiated or certified.",
+      "model_binding": "Signature candidate/source/command/CSV/log/receipt -> M initial PREDICTED exact lock fields. D/B and revised M require separate original attestors.",
+      "provenance_limits": "GitHub-run URL, job ID and solver execution are signed CLAIMS; verifier does not independently interrogate Actions or witness live OMC. No G2/G3 or withheld score conferred.",
+      "actual_world_selected": false,
+      "real_signatures_present": false,
+      "real_lock_archived": false,
+      "physical_omc_calls": 0,
+      "provider_calls": 0,
+      "des_calls": 0
     }
   },
   "CT03": {
-    "status": "PREPARED_NOT_SELECTED_NOT_AUTHORIZED_PROSPECTIVE_LOCK_CODE_TESTED",
+    "status": "PREPARED_NOT_SELECTED_NOT_AUTHORIZED_SIGNED_BOUNDARY_OFFLINE_TESTED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -135,7 +173,13 @@
     "prospective_lock_protocol_digest_bound": true,
     "prospective_lock_13_slot_schema_tested": true,
     "prospective_lock_real_seal_written": false,
-    "prospective_lock_status": "OFFLINE_CODE_AND_FIXTURE_TESTED_NO_REAL_FORECASTS_LOCKED"
+    "prospective_lock_status": "OFFLINE_CODE_AND_FIXTURE_TESTED_NO_REAL_FORECASTS_LOCKED",
+    "signed_runner_provenance_contract": "OFFLINE_VERIFIER_TESTED_NO_ACTUAL_TRUSTED_RUNNER",
+    "evaluator_private_preflight_contract": "OFFLINE_VERIFIER_TESTED_NO_TRUE_EVALUATOR_DEPLOYMENT",
+    "signed_own_prediction_mapping": "ORIGINAL_M_INITIAL_ONLY_NO_LIVE_FORECASTS",
+    "real_signed_solver_receipts": 0,
+    "real_external_trust_anchors_registered": false,
+    "actual_archived_lock_signatures": 0
   },
   "unchanged": [
     "D/B/M and original equations",
