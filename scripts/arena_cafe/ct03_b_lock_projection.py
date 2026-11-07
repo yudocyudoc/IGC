@@ -142,20 +142,26 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
                 revision_plan["revision_parent_native_sha256"]==origin and
                 revision_plan["original_G1_feedback_sha256"]==digest(b_feedback),
                 "CT03_B_LOCK_REVISED_NATIVE_NOT_OWN_CURRENT_MODEL")
-        final_candidate=_state(revised,revision_plan,
-                               revision_physical,revision_receipt)
         if revised==origin:
-            # The second Buffalo POST happened but its native was unchanged.
-            require(final_candidate["status"]==initial["status"] and
-                    final_candidate["forecast"]==initial["forecast"],
-                    "CT03_B_LOCK_IDENTICAL_B_NATIVE_DIFFERENT_TRACE")
+            # The second Buffalo provider call returned the SAME native.
+            # No second physical attempt is necessary or permitted; preserve
+            # original consequence, after confirming the same observable and
+            # original Modelica hash (the script path itself may differ).
+            require(revision_physical is None and
+                    revision_plan["status"]==initial_plan["status"] and
+                    revision_plan["observation_operator"]==
+                        initial_plan["observation_operator"] and
+                    revision_plan["translated_modelica_sha256"]==
+                        initial_plan["translated_modelica_sha256"],
+                    "CT03_B_LOCK_UNCHANGED_NATIVE_CANNOT_CONSUME_NEW_OMC")
             status="RATIFIED"
             final=initial
             new_model=None
             reason="NATIVE_UNCHANGED_AFTER_REAL_CURRENTMODEL_REVIEW"
         else:
+            final=_state(revised,revision_plan,
+                          revision_physical,revision_receipt)
             status="REVISED"
-            final=final_candidate
             new_model=revised
             reason="NATIVE_CHANGED_AFTER_REAL_CURRENTMODEL_REVIEW"
         feedback_sha=b_feedback["own_diagnostic_sha256"]
