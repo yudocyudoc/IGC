@@ -44,7 +44,8 @@ jobs:
             test_arena_ct03_world_custody.py \
             test_arena_ct03_prospective_lock.py \
             test_arena_ct03_execution_boundary.py \
-            test_arena_ct03_evaluator_preflight.py; do
+            test_arena_ct03_evaluator_preflight.py \
+            test_arena_ct03_prediction_attestation.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
       - name: CT-03 produce six D and six M native Modelica sources (script only)
