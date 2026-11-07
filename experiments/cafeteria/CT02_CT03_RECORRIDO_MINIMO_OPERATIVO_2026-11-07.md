@@ -51,6 +51,7 @@ IGC_CT03_CUSTODIAN_AUTH=CT03_POST_LOCK_CUSTODIAN_ONLY \
 python -m scripts.arena_cafe.ct03_world_custody \
   --sealed-config "$PRIVATE_BASE/world-config.json" \
   --private-out "$PRIVATE_BASE/world-run" \
+  --producer-root "$PRODUCER_CHECKOUT" \
   --public-commitment "$PRIVATE_BASE/world-commitment.json"
 ```
 
