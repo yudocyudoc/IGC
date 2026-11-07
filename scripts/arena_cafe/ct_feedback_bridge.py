@@ -1,0 +1,237 @@
+"""CT-02: scoped own-feedback ledger retrieval BEFORE a producer decision.
+
+This is a versioned adapter over F1a Ledger, arena_atms, arena_memory and M2's
+original own_policy. It does not run OpenModelica, Buffalo or a new estimator.
+It must never use future truth, other arms' models or a missing CSV as zero.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import re
+
+from scripts.arena_v0_contract import digest
+from scripts.arena_atms import events_from_ledger, project
+from scripts.arena_memory import load_events_from_ledger, retrieve
+from scripts.ledger import Ledger
+
+ROOT = Path(__file__).resolve().parents[2]
+MIGRATION = ROOT / "migrations/0001_ledger.sql"
+SCHEMA = "igc-ct02-scoped-owned-feedback/1.0"
+M_POLICY = "M-E1-OWN-FEEDBACK-SET/1.0"
+ARMS = ("D", "B", "M")
+
+
+def require(ok, reason):
+    if not ok:
+        raise ValueError(reason)
+
+
+def _sha(value):
+    return isinstance(value, str) and bool(re.fullmatch(r"sha256:[0-9a-f]{64}", value))
+
+
+def _utc(value):
+    stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    require(stamp.tzinfo is not None and stamp.utcoffset() is not None,
+            "CT02_TIMEZONE_REQUIRED")
+    return stamp.astimezone(timezone.utc).isoformat(timespec="microseconds")
+
+
+def make_context(*, experiment, world, round_id, arm, condition, source_hash):
+    for item in (experiment, world, round_id, condition):
+        require(isinstance(item, str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", item),
+                "CT02_INVALID_SCOPE_PART")
+    require(arm in ARMS and _sha(source_hash), "CT02_INVALID_ARM_OR_SOURCE")
+    case = f"ct-{experiment}-{world}-{round_id}-{arm}-{condition}"
+    return {"experiment": experiment, "world": world, "round": round_id,
+            "arm": arm, "condition": condition, "source_hash": source_hash,
+            "case_id": case}
+
+
+def _ids(context):
+    case = context["case_id"]
+    return {role: case + ":" + role.upper()
+            for role in ("source", "diagnostic", "rule", "feedback", "decision", "decision_rule")}
+
+
+def _ledger(db):
+    return Ledger(db, MIGRATION)
+
+
+def record_feedback(db, context, *, parent_hash, diagnostic, recorded_at):
+    """Record exact source + own-parent + observed diagnostic. Never invent G2."""
+    context = make_context(experiment=context["experiment"], world=context["world"],
+                           round_id=context["round"], arm=context["arm"],
+                           condition=context["condition"], source_hash=context["source_hash"])
+    require(_sha(parent_hash) and isinstance(diagnostic, dict),
+            "CT02_PARENT_OR_DIAGNOSTIC_REQUIRED")
+    require(diagnostic.get("arm") == context["arm"] and
+            diagnostic.get("condition") == context["condition"] and
+            diagnostic.get("source_hash") == context["source_hash"] and
+            diagnostic.get("parent_hash") == parent_hash,
+            "CT02_OWN_DIAGNOSTIC_BINDING_FAILED")
+    require(diagnostic.get("evidence") in ("G1", "G2", "G3"),
+            "CT02_UNSUPPORTED_DIAGNOSTIC_GATE")
+    require(diagnostic.get("no_future_truth") is True and
+            diagnostic.get("own_evidence_only") is True,
+            "CT02_FUTURE_OR_RIVAL_EVIDENCE_NOT_ALLOWED")
+    obs = diagnostic.get("observations", [])
+    require(isinstance(obs, list) and all(isinstance(p, dict) and
+            isinstance(p.get("time"), (int, float)) and
+            0 <= p["time"] <= 4 and
+            isinstance(p.get("residual"), (int, float)) for p in obs),
+            "CT02_DIAGNOSTIC_OUTSIDE_CONSTRUCTION")
+    require(diagnostic.get("evidence") == "G1" or _sha(diagnostic.get("trace_sha256")),
+            "CT02_G2_G3_REQUIRES_TRACE_HASH")
+    stamp = _utc(recorded_at)
+    ids = _ids(context)
+    l = _ledger(db)
+    source = {"kind": "assumption", "active": True, "scope": context,
+              "source_hash": context["source_hash"], "parent_hash": parent_hash,
+              "assumption_type": "OWN_INPUT_AND_PARENT_AUTHENTICATED_NOT_CAUSAL_TRUTH"}
+    own = {"kind": "assumption", "active": True, "scope": context,
+           "source_hash": context["source_hash"], "parent_hash": parent_hash,
+           "diagnostic_hash": digest(diagnostic), "diagnostic": diagnostic,
+           "assumption_type": "OWN_FEEDBACK_WITH_VERIFIED_PROVENANCE_NOT_CAUSAL_TRUTH"}
+    rule = {"kind": "justification", "active": True, "scope": context,
+            "antecedents": [ids["source"], ids["diagnostic"]],
+            "consequent": ids["feedback"], "source_id": ids["diagnostic"],
+            "interpretation": "SUPPORTED_PROVENANCE_NOT_EMPIRICAL_CORRECTNESS"}
+    knowledge = {"kind": "knowledge", "active": True, "scope": context,
+                 "node_id": ids["feedback"], "source_id": ids["diagnostic"],
+                 "title": "Own feedback diagnostic " + context["arm"],
+                 "text": "Own feedback diagnostic scoped construction result",
+                 "item_type": "OWN_FEEDBACK", "epistemic_status": "CONSTRUCTION_ONLY",
+                 "source_revision": 1,
+                 "diagnostic_hash": digest(diagnostic), "parent_hash": parent_hash}
+    for role, typ, payload in (
+        ("source", "ATMSNode", source), ("diagnostic", "ATMSNode", own),
+        ("rule", "ATMSNode", rule), ("feedback", "KnowledgeItem", knowledge)
+    ):
+        l.append_revision(entity_id=ids[role], entity_type=typ,
+            case_id=context["case_id"], actor_id="ct02-own-feedback",
+            idempotency_key=ids[role] + ":initial",
+            payload=payload, recorded_at=stamp, created_at=stamp,
+            access_policy="lane:" + context["arm"])
+    return {"case_id": context["case_id"], "diagnostic_hash": digest(diagnostic),
+            "stored_feedback": True, "decision_executed": False, "provider_calls": 0,
+            "new_omc": 0}
+
+
+def recover_feedback(db, context, *, parent_hash, as_known_at):
+    """Retrieve supported own feedback from ledger before policy invocation."""
+    context = make_context(experiment=context["experiment"], world=context["world"],
+                           round_id=context["round"], arm=context["arm"],
+                           condition=context["condition"], source_hash=context["source_hash"])
+    require(_sha(parent_hash), "CT02_PARENT_SHA_REQUIRED")
+    at = _utc(as_known_at)
+    ids = _ids(context)
+    l = _ledger(db)
+    revs = l.snapshot(case_id=context["case_id"], as_known_at=at)
+    expected = {ids[k] for k in ("source", "diagnostic", "rule", "feedback")}
+    require(expected.issubset({x.entity_id for x in revs}),
+            "CT02_NO_CURRENT_FEEDBACK")
+    require(all(x.case_id == context["case_id"] and
+                x.access_policy == "lane:" + context["arm"] and
+                l.verify_integrity(entity_id=x.entity_id, revision=x.revision)
+                for x in revs), "CT02_SCOPE_OR_INTEGRITY_VIOLATION")
+    d = next(x.payload for x in revs if x.entity_id == ids["diagnostic"])
+    require(d.get("active") is True and d.get("scope") == context and
+            d.get("parent_hash") == parent_hash and
+            d.get("source_hash") == context["source_hash"] and
+            digest(d.get("diagnostic")) == d.get("diagnostic_hash"),
+            "CT02_WITHDRAWN_OR_MISMATCHED_FEEDBACK")
+    knowledge, atms = load_events_from_ledger(Path(db), context["case_id"], at)
+    result = retrieve(investigation_id=context["case_id"], lane=context["arm"],
+                      as_known_at=at, query="own feedback diagnostic",
+                      top_k=5, knowledge_records=knowledge, atms_events=atms)
+    allowed = [x for x in result["items"]
+               if x["node_id"] == ids["feedback"] and x["logical_support"]["supported"]]
+    require(len(allowed) == 1, "CT02_FEEDBACK_NOT_CURRENTLY_SUPPORTED")
+    return {"context": context, "parent_hash": parent_hash,
+            "diagnostic": d["diagnostic"], "diagnostic_hash": d["diagnostic_hash"],
+            "retrieval": {"item_id": allowed[0]["id"],
+                          "projection_hash": result["atms"]["projection_hash"],
+                          "as_known_at": at},
+            "source": "LEDGER_ATMS_RETRIEVAL_BEFORE_POLICY"}
+
+
+def retract_feedback(db, context, *, at):
+    ids = _ids(context)
+    timestamp = _utc(at)
+    ledger = _ledger(db)
+    current = ledger.snapshot(case_id=context["case_id"], as_known_at=timestamp)
+    old = next((x for x in current if x.entity_id == ids["diagnostic"] and
+                x.payload.get("active") is True), None)
+    require(old is not None, "CT02_NO_ACTIVE_OWN_FEEDBACK_TO_RETRACT")
+    require(old.payload.get("scope") == context, "CT02_RETRACT_SCOPE_MISMATCH")
+    ledger.append_revision(entity_id=ids["diagnostic"], entity_type="ATMSNode",
+        case_id=context["case_id"], actor_id="ct02-feedback-retraction",
+        idempotency_key=ids["diagnostic"] + ":withdraw:" + timestamp,
+        recorded_at=timestamp, created_at=timestamp,
+        access_policy="lane:" + context["arm"],
+        payload={"kind": "assumption", "active": False, "scope": context,
+                 "reason": "SOURCE_OR_DIAGNOSTIC_WITHDRAWN",
+                 "superseded_diagnostic_hash": old.payload["diagnostic_hash"]})
+    return {"status": "FEEDBACK_RETRACTED_APPEND_ONLY", "case_id": context["case_id"]}
+
+
+def own_m_decision(db, context, *, parent_graph, as_known_at, classes=None):
+    """M2's original own_policy over new authenticated parent; never use M2.revise replay."""
+    require(context["arm"] == "M" and isinstance(parent_graph, dict),
+            "CT02_NOT_M_OR_NO_PARENT_GRAPH")
+    parent_hash = digest(parent_graph)
+    memory = recover_feedback(db, context, parent_hash=parent_hash,
+                              as_known_at=as_known_at)
+    from scripts.arena_m2_feedback import own_policy
+    if classes is None:
+        from experiments.e1 import composer
+        cfg, classes, _ = composer.load_registry(ROOT / "experiments/e1/registry.base.json")
+        composer.check_graph(parent_graph, cfg, classes)
+    verified = {"observations": memory["diagnostic"].get("observations", [])}
+    choice, reason = own_policy(verified, parent_graph, classes)
+    if choice is None:
+        disposition = ("RATIFIED" if reason ==
+                       "NO_CONSISTENT_LATE_OVERSHOOT_OVER_THRESHOLD" else "ABSTAINED")
+        return {"status": disposition, "reason": reason, "policy": M_POLICY,
+                "parent_hash": parent_hash, "feedback_hash": memory["diagnostic_hash"],
+                "retrieved_before_policy": memory["retrieval"], "new_model": None,
+                "provider_calls": 0, "new_omc": 0}
+    graph, edits = choice
+    require(digest(graph) != parent_hash and len(edits) == 2,
+            "CT02_M_POLICY_INVALID_EDIT")
+    return {"status": "REVISED", "policy": M_POLICY, "parent_hash": parent_hash,
+            "new_graph_hash": digest(graph), "new_model": graph,
+            "parameter_edits": edits, "feedback_hash": memory["diagnostic_hash"],
+            "retrieved_before_policy": memory["retrieval"],
+            "provider_calls": 0, "new_omc": 0}
+
+
+def d_fixed_decision(db, context, *, parent_hash, as_known_at):
+    require(context["arm"] == "D", "CT02_NOT_D")
+    memory = recover_feedback(db, context, parent_hash=parent_hash,
+                              as_known_at=as_known_at)
+    return {"status": "RATIFIED", "policy": "D-CT03-EXPLICIT-FIXED-SET/1.0",
+            "d2": "NOT_APPLICABLE_MISSING_RESET_TRIAL", "parent_hash": parent_hash,
+            "feedback_hash": memory["diagnostic_hash"],
+            "retrieved_before_policy": memory["retrieval"],
+            "model_revision": False, "provider_calls": 0, "new_omc": 0}
+
+
+def b_review_envelope(db, context, *, original_native, as_known_at):
+    """Dry preparation of currentModel with exact parent and feedback; NO POST."""
+    require(context["arm"] == "B", "CT02_NOT_B")
+    if not isinstance(original_native, dict) or not original_native:
+        return {"status": "NOT_EXECUTED_NO_AUTHENTIC_PARENT", "provider_calls": 0}
+    parent_hash = digest(original_native)
+    memory = recover_feedback(db, context, parent_hash=parent_hash,
+                              as_known_at=as_known_at)
+    return {"status": "READY_NOT_SENT", "method": "UB-IAD/sd-ai::Engine.generate",
+            "route": "OPEN_ROUTER_SDK_CLOUDFLARE_PROTOCOL_REUSE",
+            "currentModel": original_native,
+            "own_feedback": memory["diagnostic"],
+            "parent_hash": parent_hash, "retrieved_before_policy": memory["retrieval"],
+            "provider_calls": 0, "new_omc": 0,
+            "warning": "NOT_A_SCIENTIFIC_REVISION_UNTIL_ORIGINAL_PROVIDER_EXECUTES"}
