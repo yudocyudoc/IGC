@@ -3,6 +3,9 @@
 Fixture CSV is synthetic TEST ONLY; no claim of actual OpenModelica success.
 """
 import csv
+import json
+import subprocess
+import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -210,6 +213,63 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
                     build(c,manifest=m,parent=p,construction=o,receipt=bound,
                           modelica_file=n,simulate_script_file=n.parent/"simulate.mos",
                           trace_csv=csv_path)
+
+
+    def test_cli_accepts_native_fixture_and_rejects_changed_script(self):
+        """F172-06: exercise the actual Python -m entry point, not only build()."""
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest, parent, context, construction, receipt, native, csv_path = make_example(root)
+            for filename, obj in (
+                ("parent.json", parent),
+                ("context.json", context),
+                ("construction.json", construction),
+                ("receipt.json", receipt),
+            ):
+                (root / filename).write_text(json.dumps(obj), encoding="utf-8")
+
+            script = native.parent / "simulate.mos"
+            output = root / "cli-diagnostic.json"
+            argv = [
+                sys.executable, "-m",
+                "scripts.arena_cafe.ct03_m_construction_diagnostic",
+                "--manifest", str(native.parent / "manifest.json"),
+                "--parent", str(root / "parent.json"),
+                "--construction", str(root / "construction.json"),
+                "--receipt", str(root / "receipt.json"),
+                "--context", str(root / "context.json"),
+                "--native", str(native),
+                "--simulate-script", str(script),
+                "--csv", str(csv_path),
+                "--out", str(output),
+            ]
+            repo = Path(__file__).resolve().parents[1]
+            completed = subprocess.run(
+                argv, cwd=repo, capture_output=True, text=True, timeout=30
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertTrue(output.is_file(), completed.stdout)
+            direct = build(
+                context, manifest=manifest, parent=parent,
+                construction=construction, receipt=receipt,
+                modelica_file=native, simulate_script_file=script,
+                trace_csv=csv_path,
+            )
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8")), direct)
+            self.assertEqual(json.loads(completed.stdout)["provider_calls"], 0)
+            self.assertEqual(json.loads(completed.stdout)["new_omc"], 0)
+
+            # A different script is not allowed even with valid CSV/manifest.
+            script.write_text(script.read_text() + "// tampered script\\n", encoding="utf-8")
+            blocked_output = root / "blocked-diagnostic.json"
+            blocked = subprocess.run(
+                argv[:-1] + [str(blocked_output)],
+                cwd=repo, capture_output=True, text=True, timeout=30,
+            )
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("CT02_M_NATIVE_CSV_OR_RUNTIME_RECEIPT_MISMATCH", blocked.stderr)
+            self.assertNotIn("missing 1 required keyword-only argument", blocked.stderr)
+            self.assertFalse(blocked_output.exists())
 
 
 if __name__ == "__main__":
