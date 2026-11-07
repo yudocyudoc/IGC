@@ -361,7 +361,7 @@
     }
   },
   "CT03": {
-    "status": "ONE_MANUAL_CT03_PRODUCER_WORKFLOW_AND_PUBLIC_INTAKE_CODE_WIRED_OFFLINE_NOT_DEPLOYED_NOT_AUTHORIZED",
+    "status": "MANUAL_CT03_PRODUCER_WORKFLOW_G0_AND_FAILED_SECOND_PROVIDER_RECEIPTS_WIRED_OFFLINE_NOT_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -529,7 +529,11 @@
         ".github/workflows/arena-ct03-freeze-predictions.yml",
         "tests/test_arena_ct03_lot_budget.py",
         "tests/test_arena_ct03_public_intake.py",
-        "tests/test_arena_ct03_global_workflow.py"
+        "tests/test_arena_ct03_global_workflow.py",
+        "tests/test_arena_ct03_b_runner_failures.py",
+        "tests/test_arena_ct03_b_producer_replay.py",
+        "scripts/arena_cafe/ct03_prospective_lock.py",
+        ".github/workflows/arena-continuity-e01.yml"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
@@ -781,6 +785,45 @@
         "The separate prospective archive requires later workflow_dispatch; no producer job scores or reveals heldout truth",
         "Provider/OMC live paths and multi-job handoffs have not been executed in CI; tests are offline and default-deny"
       ]
+    },
+    "b_provider_failure_lifecycle": {
+      "review_source": "REVISION_PR172_WORKFLOW_GLOBAL_AE00F57A_2026-11-07.md",
+      "reviewed_sha": "ae00f57a486ad63f77238dea2ba98396c6f6711b",
+      "findings": [
+        "F172-10 P2 second failed POST was recorded as never launched",
+        "F172-11 P2 wrong native horizon aborted 13-slot assembly"
+      ],
+      "status": "FIXED_IN_PR_NOT_YET_REVIEWED_BY_ASTRA_OR_LIVE_EXECUTED",
+      "second_no_native": {
+        "statuses": [
+          "CT03_PROVIDER_ATTEMPT_NO_NATIVE",
+          "CT03_PREPROVIDER_NO_NATIVE"
+        ],
+        "second_receipt_sha256_kept": true,
+        "provider_post_observed_based_on_receipt_count": true,
+        "no_model_is_not_ratification": true,
+        "parent_feedback_and_world_integrity_fail_closed": true
+      },
+      "wrong_horizon": {
+        "status": "G0_REJECTED_NATIVE_EXISTS_NOT_TRANSLATED_OR_SIMULATED",
+        "phases": [
+          "initial",
+          "revision"
+        ],
+        "native_and_receipt_sha256_retained": true,
+        "no_forecast": true,
+        "non_B_g0_disallowed": true,
+        "13_slots_remain_assembling": true
+      },
+      "B_runner_script": "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+      "tests": [
+        "tests/test_arena_ct03_b_runner_failures.py",
+        "tests/test_arena_ct03_b_producer_replay.py"
+      ],
+      "evidence_budget": "0 CT03 OMC / 0 CT03 provider posts / 0 CT03 DES",
+      "offline_replays_are_not_real_provider_or_solver": true,
+      "original_engines_modified": false,
+      "ct03_live_authorized": false
     }
   },
   "unchanged": [
