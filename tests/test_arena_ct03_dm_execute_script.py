@@ -14,7 +14,6 @@ from test_arena_ct03_dm_initial_batch import reuse_fixture
 ROOT=Path(__file__).resolve().parents[1]
 SCRIPT=ROOT/"scripts/arena_cafe/ct03_dm_execute_ten_once.sh"
 
-MOCK=String=None
 DOCKER_FAKE=r'''#!/usr/bin/env python3
 import csv,json,re,sys,os
 from pathlib import Path
