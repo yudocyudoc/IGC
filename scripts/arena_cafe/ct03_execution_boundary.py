@@ -97,6 +97,7 @@ def verify_witness(witness, *, trust_registry, public_key, producer_root, kind):
             type(cfg["authorities"]) is list and cfg["authorities"],
             "CT03_NO_EXPLICIT_EXTERNAL_TRUST_ANCHOR")
     seen = set()
+    key_roles = {}
     matches = []
     for authority in cfg["authorities"]:
         exact(authority, ("id", "purpose", "public_key_sha256"),
@@ -106,6 +107,13 @@ def verify_witness(witness, *, trust_registry, public_key, producer_root, kind):
         key = (authority["id"], authority["purpose"])
         require(key not in seen, "CT03_DUPLICATE_TRUST_AUTHORITY")
         seen.add(key)
+        # Separating labels without separating key material is not a
+        # distinct trust boundary. Reject an authority key reused by roles.
+        fingerprint = authority["public_key_sha256"]
+        require(fingerprint not in key_roles or
+                key_roles[fingerprint] == authority["purpose"],
+                "CT03_RUNNER_AND_ARCHIVIST_SHARE_SIGNING_KEY")
+        key_roles[fingerprint] = authority["purpose"]
         if key == (witness["authority_id"], kind):
             matches.append(authority)
     require(len(matches) == 1, "CT03_SIGNER_NOT_REGISTERED_FOR_ROLE")
