@@ -1,0 +1,128 @@
+name: E02 Buffalo R2 real native G1/adapter preflight (zero provider / OMC)
+on:
+  push:
+    branches: [experiment/arena-continuity-e00-e01-20261106]
+    paths:
+      - 'experiments/cafeteria/E02_B_REAL_R2_AUDIT_TRIGGER_20261106.json'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-adjudication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Reuse real original O0 (no live inference)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-corrected-live-O0
+          run-id: 42331388032
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/real-b/O0
+      - name: Reuse real original O1 (no live inference)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-corrected-live-O1
+          run-id: 42331388032
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/real-b/O1
+      - name: Run EXISTING original B G1 advisory diagnostic on each raw output
+        run: |
+          set -euo pipefail
+          for c in O0 O1; do
+            node scripts/arena_b_native_g1_diagnostic.mjs \
+              "artifacts/real-b/$c/initial/native-engine-result.json" \
+              "artifacts/real-b/$c/g1-diagnostic.json" \
+              >"artifacts/real-b/$c/g1-stdout.json"
+          done
+      - name: Test existing pinned 8-hour translator against native 10-minute envelope (no solver)
+        run: |
+          set -euo pipefail
+          for c in O0 O1; do
+            if python -m scripts.arena_b_native_to_modelica \
+                "artifacts/real-b/$c/initial/native-engine-result.json" \
+                "artifacts/real-b/$c/conditional-translation" \
+                >"artifacts/real-b/$c/translate.log" 2>&1; then
+              echo TRANSLATOR_ACCEPTED >"artifacts/real-b/$c/translator-status.txt"
+            else
+              echo TRANSLATOR_REJECTED_WITHOUT_REPAIR >"artifacts/real-b/$c/translator-status.txt"
+            fi
+          done
+      - name: Record comparable G0/G1 boundary, native identity, usage and 4-call total
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('artifacts/real-b')
+          records={}
+          call_total_previous=2
+          for c in ('O0','O1'):
+              p=root/c
+              def read(s):return json.loads((p/s).read_text())
+              receipt=read('initial/receipt.json')
+              native=read('initial/native-engine-result.json')
+              g1=read('g1-diagnostic.json')
+              outcome=read('outcome.json')
+              assert outcome['condition']==c and receipt['condition_id']==c
+              assert receipt['model_returned'] and receipt['http_status']==200
+              assert receipt['mode']=='live' and receipt['provider_calls']==1
+              assert receipt['backend']=='OPEN_ROUTER'
+              assert receipt['transport']=='CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA'
+              assert receipt['horizon_matches_case'] is True
+              assert native['model']['specs']['stopTime']==1/6
+              assert g1['variable_count']==len(native['model']['variables'])
+              assert g1['relationship_count']==len(native['model']['relationships'])
+              assert not g1['g1_certified'] and not g1['g2_executed']
+              assert outcome['revision_attempted'] is False
+              records[c]={
+                  'run_id':42331388032,
+                  'source_snapshot_hash':receipt['source_snapshot_hash'],
+                  'causal_input_sha256':receipt['arrival_signal_sha256'],
+                  'native_result_sha256':receipt['result_sha256'],
+                  'native_variables':g1['variable_count'],
+                  'native_relationships':g1['relationship_count'],
+                  'G0':'AUTHENTIC_PROVIDER_MODEL_RETURNED',
+                  'G1':g1['status'],'g1_certified':False,
+                  'G1_issues':g1['issues'],
+                  'adapter_translation':(p/'translator-status.txt').read_text().strip(),
+                  'G2':'NOT_RUN_NO_NATIVE_SOLVER_PARITY',
+                  'G3':'NOT_RUN',
+                  'provider_usage':receipt.get('provider_usage'),
+                  'provider_calls':receipt['provider_calls']
+              }
+          assert records['O0']['causal_input_sha256']==records['O1']['causal_input_sha256']
+          n=sum(d['provider_calls'] for d in records.values())
+          assert n==2 and call_total_previous+n==4
+          result={
+             'schema':'igc-e02-b-r2-two-real-native-construction-audit/0.1',
+             'original_live_run_id':42331388032,
+             'previous_failed_transport_run_id':42319874751,
+             'previous_calls':2,'new_calls':n,'total_calls':call_total_previous+n,
+             'no_revisions_performed':True,
+             'G4':'NOT_RUN','G5':'NOT_RUN','E05_gate':'BLOCKED',
+             'no_new_provider_or_solver_in_this_audit':True,
+             'cases':records
+          }
+          (root/'two-real-native-audit.json').write_text(json.dumps(result,indent=2)+'\n')
+          for c,v in records.items():
+              print(c,'G1:',v['G1'],'issues:',len(v['G1_issues']),
+                    'translation:',v['adapter_translation'])
+          print('TOTAL_B_CALLS: 4, NEW_AUDIT_CALLS: 0')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e02-b-real-r2-g1-audit
+          path: |
+            artifacts/real-b/two-real-native-audit.json
+            artifacts/real-b/O0/g1-diagnostic.json
+            artifacts/real-b/O1/g1-diagnostic.json
+            artifacts/real-b/O0/translate.log
+            artifacts/real-b/O1/translate.log
+          if-no-files-found: error
