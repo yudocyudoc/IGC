@@ -104,6 +104,48 @@ python -m scripts.arena_cafe.ct03_b_physical_result \
 
 El flujo B **revisión → posible nuevo nativo → segunda física → decisión final** y el ensamblado de 13 filas continúan pendientes. No afirmar B G2, pronóstico real ni disponibilidad del piloto antes de ejecutar esas etapas y comprobar su evidencia.
 
+### Extensión: cierre M revisado, Buffalo currentModel y trece entradas (sin activación)
+
+Tras la retro del corte `978ef05` se conectaron los tres pasos que antes eran manuales:
+
+**Revisiones M seleccionadas.** `scripts/arena_cafe/ct03_m_revision_physical.py` comprueba cada Modelica de la política M2 original, el padre/AST, el script, las bibliotecas, la prueba material, el CSV y el log contra **un intento físico diferente**. Entrega `m-revision-outcomes.json`, con `PREDICTED` o `G2_FAILED` por revisión; los fallos no se convierten en ceros. `scripts/arena_cafe/ct03_m_revision_execute_once.sh` es el ejecutor reservado a un eventual **único lote CT-03 autorizado**: requiere `workflow_dispatch`, SHA congelado, intentos iniciales contabilizados y tope global 19 OMC si siguen reutilizados D0/M0. Revisa todos los padres antes del primer OMC, ejecutaría cada seleccionado una sola vez, conservando salida y recibo. **No está conectado aún a un workflow autorizado ni se ha ejecutado.**
+
+**Revisión B real.** La preparación física original `ct03_b_physical_prepare.py` admite ahora una *revisión explícita* solo si existe la respuesta native original del segundo `Engine.generate(currentModel)` y su recibo con enlace al padre inicial y al paquete de feedback ATMS propio. Vuelve a traducir el modelo revisado mediante el traductor original, comprueba el observable y prepara un `initial.mos` propio **en otro directorio**; el comprobador físico B existente puede validar después su CSV de esa revisión. Una respuesta idéntica ratifica y reutiliza la consecuencia original, **sin un OMC adicional**. Un cambio requiere nuevo resultado físico o bloqueo nativo documentado; jamás se copia como revisión la traza inicial.
+
+**Trece plazas.** `ct03_b_lock_projection.py` compone la plaza B a partir de las respuestas originales de Buffalo, su propia recuperación de feedback, los reportes de G1/observable y la consecuencia física (o fallo). Distingue segunda respuesta idéntica `RATIFIED`, segunda respuesta cambiada `REVISED`, parada explícita `NOT_EXECUTED` y **ausencia auténtica de nativo B** como `NO_NATIVE`, manteniendo el candidato en el denominador. `ct03_assemble_entries.py` reúne esa plaza con las doce D/M de `ct03_dm_lock_projection.py` y valida las trece con el registro y esquema del **lock original**, sin consultar parámetros privados. Su salida es solo `entries.json`, **no un lock archivado**.
+
+Comandos de preparación posterior a los resultados físicos **del lote autorizado**, nunca con fixtures sintéticos:
+
+```bash
+# Después de una corrida original de M/revisiones bajo el mismo run:
+python -m scripts.arena_cafe.ct03_m_revision_physical \
+  --dm-feedback artifacts/ct03-producer/dm-feedback/producer-12/dm-feedback-report.json \
+  --dm-root artifacts/ct03-producer/dm-feedback \
+  --m-manifest artifacts/ct03-producer/dm-ten/M/manifest.json \
+  --run-id <RUN_REAL> --git-sha <SHA_CONGELADO> \
+  --out artifacts/ct03-producer/dm-feedback/producer-12/m-revision-outcomes.json
+
+# Extraer SOLO el mapa outcomes de ese reporte (la proyección de
+# doce filas no acepta un reporte arbitrario como sustituto de resultados):
+python -m scripts.arena_cafe.ct03_dm_lock_projection \
+  --dm-feedback artifacts/ct03-producer/dm-feedback/producer-12/dm-feedback-report.json \
+  --d-manifest artifacts/ct03-producer/dm-ten/D/manifest.json \
+  --m-manifest artifacts/ct03-producer/dm-ten/M/manifest.json \
+  --revision-outcomes artifacts/ct03-producer/m-revision-outcomes-map.json \
+  --out artifacts/ct03-producer/dm-twelve-lock-rows.json
+
+# Solo después del B original y revisión verdaderos o parada documentada:
+python -m scripts.arena_cafe.ct03_assemble_entries \
+  --dm-projection artifacts/ct03-producer/dm-twelve-lock-rows.json \
+  --b-projection artifacts/ct03-producer/B-thirteenth-row.json \
+  --construction public-release/construction.json \
+  --d-manifest artifacts/ct03-producer/dm-ten/D/manifest.json \
+  --m-manifest artifacts/ct03-producer/dm-ten/M/manifest.json \
+  --out artifacts/ct03-producer/entries.json
+```
+
+La compilación JSON, por sí sola, **no habilita abrir t6/t8**. El flujo de archivo de predicciones en GitHub debe recibir `entries.json` y producir el lock en un run aparte ANTES de que el custodio acceda a la reserva. Faltan la orquestación global, el ejecutor B completo y el despliegue con cuenta/credenciales realmente separadas. Ninguna de estas funciones nuevas ejecuta al proveedor ni al solver por sí misma; las pruebas son **fixtures sintéticos**.
+
 ## 5. Pendientes reales antes de un único lote CT-03
 
 1. Custodio con cuenta/credenciales distintas, mundo único fijado, ejecución privada y liberación t0,t1,t2,t4 sin filtrar t6/t8.
