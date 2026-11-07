@@ -70,6 +70,38 @@ python -m scripts.arena_cafe.ct03_b_own_feedback \
 
 Valida el padre/recibo B original, intenta traducir con el traductor G1 existente sin reparar ecuaciones, registra su diagnóstico G1, recupera su propio feedback por ATMS y prepara el paquete para la revisión con Engine.generate(currentModel) original. Si el modelo usa semántica no soportada, queda G1_TRANSLATION_BLOCKED, no G2 artificial. Una traducción válida **todavía no prueba un observable inequívoco de entregas acumuladas**; el enlace físico y la salida observable B permanecen pendientes.
 
+### Extensión: observable físico B inicial, sin ejecutar
+
+La retro del corte `06347b6` concluyó **sin defectos nuevos reproducidos** y pidió conectar el nativo B original con una observación inequívoca y OMC. Se añadieron dos módulos, sin cambiar el motor, el traductor, las ecuaciones o el protocolo:
+
+- `scripts/arena_cafe/ct03_b_physical_prepare.py`: a partir del original `Engine.generate`, recibo live inicial y G1 del ledger B, invoca el **traductor original** y exige una salida semántica conservadora: exactamente un stock terminal de entregas explícitas, con valor inicial cero, una entrada material y sin salida, denominado en unidades de trabajo. Rechaza otros sumideros materiales ambiguos. Si no encuentra una designación inequívoca, registra **`B_OBSERVABLE_UNRESOLVED_NO_OMC`**, *no* un fallo G1 del modelo; la regla automática no agota todos los nombres o semánticas posibles. Si el traductor falla, registra separadamente `B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC`. Si la salida es identificable, prepara **un solo** `initial.mos` con Modelica original sin agregar un contador ni ajustar por observaciones. Cero OMC en este paso.
+- `scripts/arena_cafe/ct03_b_physical_result.py`: **después de que exista** una ejecución física B inicial autorizada, comprueba que modelo y comando coincidan, solver/log real 1.26.5, CSV íntegro t0–8, las predicciones propias t6/t8 de la columna nativa y la conservación de masa de los stocks materiales originales frente a las 3.4 unidades de entrada. No corre OMC ni consulta la reserva. El test de este módulo utiliza únicamente CSV y log **sintéticos**, no acredita que Buffalo ya haya sido simulado.
+
+El preparador en una futura corrida productor usaría (nunca antes del B real y de la aprobación CT-03):
+
+```bash
+python -m scripts.arena_cafe.ct03_b_physical_prepare \
+  --native producer-B/initial/native-engine-result.json \
+  --receipt producer-B/initial/receipt.json \
+  --construction public-release/construction.json \
+  --b-feedback artifacts/ct03-producer/B-own-feedback/status.json \
+  --out artifacts/ct03-producer/B-physical
+```
+
+Solo si el resultado es `B_NATIVE_PHYSICAL_PLANNED_NO_OMC`, el ejecutor autorizado puede efectuar el OMC de `initial.mos` (un intento, sin retry), conservar `b-original-omc.log` y `b-original_res.csv` y luego verificar con:
+
+```bash
+python -m scripts.arena_cafe.ct03_b_physical_result \
+  --native producer-B/initial/native-engine-result.json \
+  --receipt producer-B/initial/receipt.json \
+  --plan artifacts/ct03-producer/B-physical/plan.json \
+  --root artifacts/ct03-producer/B-physical \
+  --git-sha <SHA_CONGELADO> --run-id <ID_RUN_REAL> \
+  --out artifacts/ct03-producer/B-physical/physical-result.json
+```
+
+El flujo B **revisión → posible nuevo nativo → segunda física → decisión final** y el ensamblado de 13 filas continúan pendientes. No afirmar B G2, pronóstico real ni disponibilidad del piloto antes de ejecutar esas etapas y comprobar su evidencia.
+
 ## 5. Pendientes reales antes de un único lote CT-03
 
 1. Custodio con cuenta/credenciales distintas, mundo único fijado, ejecución privada y liberación t0,t1,t2,t4 sin filtrar t6/t8.
