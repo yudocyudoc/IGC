@@ -63,16 +63,78 @@ def operator(native:dict):
         "no_hidden_truth_or_fit":True
     }
 
-def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path):
+def validate_revision_live(native,receipt,construction,b_feedback,provenance):
+    """Require the *original* Buffalo currentModel plus its own recovered G1.
+
+    No provider call is performed. The revision receipt must come from the
+    original native runner's second round, not a forged initial receipt.
+    """
+    require(type(provenance) is dict and
+            set(provenance)=={"parent_native","parent_receipt","packet"},
+            "CT03_B_REVISION_PROVENANCE_REQUIRED")
+    parent,origin,packet=(provenance[k] for k in
+                          ("parent_native","parent_receipt","packet"))
+    validate_initial(parent,origin,construction)
+    require(type(packet) is dict and
+            packet.get("schema")=="igc-ct03-b-own-feedback/1.0" and
+            packet.get("arm")=="B" and
+            packet.get("world_public_id")==construction["world_public_id"] and
+            packet.get("condition_id")=="C0" and
+            packet.get("source_snapshot_hash")==construction["source_snapshot_hash"] and
+            packet.get("parent_result_sha256")==origin["result_sha256"] and
+            packet.get("own_diagnostic_sha256")==
+                b_feedback.get("own_diagnostic_sha256") and
+            packet.get("own_diagnostic_sha256")==
+                digest(packet.get("own_diagnostic")) and
+            packet.get("retrieved_before_policy")==
+                b_feedback.get("retrieved_before_policy") and
+            b_feedback.get("parent_native_sha256")==origin["result_sha256"] and
+            b_feedback.get("revision_packet_sha256")==digest(packet) and
+            b_feedback.get("provider_calls_by_this_adapter")==0 and
+            type(receipt) is dict and
+            receipt.get("case_id")=="CT-03" and
+            receipt.get("world_public_id")==construction["world_public_id"] and
+            receipt.get("condition_id")=="C0" and
+            receipt.get("source_snapshot_hash")==construction["source_snapshot_hash"] and
+            receipt.get("round_kind")=="revision" and
+            receipt.get("mode")=="live" and
+            receipt.get("status")=="ORIGINAL_ENGINE_LIVE_OUTPUT_RETURNED" and
+            receipt.get("provider_calls")==1 and
+            receipt.get("proxy_requests")==1 and
+            receipt.get("model_returned") is True and
+            receipt.get("upstream_sha")==origin["upstream_sha"] and
+            receipt.get("upstream_source_modified") is False and
+            receipt.get("transport")==origin["transport"] and
+            receipt.get("parent_native_sha256")==origin["result_sha256"] and
+            receipt.get("own_feedback_sha256")==digest(packet) and
+            receipt.get("horizon_matches_case") is True and
+            receipt.get("output_horizon_hours")==8 and
+            receipt.get("result_sha256")==_model_sha(native),
+            "CT03_B_REVISION_NOT_ORIGINAL_ENGINE_CURRENTMODEL_OWN_FEEDBACK")
+    return digest(packet)
+
+
+def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path,
+            *,revision_provenance=None):
     out=Path(out)
     require(not out.exists(),"CT03_B_PHYSICAL_NO_OVERWRITE")
-    validate_initial(native,receipt,construction)
+    if revision_provenance is None:
+        validate_initial(native,receipt,construction)
+        effective_g1=b_feedback.get("G1_status") if type(b_feedback) is dict else None
+    else:
+        validate_revision_live(native,receipt,construction,b_feedback,
+                               revision_provenance)
+        # G1 of the new native is checked freshly, not inherited from
+        # the original currentModel's G1 status.
+        effective_g1="NATIVE_TRANSLATION_CONDITIONAL_NEEDS_G2_AND_OBSERVABLE"
     require(type(b_feedback) is dict and
             b_feedback.get("schema")==
               "igc-ct03-b-original-own-g1-ledger-and-revision-packet/1.0" and
             b_feedback.get("world_public_id")==construction["world_public_id"] and
             b_feedback.get("source_snapshot_hash")==construction["source_snapshot_hash"] and
-            b_feedback.get("parent_native_sha256")==receipt["result_sha256"] and
+            b_feedback.get("parent_native_sha256")==(
+                receipt["result_sha256"] if revision_provenance is None
+                else revision_provenance["parent_receipt"]["result_sha256"]) and
             b_feedback.get("new_omc_by_this_adapter")==0 and
             b_feedback.get("provider_calls_by_this_adapter")==0 and
             b_feedback.get("G1_status") in (
@@ -83,7 +145,7 @@ def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path)
     translated=None
     port=None
     block=None
-    if b_feedback["G1_status"]=="G1_TRANSLATION_BLOCKED_ORIGINAL_UNCHANGED":
+    if effective_g1=="G1_TRANSLATION_BLOCKED_ORIGINAL_UNCHANGED":
         block=b_feedback["G1_block_reason"]
         require(type(block) is str and block,
                 "CT03_B_PHYSICAL_G1_FAILURE_REASON_MISSING")
@@ -104,14 +166,18 @@ def prepare(native:dict,receipt:dict,construction:dict,b_feedback:dict,out:Path)
         "schema":SCHEMA,
         "status":(
             "B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC"
-            if b_feedback["G1_status"]=="G1_TRANSLATION_BLOCKED_ORIGINAL_UNCHANGED"
+            if effective_g1=="G1_TRANSLATION_BLOCKED_ORIGINAL_UNCHANGED"
             else "B_OBSERVABLE_UNRESOLVED_NO_OMC"
             if block else "B_NATIVE_PHYSICAL_PLANNED_NO_OMC"),
         "world_public_id":construction["world_public_id"],
         "source_snapshot_hash":construction["source_snapshot_hash"],
         "native_result_sha256":receipt["result_sha256"],
         "native_result_bytes_bound":_model_sha(native)==receipt["result_sha256"],
-        "original_G1_status":b_feedback["G1_status"],
+        "original_G1_status":effective_g1,
+        "round_kind":"revision" if revision_provenance else "initial",
+        "revision_parent_native_sha256":(
+            revision_provenance["parent_receipt"]["result_sha256"]
+            if revision_provenance else None),
         "original_G1_feedback_sha256":digest(b_feedback),
         "observation_operator":port,
         "blocked_reason":block,
