@@ -26,6 +26,7 @@ DECISIONS = {"D": ("RATIFIED", "NOT_EXECUTED"),
              "M": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED"),
              "B": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED")}
 SHA = re.compile(r"sha256:[0-9a-f]{64}\Z")
+M_TOPOLOGY_KEY = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def sha(value):
@@ -65,7 +66,8 @@ def registry(d_manifest, m_manifest):
     for candidate in m:
         require(type(candidate) is dict and sha(candidate.get("full_ast_sha256")) and
                 sha(candidate.get("material_only_projection_sha256")) and
-                sha(candidate.get("canonical_sha256")),
+                type(candidate.get("canonical_sha256")) is str and
+                M_TOPOLOGY_KEY.fullmatch(candidate["canonical_sha256"]) is not None,
                 "CT03_LOCK_M_PARENT_IDENTITY")
         key = ("M", candidate["canonical_sha256"])
         require(key not in expected, "CT03_LOCK_DUPLICATE_M")
