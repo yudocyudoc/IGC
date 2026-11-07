@@ -67,14 +67,22 @@ try{
       fail("CT03_B_REVISION_PARENT_AND_OWN_FEEDBACK_REQUIRED");
     const parent=JSON.parse(await readFile(resolve(nativeFile),"utf8"));
     const receipt=JSON.parse(await readFile(resolve(receiptFile),"utf8"));
-    const feedback=JSON.parse(await readFile(resolve(feedbackFile),"utf8"));
+    const feedbackRaw=await readFile(resolve(feedbackFile),"utf8");
+    // Python exported canonical UTF-8 JSON plus exactly one LF. Hash those
+    // exact bytes, not JS JSON.stringify (different key order/float spelling).
+    if(!feedbackRaw.endsWith("\n") || feedbackRaw.endsWith("\n\n") ||
+       feedbackRaw.includes("\r"))
+      fail("CT03_B_FEEDBACK_PACKET_CANONICAL_LF_REQUIRED");
+    const feedback=JSON.parse(feedbackRaw);
+    const feedbackByteSha="sha256:"+createHash("sha256")
+      .update(Buffer.from(feedbackRaw.slice(0,-1),"utf8")).digest("hex");
     const checked=validateCt03Revision({
       native:parent,receipt,feedback,visible,mode
     });
     parentModel=checked.model;
     ownFeedback=checked.feedback;
     recorded.parent_native_sha256=receipt.result_sha256;
-    recorded.own_feedback_sha256=sha(ownFeedback);
+    recorded.own_feedback_sha256=feedbackByteSha;
     userPrompt=visible.question+"\\n\\nReconsider YOUR own previous Buffalo model "+
       "(provided as currentModel), using ONLY the following observed "+
       "construction diagnostic:\\n"+JSON.stringify(ownFeedback.own_diagnostic)+
