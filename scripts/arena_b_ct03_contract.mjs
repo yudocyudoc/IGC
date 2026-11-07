@@ -52,12 +52,19 @@ export function validateCt03Visible(v,round) {
     fail("CT03_B_INPUT_PULSE_OR_CUTS_CHANGED");
   if(!Array.isArray(v.construction.observations) || v.construction.observations.length!==4)
     fail("CT03_B_FOUR_CONSTRUCTION_OBSERVATIONS_REQUIRED");
-  let previous=-1;
+  // 1e-8 is numeric-comparison slack, not calibrated instrumental error.
+  const eps=1e-8;
+  let previous=0;
   for(let i=0;i<4;i++){
     const o=v.construction.observations[i];
-    if(!o || typeof o!=="object" || !keys(o,["time","delivered"]) ||
-       o.time!==[0,1,2,4][i] || !finite(o.delivered) ||
-       o.delivered<previous || o.delivered>3.4+1e-8)
+    const t=[0,1,2,4][i];
+    const arrived=CT03_INPUT.pulse_rate*Math.min(t,CT03_INPUT.pulse_end);
+    if(!o || typeof o!=="object" || Array.isArray(o) ||
+       Object.keys(o).length!==2 || !keys(o,["time","delivered"]) ||
+       o.time!==t || !finite(o.delivered) ||
+       (i===0 && Math.abs(o.delivered)>eps) ||
+       o.delivered < -eps || o.delivered < previous-eps ||
+       o.delivered>arrived+eps)
       fail("CT03_B_INVALID_CONSTRUCTION_POINT");
     previous=o.delivered;
   }
