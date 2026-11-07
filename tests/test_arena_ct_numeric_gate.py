@@ -26,12 +26,9 @@ class NumericGateTest(unittest.TestCase):
         model.write_text("model Test end Test;\n")
         workflow = root / WORKFLOW
         workflow.parent.mkdir(parents=True, exist_ok=True)
-        workflow.write_text(
-            'docker pull openmodelica/openmodelica:v1.26.5-minimal\n'
-            'git clone --branch v4.0.0 msl\n'
-            'git clone --branch v2.1.2 sd\n'
-            'simulate(Case,stopTime=4,numberOfIntervals=80,method="dassl",tolerance=1e-8)\n'
-        )
+        # Test real physical-job shell and dependency commands; not a
+        # hand-selected list of regex tokens or a synthetic reduced workflow.
+        workflow.write_text((Path(__file__).resolve().parents[1] / WORKFLOW).read_text())
         cmd(root, "add", ".")
         cmd(root, "commit", "-qm", "baseline")
         return cmd(root, "rev-parse", "HEAD")
@@ -72,6 +69,43 @@ class NumericGateTest(unittest.TestCase):
             cmd(root, "add", ".")
             cmd(root, "commit", "-qm", "solver changed")
             self.assertTrue(decision(root, baseline)["numerical_changed"])
+
+
+    def test_start_time_and_original_library_origin_are_numeric(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            base=self.make_repo(root)
+            wf=root/WORKFLOW
+            self.assertIn("startTime=0",wf.read_text())
+            wf.write_text(wf.read_text().replace("startTime=0","startTime=1"))
+            cmd(root,"add",".");cmd(root,"commit","-qm","changed physical start time")
+            result=decision(root,base)
+            self.assertTrue(result["numerical_changed"])
+            self.assertEqual(result["status"],"BLOCKED_NUMERICAL_DRIFT_REQUIRES_EXPLICIT_BUDGET")
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            base=self.make_repo(root)
+            wf=root/WORKFLOW
+            self.assertIn("modelica-3rdparty/SystemDynamics.git",wf.read_text())
+            wf.write_text(wf.read_text().replace(
+                "modelica-3rdparty/SystemDynamics.git",
+                "different-org/SystemDynamics.git"))
+            cmd(root,"add",".");cmd(root,"commit","-qm","changed numerical library origin")
+            result=decision(root,base)
+            self.assertTrue(result["numerical_changed"])
+            self.assertEqual(result["status"],"BLOCKED_NUMERICAL_DRIFT_REQUIRES_EXPLICIT_BUDGET")
+
+    def test_non_numeric_workflow_metadata_does_not_force_omc(self):
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            base=self.make_repo(root)
+            wf=root/WORKFLOW
+            wf.write_text(wf.read_text().replace(
+                "Recover original three M3 candidates, two worlds, and six parameter-shift worlds",
+                "Human-readable step title changed").replace(
+                "retention-days: 60","retention-days: 30"))
+            cmd(root,"add",".");cmd(root,"commit","-qm","metadata only")
+            self.assertFalse(decision(root,base)["numerical_changed"])
 
 
 if __name__ == "__main__":
