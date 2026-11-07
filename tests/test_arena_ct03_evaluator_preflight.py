@@ -17,7 +17,7 @@ from test_arena_ct03_prospective_lock import fixture as lock_fixture
 
 
 def fixture(root):
-    _, secret, public, registry=credentials(root)
+    _, secret, public, registry, archive_secret, archive_public=credentials(root)
     producer=root/"producer"
     producer.mkdir()
     construction, _, d, m, entries=lock_fixture(producer)
@@ -38,8 +38,8 @@ def fixture(root):
         "archive_id":"TEST_ONLY_ARCHIVE_123456",
         "archived_before_evaluator_access":True,
     }
-    witness=signed(root,statement,"LOCK_ARCHIVE","TEST_ARCHIVER",secret)
-    return producer,private,lock,witness,registry,public,config,secret
+    witness=signed(root,statement,"LOCK_ARCHIVE","TEST_ARCHIVER",archive_secret)
+    return producer,private,lock,witness,registry,archive_public,config,archive_secret
 
 
 class EvaluatorPreflightTests(unittest.TestCase):
