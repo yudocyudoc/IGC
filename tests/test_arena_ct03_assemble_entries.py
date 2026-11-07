@@ -84,7 +84,7 @@ class StrictThirteenAssemblyTests(unittest.TestCase):
             d12,b13,d,m=fixture(root)
             missing=copy.deepcopy(d12)
             missing["rows"].pop()
-            with self.assertRaisesRegex(ValueError,"EXACT_THIRTEEN"):
+            with self.assertRaisesRegex(ValueError,"PUBLIC_SCOPE_OR_STATUS"):
                 assemble(missing,b13,public(),d,m)
             forged=copy.deepcopy(b13)
             forged["row"]["initial"]["native_sha256"]="sha256:"+"f"*64
