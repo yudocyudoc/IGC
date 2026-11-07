@@ -30,6 +30,12 @@
     "ct03_B_F172_08_ci": {
       "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
       "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+    },
+    "ct03_thirteen_entry_offline_CI": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42418374711",
+      "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42418374710",
+      "code_sha": "7e655b8922f8420d77a107cb079e5a0fea34ec13",
+      "scope": "synthetic M revision receipt/projection, B native+review+physical-shaped 13th slot, 13-entry assembly only; no CT03 live resources"
     }
   },
   "CT00": {
@@ -333,7 +339,7 @@
     }
   },
   "CT03": {
-    "status": "B_NATIVE_FULL_CUMULATIVE_MONOTONICITY_FIXED_TESTED_OFFLINE_F172_08_CT03_LIVE_B_AND_REVISIONS_CUSTODY_UNWIRED_AND_UNAUTHORIZED",
+    "status": "TWELVE_DM_REVISIONS_AND_B_THIRTEENTH_SLOT_JOIN_PREPARED_OFFLINE_THIRTEEN_ENTRIES_NOT_ARCHIVED_CT03_NOT_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -397,11 +403,11 @@
       "reserved_truth_read": false
     },
     "remaining_operational_gates": [
-      "Actual custodian separate account/credential isolation and one frozen true-world OMC before public construction release, without private mounts in producer CI.",
-      "One authorized and frozen CT03 workflow wiring original B initial+review calls (max 2), ten D/M original attempts, B conditional physical solve, six possible M and one B physical revisions, with shared <=19 actual new OMC budget if D0/M0 reused. Default is denied; NO live CT03 currently authorized.",
-      "B original native producer call with real provider receipt, output observable: unique terminal delivery stock can now be prepared and later checked physically; ambiguous port is explicitly UNRESOLVED (not G1), and native G1 translation blockers are distinct. Real B initial and revised source/physics not yet run.",
-      "Separate M-revision physical execution+receipts, B own currentModel revision+physical receipt and B prospective slot with failures retained. Integrate with 12 D/M into 13-slot prediction lock archived BEFORE revealing t6/t8.",
-      "Run evaluator only after human custodian verifies frozen lock and disables producer access. No CT03 world selected, reserved truth read or score computed."
+      "Deploy effective CT03 custodian/producer account credential isolation, private one-world OMC, public release ONLY t0/t1/t2/t4; do not mount world params, heldout CSV or custodian tokens into producer workflows.",
+      "Integrate a SINGLE authorized CT03 manual workflow with shared cost counter, original Buffalo initial+review (max 2 POST), the existing D/M ten-once script, M revised-once script, and B original/revised conditional physical OMC; stop each route without retry and keep 13 slots.",
+      "Check actual Buffalo original/currentModel native receipt provenance and execution, revised/initial Modelica + native cumulative output operator, per-CSV full-trace monotonicity and conservation. Scripts exist but neither Buffalo live call nor B physical run has been performed for CT03.",
+      "Build B thirteenth row from real provider/native+solver evidence (or documented no-native/blocked), join with twelve D/M and archive the resulting entries as an immutable prospective 13-slot lock through GitHub before revealing t6/t8. Local entries file is NOT an archive.",
+      "Evaluator custodian verifies archive/disabled producer access then alone reads t6/t8, calculates original MAE/baselines, keeps failures in full denominator. No scoring or reveal to date."
     ],
     "d_m_producer_link": {
       "status": "TEN_INITIAL_NEW_ORIGINALS_STAGED_ZERO_EXECUTED_AND_TWELVE_OWN_POLICIES_CONNECTED_OFFLINE",
@@ -475,12 +481,24 @@
         "scripts/arena_cafe/ct03_b_physical_prepare.py",
         "scripts/arena_cafe/ct03_b_physical_result.py",
         "tests/test_arena_ct03_b_physical_prepare.py",
-        "tests/test_arena_ct03_b_physical_result.py"
+        "tests/test_arena_ct03_b_physical_result.py",
+        "scripts/arena_cafe/ct03_m_revision_physical.py",
+        "scripts/arena_cafe/ct03_m_revision_execute_once.sh",
+        "scripts/arena_cafe/ct03_b_lock_projection.py",
+        "scripts/arena_cafe/ct03_assemble_entries.py",
+        "tests/test_arena_ct03_m_revision_physical.py",
+        "tests/test_arena_ct03_b_lock_projection.py",
+        "tests/test_arena_ct03_assemble_entries.py"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
       "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
-      "consumes_no_omc_or_provider_by_tests": true
+      "consumes_no_omc_or_provider_by_tests": true,
+      "last_tested_code_sha": "7e655b8922f8420d77a107cb079e5a0fea34ec13",
+      "last_verified_CI": {
+        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42418374711",
+        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42418374710"
+      }
     },
     "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
     "review_received": {
@@ -550,6 +568,61 @@
       "new_buffalo_posts": 0,
       "new_des": 0,
       "CT03_authorized": false
+    },
+    "m_revision_physical_join": {
+      "status": "ORIGINAL_M2_SELECTED_REVISIONS_RECEIPTS_AND_SINGLE_SHOT_EXECUTOR_PREPARED_OFFLINE_NOT_RUN",
+      "verifier": "scripts/arena_cafe/ct03_m_revision_physical.py",
+      "executor": "scripts/arena_cafe/ct03_m_revision_execute_once.sh",
+      "physical_result_source": "original own_policy revised native Modelica and simulate.mos from ct03_m_revision_prepare",
+      "no_revised_parent_without_own_feedback": true,
+      "max_selected_revisions": 6,
+      "modelica_integrity_checked_before_first_omc": true,
+      "per_parent_omc_attempt_registered_before_execution": true,
+      "verdicts": [
+        "PREDICTED",
+        "G2_FAILED"
+      ],
+      "native_integrity_error_is_whole_batch_stop": true,
+      "numerical_failed_candidate_remains_in_denominator": true,
+      "outcomes_consumed_via_full_receipts": "scripts/arena_cafe/ct03_dm_lock_projection.py::project_from_revision_report",
+      "live_revision_attempts_ct03": 0,
+      "CI_tests_use_synthetic_csv_log": true
+    },
+    "b_revision_and_slot": {
+      "status": "B_SECOND_CURRENTMODEL_NATIVE_AND_13TH_ROW_READY_OFFLINE_NOT_RUN",
+      "original_engine_reused": "scripts/arena_b_ct03_native_runner.mjs",
+      "plan": "scripts/arena_cafe/ct03_b_physical_prepare.py::prepare(revision_provenance=...)",
+      "lock_projection": "scripts/arena_cafe/ct03_b_lock_projection.py",
+      "second_B_provider_response_requires": {
+        "original_parent_receipt": true,
+        "own_ATMS_diagnostic_packet": true,
+        "original_engine_revision_receipt": true,
+        "same_world_and_source": true
+      },
+      "unchanged_native_result": "RATIFIED with initial physical consequence, no repeat OMC",
+      "changed_native_result": "REVISED only with new G1/observable physical outcome or explicit blocked G1 state",
+      "original_provider_failure": "NO_NATIVE with own actual failure receipt retained in 13th slot; no fake zero",
+      "no_second_B_POST": "NOT_EXECUTED only when named stop reason is supplied, never silent ratification",
+      "original_B_initial_live_calls": 0,
+      "original_B_revision_live_calls": 0,
+      "real_B_OMC": 0,
+      "synthetic_tests_not_physical_evidence": true
+    },
+    "thirteen_entry_assembler": {
+      "status": "STRICT_13_ENTRIES_READY_ONLY_IF_ALL_REAL_EVIDENCE_CONTRACTS_MET_NOT_ARCHIVED",
+      "implementation": "scripts/arena_cafe/ct03_assemble_entries.py",
+      "exact_slots": {
+        "D": 6,
+        "M": 6,
+        "B": 1
+      },
+      "checks": "original frozen registry+validate_row, cross-world and source, no duplicate, no missing candidate or tampered B parent",
+      "output": "entries.json only, same schema as ct03_prospective_lock INPUT_SCHEMA",
+      "github_archive_still_required": true,
+      "evaluator_truth_still_private": true,
+      "archived_lock_created": false,
+      "source_dataset_world_selected": false,
+      "scientifically_scored": false
     }
   },
   "unchanged": [
