@@ -83,7 +83,7 @@ def generated():
                 "    Modelica.Blocks.Sources.RealExpression stimulus(",
                 "      y=if probe==1 then pulse.y else if probe==2 then step.y else",
                 "        if probe==3 then ramp.y else highPulse.y);",
-            ]), expected), "CT03_M_NON_STIMULUS_ORIGINAL_CHANGED")
+            ]), "    // Only publicly supplied experimental stimulus; molecule internals unchanged.\\n" + expected), "CT03_M_NON_STIMULUS_ORIGINAL_CHANGED")
         rows.append({
             "index": idx, "canonical_sha256": key,
             "full_ast_sha256": digest(graph),
