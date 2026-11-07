@@ -20,6 +20,9 @@ from scripts.arena_cafe.ct03_b_physical_prepare import (
 from scripts.arena_cafe.ct03_b_physical_result import (
     SCHEMA as PHYSICAL_SCHEMA,CUMULATIVE_MONOTONIC_EPS_ITEMS
 )
+from scripts.arena_cafe.ct03_b_physical_outcome import (
+    SCHEMA as FAILURE_SCHEMA,STATUS as FAILURE_STATUS,G2_CHECK_FAILURES
+)
 from scripts.arena_cafe.ct03_prospective_lock import validate_row,sha
 from scripts.arena_cafe.e02_b_feedback import _model_sha
 from scripts.arena_cafe.ct_feedback_bridge import require
@@ -50,6 +53,52 @@ def _state(native_sha,plan,physical,receipt):
             "receipt_sha256":digest({
                 "native_provider_receipt":digest(receipt),
                 "original_G1_or_observable_plan":digest(plan)
+            }),"forecast":None
+        }
+    # A consumed physical attempt may fail after the original native was
+    # returned. Preserve its own attempted-run receipt; no trace or forecast.
+    if type(physical) is dict and physical.get("status")==FAILURE_STATUS:
+        require(status=="B_NATIVE_PHYSICAL_PLANNED_NO_OMC" and
+                physical.get("schema")==FAILURE_SCHEMA and
+                physical.get("world_public_id")==plan["world_public_id"] and
+                physical.get("source_snapshot_hash")==plan["source_snapshot_hash"] and
+                physical.get("round_kind")==plan["round_kind"] and
+                physical.get("parent_native_sha256")==native_sha and
+                physical.get("native_modelica_sha256")==
+                    plan["translated_modelica_sha256"] and
+                physical.get("script_sha256")==plan["script_sha256"] and
+                physical.get("observation_operator")==plan["observation_operator"] and
+                sha(physical.get("attempt_record_sha256")) and
+                sha(physical.get("solver_log_sha256")) and
+                (physical.get("csv_sha256") is None or
+                 sha(physical["csv_sha256"])) and
+                type(physical.get("github_code_sha")) is str and
+                len(physical["github_code_sha"])==40 and
+                all(c in "0123456789abcdef" for c in
+                    physical["github_code_sha"]) and
+                type(physical.get("github_run_id")) is str and
+                physical["github_run_id"].isdigit() and
+                physical.get("attempted") is True and
+                physical.get("forecast") is None and
+                physical.get("reserved_truth_read") is False and
+                physical.get("independent_solver_execution_proven") is False and
+                physical.get("no_provider_or_solver_call_by_collector") is True and
+                type(physical.get("omc_exit_code")) is int and
+                0<=physical["omc_exit_code"]<=255 and
+                ((physical["omc_exit_code"]>0 and
+                  physical.get("failure_class")=="OMC_EXIT_NONZERO" and
+                  physical.get("failure_reason")==
+                    "OMC_EXIT_NONZERO:"+str(physical["omc_exit_code"])) or
+                 (physical["omc_exit_code"]==0 and
+                  physical.get("failure_class")=="G2_PHYSICAL_CHECK_FAILED" and
+                  physical.get("failure_reason") in G2_CHECK_FAILURES)),
+                "CT03_B_LOCK_FAILED_PHYSICAL_ATTEMPT_RECEIPT_MISMATCH")
+        return {
+            "status":"G2_FAILED","native_sha256":native_sha,
+            "trace_sha256":None,
+            "receipt_sha256":digest({
+                "native_provider_receipt":digest(receipt),
+                "original_solver_failed_attempt":digest(physical)
             }),"forecast":None
         }
     require(status=="B_NATIVE_PHYSICAL_PLANNED_NO_OMC" and
