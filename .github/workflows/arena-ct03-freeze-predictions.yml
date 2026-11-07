@@ -40,9 +40,15 @@ jobs:
           [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
           [[ "$SOURCE_RUN" =~ ^[1-9][0-9]*$ ]]
           test "$FROZEN" = "$GITHUB_SHA"
-          ACTUAL="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" --jq '.head_sha')"
-          test "$ACTUAL" = "$FROZEN"
-          echo "CT03_PRODUCER_RUN_SAME_FROZEN_SHA source=$SOURCE_RUN"
+          META="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN")"
+          test "$(jq -r '.head_sha' <<< "$META")" = "$FROZEN"
+          test "$(jq -r '.event' <<< "$META")" = workflow_dispatch
+          test "$(jq -r '.conclusion' <<< "$META")" = success
+          test "$(jq -r '.run_attempt' <<< "$META")" = 1
+          test "$(jq -r '.path' <<< "$META")" = ".github/workflows/arena-ct03-producer.yml"
+          test "$(jq -r '.head_branch' <<< "$META")" = experiment/arena-ct00-ct02-20261107
+          test "$SOURCE_RUN" != "$GITHUB_RUN_ID"
+          echo "CT03_PRODUCER_AUTHORIZED_WORKFLOW_AND_SAME_FROZEN_SHA source=$SOURCE_RUN"
       - name: Download ONLY source producer bundle, never custodian private world
         uses: actions/download-artifact@v4
         with:
