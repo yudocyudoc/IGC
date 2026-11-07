@@ -279,6 +279,8 @@ jobs:
                           recorded_at='2026-11-07T12:00:00+00:00')
           memory=recover_feedback(db,ctx,parent_hash=parent,
                           as_known_at='2026-11-07T12:00:01+00:00')
+          print('CT03_B_MOCK_RETRIEVAL_KEYS_TYPES', {
+            k: (str(v)[:100], type(v).__name__) for k,v in memory['retrieval'].items()})
           feedback={'schema':'igc-ct03-b-own-feedback/1.0','arm':'B',
              'world_public_id':'W1','condition_id':'C0','source_snapshot_hash':source,
              'parent_result_sha256':parent,
