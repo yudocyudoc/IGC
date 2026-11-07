@@ -113,59 +113,182 @@ def _policy_decision(arm, diagnostics):
 
 
 def _memory(ledger, arm, condition, report, recorded):
-    """One scoped before/after revision per D/M condition in existing F1a + ATMS."""
+    """Store actual source -> native -> diagnostic -> feedback -> decision lineage.
+
+    Existing F1a ledger is canonical. ATMS supports *use* of artifacts, not
+    truth of their scientific content. Exactly one scoped development round.
+    """
     case=f"E02-{arm}-{condition}"
-    anchor=case+":NATIVE_EVIDENCE_ASSUMED"
-    rule=case+":REVIEW_SUPPORT"
-    knowledge=case+":KNOWLEDGE"
-    first=case+":INITIAL"
-    second=case+":RETAINED_AMBIGUITY"
+    need(arm in ARMS and condition in CONDS and type(report) is dict,
+         "E02_MISSING_OR_INVALID_EVIDENCE_RECORD")
+    need(set(report)=={"source","native","diagnostics","feedback","decision"},
+         "E02_EVIDENCE_CHAIN_INCOMPLETE")
+    source,native,diagnostics,feedback,decision=(
+        report[k] for k in ("source","native","diagnostics","feedback","decision"))
+    need(type(source) is dict and source.get("source_snapshot_hash") and
+         source.get("visible_sha256") and source.get("condition")==condition,
+         "E02_SOURCE_NOT_HASH_BOUND")
+    need(type(native) is dict and native.get("arm")==arm and
+         native.get("manifest_sha256") and native.get("G2")==
+         "HISTORICAL_AUTHENTIC_REAL_OMC_VERIFIED",
+         "E02_NATIVE_NOT_HASH_BOUND")
+    need(type(diagnostics) is list and len(diagnostics)==6 and
+         all(type(x) is dict and x.get("candidate") and
+             type(x.get("diagnostic")) is dict for x in diagnostics) and
+         len({x["candidate"] for x in diagnostics})==6,
+         "E02_DIAGNOSTIC_SET_INVALID")
+    ids=[x["candidate"] for x in diagnostics]
+    need(native.get("candidate_ids")==ids and
+         type(native.get("verified_g2_traces")) is dict and
+         set(native["verified_g2_traces"])==set(ids) and
+         all(isinstance(v,str) and v.startswith("sha256:") and len(v)==71
+             for v in native["verified_g2_traces"].values()),
+         "E02_NATIVE_TRACE_IDENTITY_MISMATCH")
+    need(type(feedback) is dict and
+         feedback.get("own_diagnostic_by_candidate")==diagnostics and
+         feedback.get("rival_outputs_visible") is False and
+         feedback.get("physical_private_des_visible") is False and
+         type(decision) is dict and decision.get("private_feedback")==feedback and
+         decision.get("first_decision",{}).get("candidate_ids")==ids and
+         decision.get("second_decision",{}).get("candidate_ids")==ids and
+         decision.get("author")=="EXPLICIT_EXPERIMENTAL_POLICY_NOT_ORIGINAL_ENUMERATOR",
+         "E02_FEEDBACK_OR_DECISION_NOT_CAUSED_BY_OWN_DIAGNOSTIC")
+    need(recorded.tzinfo is not None and recorded.utcoffset() is not None,
+         "E02_RECORDED_TIME_NEEDS_ZONE")
     t0=recorded.astimezone(timezone.utc)
     t1=t0+timedelta(microseconds=1)
-    stages=[
-        (anchor,"ATMSNode",{"kind":"assumption","active":True,
-             "assumption_type":"G2_ENGINEERING_NOT_SCIENTIFICALLY_FITTED"},t0,"anchor"),
-        (rule,"ATMSNode",{"kind":"justification","active":True,
-             "antecedents":[anchor],"consequent":first,"source_id":anchor},t0,"rule0"),
-        (knowledge,"KnowledgeItem",{"kind":"knowledge","active":True,
-             "node_id":first,"source_id":anchor,
-             "title":case+" initial native universe",
-             "text":"G2 historical six native candidates, no selection",
-             "source_revision":1,"epistemic_status":"ENGINEERING_ONLY"},t0,"knowledge0"),
-        (rule,"ATMSNode",{"kind":"justification","active":True,
-             "antecedents":[anchor],"consequent":second,"source_id":anchor},t1,"rule1"),
-        (knowledge,"KnowledgeItem",{"kind":"knowledge","active":True,
-             "node_id":second,"source_id":anchor,
-             "title":case+" retained ambiguity after feedback",
-             "text":"Own descriptive discrepancies, no epsilon model or native refit",
-             "source_revision":2,"epistemic_status":"DESCRIPTIVE_UNRESOLVED"},t1,"knowledge1"),
-    ]
-    for entity,typ,payload,t,key in stages:
-        stamp=t.isoformat()
+    stamps=[t.isoformat() for t in (t0,t1)]
+    bodies={"source":source,"native":native,"diagnostics":diagnostics,
+            "feedback":feedback,"decision":decision}
+    hashes={k:digest(v) for k,v in bodies.items()}
+    ids_map={k:case+":"+k.upper()+":"+h[7:23] for k,h in hashes.items()}
+    initial=case+":INITIAL"
+    revised=case+":RETAINED_AMBIGUITY"
+    support=case+":SUPPORT"
+    fb_rule=case+":FEEDBACK_FROM_DIAGNOSTIC"
+    decision_rule=case+":DECISION_FROM_FEEDBACK"
+    knowledge=case+":KNOWLEDGE"
+    staged=[]
+
+    def put(entity,typ,payload,at,key):
+        staged.append((entity,typ,payload,stamps[at],case+":"+key))
+
+    # Hash-identified artifacts carry the evidence itself, not only a generic
+    # stamp. Their references can be checked against native manifests/CSV.
+    for role,body in bodies.items():
+        put(case+":ARTIFACT:"+role.upper(),"EvidenceArtifact",{
+            "schema":"igc-e02-evidence-artifact/0.1",
+            "artifact_sha256":hashes[role],
+            "artifact_role":role,
+            "data":body,
+            "dependencies":(
+                [] if role=="source" else
+                ["source:"+hashes["source"]] if role=="native" else
+                ["native:"+hashes["native"]] if role=="diagnostics" else
+                ["diagnostics:"+hashes["diagnostics"]] if role=="feedback" else
+                ["feedback:"+hashes["feedback"]]),
+        },0 if role in ("source","native") else 1,"artifact-"+role)
+    for role in ("source","native","diagnostics"):
+        put(ids_map[role],"ATMSNode",{
+            "kind":"assumption","active":True,
+            "evidence_artifact_sha256":hashes[role],
+            "assumption_type":"DOCUMENTED_EVIDENCE_AVAILABLE_NOT_SCIENTIFIC_TRUTH"
+        },0 if role!="diagnostics" else 1,"anchor-"+role)
+    put(support,"ATMSNode",{"kind":"justification","active":True,
+        "antecedents":[ids_map["source"],ids_map["native"]],
+        "consequent":initial,"source_id":ids_map["native"]},0,"support-v1")
+    put(knowledge,"KnowledgeItem",{"kind":"knowledge","active":True,
+        "node_id":initial,"source_id":ids_map["native"],
+        "title":case+" native universe before own feedback",
+        "text":"Six authentic G2 engineering traces, no scientific model band",
+        "source_revision":1,"source_artifact_sha256":hashes["source"],
+        "native_artifact_sha256":hashes["native"]},0,"knowledge-v1")
+    put(fb_rule,"ATMSNode",{"kind":"justification","active":True,
+        "antecedents":[ids_map["diagnostics"]],
+        "consequent":ids_map["feedback"],
+        "source_id":ids_map["diagnostics"],
+        "feedback_sha256":hashes["feedback"]},1,"feedback-rule")
+    put(decision_rule,"ATMSNode",{"kind":"justification","active":True,
+        "antecedents":[ids_map["feedback"]],
+        "consequent":ids_map["decision"],"source_id":ids_map["feedback"],
+        "decision_sha256":hashes["decision"]},1,"decision-rule")
+    put(support,"ATMSNode",{"kind":"justification","active":True,
+        "antecedents":[ids_map["source"],ids_map["native"],ids_map["decision"]],
+        "consequent":revised,"source_id":ids_map["decision"]},1,"support-v2")
+    put(knowledge,"KnowledgeItem",{"kind":"knowledge","active":True,
+        "node_id":revised,"source_id":ids_map["decision"],
+        "title":case+" revision supported by own diagnostics",
+        "text":decision["second_decision"]["status"],
+        "source_revision":2,
+        "diagnostics_sha256":hashes["diagnostics"],
+        "feedback_sha256":hashes["feedback"],
+        "decision_sha256":hashes["decision"]},1,"knowledge-v2")
+    for entity,typ,payload,stamp,key in staged:
         ledger.append_revision(entity_id=entity,entity_type=typ,case_id=case,
-             actor_id="arena-e02-explicit-policy",idempotency_key=case+":"+key,
-             payload=payload,recorded_at=stamp,created_at=stamp,
-             access_policy="lane:"+arm)
+            actor_id="arena-e02-explicit-policy",idempotency_key=key,
+            payload=payload,recorded_at=stamp,created_at=stamp,
+            access_policy="lane:"+arm)
     cuts=[]
-    for t in (t0,t1):
-        stamp=t.isoformat()
-        rev=ledger.snapshot(case_id=case,as_known_at=stamp)
-        eng,projection=project(events_from_ledger(rev),as_known_at=stamp,
+    engines=[]
+    for stamp in stamps:
+        snapshot=ledger.snapshot(case_id=case,as_known_at=stamp)
+        eng,projection=project(events_from_ledger(snapshot),as_known_at=stamp,
                                investigation_id=case,lane=arm)
         kn,events=load_events_from_ledger(Path(ledger.db_path),case,stamp)
         result=retrieve(investigation_id=case,lane=arm,as_known_at=stamp,
                         query="native ambiguity",knowledge_records=kn,
                         atms_events=events)
-        cuts.append({"at":stamp,"initial_supported":eng.explain(first)["supported"],
-                     "retained_supported":eng.explain(second)["supported"],
+        cuts.append({"at":stamp,
+                     "initial_supported":eng.explain(initial)["supported"],
+                     "retained_supported":eng.explain(revised)["supported"],
                      "visible_knowledge":[x["node_id"] for x in result["items"]],
                      "projection_hash":projection["projection_hash"]})
-    if not cuts[0]["initial_supported"] or cuts[0]["retained_supported"] or \
-       cuts[1]["initial_supported"] or not cuts[1]["retained_supported"]:
-        raise ValueError("E02_MEMORY_NOT_RECONSTRUCTIBLE")
-    return {"status":"SCOPED_ATMS_REVISION_DEMONSTRATED_NOT_EMPIRICAL_LEARNING",
-            "case_id":case,"cuts":cuts}
+        engines.append(eng)
+    need(cuts[0]["initial_supported"] and
+         not cuts[0]["retained_supported"] and
+         not cuts[1]["initial_supported"] and
+         cuts[1]["retained_supported"],"E02_TEMPORAL_SUPPORT_NOT_EVIDENCE_BOUND")
+    alternative=engines[1].what_if(disable_assumptions=(ids_map["diagnostics"],))
+    need(revised in alternative["changed_nodes"] and
+         ids_map["source"] not in alternative["changed_nodes"] and
+         ids_map["native"] not in alternative["changed_nodes"],
+         "E02_DIAGNOSTIC_REMOVAL_NOT_LOCALIZED")
+    return {"status":"SCOPED_ATMS_EVIDENCE_BOUND_REVISION_NOT_EMPIRICAL_LEARNING",
+            "case_id":case,"cuts":cuts,"artifact_sha256":hashes,
+            "support_node_ids":ids_map,
+            "diagnostic_removal_changes_only_dependent_conclusions":True,
+            "recorded_revisions":len(staged),
+            "truth_status":"NOT_ESTABLISHED_BY_ATMS"}
 
+
+def retract_e02_diagnostic(ledger, arm, condition, node_id, recorded):
+    """Append an actual correction; never mutate an older knowledge snapshot."""
+    case=f"E02-{arm}-{condition}"
+    need(arm in ARMS and condition in CONDS and
+         node_id.startswith(case+":DIAGNOSTICS:") and
+         recorded.tzinfo is not None,"E02_INVALID_RETRACTION_CONTEXT")
+    stamp=recorded.astimezone(timezone.utc).isoformat()
+    # Do not accept arbitrary nodes from another case or synthetic assumptions.
+    prior=ledger.snapshot(case_id=case,as_known_at=stamp)
+    matches=[x for x in prior if x.entity_id==node_id and
+             x.entity_type=="ATMSNode" and
+             x.payload.get("kind")=="assumption" and x.payload.get("active") is True]
+    need(len(matches)==1,"E02_DIAGNOSTIC_NOT_CURRENTLY_ACTIVE")
+    ledger.append_revision(entity_id=node_id,entity_type="ATMSNode",
+        case_id=case,actor_id="arena-e02-diagnostic-retraction",
+        idempotency_key=case+":retract:"+node_id+":"+stamp,
+        payload={"kind":"assumption","active":False,
+                 "reason":"EVIDENCE_DIAGNOSTIC_RETRACTED",
+                 "superseded_diagnostic_hash":matches[0].payload["evidence_artifact_sha256"]},
+        recorded_at=stamp,created_at=stamp,access_policy="lane:"+arm)
+    eng,_=project(events_from_ledger(
+         ledger.snapshot(case_id=case,as_known_at=stamp)),
+         as_known_at=stamp,lane=arm,investigation_id=case)
+    return {"case_id":case,"at":stamp,"revised_supported":
+            eng.explain(case+":RETAINED_AMBIGUITY")["supported"],
+            "source_supported":True,
+            "native_supported":True,
+            "reason":"WITHDRAWN_DIAGNOSTIC_AFFECTS_ITS_DEPENDENT_DECISION"}
 
 def run(o0,o1,d_dir,m_dir,db):
     from scripts.arena_cafe.native_handoff import validate_a1_visible
@@ -201,7 +324,32 @@ def run(o0,o1,d_dir,m_dir,db):
                              else "E1_FIXED_PRIORS_NOT_ESTIMATED",
                 "H_j":diagnostics,"decision":decision,
             }
-            memory=_memory(ledger,arm,cond,decision,datetime.now(timezone.utc))
+            verified=d_verified if arm=="D" else m_verified
+            verified_traces={}
+            for x in verified["candidates"]:
+                key=x["candidate_id"] if arm=="D" else x["canonical_sha256"]
+                verified_traces[key]=(x["csv_sha256"] if arm=="D"
+                                      else x["solver_csv_sha256"])
+            evidence_record={
+                "source":{
+                    "condition":cond,
+                    "source_snapshot_hash":v["source_snapshot_hash"],
+                    "visible_sha256":digest(v),
+                    "public_cutoff_minutes_exact":
+                        v["observability"]["cutoff_minutes_exact"],
+                },
+                "native":{
+                    "arm":arm,"manifest_sha256":digest(manifest),
+                    "candidate_ids":[x["candidate"] for x in diagnostics],
+                    "verified_g2_traces":verified_traces,
+                    "G2":"HISTORICAL_AUTHENTIC_REAL_OMC_VERIFIED",
+                },
+                "diagnostics":diagnostics,
+                "feedback":decision["private_feedback"],
+                "decision":decision,
+            }
+            memory=_memory(ledger,arm,cond,evidence_record,
+                           datetime.now(timezone.utc))
             results[cond][arm]["memory"]=memory
     return {"schema":SCHEMA,"case":"EV-01","dataset":"PUBLIC_DEVELOPMENT_O0_O1",
             "status":"E02_PARTIAL_B_NOT_RUN_D_M_POLICY_REVIEW_RECORDED",
