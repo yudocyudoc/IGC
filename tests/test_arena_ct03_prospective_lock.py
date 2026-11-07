@@ -13,7 +13,7 @@ from scripts.arena_cafe.ct03_m_prepare import prepare as prepare_m
 from scripts.arena_cafe.ct03_public import PUBLIC_INPUT, OBS_SCHEMA
 from scripts.arena_cafe.ct03_world_custody import PUBLIC_SCHEMA
 from scripts.arena_cafe.ct03_prospective_lock import (
-    INPUT_SCHEMA, registry, seal, verify_locked,
+    INPUT_SCHEMA, registry, seal, verify_locked, PROTOCOL,
 )
 
 SRC = "sha256:" + "a" * 64
@@ -34,7 +34,8 @@ def fixture(root):
     commitment = {
         "schema": PUBLIC_SCHEMA, "world_public_id": "W1",
         "source_definition_sha256": digest(PUBLIC_INPUT),
-        "private_commitment_sha256": H("b"), "protocol_sha256": H("c"),
+        "private_commitment_sha256": H("b"),
+        "protocol_sha256": digest(json.loads(PROTOCOL.read_text(encoding="utf-8"))),
         "status": "WORLD_COMMITTED_NOT_EXECUTED_NO_PUBLIC_CONSTRUCTION_YET",
         "evaluator_boundary": "PROCEDURAL_JOB_ISOLATION_NOT_OS_ACL_PROOF",
         "omc_executed": 0, "provider_calls": 0,
@@ -90,6 +91,9 @@ class ProspectiveLockTests(unittest.TestCase):
             wrong["rows"][0]["true_t8"] = 2
             with self.assertRaisesRegex(ValueError, "UNKNOWN_ROW"):
                 seal(c, world, d, m, wrong)
+            bad_commitment = {**world, "protocol_sha256": H("c")}
+            with self.assertRaisesRegex(ValueError, "CUSTODY_COMMITMENT_INVALID"):
+                seal(c, bad_commitment, d, m, entries)
             wrong = copy.deepcopy(c)
             wrong["observations"].append({"time": 8, "delivered": 2})
             with self.assertRaisesRegex(ValueError, "FOUR_CONSTRUCTION"):
