@@ -38,14 +38,54 @@ EXACT = frozenset({
     "data/synthetic/arena_v0_declared_d_assumptions.json",
 })
 PREFIXES = ("src/modelica/",)
-RUNTIME_PATTERNS = (
-    r"openmodelica/openmodelica:v[0-9.]+-minimal",
-    r"--branch v[0-9.]+",
-    r'method="[A-Za-z0-9]+"',
-    r"tolerance=[0-9.eE-]+",
-    r"stopTime=[0-9.]+",
-    r"numberOfIntervals=[0-9]+",
-)
+def physical_runtime_contract(workflow: str) -> dict:
+    """Fingerprint ALL effective steps in the physical job, not six regex tokens.
+
+    Step labels, gate metadata, tests and artifact-retention settings are not
+    numeric dependencies. But shell scripts, their entire inline Python, library
+    Git origins/refs, container images, environment and executable versions
+    are. Unknown physical-job syntax blocks instead of authorizing reuse.
+    """
+    parts = re.split(r"(?m)^  physical-m3:\\s*$", workflow)
+    if len(parts) != 2:
+        raise ValueError("CT00_PHYSICAL_JOB_MISSING_OR_DUPLICATED")
+    block = re.split(r"(?m)^  [A-Za-z0-9_-]+:\\s*$", parts[1], maxsplit=1)[0]
+    lines = block.splitlines()
+    runners = [x.strip() for x in lines if re.match(r"^    runs-on:", x)]
+    if len(runners) != 1 or not any(x.strip() == "steps:" for x in lines):
+        raise ValueError("CT00_PHYSICAL_RUNTIME_UNRECOGNIZED")
+    boundaries = [i for i, line in enumerate(lines)
+                  if re.match(r"^      - (name|uses):", line)]
+    if len(boundaries) < 5:
+        raise ValueError("CT00_PHYSICAL_STEPS_UNRECOGNIZED")
+    if re.search(r"(?m)^      - (?!name:|uses:)", block):
+        raise ValueError("CT00_UNKNOWN_PHYSICAL_STEP_KIND")
+    boundaries.append(len(lines))
+    effective = []
+    for index, end in zip(boundaries, boundaries[1:]):
+        step = lines[index:end]
+        header = step[0].strip()
+        # A changed upload-retention name/path is an artifact policy, not a
+        # changed solver call. Preserve ALL other steps and shell contents.
+        if header.startswith("- uses: actions/upload-artifact@"):
+            continue
+        if "run: >" in "\n".join(step):
+            raise ValueError("CT00_UNKNOWN_FOLDED_SHELL_SCRIPT")
+        if header.startswith("- name:"):
+            step = step[1:]  # only the human-readable name is metadata
+        if not any("run: |" in x for x in step) and not header.startswith("- uses:"):
+            raise ValueError("CT00_STEP_WITHOUT_RUN_OR_ACTION")
+        effective.append("\n".join(step).rstrip())
+    serialized = "\n".join(effective)
+    required = ("git clone", "SystemDynamics.git", "ModelicaStandardLibrary.git",
+                "docker pull", "docker run", "openmodelica/openmodelica:",
+                "simulate(", "startTime=", "stopTime=", "numberOfIntervals=",
+                "method=", "tolerance=", "OPENMODELICALIBRARY=", "omc")
+    if not all(token in serialized for token in required):
+        raise ValueError("CT00_RUNTIME_NUMERICAL_CONTRACT_UNRECOGNIZED")
+    return {"runner": runners[0], "effective_steps": effective}
+
+
 
 
 def git(*args: str, cwd: Path | None = None) -> bytes:
@@ -65,14 +105,9 @@ def dependencies(ref: str, repo: Path) -> dict[str, str]:
     if not EXACT.issubset(found) or not any(k.startswith("src/modelica/") for k in found):
         raise ValueError("CT00_INCOMPLETE_NUMERICAL_DEPENDENCY_CLOSURE")
     wf = git("show", f"{ref}:{WORKFLOW}", cwd=repo).decode("utf-8")
-    tokens = []
-    for pattern in RUNTIME_PATTERNS:
-        terms = re.findall(pattern, wf)
-        if not terms:
-            raise ValueError("CT00_SOLVER_RUNTIME_CONFIG_UNRECOGNIZED:" + pattern)
-        tokens += sorted(terms)
+    contract = physical_runtime_contract(wf)
     found["@runtime_omc_libraries_solver_settings"] = hashlib.sha256(
-        json.dumps(tokens, separators=(",", ":")).encode("utf-8")
+        json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
     return found
 
