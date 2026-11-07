@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42354612232",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42355793979",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42354612212",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42355793988",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "cf6a02bdb9cb6ecd61bb223eed569e6a394c9afc"
+    "verified_code_sha": "0d272d069ad4c939f61eb7f47a279985b8e5e2ab"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -42,7 +42,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "F172_01_02_03_04_05_OFFLINE_CONTRACT_CORRECTIONS_VERIFIED_NOT_SCIENTIFIC_END_TO_END",
+    "status": "F172_01_TO_06_CONTRACT_AND_CLI_REGRESSIONS_VERIFIED_NOT_SCIENTIFIC_END_TO_END",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -79,7 +79,8 @@
       "F172-02: Python canonical diagnostic bytes cross JS boundary as exact base64; digest, JSON content, own inner arm/condition/source/parent, construction times and exact ATMS item_id/temporal retrieval checked before original Buffalo SDK; mock Python-ledger-ATMS-to-B chain CI passed.",
       "F172-04 (amended by follow-up): CSV output class is NOT encoded in root field name; class identity belongs in candidate/command/runner receipt, root deliveredTotal remains unprefixed.",
       "F172-05: Python/JS construction validators reject +/- 0.5 at t0, excessive 3.0 at t1, and negative or unsupported cumulative delivery; valid four public cuts still accepted.",
-      "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected."
+      "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected.",
+      "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
@@ -190,6 +191,21 @@
         "physical_m3": "SKIPPED"
       },
       "limits": "No actual new CT03 solver CSV exists. Command and receipt provenance are checked for internal consistency, not independently authenticated as a solver execution. Custody, isolation and prospective lock remain outstanding."
+    },
+    "cli_followup": {
+      "review_file": "REVISION_PR172_CIERRE_F172_04_2761160_2026-11-07.md",
+      "reviewed_head": "276116003b2dacdcb62f374f4289b69b4e4db23d",
+      "finding": "F172-06 P2: CLI required --simulate-script but did not forward simulate_script_file to build().",
+      "status": "CORRECTED_VERIFIED_OFFLINE",
+      "implementation": "scripts/arena_cafe/ct03_m_construction_diagnostic.py::main forwards simulate_script_file=args.simulate_script to build(), preserving the existing signature and strict receipt/script checks.",
+      "regression": "tests/test_arena_ct03_m_construction_diagnostic.py::test_cli_accepts_native_fixture_and_rejects_changed_script invokes python -m with all fixture files; asserts exit 0, written JSON equals direct build(), no provider/new OMC; changed simulate.mos rejects without output file.",
+      "code_ci_head": "0d272d069ad4c939f61eb7f47a279985b8e5e2ab",
+      "verified_ci": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42355793988",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42355793979",
+        "physical_m3": "SKIPPED"
+      },
+      "scope": "Only caller wiring and offline CLI regression. F172-04 stays closed. No scientific CT02 end-to-end acceptance nor CT03 authorization."
     }
   }
 }
