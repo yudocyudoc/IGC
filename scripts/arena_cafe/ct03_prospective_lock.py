@@ -26,6 +26,8 @@ DECISIONS = {"D": ("RATIFIED", "NOT_EXECUTED"),
              "M": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED"),
              "B": ("REVISED", "RATIFIED", "ABSTAINED", "NOT_EXECUTED")}
 SHA = re.compile(r"sha256:[0-9a-f]{64}\Z")
+PROTOCOL = (Path(__file__).resolve().parents[2] /
+            "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json")
 M_TOPOLOGY_KEY = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -179,9 +181,17 @@ def seal(construction, commitment, d_manifest, m_manifest, entries):
                       "private_commitment_sha256", "protocol_sha256", "status",
                       "evaluator_boundary", "omc_executed", "provider_calls"),
          "CT03_LOCK_CUSTODY_COMMITMENT_FIELDS")
+    protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    require(protocol.get("schema") == "igc-ct03-preexecution-protocol/1.0" and
+            protocol["world"]["construction_times_hours"] == [0, 1, 2, 4] and
+            protocol["world"]["heldout_times_hours"] == [6, 8] and
+            protocol["cost"]["currently_authorized_new_provider_post"] == 0 and
+            protocol["cost"]["currently_authorized_new_omc"] == 0,
+            "CT03_LOCK_PREEXECUTION_PROTOCOL_DRIFT")
     require(commitment["schema"] == WORLD_SCHEMA and
             sha(commitment["private_commitment_sha256"]) and
             sha(commitment["protocol_sha256"]) and
+            commitment["protocol_sha256"] == digest(protocol) and
             commitment["source_definition_sha256"] == digest(PUBLIC_INPUT),
             "CT03_LOCK_CUSTODY_COMMITMENT_INVALID")
     require(type(construction) is dict and
