@@ -141,3 +141,35 @@ test("CT03 B has separate NONE vs malformed horizon statuses",()=>{
   assert.equal(classifyCt03NativeResult({mode:"mock",model_returned:true,
     horizon_matches_case:false}).status,"CT03_NATIVE_HORIZON_MISMATCH");
 });
+
+test("CT03 B accepts only receipt-backed no-trajectory G2 as own revision feedback",()=>{
+  const native={model:{specs:{stopTime:8},variables:[],relationships:[]}};
+  const receipt={case_id:"CT-03",world_public_id:"W1",condition_id:"C0",
+    round_kind:"initial",source_snapshot_hash:SHA,model_returned:true,
+    mode:"mock",provider_calls:0,result_sha256:digest(native)};
+  const basic=fixtureFeedback(receipt.result_sha256);
+  const d={...basic.own_diagnostic,
+    evidence:"G2",trace_sha256:null,observations:[],
+    own_physical_outcome_sha256:"sha256:"+"b".repeat(64),
+    attempt_record_sha256:"sha256:"+"c".repeat(64),
+    no_valid_trajectory_or_forecast:true,
+    physical_failure_class:"G2_PHYSICAL_CHECK_FAILED",
+    physical_failure_reason:"CT03_B_PHYS_MATERIAL_MASS_BALANCE_FAILED"};
+  const packet=(diag)=>{
+    const bytes=Buffer.from(canonical(diag),"utf8");
+    return {...basic,own_diagnostic:diag,
+      own_diagnostic_canonical_base64:bytes.toString("base64"),
+      own_diagnostic_sha256:"sha256:"+createHash("sha256").update(bytes).digest("hex")};
+  };
+  const verify=fb=>validateCt03Revision({
+    native,receipt,feedback:fb,visible:visible("revision"),mode:"mock"});
+  assert.equal(verify(packet(d)).feedback.own_diagnostic.evidence,"G2");
+  assert.throws(()=>verify(packet({...d,attempt_record_sha256:null})),
+    /OWN_SCOPE_OR_PROVENANCE/);
+  assert.throws(()=>verify(packet({...d,no_valid_trajectory_or_forecast:false})),
+    /OWN_SCOPE_OR_PROVENANCE/);
+  assert.throws(()=>verify(packet({...d,physical_failure_reason:""})),
+    /OWN_SCOPE_OR_PROVENANCE/);
+  assert.throws(()=>verify(packet({...d,observations:[{time:6,residual:0}]})),
+    /OWN_SCOPE_OR_PROVENANCE|OUTSIDE_CONSTRUCTION/);
+});
