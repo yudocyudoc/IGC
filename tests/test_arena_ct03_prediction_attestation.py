@@ -12,7 +12,7 @@ from test_arena_ct03_execution_boundary import credentials, runner_fixture, sign
 
 
 def evidence(root):
-    _,secret,public,registry=credentials(root)
+    _,secret,public,registry,archive_secret,archive_public=credentials(root)
     producer,manifest,parent,receipt,mo,csv,log,statement=runner_fixture(root)
     sources = root/"lock-sources"
     sources.mkdir()
