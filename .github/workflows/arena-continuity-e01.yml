@@ -277,6 +277,52 @@ jobs:
           assert r['proxy_requests']==0
           print('B_EV01_CROSS_CONDITION_REVIEW_REJECTED_BEFORE_UPSTREAM')
           PY
+      - name: Assert actual upstream OpenRouter SDK and effective CF payload parity, zero provider
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from hashlib import sha256
+          root=Path('artifacts/e01')
+          out={}
+          for cond in ('O0','O1','O0-revision-mock'):
+              base=root/('b-native-'+cond)
+              req=json.loads((base/'cf-effective-request.json').read_text())
+              metadata=json.loads((base/'request-metadata.json').read_text())
+              receipt=json.loads((base/'receipt.json').read_text())
+              wire=req['body']
+              assert req['target_endpoint']=='Workers AI /ai/run/{model}'
+              assert req['actual_model']=='@cf/zai-org/glm-5.3-flash'
+              assert metadata['backend']=='OPEN_ROUTER'
+              assert metadata['original_alias_model']=='cloudflare/glm-5.3-flash'
+              assert receipt['transport']=='CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA'
+              assert receipt['provider_calls']==0
+              assert receipt['proxy_requests']==1
+              assert receipt['backend_alias']=='cloudflare/glm-5.3-flash'
+              assert receipt['original_engine_max_tokens']==16000
+              assert receipt['configured_http_timeout_ms']==360000
+              assert wire['max_completion_tokens']==16000
+              assert wire['reasoning_effort']=='low' and wire['stream'] is False
+              assert 'model' not in wire
+              assert wire['response_format']['type']=='json_schema'
+              schema=wire['response_format']['json_schema']
+              assert 'name' not in schema and 'strict' not in schema and 'schema' not in schema
+              assert 'variables' in schema['properties'] and 'relationships' in schema['properties']
+              assert len(wire['messages'])>=2
+              assert all(m['role'] in ('system','user','assistant') for m in wire['messages'])
+              digest='sha256:'+sha256(json.dumps(wire,separators=(',',':'),
+                        ensure_ascii=False).encode()).hexdigest()
+              assert digest==req['body_sha256']==receipt['translated_body_sha256']
+              assert receipt['model_returned'] is True
+              out[cond]=receipt
+          assert out['O0']['arrival_signal_sha256']==out['O1']['arrival_signal_sha256']
+          assert out['O0']['arrival_signal_sha256']==out['O0-revision-mock']['arrival_signal_sha256']
+          assert out['O0-revision-mock']['parent_as_original_currentModel'] is True
+          assert out['O0-revision-mock']['own_feedback_sha256']
+          assert out['O0-revision-mock']['request_sha256']!=out['O0']['request_sha256']
+          print('BUFFALO_EV01_PROVEN_R2_TRANSPORT_PAYLOAD_PARITY_OFFLINE_PASS')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: arena-continuity-e01-buffalo-ev01-original-offline-chain
