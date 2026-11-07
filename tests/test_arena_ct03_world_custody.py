@@ -1,5 +1,9 @@
 """CT-03 world factory is evaluator-private, unselected and never run by CI."""
 from copy import deepcopy
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -7,6 +11,8 @@ import unittest
 from scripts.arena_cafe.ct03_world_custody import (
     validate, make_private_source, prepare_private
 )
+from scripts.arena_v0_contract import digest
+from scripts.arena_cafe.ct03_prospective_lock import PROTOCOL
 
 
 def fixture(n=2):
@@ -52,6 +58,50 @@ class WorldFactoryTest(unittest.TestCase):
             config[key]=value
             with self.assertRaises(ValueError,msg=key):
                 validate(config)
+
+
+    def test_cli_guards_private_root_and_frozen_protocol_before_creating_world(self):
+        """No private config/world may reside under producer or code checkout."""
+        with TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            producer=root/"producer"
+            producer.mkdir()
+            config=fixture()
+            config["protocol_sha256"]=digest(json.loads(
+                PROTOCOL.read_text(encoding="utf-8")))
+            private_config=root/"sealed-config.json"
+            private_config.write_text(json.dumps(config),encoding="utf-8")
+            private_out=root/"custodian-private"
+            public=root/"public-commitment.json"
+            repo=Path(__file__).resolve().parents[1]
+            base=[
+                sys.executable,"-m","scripts.arena_cafe.ct03_world_custody",
+                "--sealed-config",str(private_config),
+                "--private-out",str(private_out),
+                "--public-commitment",str(public),
+                "--producer-root",str(producer),
+            ]
+            env={**os.environ,
+                 "IGC_CT03_CUSTODIAN_AUTH":"CT03_POST_LOCK_CUSTODIAN_ONLY"}
+            good=subprocess.run(base,cwd=repo,env=env,capture_output=True,
+                                text=True,timeout=30)
+            self.assertEqual(good.returncode,0,good.stderr)
+            self.assertTrue((private_out/"private-manifest.json").is_file())
+            self.assertTrue(public.is_file())
+            forbidden=repo/"artifacts/DO_NOT_CREATE_TEST_PRIVATE"
+            wrong=[
+                sys.executable,"-m","scripts.arena_cafe.ct03_world_custody",
+                "--sealed-config",str(private_config),
+                "--private-out",str(forbidden),
+                "--public-commitment",str(root/"bad-commitment.json"),
+                "--producer-root",str(producer),
+            ]
+            rejected=subprocess.run(wrong,cwd=repo,env=env,capture_output=True,
+                                    text=True,timeout=30)
+            self.assertNotEqual(rejected.returncode,0)
+            self.assertIn("CT03_WORLD_PRIVATE_PATH_INSIDE_REPO_OR_PRODUCER",
+                          rejected.stderr)
+            self.assertFalse(forbidden.exists())
 
 
 if __name__=="__main__":
