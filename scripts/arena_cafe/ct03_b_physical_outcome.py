@@ -37,11 +37,8 @@ G2_CHECK_FAILURES=frozenset({
     "CT03_REUSE_FULL_HORIZON_OR_PREDICTIONS_MISSING",
 })
 
-def collect(*,native,receipt,plan,root,github_sha,github_run_id):
-    require(type(github_sha) is str and len(github_sha)==40 and
-            all(c in "0123456789abcdef" for c in github_sha) and
-            type(github_run_id) is str and github_run_id.isdigit(),
-            "CT03_B_OUTCOME_REAL_RUN_ID_REQUIRED")
+def preflight(*,native,receipt,plan,root):
+    """Fail closed on parent/translation/script BEFORE any actual OMC attempt."""
     require(type(receipt) is dict and type(plan) is dict and
             plan.get("schema")==PLAN_SCHEMA and
             plan.get("status")=="B_NATIVE_PHYSICAL_PLANNED_NO_OMC" and
@@ -73,6 +70,18 @@ def collect(*,native,receipt,plan,root,github_sha,github_run_id):
             'fileNamePrefix="'+(root/"b-original").as_posix()+'"' in
                 mos.read_text(encoding="utf-8"),
             "CT03_B_OUTCOME_NATIVE_SCRIPT_INTEGRITY_STOP")
+    return {"status":"B_PHYSICAL_SOURCE_PREFLIGHT_OK_NOT_EXECUTED",
+            "round_kind":plan["round_kind"],
+            "parent_native_sha256":receipt["result_sha256"],
+            "new_omc":0,"provider_calls":0}
+
+def collect(*,native,receipt,plan,root,github_sha,github_run_id):
+    require(type(github_sha) is str and len(github_sha)==40 and
+            all(c in "0123456789abcdef" for c in github_sha) and
+            type(github_run_id) is str and github_run_id.isdigit(),
+            "CT03_B_OUTCOME_REAL_RUN_ID_REQUIRED")
+    preflight(native=native,receipt=receipt,plan=plan,root=root)
+    root=Path(root)
     meta_path=root/"omc-exit.json"
     log=root/"b-original-omc.log"
     require(meta_path.is_file() and log.is_file() and log.stat().st_size>0,
@@ -125,9 +134,16 @@ def main():
         p.add_argument("--"+flag,type=Path,required=True)
     p.add_argument("--git-sha",required=True)
     p.add_argument("--run-id",required=True)
+    p.add_argument("--preflight-only",action="store_true")
     a=p.parse_args()
-    require(not a.out.exists(),"CT03_B_OUTCOME_REFUSE_OVERWRITE")
+    require(a.preflight_only or not a.out.exists(),
+            "CT03_B_OUTCOME_REFUSE_OVERWRITE")
     def read(path): return json.loads(path.read_text(encoding="utf-8"))
+    if a.preflight_only:
+        result=preflight(native=read(a.native),receipt=read(a.receipt),
+                         plan=read(a.plan),root=a.root)
+        print(json.dumps(result))
+        return
     result=collect(native=read(a.native),receipt=read(a.receipt),
                    plan=read(a.plan),root=a.root,
                    github_sha=a.git_sha,github_run_id=a.run_id)
