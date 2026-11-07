@@ -258,3 +258,66 @@ def b_review_envelope(db, context, *, original_native, authenticated_receipt=Non
             "retrieved_before_policy": memory["retrieval"],
             "provider_calls": 0, "new_omc": 0,
             "warning": "NO_LIVE_UNTIL_ORIGINAL_RECEIPT_BYTES_AND_NEW_CASE_ADAPTER_VERIFIED"}
+
+
+def persist_disposition(db, context, *, decision, recorded_at):
+    """Persist a D/M disposition with a support dependency on recovered feedback.
+
+    A B staging envelope is never accepted as a Buffalo revision. Scientific
+    fitness is not conferred by ATMS; revised M models still require new G2/G5.
+    """
+    require(context["arm"] in ("D", "M") and isinstance(decision, dict),
+            "CT02_NOT_AN_EXECUTED_D_M_DISPOSITION")
+    require(decision.get("status") in ("REVISED", "RATIFIED", "ABSTAINED") and
+            isinstance(decision.get("retrieved_before_policy"), dict),
+            "CT02_NOT_AN_OWN_POLICY_DISPOSITION")
+    stamp = _utc(recorded_at)
+    parent_hash = decision.get("parent_hash")
+    own = recover_feedback(db, context, parent_hash=parent_hash, as_known_at=stamp)
+    require(decision["retrieved_before_policy"] == own["retrieval"] or (
+        decision["retrieved_before_policy"]["item_id"] == own["retrieval"]["item_id"] and
+        decision["retrieved_before_policy"]["projection_hash"] == own["retrieval"]["projection_hash"] and
+        decision["retrieved_before_policy"]["as_known_at"] <= stamp),
+        "CT02_DECISION_NOT_FROM_RETRIEVED_OWN_FEEDBACK")
+    require(decision.get("feedback_hash") == own["diagnostic_hash"] and
+            decision.get("provider_calls") == 0 and
+            decision.get("new_omc") == 0,
+            "CT02_DECISION_FEEDBACK_OR_COST_MISMATCH")
+    ids = _ids(context)
+    status = decision["status"]
+    prepared = {"schema": SCHEMA, "status": status,
+                "policy": decision.get("policy"), "parent_hash": parent_hash,
+                "feedback_hash": own["diagnostic_hash"],
+                "new_graph_hash": decision.get("new_graph_hash") if status == "REVISED" else None,
+                "parameter_edits": decision.get("parameter_edits", []),
+                "consequences_not_resimulated": True,
+                "scientific_status": "METHOD_DISPOSITION_ONLY_NOT_HELDOUT_EVALUATION"}
+    rule = {"kind": "justification", "active": True, "scope": context,
+            "antecedents": [ids["feedback"]], "consequent": ids["decision"],
+            "source_id": ids["feedback"],
+            "interpretation": "DECISION_TRACED_TO_OWN_FEEDBACK_NOT_CAUSAL_VERIFICATION"}
+    knowledge = {"kind": "knowledge", "active": True, "scope": context,
+                 "node_id": ids["decision"], "source_id": ids["feedback"],
+                 "title": "Own decision following feedback",
+                 "text": "Own policy disposition after retrieval of supported feedback",
+                 "item_type": "OWN_POLICY_DISPOSITION",
+                 "epistemic_status": "NOT_PREDICTIVELY_VALIDATED", "source_revision": 1,
+                 "prepared_disposition": prepared}
+    ledger = _ledger(db)
+    for role, typ, payload in (("decision_rule", "ATMSNode", rule),
+                               ("decision", "KnowledgeItem", knowledge)):
+        ledger.append_revision(entity_id=ids[role], entity_type=typ,
+            case_id=context["case_id"], actor_id="ct02-own-policy-disposition",
+            idempotency_key=ids[role] + ":initial",
+            payload=payload, recorded_at=stamp, created_at=stamp,
+            access_policy="lane:" + context["arm"])
+    revs = ledger.snapshot(case_id=context["case_id"], as_known_at=stamp)
+    engine, _ = project(events_from_ledger(revs), as_known_at=stamp,
+                        lane=context["arm"], investigation_id=context["case_id"])
+    require(engine.explain(ids["decision"])["supported"],
+            "CT02_PERSISTED_DECISION_UNSUPPORTED")
+    return {"status": "DISPOSITION_RECORDED_WITH_OWN_FEEDBACK_SUPPORT",
+            "case_id": context["case_id"], "method_status": status,
+            "scientific_status": prepared["scientific_status"],
+            "model_change_count": int(status == "REVISED"),
+            "provider_calls": 0, "new_omc": 0}
