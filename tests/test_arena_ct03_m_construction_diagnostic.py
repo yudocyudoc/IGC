@@ -93,7 +93,7 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
                 build(c, manifest=m, parent=p, construction=o, receipt=changed,
                       modelica_file=n, trace_csv=s)
             with self.assertRaisesRegex(ValueError, "PARENT_NOT_FROM_THE_SIX"):
-                build(c, manifest=m, parent=m["candidates"][1],
+                build(c, manifest=m, parent={**m["candidates"][1], "spurious": True},
                       construction=o, receipt=r, modelica_file=n, trace_csv=s)
 
     def test_missing_exact_time_is_not_zero_or_interpolated(self):
