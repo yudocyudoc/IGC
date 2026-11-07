@@ -539,10 +539,10 @@
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
       "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
       "consumes_no_omc_or_provider_by_tests": true,
-      "last_tested_code_sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
+      "last_tested_code_sha": "484b5a6572d0f527136bd7b8cbf6ed02d104f393",
       "last_verified_CI": {
-        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
-        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673"
+        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42426930590",
+        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42426930704"
       }
     },
     "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
@@ -823,7 +823,16 @@
       "evidence_budget": "0 CT03 OMC / 0 CT03 provider posts / 0 CT03 DES",
       "offline_replays_are_not_real_provider_or_solver": true,
       "original_engines_modified": false,
-      "ct03_live_authorized": false
+      "ct03_live_authorized": false,
+      "code_tested_sha": "484b5a6572d0f527136bd7b8cbf6ed02d104f393",
+      "offline_verified": {
+        "recovered_capabilities": "https://github.com/yudocyudoc/IGC/actions/runs/42426930590",
+        "continuity_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42426930704",
+        "real_provider_calls": 0,
+        "real_new_omc": 0,
+        "physical_m3": "SKIPPED",
+        "bash_replays": "Bash original with synthetic local Node substitution (4), not live provider or physics"
+      }
     }
   },
   "unchanged": [
