@@ -18,6 +18,56 @@ permissions:
   contents: read
   actions: read
 jobs:
+  ct03-reuse-authentic-ct02-originals:
+    # An actual GitHub artifact from the already spent two-run CT02 lot;
+    # no producer world/feedback, solver, provider, DES or secrets.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify authentic source run/artifact metadata with GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/42409210062)"
+          test "$(echo "$RUN" | jq -r '.head_sha')" = 6534ec6bbbe0c48265d1e4eb0d1d243c7fe55b4d
+          test "$(echo "$RUN" | jq -r '.event')" = workflow_dispatch
+          test "$(echo "$RUN" | jq -r '.conclusion')" = success
+          test "$(echo "$RUN" | jq -r '.run_attempt')" = 1
+          ART="$(gh api repos/$GITHUB_REPOSITORY/actions/artifacts/13588621967)"
+          test "$(echo "$ART" | jq -r '.name')" = arena-ct02-technical-attempt-42409210062
+          test "$(echo "$ART" | jq -r '.expired')" = false
+          test "$(echo "$ART" | jq -r '.workflow_run.id')" = 42409210062
+          test "$(echo "$ART" | jq -r '.digest')" = sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac
+          echo CT03_CT02_ARCHIVE_ORIGIN_AND_DIGEST_METADATA_CONFIRMED
+      - name: Download only the original CT02 physical artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-ct02-technical-attempt-42409210062
+          run-id: 42409210062
+          github-token: ${{ github.token }}
+          path: artifacts/ct03-reuse/original
+      - name: Compare two originals bytewise with fresh D/M native generators and runtime
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct03_reuse_ct02 \
+            --original-artifact-dir artifacts/ct03-reuse/original \
+            --out artifacts/ct03-reuse/reused-original-two.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-reuse-two-ct02-originals-no-omc
+          path: artifacts/ct03-reuse/reused-original-two.json
+          if-no-files-found: error
   d-m-pinned-g2-reuse:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
