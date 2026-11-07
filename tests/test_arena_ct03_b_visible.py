@@ -28,5 +28,30 @@ class BuffaloVisibleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"CT02_M_WRONG_CONSTRUCTION_SCOPE"):
             view(self.visible(),world="W2",round_kind="initial")
 
+
+    def test_f172_05_initial_and_available_mass_are_required(self):
+        from scripts.arena_cafe.ct03_public import validate_construction
+        ctx={"source_hash":SRC,"world":"W1","condition":"C0"}
+        valid=self.visible()
+        self.assertEqual(len(validate_construction(ctx,valid)),4)
+        for initial in (-.5,.5):
+            altered=self.visible()
+            altered["observations"][0]["delivered"]=initial
+            if initial<0:
+                for p in altered["observations"][1:]:
+                    p["delivered"]=.6
+            with self.subTest(initial=initial),self.assertRaisesRegex(
+                    ValueError,"INVALID_OBSERVED_DELIVERY_OR_INPUT_CAUSAL_BOUND"):
+                validate_construction(ctx,altered)
+        invalid=self.visible()
+        for p,v in zip(invalid["observations"],[0,3.,3.1,3.2]):
+            p["delivered"]=v
+        with self.assertRaisesRegex(ValueError,"INVALID_OBSERVED_DELIVERY_OR_INPUT_CAUSAL_BOUND"):
+            validate_construction(ctx,invalid)
+        invalid=self.visible()
+        invalid["observations"][2]["delivered"]=-.01
+        with self.assertRaises(ValueError):
+            validate_construction(ctx,invalid)
+
 if __name__=="__main__":
     unittest.main()
