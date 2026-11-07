@@ -63,6 +63,7 @@ def runner_fixture(root):
     log.write_text("TEST ONLY: fabricated stdout, never an OpenModelica run!\n")
     statement = {
         "case_id": "CT-03", "world_public_id": "W1", "arm": "M",
+        "round_kind": "initial",
         "candidate_id": parent["canonical_sha256"],
         "parent_hash": parent["full_ast_sha256"],
         "receipt_sha256": digest(receipt),
