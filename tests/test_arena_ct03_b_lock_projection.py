@@ -9,7 +9,7 @@ import unittest
 from scripts.arena_v0_contract import digest
 from scripts.arena_cafe.ct03_b_physical_prepare import prepare
 from scripts.arena_cafe.ct03_b_physical_result import check
-from scripts.arena_cafe.ct03_b_lock_projection import project
+from scripts.arena_cafe.ct03_b_lock_projection import project,project_no_native
 from scripts.arena_cafe.ct03_prospective_lock import validate_row
 from scripts.arena_cafe.e02_b_feedback import _model_sha
 from test_arena_ct03_b_physical_result import setup
@@ -133,6 +133,28 @@ class BuffaloSlotTests(unittest.TestCase):
                         initial_plan=plan,initial_physical=physical,
                         revision_native=revised,revision_receipt=second,
                         revision_plan=rev_plan)
+
+    def test_failed_live_original_B_occupies_slot_without_fake_zero(self):
+        receipt={
+            "case_id":"CT-03","world_public_id":public()["world_public_id"],
+            "condition_id":"C0",
+            "source_snapshot_hash":public()["source_snapshot_hash"],
+            "round_kind":"initial","mode":"live","model_returned":False,
+            "status":"CT03_PROVIDER_ATTEMPT_NO_NATIVE",
+            "upstream_source_modified":False,
+            "upstream_sha":"5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+            "transport":"CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA",
+            "provider_calls":1
+        }
+        result=project_no_native(receipt,public())
+        check_row(result)
+        self.assertEqual(result["row"]["initial"]["status"],"NO_NATIVE")
+        self.assertIsNone(result["row"]["initial"]["forecast"])
+        self.assertEqual(result["row"]["initial"],result["row"]["final"])
+        self.assertEqual(result["row"]["decision"]["status"],"NOT_EXECUTED")
+        tampered={**receipt,"world_public_id":"OTHER_WORLD"}
+        with self.assertRaisesRegex(ValueError,"NO_NATIVE_NEEDS_REAL_ORIGINAL"):
+            project_no_native(tampered,public())
 
     def test_review_parent_or_own_diagnostic_mismatch_rejected(self):
         with TemporaryDirectory(dir=".") as temp:
