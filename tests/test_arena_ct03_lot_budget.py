@@ -52,6 +52,17 @@ class LotBudgetTests(unittest.TestCase):
                          run_id=RUN,git_sha=SHA)
             self.assertEqual(budget["schema"],SCHEMA)
             self.assertEqual(verify_receipt(budget,run_id=RUN,git_sha=SHA),17)
+            construction={"world_public_id":"W1","source_snapshot_hash":SRC,
+                          "condition_id":"C0",
+                          "observations":[{"time":t} for t in (0,1,2,4)]}
+            self.assertEqual(verify_receipt(budget,run_id=RUN,git_sha=SHA,
+                                            construction=construction),17)
+            for change in ({"world_public_id":"W2"},
+                           {"source_snapshot_hash":"sha256:"+"f"*64},
+                           {"observations":[{"time":t} for t in (0,1,2,6)]}):
+                with self.assertRaisesRegex(ValueError,"B_OTHER_WORLD_OR_PUBLIC_SOURCE"):
+                    verify_receipt(budget,run_id=RUN,git_sha=SHA,
+                                   construction={**construction,**change})
             self.assertEqual(17+budget["b_physical_omc_max"],19)
             self.assertEqual(set(budget),{
                 "schema","world_public_id","source_snapshot_hash",
