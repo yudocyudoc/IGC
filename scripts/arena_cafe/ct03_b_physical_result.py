@@ -19,6 +19,9 @@ from scripts.arena_cafe.ct03_m_construction_diagnostic import sha_bytes
 from scripts.arena_cafe.ct_feedback_bridge import require
 
 SCHEMA="igc-ct03-b-own-original-physical-result/1.0"
+# Numerical round-off allowance for cumulative delivery in units of items.
+# Distinct from the existing 0.008-item MATERIAL conservation tolerance.
+CUMULATIVE_MONOTONIC_EPS_ITEMS=1e-8
 
 def check(*,native:dict,receipt:dict,plan:dict,root:Path,
           github_sha:str,github_run_id:str,tolerance:float=.008):
@@ -72,6 +75,8 @@ def check(*,native:dict,receipt:dict,plan:dict,root:Path,
     require(len(cols)==len(set(cols)),
             "CT03_B_PHYS_COLLIDING_NATIVE_MATERIAL_STOCK_IDENTIFIERS")
     maximum=0.0
+    previous_time=None
+    previous_delivered=None
     with csv_file.open(encoding="utf-8-sig",newline="") as f:
         reader=csv.DictReader(f)
         require(reader.fieldnames is not None and
@@ -81,9 +86,20 @@ def check(*,native:dict,receipt:dict,plan:dict,root:Path,
         for row in reader:
             t=float(row["time"])
             states=[float(row[c]) for c in cols]
-            require(math.isfinite(t) and
+            delivered=float(row[column])
+            require(math.isfinite(t) and math.isfinite(delivered) and
                     all(math.isfinite(x) and x>=-tolerance for x in states),
                     "CT03_B_PHYS_NONFINITE_OR_NEGATIVE_MATERIAL")
+            require(previous_delivered is None or
+                    delivered >= previous_delivered-CUMULATIVE_MONOTONIC_EPS_ITEMS,
+                    "CT03_B_PHYS_CUMULATIVE_DELIVERED_DECREASED")
+            # Event-time duplicates may repeat the same cumulative value,
+            # allowing ONLY bounded numeric round-off, not a new increment.
+            if previous_time is not None and abs(t-previous_time)<=1e-9:
+                require(abs(delivered-previous_delivered) <=
+                        CUMULATIVE_MONOTONIC_EPS_ITEMS,
+                        "CT03_B_PHYS_DUPLICATE_TIME_INCONSISTENT_DELIVERIES")
+            previous_time,previous_delivered=t,delivered
             maximum=max(maximum,
                         abs(sum(states)-1.7*min(max(t,0),2)))
             require(maximum<=tolerance,
@@ -103,6 +119,7 @@ def check(*,native:dict,receipt:dict,plan:dict,root:Path,
         "observation_operator":plan["observation_operator"],
         "csv_rows":count,
         "max_abs_material_residual":maximum,
+        "cumulative_monotonicity_tolerance_items":CUMULATIVE_MONOTONIC_EPS_ITEMS,
         "github_code_sha":github_sha,
         "github_run_id":github_run_id,
         "forecast":[{"time":t,"delivered":points[t]} for t in (6,8)],
