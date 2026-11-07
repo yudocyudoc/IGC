@@ -20,7 +20,11 @@
     "ct02_technical_physical_run": "https://github.com/yudocyudoc/IGC/actions/runs/42409210062",
     "ct02_technical_artifact_id": 13588621967,
     "ct02_technical_artifact_zip_sha256": "sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac",
-    "ct02_technical_conformity": "PASS_TWO_ORIGINAL_NATIVE_MODELS_ONLY"
+    "ct02_technical_conformity": "PASS_TWO_ORIGINAL_NATIVE_MODELS_ONLY",
+    "ct03_two_initial_reuse_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42411052819",
+    "ct03_two_initial_reuse_artifact_id": 13589342812,
+    "ct03_two_initial_reuse_status": "REUSABLE_CONSEQUENCES_TWO_ORIGINALS_NOT_FEEDBACK_OR_SCORES",
+    "recovered_offline_after_reuse": "https://github.com/yudocyudoc/IGC/actions/runs/42411052826"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -46,7 +50,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "TWO_ORIGINAL_TECHNICAL_OMC_RUNS_SUCCESSFULLY_VERIFIED_OTHER_CT02_SCIENTIFIC_GATES_NOT_CLOSED",
+    "status": "ACCEPTED_PREPARATORY_SCOPE_FEEDBACK_LINK_OFFLINE_AND_D0_M0_REAL_NUMERICAL_CONFORMITY;_NOT_CT03_PROSPECTIVE_RESULT",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -84,7 +88,9 @@
       "tests/test_arena_ct03_minimal_score.py",
       ".github/workflows/arena-ct02-minimal-physical.yml",
       ".github/workflows/arena-ct03-freeze-predictions.yml",
-      "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md"
+      "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+      "scripts/arena_cafe/ct03_reuse_ct02.py",
+      "tests/test_arena_ct03_reuse_ct02.py"
     ],
     "verified": [
       "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
@@ -113,16 +119,10 @@
       "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
       "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC.",
       "F172-07: exact-two CT02 workflow now checks each original arm's source/solver/CSV/horizon/conservation immediately after its OMC invocation, before proceeding D->M. Real workflow Bash replay with mock Docker verifies invalid D performs only D attempt and valid D performs D and M; no new solver/provider calls.",
-      "CT-02 physical technical batch REAL run 42409210062 on SHA 6534ec6: original D0 and M0 OpenModelica 1.26.5 executed once each; steps and physical checks passed; GitHub artifact 13588621967 and original CSV/log/native hashes independently inspected. Scope two original models only, not 13 candidates or full prospective feedback cycle."
+      "CT-02 physical technical batch REAL run 42409210062 on SHA 6534ec6: original D0 and M0 OpenModelica 1.26.5 executed once each; steps and physical checks passed; GitHub artifact 13588621967 and original CSV/log/native hashes independently inspected. Scope two original models only, not 13 candidates or full prospective feedback cycle.",
+      "Roadmap v4 §5 CT02 PREPARATORY_ACCEPTANCE: prospective cycle need not be complete at CT02 because CT03 is designed to measure it. No further CT02 solver reruns or independent RSA review required for this scope."
     ],
-    "blockers": [
-      "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
-      "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
-      "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
-      "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
-      "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement.",
-      "Two-run numerical technical conformity is DONE; full scientific CT02 acceptance still requires authentic feedback retrieval-to-policy loop/provenance in the selected world, and CT03 requires a separate user-authorized batch for live D/M/B and heldout scoring."
-    ],
+    "blockers": [],
     "provider_new_calls": 0,
     "omc_new_simulations": 2,
     "prospective_lock_increment": {
@@ -311,10 +311,23 @@
       "scientific_G2_for_all_13": false,
       "heldout_evaluation_performed": false,
       "world_CT03_selected": false
+    },
+    "acceptance": {
+      "scope": "Roadmap v4 section 5: source-to-own-feedback-to-ATMS-retrieval-before-policy, six-parent M own_policy, D fixed, B original request/feedback mock contract, source and budget checks; two original D0/M0 real OMC technical conformities in run 42409210062.",
+      "decision": "ACCEPTED_WITHIN_PREPARATION_SCOPE_NO_CIRCULAR_CT03_REQUIREMENT",
+      "reviewer": "REVISION_PR172_EJECUCION_CT02_61D535D_2026-11-07.md",
+      "reviewed_cut": "61d535d72dac778a5fdb502d1b25c54847d85afd",
+      "physical_run_id": 42409210062,
+      "physical_artifact_id": 13588621967,
+      "physical_attempts_used": 2,
+      "physical_budget_remaining": 0,
+      "no_13_slots_claim": true,
+      "no_prospective_scores_claim": true,
+      "requires_new_world_to_accept_ct02": false
     }
   },
   "CT03": {
-    "status": "NOT_AUTHORIZED_WORLD_UNSELECTED_NO_LIVE_CT03_ONE_CT02_TECHNICAL_BATCH_COMPLETED",
+    "status": "CT02_PREPARATION_ACCEPTED_CT03_LIVE_PRODUCER_AND_CUSTODY_STILL_NOT_READY_OR_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -345,9 +358,45 @@
     "actual_archived_lock_signatures": 0,
     "minimal_runbook": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
     "live_producer_batch_connected": false,
-    "ct02_technical_prerequisite": "TWO_ORIGINAL_NATIVE_PHYSICAL_CHECKS_PASSED_NOT_FULL_CT02_ACCEPTANCE",
+    "ct02_technical_prerequisite": "CT02_ACCEPTED_PREPARATORY_AND_D0_M0_NATIVE_CONFORMITY_CLOSED",
     "heldout_opened": false,
-    "real_omc_runs": 0
+    "real_omc_runs": 0,
+    "real_initial_two_reuse": {
+      "status": "CONFIRMED_ELIGIBLE_REUSE_ONLY_NO_CT03_WORLD_NO_CONSTRUCTION_FEEDBACK_YET",
+      "origin_ct02_run": 42409210062,
+      "origin_artifact_id": 13588621967,
+      "verified_by_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42411052819",
+      "reusable_initial_candidates": [
+        "D0",
+        "M0"
+      ],
+      "forecasts": {
+        "D0": {
+          "t6": 3.379100198824965,
+          "t8": 3.39753242195592
+        },
+        "M0": {
+          "t6": 3.398933866844736,
+          "t8": 3.399984796863248
+        }
+      },
+      "artifact_reuse_report": "arena-ct03-reuse-two-ct02-originals-no-omc",
+      "result_artifact_id": 13589342812,
+      "physical_ref_identity": "same source/initials/pulse/solver/libraries/model/operator; native sources bytewise match fresh frozen D/M generation",
+      "no_feedback_or_revision_reuse": true,
+      "provisional_max_new_omc_given_exact_two_reuses": 19,
+      "original_ct03_ceiling_new_omc_unchanged": 21,
+      "new_ct03_omc_spent": 0,
+      "new_ct03_provider_posts": 0,
+      "reserved_truth_read": false
+    },
+    "remaining_operational_gates": [
+      "One actual CT03 custodian with separate account/workspace + inaccessible credentials; private config and y6/y8 cannot enter producer jobs.",
+      "Concrete CT03 producer job for remaining D1..D5 M1..M5 original native OMC, initial B original Engine.generate via existing Cloudflare transport; no new physical without CT03 batch authorization.",
+      "Own diagnostic from actual new construction t0/1/2/4, supported ledger retrieval before M six-parent own_policy / D fixed disposition / B currentModel; genuine revised M/B runs only when applicable, all failures retained.",
+      "Real 13-slot initial/final entries tied to native traces/decisions, archive prospective lock before private t6/y8 reveal; evaluate MAE and baselines only afterward.",
+      "CT03 separate authorized lot with exact stop rules and counts, no RSA required; max 21 new OMC / 2 Buffalo proposed (at most 19 OMC if two proven reuses remain eligible)."
+    ]
   },
   "unchanged": [
     "D/B/M and original equations",
