@@ -244,6 +244,67 @@ def verify_one(out:Path, *, arm:str, index:int, run_id:str, git_sha:str):
     dest.write_bytes(canonical(result)+b"\n")
     return result
 
+def record_failure(out:Path,*,arm:str,index:int,run_id:str,git_sha:str,
+                   failure_class:str,omc_exit_code:int):
+    """Preserve one consumed physical attempt that cannot become a prediction.
+
+    The authorized runner itself writes the attempt record BEFORE invoking
+    OMC. An exception from verify_one creates a G2_FAILED entry; compiler /
+    translation / contract failure cannot be converted to NOT_EXECUTED or
+    a fake zero. No retry, no model edit, no missing raw logs concealed.
+    """
+    out=Path(out)
+    require(arm in ("D","M") and index in range(1,6) and
+            type(run_id) is str and run_id.isdigit() and
+            type(git_sha) is str and len(git_sha)==40 and
+            all(c in "0123456789abcdef" for c in git_sha) and
+            failure_class in ("OMC_EXIT_NONZERO","G1_CHECK_FAILED",
+                              "G2_CHECK_FAILED","TIMEOUT","CSV_MISSING") and
+            type(omc_exit_code) is int and 0<=omc_exit_code<=255,
+            "CT03_DM_FAILURE_INVALID_ATTEMPT_METADATA")
+    plan=json.loads((out/"plan.json").read_text(encoding="utf-8"))
+    require(plan["schema"]==SCHEMA and len(plan["rows"])==10,
+            "CT03_DM_FAILURE_ORIGINAL_PLAN_MISSING")
+    row=next(x for x in plan["rows"]
+             if x["arm"]==arm and x["index"]==index)
+    prefix=row["csv_file"].split("/")[-1].removesuffix("_res.csv")
+    dest=out/arm/(prefix+"-result.json")
+    require(not dest.exists(),"CT03_DM_FAILURE_REFUSE_OVERWRITE")
+    log=Path(row["solver_log_file"])
+    require(log.is_file() and log.stat().st_size>0,
+            "CT03_DM_FAILURE_REAL_ATTEMPT_LOG_REQUIRED")
+    attempts=(out/"attempts.log").read_text(encoding="utf-8").splitlines()
+    exact=(arm+str(index)+" attempted; GitHub run "+run_id+
+           "; code "+git_sha)
+    require(attempts.count(exact)==1,
+            "CT03_DM_FAILURE_ONE_ATTEMPT_LOGGED_REQUIRED")
+    require(sha_bytes(Path(row["source_file"]).read_bytes())==
+            row["model_sha256"] and
+            sha_bytes(Path(row["script_file"]).read_bytes())==
+            row["script_sha256"],
+            "CT03_DM_FAILURE_ORIGINAL_SOURCE_OR_COMMAND_CHANGED")
+    require(failure_class=="OMC_EXIT_NONZERO" or
+            failure_class=="TIMEOUT" or omc_exit_code==0,
+            "CT03_DM_FAILURE_EXIT_CODE_CONTRADICTS_CLASS")
+    result={
+        "schema":RESULT,
+        "status":"G2_FAILED_NATIVE_ATTEMPT_NO_FORECAST",
+        "arm":arm,"index":index,"candidate_id":row["candidate_id"],
+        "parent_hash":row["parent_hash"],
+        "model_sha256":row["model_sha256"],
+        "script_sha256":row["script_sha256"],
+        "run_id":run_id,"git_sha":git_sha,
+        "attempt_log_entry":exact,
+        "solver_log_sha256":sha_bytes(log.read_bytes()),
+        "failure_class":failure_class,"omc_exit_code":omc_exit_code,
+        "trace_sha256":None,"forecast":None,
+        "new_omc_by_this_recorder":0,"provider_calls":0,
+        "not_a_synthetic_zero":True,
+    }
+    dest.write_bytes(canonical(result)+b"\n")
+    return result
+
+
 def main():
     p=argparse.ArgumentParser()
     s=p.add_subparsers(dest="mode",required=True)
@@ -253,9 +314,21 @@ def main():
     b.add_argument("--arm",required=True,choices=["D","M"])
     b.add_argument("--index",type=int,required=True)
     b.add_argument("--run-id",required=True);b.add_argument("--git-sha",required=True)
+    c=s.add_parser("record-failure")
+    c.add_argument("--out",type=Path,required=True)
+    c.add_argument("--arm",required=True,choices=["D","M"])
+    c.add_argument("--index",type=int,required=True)
+    c.add_argument("--run-id",required=True);c.add_argument("--git-sha",required=True)
+    c.add_argument("--failure-class",required=True,choices=[
+        "OMC_EXIT_NONZERO","G1_CHECK_FAILED","G2_CHECK_FAILED","TIMEOUT","CSV_MISSING"])
+    c.add_argument("--omc-exit-code",type=int,required=True)
     args=p.parse_args()
     if args.mode=="prepare":
         result=prepare(args.out,json.loads(args.reuse_report.read_text(encoding="utf-8")))
+    elif args.mode=="record-failure":
+        result=record_failure(args.out,arm=args.arm,index=args.index,
+            run_id=args.run_id,git_sha=args.git_sha,
+            failure_class=args.failure_class,omc_exit_code=args.omc_exit_code)
     else:
         result=verify_one(args.out,arm=args.arm,index=args.index,
                           run_id=args.run_id,git_sha=args.git_sha)
