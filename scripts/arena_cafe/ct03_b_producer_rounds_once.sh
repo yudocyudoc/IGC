@@ -36,6 +36,11 @@ REVISED_PLAN="$ROOT/B-revision-physical"
 RESULT="$ROOT/B-thirteenth-row.json"
 LEDGER="$ROOT/b-provider-attempts.log"
 test -s "$PUBLIC"
+test -s "${CT03_DM_COUNT_ONLY_BUDGET:?CT03_B_DM_BUDGET_REQUIRED}"
+python -m scripts.arena_cafe.ct03_lot_budget verify \
+  --receipt "$CT03_DM_COUNT_ONLY_BUDGET" \
+  --construction "$PUBLIC" \
+  --run-id "$GITHUB_RUN_ID" --git-sha "$GITHUB_SHA"
 test ! -e "$LEDGER"
 test ! -e "$RESULT"
 test ! -e "$INITIAL"
