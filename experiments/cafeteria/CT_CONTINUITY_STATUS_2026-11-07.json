@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42355793979",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42358155539",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42355793988",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42358155570",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "0d272d069ad4c939f61eb7f47a279985b8e5e2ab"
+    "verified_code_sha": "23f4d460cc17683bb0ccff6b5be5348a7789a69a"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -42,7 +42,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "F172_01_TO_06_CONTRACT_AND_CLI_REGRESSIONS_VERIFIED_NOT_SCIENTIFIC_END_TO_END",
+    "status": "F172_01_TO_06_OFFLINE_VERIFIED_PLUS_PROSPECTIVE_LOCK_PREPARED_NOT_EXPERIMENTALLY_ACCEPTED",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -63,7 +63,9 @@
       "tests/test_arena_ct03_b_visible.py",
       "tests/test_arena_b_ct03_contract.mjs",
       "tests/test_arena_ct03_world_custody.py",
-      ".github/workflows/arena-continuity-e01.yml"
+      ".github/workflows/arena-continuity-e01.yml",
+      "scripts/arena_cafe/ct03_prospective_lock.py",
+      "tests/test_arena_ct03_prospective_lock.py"
     ],
     "verified": [
       "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
@@ -80,20 +82,38 @@
       "F172-04 (amended by follow-up): CSV output class is NOT encoded in root field name; class identity belongs in candidate/command/runner receipt, root deliveredTotal remains unprefixed.",
       "F172-05: Python/JS construction validators reject +/- 0.5 at t0, excessive 3.0 at t1, and negative or unsupported cumulative delivery; valid four public cuts still accepted.",
       "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected.",
-      "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process."
+      "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process.",
+      "CT03 prospective producer lock module now enforces all 13 original slots (6 D, 6 M, 1 B), six D and three M material groups; exact own-parent feedback retrieval, initial/final states PREDICTED vs G1/G2 failure vs NO_NATIVE vs NOT_EXECUTED, and only typed forecast predictions at t6/t8. Strictly rejects evaluator truth fields and swapped parents, multiple or missing slots, false zeros, tampered bytes and overwrite.",
+      "Locking binds public custody commitment to the current CT03 preexecution protocol canonical digest and no-run budgets; a wrong protocol commitment fails before sealing. Pure function and subprocess CLI regression are CI-tested; native physical execution and withheld truth were NOT used."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
       "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
-      "CT03 evaluator/producers still need independent job boundaries and a demonstrable forecast lock before opening reserved t6/t8 values; current isolation is procedural, not OS-level proof.",
+      "Prospective producer lock code and 13-slot fixture/CLI tests exist; a REAL forecast lock, independently authenticated G2 receipts and evaluator-only reserved reveal are still missing. Custody isolation remains procedural, not OS-level proof.",
       "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
       "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement."
     ],
     "provider_new_calls": 0,
-    "omc_new_simulations": 0
+    "omc_new_simulations": 0,
+    "prospective_lock_increment": {
+      "code": "scripts/arena_cafe/ct03_prospective_lock.py",
+      "test": "tests/test_arena_ct03_prospective_lock.py",
+      "ci_code_sha": "23f4d460cc17683bb0ccff6b5be5348a7789a69a",
+      "ci_runs": [
+        "42358155539",
+        "42358155570"
+      ],
+      "status": "BYTE_SEAL_CODE_VERIFIED_NO_WORLD_NO_FORECASTS_NO_REAL_LOCK",
+      "blocked_next": "independently verifiable runner provenance, actual construction and forecasts, segregated custodian and evaluator-only reveal after immutable lock. No live/OMC budget currently authorized.",
+      "cost": {
+        "provider_calls": 0,
+        "new_omc": 0,
+        "new_des": 0
+      }
+    }
   },
   "CT03": {
-    "status": "PREPARED_UNSELECTED_NOT_AUTHORIZED_NOT_RUN_AFTER_F172_CORRECTIONS",
+    "status": "PREPARED_NOT_SELECTED_NOT_AUTHORIZED_PROSPECTIVE_LOCK_CODE_TESTED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -109,7 +129,13 @@
     "reserved_truth_opened": false,
     "prospective_lock_performed": false,
     "technical_omc_executed": 0,
-    "new_provider_posts": 0
+    "new_provider_posts": 0,
+    "prospective_lock_implementation": "scripts/arena_cafe/ct03_prospective_lock.py",
+    "prospective_lock_regression": "tests/test_arena_ct03_prospective_lock.py",
+    "prospective_lock_protocol_digest_bound": true,
+    "prospective_lock_13_slot_schema_tested": true,
+    "prospective_lock_real_seal_written": false,
+    "prospective_lock_status": "OFFLINE_CODE_AND_FIXTURE_TESTED_NO_REAL_FORECASTS_LOCKED"
   },
   "unchanged": [
     "D/B/M and original equations",
