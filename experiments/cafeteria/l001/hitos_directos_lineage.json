@@ -4,7 +4,7 @@
   "primary_locations": [
     "video2/lote_L001_v2/eventos_detallados.csv",
     "video2/lote_L001_v2/metricas.csv",
-    "video2/lote_L001_v2/eventos_maestro_v2.csv"
+    "video2/maestro_15m_v2/eventos_maestro.csv"
   ],
   "provenance_notices": [
     "MASTER_V2_HASH_KNOWN_CONTENT_NOT_AVAILABLE_FOR_INDEPENDENT_CHECK",
@@ -66,5 +66,17 @@
       "v1_source": "E132→E136",
       "revision_kind": "REVISED_ANCHOR_NOT_INDEPENDENT_CONFLICT"
     }
-  ]
+  ],
+  "external_review_attestation": {
+    "review_name": "REVISION_PR171_IMPLEMENTACION_Y_CONCLUSION_2026-11-06.md",
+    "review_scope": "REPORTED_LOCAL_COMPARISON_WITH_EVENTOS_DETALLADOS_AND_BOTH_MASTERS",
+    "direct_bounds_and_master_hashes_reported_matching": true,
+    "verified_by_this_repository_from_raw_csv": false,
+    "verdict": "SECONDARY_REVIEW_REPORT_NOT_RAW_CSV_REPRODUCTION",
+    "not_certified": [
+      "PHYSICAL_TIMEBASE",
+      "VIDEO_FRAME_IDENTITY",
+      "SERVICE_CAPACITY"
+    ]
+  }
 }

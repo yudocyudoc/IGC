@@ -22,6 +22,16 @@ class TestE00(unittest.TestCase):
                          "PENDING_PRIMARY_MASTER_AND_EVENT_EXPORT")
         self.assertEqual({x["id"] for x in result["revisions"]},{"MD-M001","MD-M002"})
 
+    def test_external_review_attestation_is_not_raw_csv_verification(self):
+        source=load_direct_source()
+        self.assertIn("video2/maestro_15m_v2/eventos_maestro.csv",
+                      source["primary_locations"])
+        self.assertNotIn("video2/lote_L001_v2/eventos_maestro_v2.csv",
+                         source["primary_locations"])
+        attest=source["external_review_attestation"]
+        self.assertTrue(attest["direct_bounds_and_master_hashes_reported_matching"])
+        self.assertFalse(attest["verified_by_this_repository_from_raw_csv"])
+
     def test_old_h07_witness_excluded_by_direct_hit(self):
         a,b=constraints(read_metrics())
         candidate=np.array([42.0,45.5,47.4,48.585])

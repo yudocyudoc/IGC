@@ -76,3 +76,17 @@ Estado E00: `LINEAGE_PATCHED_PRIMARY_SOURCE_PENDING`. El tiempo de anotación
 original no se confunde con el tiempo de ingestión de las revisiones.
 El test de memoria usa el ledger F1a y ATMS existentes y demuestra consultas
 antes/después sin convertir el soporte lógico en verdad empírica.
+
+### Auditoría de fuente posterior a PR #171
+
+La revisión independiente adjunta (2026-11-06) **informa** cotejo local con
+`video2/lote_L001_v2/eventos_detallados.csv`, ambos maestros y hashes concordantes.
+Corrige la ruta primaria del maestro v2:
+`video2/maestro_15m_v2/eventos_maestro.csv`.
+
+El repo no incorpora todavía esos CSV primarios ni una extracción ejecutable
+autenticada dentro de CI. Por ello `check_lineage()` sigue marcando
+`PENDING_PRIMARY_MASTER_AND_EVENT_EXPORT`. Este estado se refiere a
+**verificación reproducible dentro de la rama**, no desestima la revisión ajena.
+No se interpreta el reloj de video como tiempo físico y no se infiere capacidad
+de servicio a partir de dos recipientes.
