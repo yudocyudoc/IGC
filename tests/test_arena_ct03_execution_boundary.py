@@ -183,7 +183,7 @@ class IndependentWitnessContractTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"SEAL_TAMPERED"):
                 verify_archive(lock=different,witness=witness,trust_registry=registry,
                                public_key=public,producer_root=producer)
-            wrong=signed(root,{**statement,"archive_id":"OTHER_ARCHIVE_123"},
+            wrong=signed(root,{**statement,"lock_sha256":"sha256:"+"e"*64},
                          "LOCK_ARCHIVE","TEST_ARCHIVER",secret)
             with self.assertRaisesRegex(ValueError,"ARCHIVE_SIGNED_LOCK_MISMATCH"):
                 verify_archive(lock=lock,witness=wrong,trust_registry=registry,
