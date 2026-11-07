@@ -123,6 +123,7 @@ class BuffaloFailedRunnerLifecycleTests(unittest.TestCase):
             self.assertTrue(r["second_B_provider_post_observed"])
             self.assertEqual(r["second_B_provider_receipt_sha256"],digest(second))
             self.assertEqual(r["row"]["decision"]["feedback_hash"],g1["own_diagnostic_sha256"])
+            (root/"dm").mkdir()
             dm,b,d,m=dm_fixture(root/"dm")
             entries=assemble(dm,r,public(),d,m)
             self.assertEqual(len(entries["rows"]),13)
