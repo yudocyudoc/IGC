@@ -78,6 +78,9 @@ class BPhysicsPreparationTests(unittest.TestCase):
             sink=next(v for v in native["model"]["variables"]
                       if v["name"]=="delivered work")
             sink["name"]="completed output"
+            for edge in native["model"]["relationships"]:
+                if edge["to"]=="delivered work":
+                    edge["to"]="completed output"
             receipt["result_sha256"]=_model_sha(native)
             feedback=build(original=native,receipt=receipt,construction=public(),
                            recorded_at=T,out=root/"G1")
