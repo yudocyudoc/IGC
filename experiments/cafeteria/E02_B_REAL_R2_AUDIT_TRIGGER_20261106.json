@@ -1,0 +1,12 @@
+{
+  "schema": "igc-e02-b-r2-native-audit-request/0.1",
+  "source_run_id": 42331388032,
+  "source_artifacts": [
+    "arena-e02-b-corrected-live-O0",
+    "arena-e02-b-corrected-live-O1"
+  ],
+  "scope": "EXISTING_NATIVE_G1_AND_CONDITIONAL_TRANSLATOR_ONLY",
+  "new_provider_calls": 0,
+  "new_omc_runs": 0,
+  "retain_raw_provider_receipts": true
+}
