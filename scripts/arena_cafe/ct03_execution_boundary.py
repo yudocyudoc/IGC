@@ -133,8 +133,8 @@ def verify_runner(*, witness, trust_registry, public_key, producer_root,
     _check_receipt(receipt, parent, manifest, mo, csv, script,
                    Path(csv_file).name)
     _sample(csv, "deliveredTotal")
-    exact(statement, ("case_id", "world_public_id", "arm", "candidate_id",
-                      "parent_hash", "receipt_sha256", "script_sha256",
+    exact(statement, ("case_id", "world_public_id", "arm", "round_kind",
+                      "candidate_id", "parent_hash", "receipt_sha256", "script_sha256",
                       "modelica_sha256", "csv_sha256", "solver_log_sha256",
                       "command", "csv_filename", "solver_image",
                       "runner_job_id", "workflow_run_url", "exit_code"),
@@ -143,6 +143,7 @@ def verify_runner(*, witness, trust_registry, public_key, producer_root,
             type(statement["world_public_id"]) is str and
             re.fullmatch(r"[A-Za-z0-9_-]{1,64}", statement["world_public_id"]) and
             statement["arm"] == "M" and
+            statement["round_kind"] == "initial" and
             statement["candidate_id"] == parent["canonical_sha256"] and
             statement["parent_hash"] == parent["full_ast_sha256"] and
             statement["receipt_sha256"] == digest(receipt) and
@@ -167,6 +168,10 @@ def verify_runner(*, witness, trust_registry, public_key, producer_root,
         "world_public_id": statement["world_public_id"],
         "candidate_id": statement["candidate_id"],
         "parent_hash": statement["parent_hash"],
+        "round_kind": statement["round_kind"],
+        "native_sha256": statement["modelica_sha256"],
+        "trace_sha256": statement["csv_sha256"],
+        "receipt_sha256": statement["receipt_sha256"],
         "signed_statement_sha256": witness["statement_sha256"],
         "runner_job_id_claim": statement["runner_job_id"],
         "workflow_run_url_claim": statement["workflow_run_url"],
