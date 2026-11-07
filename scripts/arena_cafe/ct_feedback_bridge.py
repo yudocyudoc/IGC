@@ -220,18 +220,41 @@ def d_fixed_decision(db, context, *, parent_hash, as_known_at):
             "model_revision": False, "provider_calls": 0, "new_omc": 0}
 
 
-def b_review_envelope(db, context, *, original_native, as_known_at):
-    """Dry preparation of currentModel with exact parent and feedback; NO POST."""
+def b_review_envelope(db, context, *, original_native, authenticated_receipt=None,
+                      as_known_at):
+    """Prepare currentModel only when the original Buffalo result has a bound receipt.
+
+    This adapter does not authenticate provider bytes by itself. A separate
+    source verifier must assert the receipt and original raw model match before
+    moving READY_NOT_SENT into a real live runner. Missing evidence fails closed.
+    """
     require(context["arm"] == "B", "CT02_NOT_B")
     if not isinstance(original_native, dict) or not original_native:
         return {"status": "NOT_EXECUTED_NO_AUTHENTIC_PARENT", "provider_calls": 0}
+    model = original_native.get("model")
+    receipt = authenticated_receipt
+    if (not isinstance(model, dict) or not isinstance(model.get("variables"), list)
+            or not isinstance(model.get("relationships"), list)
+            or not isinstance(receipt, dict)
+            or receipt.get("model_returned") is not True
+            or receipt.get("round_kind") != "initial"
+            or receipt.get("condition_id") != context["condition"]
+            or receipt.get("source_snapshot_hash") != context["source_hash"]
+            or receipt.get("provider_calls") != 1
+            or receipt.get("mode") != "live"
+            or not isinstance(receipt.get("result_sha256"), str)):
+        return {"status": "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT",
+                "provider_calls": 0}
     parent_hash = digest(original_native)
     memory = recover_feedback(db, context, parent_hash=parent_hash,
                               as_known_at=as_known_at)
-    return {"status": "READY_NOT_SENT", "method": "UB-IAD/sd-ai::Engine.generate",
+    return {"status": "READY_NOT_SENT_RECEIPT_REQUIRES_EXTERNAL_BYTE_VERIFICATION",
+            "method": "UB-IAD/sd-ai::Engine.generate",
             "route": "OPEN_ROUTER_SDK_CLOUDFLARE_PROTOCOL_REUSE",
-            "currentModel": original_native,
+            "currentModel": model,
             "own_feedback": memory["diagnostic"],
-            "parent_hash": parent_hash, "retrieved_before_policy": memory["retrieval"],
+            "parent_hash": parent_hash,
+            "provider_receipt_result_sha256": receipt["result_sha256"],
+            "retrieved_before_policy": memory["retrieval"],
             "provider_calls": 0, "new_omc": 0,
-            "warning": "NOT_A_SCIENTIFIC_REVISION_UNTIL_ORIGINAL_PROVIDER_EXECUTES"}
+            "warning": "NO_LIVE_UNTIL_ORIGINAL_RECEIPT_BYTES_AND_NEW_CASE_ADAPTER_VERIFIED"}
