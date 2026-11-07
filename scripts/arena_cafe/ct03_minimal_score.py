@@ -21,7 +21,7 @@ from scripts.arena_cafe.ct03_world_custody import SCHEMA as PRIVATE_SCHEMA
 from scripts.arena_cafe.ct03_prospective_lock import verify_locked
 from scripts.arena_cafe.ct03_minimal_custody import distinct
 from scripts.arena_cafe.ct02_minimal_batch import _full_end
-from scripts.arena_cafe.ct03_feedback_bridge import require
+from scripts.arena_cafe.ct_feedback_bridge import require
 
 SCHEMA = "igc-ct03-paired-prospective-evaluation/1.0"
 FREEZE_SCHEMA = "igc-ct03-procedural-archive-ack/1.0"
