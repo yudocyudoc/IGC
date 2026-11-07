@@ -1,5 +1,10 @@
 name: E02 Buffalo R2 real native G1/adapter preflight (zero provider / OMC)
 on:
+  pull_request:
+    paths:
+      - 'scripts/arena_b_native_g1_diagnostic.mjs'
+      - 'tests/test_arena_b_native_g1_diagnostic.mjs'
+      - '.github/workflows/arena-e02-b-real-native-audit.yml'
   push:
     branches: [experiment/arena-continuity-e00-e01-20261106]
     paths:
@@ -32,6 +37,10 @@ jobs:
           run-id: 42331388032
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/real-b/O1
+      - name: Verify corrected diagnostic fixtures against original Buffalo semantics
+        run: |
+          set -euo pipefail
+          node --test tests/test_arena_b_native_g1_diagnostic.mjs
       - name: Run EXISTING original B G1 advisory diagnostic on each raw output
         run: |
           set -euo pipefail
@@ -41,6 +50,30 @@ jobs:
               "artifacts/real-b/$c/g1-diagnostic.json" \
               >"artifacts/real-b/$c/g1-stdout.json"
           done
+      - name: Verify ACTUAL native semantics, not a generic fixture
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for c,expected_codes,markers in (
+              ('O0',{'UPSTREAM_FLOW_LOOKUP_IGNORED','VARIABLE_CALLED_AS_FUNCTION'},5),
+              ('O1',{'UNDECLARED_FUNCTION_CALL'},0),
+          ):
+              root=Path('artifacts/real-b')/c
+              d=json.loads((root/'g1-diagnostic.json').read_text())
+              native=json.loads((root/'initial/native-engine-result.json').read_text())
+              codes={x['code'] for x in d['issues']}
+              assert d['schema']=='igc-b-native-g1-preflight/0.2'
+              assert len(d['one_point_graphical_markers'])==markers
+              assert expected_codes.issubset(codes),(c,expected_codes-codes)
+              assert 'MALFORMED_GRAPHICAL_FUNCTION' not in codes,(c,codes)
+              assert d['status']=='G1_ISSUES_FOUND'
+              assert d['g1_certified'] is False and d['g2_executed'] is False
+              print('REAL_NATIVE_ADMISSION',c,'codes',sorted(codes),
+                    'one-point placeholders',markers,'preserved',len(native['model']['variables']))
+          print('REAL_O0_O1_B_NATIVE_ADMISSIBILITY_BLOCKERS_CONFIRMED')
+          PY
       - name: Test existing pinned 8-hour translator against native 10-minute envelope (no solver)
         run: |
           set -euo pipefail
