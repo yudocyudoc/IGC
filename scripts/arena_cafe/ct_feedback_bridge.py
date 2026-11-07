@@ -50,6 +50,25 @@ def make_context(*, experiment, world, round_id, arm, condition, source_hash):
             "case_id": case}
 
 
+def _parent_scope(context, parent_hash):
+    """One typed subcase per own full parent hash inside the SAME world/round.
+
+    A full 256-bit hash avoids prefix collisions. This is NOT a new world,
+    condition or experimental iteration. Parents can coexist and retract
+    independently without changing their historical as-known-at cuts.
+    """
+    require(_sha(parent_hash), "CT02_PARENT_SHA_REQUIRED")
+    base = make_context(experiment=context["experiment"], world=context["world"],
+                        round_id=context["round"], arm=context["arm"],
+                        condition=context["condition"], source_hash=context["source_hash"])
+    require(context.get("case_id") in (base["case_id"],
+            base["case_id"] + "-parent-" + parent_hash[7:]),
+            "CT02_CROSS_PARENT_CONTEXT")
+    return {**base, "base_case_id": base["case_id"],
+            "candidate_parent_hash": parent_hash,
+            "case_id": base["case_id"] + "-parent-" + parent_hash[7:]}
+
+
 def _ids(context):
     case = context["case_id"]
     return {role: case + ":" + role.upper()
@@ -62,9 +81,7 @@ def _ledger(db):
 
 def record_feedback(db, context, *, parent_hash, diagnostic, recorded_at):
     """Record exact source + own-parent + observed diagnostic. Never invent G2."""
-    context = make_context(experiment=context["experiment"], world=context["world"],
-                           round_id=context["round"], arm=context["arm"],
-                           condition=context["condition"], source_hash=context["source_hash"])
+    context = _parent_scope(context, parent_hash)
     require(_sha(parent_hash) and isinstance(diagnostic, dict),
             "CT02_PARENT_OR_DIAGNOSTIC_REQUIRED")
     require(diagnostic.get("arm") == context["arm"] and
@@ -122,9 +139,7 @@ def record_feedback(db, context, *, parent_hash, diagnostic, recorded_at):
 
 def recover_feedback(db, context, *, parent_hash, as_known_at):
     """Retrieve supported own feedback from ledger before policy invocation."""
-    context = make_context(experiment=context["experiment"], world=context["world"],
-                           round_id=context["round"], arm=context["arm"],
-                           condition=context["condition"], source_hash=context["source_hash"])
+    context = _parent_scope(context, parent_hash)
     require(_sha(parent_hash), "CT02_PARENT_SHA_REQUIRED")
     at = _utc(as_known_at)
     ids = _ids(context)
@@ -158,7 +173,9 @@ def recover_feedback(db, context, *, parent_hash, as_known_at):
             "source": "LEDGER_ATMS_RETRIEVAL_BEFORE_POLICY"}
 
 
-def retract_feedback(db, context, *, at):
+def retract_feedback(db, context, *, parent_hash, at):
+    """Append-only retraction requires the exact parent (never infer it)."""
+    context = _parent_scope(context, parent_hash)
     ids = _ids(context)
     timestamp = _utc(at)
     ledger = _ledger(db)
@@ -296,6 +313,7 @@ def persist_disposition(db, context, *, decision, recorded_at):
             "CT02_NOT_AN_OWN_POLICY_DISPOSITION")
     stamp = _utc(recorded_at)
     parent_hash = decision.get("parent_hash")
+    context = _parent_scope(context, parent_hash)
     own = recover_feedback(db, context, parent_hash=parent_hash, as_known_at=stamp)
     require(decision["retrieved_before_policy"] == own["retrieval"] or (
         decision["retrieved_before_policy"]["item_id"] == own["retrieval"]["item_id"] and
