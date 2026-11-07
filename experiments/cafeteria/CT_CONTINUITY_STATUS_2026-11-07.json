@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359398595",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359628378",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359398583",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359628359",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "b34113fa821a267f5732df2d4d2cc565d92126d7"
+    "verified_code_sha": "d70334fcb87d39a6a0ad812eacd3e8c2b87131ce"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -94,7 +94,8 @@
       "Signed witness verifier checks detached OpenSSL signatures against externally supplied pinned public-key fingerprints, exact original M AST/command/script/Modelica/CSV/log/receipt bytes and candidate scope. Runner claim and actual execution are NOT independently verified by a signature alone. No real trusted signer is configured.",
       "Archival lock witness requires a separate signer ROLE and distinct key fingerprint from physical runner. A shared runner/archive key is rejected even under different authority names. Private trust registry/key and private world paths must be disjoint from producer workspace; full OS access isolation requires separately deployed jobs.",
       "Evaluator preflight verifies detached lock signature BEFORE private-world manifest/source access, matches private manifest commitment, modelica/source and script hashes without opening reserved t6/t8. The CLI never exposes a truth-reveal or scoring command.",
-      "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs."
+      "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs.",
+      "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
@@ -132,10 +133,10 @@
         "tests/test_arena_ct03_evaluator_preflight.py",
         "tests/test_arena_ct03_prediction_attestation.py"
       ],
-      "ci_code_sha": "b34113fa821a267f5732df2d4d2cc565d92126d7",
+      "ci_code_sha": "d70334fcb87d39a6a0ad812eacd3e8c2b87131ce",
       "ci_runs": [
-        "https://github.com/yudocyudoc/IGC/actions/runs/42359398583",
-        "https://github.com/yudocyudoc/IGC/actions/runs/42359398595"
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628359",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628378"
       ],
       "status": "OFFLINE_SIGNATURE_AND_BYTES_TESTED_NO_TRUSTED_DEPLOYMENT_NO_PHYSICAL_G2",
       "cryptography": "Detached RSA/SHA256 OpenSSL verification with two distinct public key fingerprints pinned in external trust registry; test keys disposable under temporary directories, no keys committed.",
@@ -147,7 +148,23 @@
       "real_lock_archived": false,
       "physical_omc_calls": 0,
       "provider_calls": 0,
-      "des_calls": 0
+      "des_calls": 0,
+      "cli": {
+        "module": "python -m scripts.arena_cafe.ct03_execution_boundary",
+        "modes": [
+          "runner",
+          "archive"
+        ],
+        "negative_checks": [
+          "tampered solver log",
+          "tampered signed statement",
+          "wrong pinned key",
+          "shared runner and archive key",
+          "overwrite existing report"
+        ],
+        "status": "REAL_CLI_SYNTHETIC_FIXTURES_VERIFIED_NOT_CERTIFIED_RUNNER_OR_ARCHIVE",
+        "no_private_key_or_solver_operation": true
+      }
     }
   },
   "CT03": {
