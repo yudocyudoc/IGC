@@ -43,14 +43,22 @@ def validate_construction(context, construction):
     }:
         raise ValueError("CT02_M_EXTRA_FIELDS_IN_CONSTRUCTION")
     points = construction["observations"]
-    if not (type(points) is list and len(points) == 4 and
-            [x.get("time") for x in points if type(x) is dict] == [0, 1, 2, 4]):
+    cuts = PUBLIC_INPUT["construction_times"]
+    if not (type(points) is list and len(points) == len(cuts) and
+            all(type(x) is dict and set(x) == {"time", "delivered"}
+                and type(x["time"]) in (int, float) and x["time"] == t
+                for x, t in zip(points, cuts))):
         raise ValueError("CT02_M_FOUR_CONSTRUCTION_CUTS_REQUIRED")
-    previous = -1.
-    for x in points:
-        v = x.get("delivered")
-        if not (type(v) in (int,float) and math.isfinite(v) and
-                previous <= v <= 3.4 + 1e-8):
-            raise ValueError("CT02_M_INVALID_OBSERVED_DELIVERY")
+    # Numeric comparison slack only, not an observed score tolerance.
+    eps = 1e-8
+    previous = 0.0
+    for i, x in enumerate(points):
+        v = x["delivered"]
+        t = x["time"]
+        arrivals = PUBLIC_INPUT["pulse_rate"] * min(t, PUBLIC_INPUT["pulse_end"])
+        if not (type(v) in (int, float) and math.isfinite(v) and
+                (i != 0 or abs(v) <= eps) and
+                v >= -eps and v >= previous - eps and v <= arrivals + eps):
+            raise ValueError("CT02_M_INVALID_OBSERVED_DELIVERY_OR_INPUT_CAUSAL_BOUND")
         previous = v
     return points
