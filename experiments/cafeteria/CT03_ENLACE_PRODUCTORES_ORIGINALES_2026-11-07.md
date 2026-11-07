@@ -100,6 +100,8 @@ python -m scripts.arena_cafe.ct03_b_physical_result \
   --out artifacts/ct03-producer/B-physical/physical-result.json
 ```
 
+**Corrección F172-08 · P2 (retro del corte `9c3a8ec`):** la validación física B ya no confía únicamente en el orden de las predicciones t6 y t8. `ct03_b_physical_result.check` recorre **cada fila** de `cumulative_delivered` y rechaza cualquier disminución superior a `1e-8` unidades (tolerancia absoluta y fija, diferente de los `0.008` ítems del balance de masa). En marcas de tiempo duplicadas por eventos, exige valores iguales dentro de `1e-8`; admite redondeo pequeño, no un incremento inconsistente en el mismo instante. La retro reprodujo una caída artificial en t=3 que mantenía conservación y t6/t8 intactos; la nueva prueba verifica que falla. No suaviza el CSV, no obliga a `uniflow=true` ni repara ecuaciones Buffalo. **Esta es conformidad de interfaz, no un solver B real.** CI: [regresiones 42416877943](https://github.com/yudocyudoc/IGC/actions/runs/42416877943), [integración E01 42416877780](https://github.com/yudocyudoc/IGC/actions/runs/42416877780), ambas exitosas, sin nuevo consumo.
+
 El flujo B **revisión → posible nuevo nativo → segunda física → decisión final** y el ensamblado de 13 filas continúan pendientes. No afirmar B G2, pronóstico real ni disponibilidad del piloto antes de ejecutar esas etapas y comprobar su evidencia.
 
 ## 5. Pendientes reales antes de un único lote CT-03
