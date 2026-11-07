@@ -1,6 +1,8 @@
 """Synthetic M revision OMC fixtures: no solver, provider, or private world."""
 import csv
 import json
+import os
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -66,6 +68,18 @@ def fixture_revised(dm_root,dm,m,*,failed_index=None):
 
 
 class MRevisionPhysicalTests(unittest.TestCase):
+    def test_shell_is_valid_bash_and_denies_unapproved_execution(self):
+        script=Path(__file__).resolve().parents[1] / (
+            "scripts/arena_cafe/ct03_m_revision_execute_once.sh")
+        syntax=subprocess.run(["bash","-n",str(script)],capture_output=True,
+                              text=True,timeout=10)
+        self.assertEqual(syntax.returncode,0,syntax.stderr)
+        denial=subprocess.run(["bash",str(script)],capture_output=True,
+                              text=True,timeout=10,env={"PATH":os.environ["PATH"]})
+        self.assertNotEqual(denial.returncode,0)
+        self.assertIn("CT03_M_REVISION_LOT_SHA_AND_BUDGET_AUTH_REQUIRED",
+                      denial.stderr)
+
     def test_zero_revision_uses_no_solver_and_outputs_empty_map(self):
         with TemporaryDirectory(dir=".") as temp:
             root=Path(temp).relative_to(Path.cwd())
