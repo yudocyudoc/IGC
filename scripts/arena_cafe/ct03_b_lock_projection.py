@@ -155,9 +155,26 @@ def _validate_feedback(initial_receipt,construction,b_feedback,packet):
 def project(*,original_native,initial_receipt,construction,b_feedback,packet,
             initial_plan,initial_physical=None,
             revision_native=None,revision_receipt=None,revision_plan=None,
-            revision_physical=None,stop_reason=None):
+            revision_physical=None,stop_reason=None,
+            review_feedback=None,review_packet=None):
     validate_initial(original_native,initial_receipt,construction)
     _validate_feedback(initial_receipt,construction,b_feedback,packet)
+    require((review_feedback is None)==(review_packet is None),
+            "CT03_B_LOCK_REVIEW_FEEDBACK_MUST_BE_COMPLETE")
+    revised_feedback=b_feedback if review_feedback is None else review_feedback
+    revised_packet=packet if review_packet is None else review_packet
+    if review_feedback is not None:
+        _validate_feedback(initial_receipt,construction,revised_feedback,revised_packet)
+        require(type(initial_physical) is dict and
+                revised_feedback.get("physical_B_G2_or_G3") in ("G2","G3") and
+                revised_feedback.get("physical_outcome_sha256")==
+                    digest(initial_physical) and
+                revised_feedback.get("previous_G1_diagnostic_sha256")==
+                    b_feedback["own_diagnostic_sha256"] and
+                revised_feedback.get("G1_status")==b_feedback.get("G1_status") and
+                revised_feedback.get("parent_native_sha256")==
+                    initial_receipt["result_sha256"],
+                "CT03_B_LOCK_PHYSICAL_FEEDBACK_NOT_OWN_INITIAL_ATTEMPT")
     origin=initial_receipt["result_sha256"]
     require(sha(origin) and _model_sha(original_native)==origin,
             "CT03_B_LOCK_OWN_ORIGINAL_PARENT_MISMATCH")
@@ -183,13 +200,14 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
                 stop_reason is None,
                 "CT03_B_LOCK_PARTIAL_REVISION_NOT_ALLOWED")
         validate_revision_live(
-            revision_native,revision_receipt,construction,b_feedback,
+            revision_native,revision_receipt,construction,revised_feedback,
             {"parent_native":original_native,
-             "parent_receipt":initial_receipt,"packet":packet})
+             "parent_receipt":initial_receipt,"packet":revised_packet})
         revised=revision_receipt["result_sha256"]
         require(revision_plan["round_kind"]=="revision" and
                 revision_plan["revision_parent_native_sha256"]==origin and
-                revision_plan["original_G1_feedback_sha256"]==digest(b_feedback),
+                revision_plan["original_G1_feedback_sha256"]==
+                    digest(revised_feedback),
                 "CT03_B_LOCK_REVISED_NATIVE_NOT_OWN_CURRENT_MODEL")
         if revised==origin:
             # The second Buffalo provider call returned the SAME native.
@@ -213,8 +231,8 @@ def project(*,original_native,initial_receipt,construction,b_feedback,packet,
             status="REVISED"
             new_model=revised
             reason="NATIVE_CHANGED_AFTER_REAL_CURRENTMODEL_REVIEW"
-        feedback_sha=b_feedback["own_diagnostic_sha256"]
-        item_id=b_feedback["retrieved_before_policy"]["item_id"]
+        feedback_sha=revised_feedback["own_diagnostic_sha256"]
+        item_id=revised_feedback["retrieved_before_policy"]["item_id"]
     row={
         "arm":"B","candidate_id":"B-original","parent_hash":origin,
         "material_group":"B-original","initial":initial,
