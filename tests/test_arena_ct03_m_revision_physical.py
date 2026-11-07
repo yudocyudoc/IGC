@@ -1,5 +1,6 @@
 """Synthetic M revision OMC fixtures: no solver, provider, or private world."""
 import csv
+import copy
 import json
 import os
 import subprocess
@@ -10,7 +11,7 @@ import unittest
 from scripts.arena_v0_contract import canonical
 from scripts.arena_cafe.ct03_dm_feedback_round import build
 from scripts.arena_cafe.ct03_m_revision_physical import collect
-from scripts.arena_cafe.ct03_dm_lock_projection import project
+from scripts.arena_cafe.ct03_dm_lock_projection import project,project_from_revision_report
 from test_arena_ct03_dm_feedback_round import make_all_twelve,input_construction,T
 
 SHA="b"*40
@@ -112,8 +113,13 @@ class MRevisionPhysicalTests(unittest.TestCase):
             self.assertEqual(failed_out["status"],"G2_FAILED")
             self.assertIsNone(failed_out["forecast"])
             self.assertIsNone(failed_out["trace_sha256"])
-            projected=project(dm,d,m,report["outcomes"])
+            projected=project_from_revision_report(dm,d,m,report)
             self.assertEqual(projected["candidate_count"],12)
+            bad=copy.deepcopy(report)
+            cid=next(iter(bad["receipts"]))
+            bad["receipts"][cid]["failure"]="FORGED_FAILURE"
+            with self.assertRaisesRegex(ValueError,"ATTEMPT_RECEIPT_MISMATCH"):
+                project_from_revision_report(dm,d,m,bad)
             self.assertEqual(projected["M_physical_revised_count"],len(selected))
             for r in projected["rows"]:
                 if r["arm"]=="M" and r["decision"]["status"]=="REVISED":
