@@ -9,6 +9,8 @@ on:
       - 'scripts/arena_cafe/e04_evaluator.py'
       - 'tests/test_arena_cafe_buffalo_ev01_visible.py'
       - 'tests/test_arena_cafe_e02_memory_bound.py'
+      - 'tests/test_arena_cafe_e02_b_feedback.py'
+      - 'scripts/arena_cafe/e02_b_feedback.py'
       - 'tests/test_arena_cafe_e03_cal_grid.py'
       - 'tests/test_arena_cafe_e03_accounting.py'
       - 'scripts/arena_cafe/e03_execution_reconcile.py'
@@ -61,6 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_arena_cafe_e02_memory_bound.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_b_feedback.py' -v
           python -m unittest discover -s tests -p 'test_arena_cafe_continuity_round.py' -v
       - name: Cheap E03 native source and fixed grid guards
         run: |
