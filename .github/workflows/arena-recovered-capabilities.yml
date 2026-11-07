@@ -1,7 +1,7 @@
 name: Arena recovered capabilities - no provider calls
 on:
   pull_request:
-    branches: [main]
+    branches: [main, experiment/arena-continuity-e00-e01-20261106]
     paths: ['scripts/arena_*', 'tests/**', 'data/arena/**', 'data/synthetic/arena_v0_*', 'src/modelica/**', 'experiments/e1/**', 'experiments/e0/catalog.json', 'docs/**', '.github/workflows/arena-recovered-capabilities.yml']
   push:
     branches: [main]
