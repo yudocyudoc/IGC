@@ -15,11 +15,13 @@ Candidatos fijados antes de ver datos: D inicial #0 de la gramática original y 
 Una vez habilitado el lote y congelado un commit `<SHA40>`, el operador ejecuta **una sola vez**:
 
 ```bash
-gh workflow run arena-ct02-minimal-physical.yml --ref main \
-  -f authorized=yes -f budget=2 -f freeze_sha=<SHA40>
+gh workflow run arena-ct02-minimal-physical.yml \
+  --repo yudocyudoc/IGC \
+  --ref experiment/arena-ct00-ct02-20261107 \
+  -f authorized=yes -f budget=2 -f freeze_sha=<SHA40_DE_ESA_RAMA>
 ```
 
-Este job se dispara **exclusivamente** por `workflow_dispatch`. Confirma el SHA de checkout, la autorización y presupuesto 2 antes de preparar scripts. Descarga bibliotecas originales por tags fijados, anota sus commits e identidad de imagen, ejecuta:
+Este job se dispara **exclusivamente** por `workflow_dispatch`. GitHub exige que el archivo del workflow esté registrado en la rama por defecto, pero `--ref` puede seleccionar la rama experimental sin fusionar toda la cadena #171/#172. Si se usa `--ref main`, el SHA debe ser el de `main`, no el experimental. Confirma el SHA de checkout, la autorización y presupuesto 2 antes de preparar scripts. Descarga bibliotecas originales por tags fijados, anota sus commits e identidad de imagen, ejecuta:
 
 ```bash
 docker run --rm --network none --user "$(id -u):$(id -g)" \
@@ -36,7 +38,7 @@ docker run --rm --network none --user "$(id -u):$(id -g)" \
 
 Los scripts tienen **un `simulate(...)` cada uno** y conservan los Modelica/AST completos. No hay retry. Antes de cada llamada se añade una línea a `attempts.log`. El artefacto `arena-ct02-technical-attempt-<run_id>` conserva siempre que existan: `D/M-single.mos`, `D/M-omc.log`, `d00_res.csv`, `m00_res.csv`, fuentes, manifiestos, `attempts.log`, `runtime-identity.txt` y `conformity.json` solo si ambas pruebas pasan.
 
-**Parada:** si la primera falla, la segunda no se ejecuta; un fallo cuenta como intento consumido. Si falta cualquier CSV o log, el solver/versión/columna difiere, no hay 0–8 h completos, el balance material D no cierra o falta un corte nativo M, no declarar aceptación técnica ni correr repeticiones para «arreglar» datos. El presupuesto **máximo 2**, no una obligación de gastarlo. Dejar `physical-m3` sin ejecutar. Ninguna llamada al proveedor.
+**Parada:** inmediatamente después de ejecutar D, `verify-arm --arm D` comprueba versión, fuente, script, horizonte y **balance material** antes de consumir M; tras M aplica el mismo chequeo específico, y solo si ambos pasan produce el reporte agregado. Si la primera falla, la segunda no se ejecuta; un fallo cuenta como intento consumido. Si falta cualquier CSV o log, el solver/versión/columna difiere, no hay 0–8 h completos, el balance material D no cierra o falta un corte nativo M, no declarar aceptación técnica ni correr repeticiones para «arreglar» datos. El presupuesto **máximo 2**, no una obligación de gastarlo. Dejar `physical-m3` sin ejecutar. Ninguna llamada al proveedor.
 
 ## 2. Custodio del mundo CT-03: entorno y cuenta separados
 
