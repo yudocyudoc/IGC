@@ -3,7 +3,7 @@ on:
   push:
     branches: [experiment/arena-continuity-e00-e01-20261106]
     paths:
-      - 'data/diagnostics/ARENA_E02_B_ONE_SHOT_20261106.json'
+      - 'data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json'
 permissions:
   contents: read
   actions: read
@@ -25,11 +25,11 @@ jobs:
           test "$GITHUB_RUN_ATTEMPT" = 1
           test "$GITHUB_REF" = "refs/heads/experiment/arena-continuity-e00-e01-20261106"
           git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
-            grep -Fxq 'data/diagnostics/ARENA_E02_B_ONE_SHOT_20261106.json'
+            grep -Fxq 'data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json'
           python - <<'PY'
           import json
           from pathlib import Path
-          x=json.loads(Path('data/diagnostics/ARENA_E02_B_ONE_SHOT_20261106.json').read_text())
+          x=json.loads(Path('data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json').read_text())
           assert x=={
             'schema':'igc-arena-e02-b-one-shot-real/0.1',
             'researcher_intent':'EXECUTE_ROADMAP_V3_CONTINUITY_V4',
@@ -47,6 +47,8 @@ jobs:
             'accept_negative_outcome':True,
             'no_solver_or_modelicafication_by_control':True,
             'scientific_status':'CONSTRUCTION_ATTEMPT_ONLY',
+            'preflight_recovery_run_id':42319641383,
+            'previous_provider_calls':0,
           },'B_AUTHORIZATION_MARKER_NOT_EXACT'
           PY
           echo 'permit=true' >> "$GITHUB_OUTPUT"
@@ -98,7 +100,7 @@ jobs:
           BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
           BUFFALO_ROUND_KIND: initial
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: ${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
           export BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e02/$COND/stage-initial/b-visible.json"
@@ -120,7 +122,7 @@ jobs:
           BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
           BUFFALO_ROUND_KIND: revision
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }}: ${{ secrets.CLOUDFLARE_API_${{ secrets.GITHUB_TOKEN }} }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
           ROOT="$PWD/artifacts/e02/$COND"
