@@ -6,7 +6,7 @@ import unittest
 
 from scripts.arena_cafe.ct03_b_own_feedback import build
 from scripts.arena_cafe.ct03_b_physical_prepare import prepare,operator
-from test_arena_ct03_b_own_feedback import fixture,public,T
+from test_arena_ct03_b_own_feedback import fixture,public,TIME as T
 from scripts.arena_cafe.e02_b_feedback import _model_sha
 
 
