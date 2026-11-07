@@ -6,17 +6,17 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359628378",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
     "des_new_simulations": 0,
-    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42359628359",
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "d70334fcb87d39a6a0ad812eacd3e8c2b87131ce"
+    "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -42,7 +42,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "F172_01_TO_06_VERIFIED_PLUS_EXTERNAL_WITNESS_AND_EVALUATOR_BOUNDARY_CONTRACTS_CI_PASS_NOT_G2",
+    "status": "PREPARACION_MINIMA_CI_VERIFICADA_LOTE_FISICO_CT02_AUN_NO_AUTORIZADO",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -71,7 +71,16 @@
       "scripts/arena_cafe/ct03_prediction_attestation.py",
       "tests/test_arena_ct03_execution_boundary.py",
       "tests/test_arena_ct03_evaluator_preflight.py",
-      "tests/test_arena_ct03_prediction_attestation.py"
+      "tests/test_arena_ct03_prediction_attestation.py",
+      "scripts/arena_cafe/ct02_minimal_batch.py",
+      "scripts/arena_cafe/ct03_minimal_custody.py",
+      "scripts/arena_cafe/ct03_minimal_score.py",
+      "tests/test_arena_ct02_minimal_batch.py",
+      "tests/test_arena_ct03_minimal_custody.py",
+      "tests/test_arena_ct03_minimal_score.py",
+      ".github/workflows/arena-ct02-minimal-physical.yml",
+      ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md"
     ],
     "verified": [
       "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
@@ -95,14 +104,18 @@
       "Archival lock witness requires a separate signer ROLE and distinct key fingerprint from physical runner. A shared runner/archive key is rejected even under different authority names. Private trust registry/key and private world paths must be disjoint from producer workspace; full OS access isolation requires separately deployed jobs.",
       "Evaluator preflight verifies detached lock signature BEFORE private-world manifest/source access, matches private manifest commitment, modelica/source and script hashes without opening reserved t6/t8. The CLI never exposes a truth-reveal or scoring command.",
       "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs.",
-      "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured."
+      "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured.",
+      "Minimal CT-02 manual-only physical workflow stages original D0+M0 without ranking; single simulate per D/M .mos; GitHub SHA gate + exact budget=2, no PR trigger, no Buffalo or hidden world; production OMC job NOT DISPATCHED.",
+      "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
+      "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
       "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
       "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
       "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
-      "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement."
+      "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement.",
+      "Manual CT02 OMC technical batch not authorized/attempted (maximum two). Default branch must include workflow before workflow_dispatch. CT03 live producer integration still pending separately; no scientific CT02 acceptance yet."
     ],
     "provider_new_calls": 0,
     "omc_new_simulations": 0,
@@ -165,10 +178,44 @@
         "status": "REAL_CLI_SYNTHETIC_FIXTURES_VERIFIED_NOT_CERTIFIED_RUNNER_OR_ARCHIVE",
         "no_private_key_or_solver_operation": true
       }
+    },
+    "minimal_operational_batch": {
+      "governing_doc": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+      "freeze_commit_on_manual_dispatch": true,
+      "ct02_manual_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
+      "ct02_selected_technical_candidates": "original D initial index 0 and original M full-AST initial index 0, fixed before seeing outputs; no ranking",
+      "ct02_exact_budget_omc": 2,
+      "ct02_currently_authorized_omc": 0,
+      "ct02_attempted_omc": 0,
+      "ct02_manual_dispatch_performed": false,
+      "cto2_stop": "one simulate per OMC command, D then M; stop on first solver/CSV/G2 technical check failure, no retry, upload originals including attempts/logs",
+      "ct03_private_custody": "different operator account/runner required; config/private Modelica/CSV never mounted or uploaded to producer; local custody CLI rejects private paths in repo and incompatible frozen protocol",
+      "ct03_public_release": "only t0,t1,t2,t4 and commitment; original private CSV plus t6,t8 kept with custodian",
+      "ct03_prospective_lock": ".github/workflows/arena-ct03-freeze-predictions.yml manual dispatch after same SHA producer artifact, no secrets; prior existing 13-slot seal",
+      "ct03_post_lock_evaluation": "scripts/arena_cafe/ct03_minimal_score.py; check procedural Github artifact ACK before private t6/t8, all failures remain denominator",
+      "ct03_actual_producer_live_runner": "NOT_YET_WIRED_UNTIL_CT02_ACCEPTANCE_AND_CT03_BATCH_AUTHORIZATION",
+      "ct03_budget_proposed": {
+        "new_omc": 21,
+        "buffalo_posts": 2
+      },
+      "ct03_budget_authorized": {
+        "new_omc": 0,
+        "buffalo_posts": 0
+      },
+      "ct03_world_selected": false,
+      "reserved_truth_opened": false,
+      "special_simplification": "Existing RSA witness/archivist signing modules remain optional and are not imported or run by this minimal operation route",
+      "isolation_limit": "Procedural only until custodian uses actual distinct account/workspace/credentials; same-account folders insufficient",
+      "verified_code_sha": "0355bc9fb27de2af61de5b952287396a0dd213ba",
+      "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989011",
+      "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42361989013",
+      "real_omc_runs": 0,
+      "provider_posts": 0,
+      "des_runs": 0
     }
   },
   "CT03": {
-    "status": "PREPARED_NOT_SELECTED_NOT_AUTHORIZED_SIGNED_BOUNDARY_OFFLINE_TESTED",
+    "status": "MINIMAL_PROCEDURAL_CUSTODY_AND_EVALUATION_PREPARED_NO_WORLD_NO_LIVE",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -196,7 +243,9 @@
     "signed_own_prediction_mapping": "ORIGINAL_M_INITIAL_ONLY_NO_LIVE_FORECASTS",
     "real_signed_solver_receipts": 0,
     "real_external_trust_anchors_registered": false,
-    "actual_archived_lock_signatures": 0
+    "actual_archived_lock_signatures": 0,
+    "minimal_runbook": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+    "live_producer_batch_connected": false
   },
   "unchanged": [
     "D/B/M and original equations",
