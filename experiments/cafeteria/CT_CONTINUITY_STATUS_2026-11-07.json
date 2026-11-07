@@ -52,6 +52,12 @@
       "new_ct03_omc": 0,
       "new_ct03_provider_posts": 0,
       "new_ct03_des": 0
+    },
+    "ct03_manual_producer_code": {
+      "sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
+      "ci_recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
+      "ci_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673",
+      "note": "No CT03 live operation, private custodian, POST, OMC, DES, lock, or reserved evaluation"
     }
   },
   "CT00": {
@@ -355,7 +361,7 @@
     }
   },
   "CT03": {
-    "status": "B_G1_TO_OWN_PHYSICAL_G2_G3_FEEDBACK_AND_FIVE_FILE_PRODUCER_HANDOFF_PREPARED_OFFLINE_NO_CT03_LIVE_OR_ARCHIVED_LOCK",
+    "status": "ONE_MANUAL_CT03_PRODUCER_WORKFLOW_AND_PUBLIC_INTAKE_CODE_WIRED_OFFLINE_NOT_DEPLOYED_NOT_AUTHORIZED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -514,16 +520,25 @@
         "tests/test_arena_ct03_b_physical_execute_script.py",
         "tests/test_arena_ct03_producer_freeze_handoff.py",
         "scripts/arena_b_ct03_contract.mjs",
-        "tests/test_arena_b_ct03_contract.mjs"
+        "tests/test_arena_b_ct03_contract.mjs",
+        "scripts/arena_cafe/ct03_lot_budget.py",
+        "scripts/arena_cafe/ct03_public_intake.py",
+        "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+        ".github/workflows/arena-ct03-public-intake.yml",
+        ".github/workflows/arena-ct03-producer.yml",
+        ".github/workflows/arena-ct03-freeze-predictions.yml",
+        "tests/test_arena_ct03_lot_budget.py",
+        "tests/test_arena_ct03_public_intake.py",
+        "tests/test_arena_ct03_global_workflow.py"
       ],
       "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
       "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
       "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
       "consumes_no_omc_or_provider_by_tests": true,
-      "last_tested_code_sha": "0cdf91970acc9b0b9b2de2f90307f824a436ce2a",
+      "last_tested_code_sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
       "last_verified_CI": {
-        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42422819276",
-        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42422819259"
+        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
+        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673"
       }
     },
     "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
@@ -713,6 +728,59 @@
       "freezes_via_existing_workflow": ".github/workflows/arena-ct03-freeze-predictions.yml",
       "actual_archive_run_id": null,
       "reserved_truth_opened": false
+    },
+    "manual_ct03_lot": {
+      "status": "CODE_ONLY_NOT_AUTHORIZED_NOT_DISPATCHED_NOT_SCIENTIFICALLY_EXECUTED",
+      "public_intake_workflow": ".github/workflows/arena-ct03-public-intake.yml",
+      "producer_workflow": ".github/workflows/arena-ct03-producer.yml",
+      "separate_archive_workflow": ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "public_intake_validator": "scripts/arena_cafe/ct03_public_intake.py",
+      "count_only_dm_budget": "scripts/arena_cafe/ct03_lot_budget.py",
+      "b_original_and_revision_runner": "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+      "no_cross_arm_model_handoff_to_B": true,
+      "limited_public_custody_files": [
+        "construction.json",
+        "world-commitment.json",
+        "release-status.json"
+      ],
+      "producer_freeze_files": [
+        "construction.json",
+        "world-commitment.json",
+        "D/manifest.json",
+        "M/manifest.json",
+        "entries.json"
+      ],
+      "theoretical_one_lot_omc_max_new": 19,
+      "slots": {
+        "private_world": 1,
+        "dm_new_initials": 10,
+        "m_revisions_max": 6,
+        "b_physical_max": 2
+      },
+      "two_B_provider_posts_max": 2,
+      "third_party_custodian_isolation_certified": false,
+      "active_environment_approvals_confirmed": false,
+      "registered_default_branch_confirmed": false,
+      "actual_public_release_run_id": null,
+      "actual_producer_run_id": null,
+      "actual_prospective_lock_run_id": null,
+      "read_reserved_truth": false,
+      "new_ct03_omc": 0,
+      "new_ct03_provider_posts": 0,
+      "new_ct03_des": 0,
+      "code_ci": {
+        "tested_sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
+        "regression": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
+        "original_engine_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673",
+        "physical_m3": "SKIPPED"
+      },
+      "limitations": [
+        "GitHub environments require actual required reviewers and variables; names alone prove nothing",
+        "The public intake validates only public contents, not separate custodial machine/accounts",
+        "One-lot policy checks earlier GitHub dispatches but is not cryptographic proof of physically isolated operations",
+        "The separate prospective archive requires later workflow_dispatch; no producer job scores or reveals heldout truth",
+        "Provider/OMC live paths and multi-job handoffs have not been executed in CI; tests are offline and default-deny"
+      ]
     }
   },
   "unchanged": [
@@ -841,6 +909,12 @@
       "new_provider_posts": 0,
       "new_des_simulations": 0,
       "authorization": "NOT_GRANTED"
+    },
+    "latest_astra_review": {
+      "reviewed_sha": "d3cc94accb9a459562c0c71c54a421714696ec4a",
+      "finding": "F172-09 closed offline, no newly reproduced defect",
+      "next": "One global CT03 producer workflow + external custodian separated + prospective archive, not live authorized",
+      "resulting_manual_workflow_code_sha": "52462e4054e19a96740cb3825379ed1730ee9dda"
     }
   }
 }
