@@ -31,7 +31,7 @@ jobs:
         with:
           name: a1-cafe-public-evidence
           run-id: 41575917332
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/public
       - name: Buffalo preflight on both conditions, zero provider
         env:
