@@ -1,5 +1,6 @@
 """Synthetic offline D/M-to-own-feedback-to-policy join. Never physical proof."""
 import csv
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
