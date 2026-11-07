@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import math
 
 from scripts.arena_v0_contract import canonical,digest
 from scripts.arena_cafe.ct03_b_own_feedback import validate as validate_initial
@@ -28,9 +29,128 @@ from scripts.arena_cafe.e02_b_feedback import _model_sha
 from scripts.arena_cafe.ct_feedback_bridge import require
 
 SCHEMA="igc-ct03-b-own-original-thirteenth-lock-row/1.0"
+PIN="5199f7b45f3a7ae4a773cb0dd8542940aabe9edc"
+TRANSPORT="CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA"
+
+def _runner_scope(receipt,construction,round_kind):
+    """A provider-returned B result/failure, not a fabricated slot or provider claim.
+
+    The runner receipt alone is NOT independent proof of Cloudflare billing.
+    Unexpected identity/source drift stops the batch; it is not a G0 failure.
+    """
+    require(type(receipt) is dict and
+            receipt.get("case_id")=="CT-03" and
+            receipt.get("world_public_id")==construction["world_public_id"] and
+            receipt.get("condition_id")=="C0" and
+            receipt.get("source_snapshot_hash")==construction["source_snapshot_hash"] and
+            receipt.get("round_kind")==round_kind and
+            receipt.get("mode")=="live" and
+            receipt.get("upstream_sha")==PIN and
+            receipt.get("upstream_source_modified") is False and
+            receipt.get("transport")==TRANSPORT and
+            type(receipt.get("provider_calls")) is int and
+            receipt["provider_calls"] in (0,1) and
+            type(receipt.get("proxy_requests")) is int and
+            receipt["proxy_requests"] in (0,1) and
+            (receipt["provider_calls"]==0 or receipt["proxy_requests"]==1) and
+            (receipt.get("provider_calls_attempted") is None or
+             receipt["provider_calls_attempted"]==receipt["provider_calls"]),
+            "CT03_B_RUNNER_FAILURE_SCOPE_OR_ATTEMPT_INTEGRITY_STOP")
+
+
+def _no_native_second(receipt,construction,original_receipt,packet):
+    """Own currentModel was attempted but there is no native second model.
+
+    A pre-provider stop counts zero POST; a provider attempt counts one.
+    Both retain their actual revision receipt and never become RATIFIED.
+    """
+    _runner_scope(receipt,construction,"revision")
+    require(receipt.get("model_returned") is False and
+            receipt.get("status")==(
+                "CT03_PROVIDER_ATTEMPT_NO_NATIVE" if receipt["provider_calls"]==1
+                else "CT03_PREPROVIDER_NO_NATIVE") and
+            receipt.get("parent_native_sha256")==original_receipt["result_sha256"] and
+            receipt.get("own_feedback_sha256")==digest(packet) and
+            receipt.get("result_sha256") is None or False,
+            "CT03_B_REVISION_FAILURE_NOT_OWN_CURRENTMODEL")
+    return receipt["provider_calls"]
+
+
+def _invalid_horizon(native,receipt,construction,round_kind,
+                     *,original_receipt=None,packet=None):
+    """Real native exists, but its original time horizon is not admissible.
+
+    G0_REJECTED is not G1 translation, G2 physical failure or NO_NATIVE.
+    Preserve parent/native/receipt; never repair duration or run OMC.
+    """
+    from scripts.arena_cafe.ct03_b_visible import view
+    view(construction,world=construction["world_public_id"],round_kind=round_kind)
+    _runner_scope(receipt,construction,round_kind)
+    model=native.get("model") if type(native) is dict else None
+    specs=model.get("specs") if type(model) is dict else None
+    stop=specs.get("stopTime") if type(specs) is dict else None
+    require(type(model) is dict and type(model.get("variables")) is list and
+            type(model.get("relationships")) is list and
+            type(stop) in (int,float) and math.isfinite(stop) and
+            abs(stop-8)>=1e-8 and
+            receipt.get("provider_calls")==1 and
+            receipt.get("proxy_requests")==1 and
+            receipt.get("model_returned") is True and
+            receipt.get("status")=="CT03_NATIVE_HORIZON_MISMATCH" and
+            receipt.get("horizon_matches_case") is False and
+            receipt.get("output_horizon_hours")==stop and
+            receipt.get("result_sha256")==_model_sha(native) and
+            receipt.get("runner_error") in (None,""),
+            "CT03_B_NATIVE_HORIZON_REJECTION_PROVENANCE_INVALID")
+    if round_kind=="revision":
+        require(type(original_receipt) is dict and type(packet) is dict and
+                receipt.get("parent_native_sha256")==
+                    original_receipt["result_sha256"] and
+                receipt.get("own_feedback_sha256")==digest(packet),
+                "CT03_B_REVISED_HORIZON_WRONG_OWN_CURRENTMODEL")
+    return {
+        "status":"G0_REJECTED",
+        "native_sha256":receipt["result_sha256"],
+        "trace_sha256":None,
+        "receipt_sha256":digest(receipt),
+        "forecast":None
+    }
+
+
+def project_invalid_horizon_initial(native,receipt,construction):
+    """Preserve one real original B with inadmissible horizon in slot 13."""
+    initial=_invalid_horizon(native,receipt,construction,"initial")
+    row={
+        "arm":"B","candidate_id":"B-original",
+        "parent_hash":initial["native_sha256"],"material_group":"B-original",
+        "initial":initial,
+        "decision":{"status":"NOT_EXECUTED",
+                    "policy":"UB-IAD/sd-ai::Engine.generate",
+                    "feedback_hash":None,"retrieved_item_id":None,
+                    "new_model_sha256":None},
+        "final":initial
+    }
+    validate_row(row,{("B","B-original"):
+                     {"parent_hash":None,"group":"B-original"}},
+                 construction["world_public_id"])
+    return {
+        "schema":SCHEMA,"status":"B_THIRTEENTH_SLOT_VALID_NOT_ARCHIVED_OR_SCORED",
+        "world_public_id":construction["world_public_id"],
+        "source_snapshot_hash":construction["source_snapshot_hash"],
+        "original_provider_receipt_sha256":digest(receipt),
+        "own_feedback_report_sha256":None,"own_revision_packet_sha256":None,
+        "second_B_provider_post_observed":False,
+        "second_B_provider_receipt_sha256":None,
+        "revision_stop_or_disposition":"ORIGINAL_NATIVE_G0_HORIZON_REJECTED_NO_SECOND_POST",
+        "initial_native_G1_or_observable_status":"G0_HORIZON_REJECTED_NOT_G1",
+        "final_native_G1_or_observable_status":None,
+        "reserved_truth_read":False,
+        "new_omc_by_projection":0,"new_provider_calls":0,
+        "actual_provider_or_solver_source_verified_outside_process":False,
+        "row":row
+    }
 STOP_REASONS=frozenset({
     "B_ORIGINAL_NATIVE_G1_OR_OBSERVABLE_BLOCKED_STOP",
-    "B_PROVIDER_REVISION_NOT_AVAILABLE_STOP",
     "B_BATCH_STOP_RULE_OR_BUDGET_EXHAUSTED",
 })
 
