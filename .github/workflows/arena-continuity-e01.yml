@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/arena_cafe/**'
+      - 'scripts/arena_b_native_runner.mjs'
       - 'scripts/arena_event_observability.py'
       - 'tests/test_arena_cafe_rf02_*.py'
       - 'tests/test_arena_cafe_continuity_round.py'
@@ -147,7 +148,7 @@ jobs:
           if-no-files-found: error
   b-original-offline-transport:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,16 +161,17 @@ jobs:
           node-version: '22'
       - uses: actions/download-artifact@v4
         with:
-          name: a1-cafe-O0
+          name: a1-cafe-public-evidence
           run-id: 41575917332
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/e01/public
-      - name: Export authorized public input only for B
+      - name: Stage B from actual causal O0/O1 evidence, no source extrapolation
         run: |
-          python -m scripts.arena_cafe.native_handoff \
-            --input artifacts/e01/public/O0_VISIBLE.json \
-            --condition O0 --arm B --out artifacts/e01/scoped
-      - name: Fetch original pinned Buffalo source and dependencies
+          set -euo pipefail
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O0_VISIBLE.json --condition O0 --out artifacts/e01/b-stage-O0
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O1_VISIBLE.json --condition O1 --out artifacts/e01/b-stage-O1
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/e01/public/O0_VISIBLE.json --condition O0 --kind revision --out artifacts/e01/b-stage-O0-revision
+      - name: Fetch original pinned Buffalo source and dependencies (read-only)
         run: |
           set -euo pipefail
           mkdir -p upstream/sd-ai
@@ -180,25 +182,82 @@ jobs:
           git checkout -q --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
           npm ci --ignore-scripts --omit=optional --no-audit --no-fund
-      - name: Execute original Engine.generate in mock transport ONLY
+      - name: Call ORIGINAL Engine.generate separately for both inputs with mock transport
         env:
           SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
-          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/scoped/visible.json
-          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native
           BUFFALO_MODE: mock
         run: |
+          set -euo pipefail
+          for c in O0 O1; do
+            BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e01/b-stage-$c/b-visible.json" \
+              BUFFALO_OUTPUT="$PWD/artifacts/e01/b-native-$c" \
+              BUFFALO_ROUND_KIND=initial node scripts/arena_b_native_runner.mjs
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x={}
+          for c in ('O0','O1'):
+              r=json.loads((Path('artifacts/e01/b-native-'+c)/'receipt.json').read_text())
+              x[c]=r
+              assert r['provider_calls']==0 and r['mode']=='mock'
+              assert r['model_returned'] and r['quant_schema_seen']
+              assert r['horizon_matches_case'] is True
+              assert r['original_engine_max_tokens']==16000
+              assert r['round_kind']=='initial' and r['condition_id']==c
+              assert r['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
+          assert x['O0']['arrival_signal_sha256']==x['O1']['arrival_signal_sha256']
+          print('E01_B_REAL_ORIGINAL_METHOD_MOCK_TRANSPORT_FOR_BOTH_VIEWS')
+          PY
+      - name: Test original Engine revision path with MOCK parent and MOCK feedback only
+        env:
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: mock
+          BUFFALO_ROUND_KIND: revision
+          BUFFALO_VISIBLE_INPUT: ${{ github.workspace }}/artifacts/e01/b-stage-O0-revision/b-visible.json
+          BUFFALO_PARENT_NATIVE: ${{ github.workspace }}/artifacts/e01/b-native-O0/native-engine-result.json
+          BUFFALO_PARENT_RECEIPT: ${{ github.workspace }}/artifacts/e01/b-native-O0/receipt.json
+          BUFFALO_OWN_FEEDBACK: ${{ github.workspace }}/artifacts/e01/b-feedback-O0-offline.json
+          BUFFALO_OUTPUT: ${{ github.workspace }}/artifacts/e01/b-native-O0-revision-mock
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt=json.loads(Path('artifacts/e01/b-native-O0/receipt.json').read_text())
+          json.dump({
+            'schema':'igc-e02-b-own-feedback/0.1',
+            'arm':'B','condition_id':'O0',
+            'source_snapshot_hash':receipt['source_snapshot_hash'],
+            'parent_result_sha256':receipt['result_sha256'],
+            'diagnostic':{'scope':'MOCK_TRANSPORT_ONLY_NOT_ENGINEERING_OR_SCIENTIFIC_FEEDBACK',
+                          'no_empirical_score':True}
+          },open('artifacts/e01/b-feedback-O0-offline.json','w'))
+          PY
           node scripts/arena_b_native_runner.mjs
           node --test tests/test_arena_b_cf_protocol_adapter.mjs
           python - <<'PY'
           import json
           from pathlib import Path
-          r=json.loads(Path('artifacts/e01/b-native/receipt.json').read_text())
-          assert r['provider_calls']==0 and r['model_returned']
+          def get(path):return json.loads(Path(path).read_text())
+          a=get('artifacts/e01/b-native-O0/receipt.json')
+          r=get('artifacts/e01/b-native-O0-revision-mock/receipt.json')
           assert r['status']=='ORIGINAL_ENGINE_OFFLINE_PATH_PASS'
-          print('E01_BUFFALO_UPSTREAM_METHOD_MOCK_TRANSPORT_ONLY')
+          assert r['round_kind']=='revision' and r['provider_calls']==0
+          assert r['parent_native_sha256']==a['result_sha256']
+          assert r['request_sha256']!=a['request_sha256']
+          assert r['horizon_matches_case'] is True
+          print('E01_B_REVIEW_PARENT_CHAIN_EXECUTED_MOCK_ONLY_NO_SCIENTIFIC_CLAIM')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: arena-continuity-e01-buffalo-offline-transport
-          path: artifacts/e01/b-native
+          name: arena-continuity-e01-buffalo-ev01-original-offline-chain
+          path: |
+            artifacts/e01/b-stage-O0/
+            artifacts/e01/b-stage-O1/
+            artifacts/e01/b-stage-O0-revision/
+            artifacts/e01/b-native-O0/
+            artifacts/e01/b-native-O1/
+            artifacts/e01/b-native-O0-revision-mock/
+            artifacts/e01/b-feedback-O0-offline.json
           if-no-files-found: error

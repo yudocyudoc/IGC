@@ -233,5 +233,5 @@ try {
     provider_calls:results.provider_calls,variable_count:results.variable_count,
     native_error:results.native_error,runner_error:results.runner_error,
     bridge_error:results.bridge_error,provider_http_status:results.http_status}));
-  if(!results.model_returned||results.runner_error)process.exitCode=1;
+  if(!results.model_returned||results.runner_error||results.status==='EV01_NATIVE_HORIZON_NOT_COMPARABLE')process.exitCode=1;
 }
