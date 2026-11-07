@@ -1,0 +1,97 @@
+name: Arena E02 B authentic-native closure — append-only ATMS, no inference
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/e02_b_native_close.py'
+      - 'tests/test_arena_cafe_e02_b_native_close.py'
+      - 'experiments/cafeteria/E02_B_G1_V02_ADJUDICATION_2026-11-06.json'
+      - '.github/workflows/arena-e02-b-native-temporal-closure.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit-and-append:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Freeze prior canonical six-case F1a/ATMS ledger (never overwrite)
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-three-arm-actual-evidence-ledger
+          run-id: 42322465960
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/base
+      - name: Retrieve authentic corrected Buffalo O0, original HTTP response
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-corrected-live-O0
+          run-id: 42331388032
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/B/O0
+      - name: Retrieve authentic corrected Buffalo O1, original HTTP response
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-corrected-live-O1
+          run-id: 42331388032
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/B/O1
+      - name: Retrieve frozen G1 v0.1 advisory, including its false positives
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-r2-g1-audit
+          run-id: 42331727460
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/g1-old
+      - name: Retrieve corrected G1 v0.2 real-native advisory
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e02-b-real-r2-g1-audit
+          run-id: 42335080421
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02-closure/g1-new
+      - name: Test pinned raw bytes, true timestamps, previous snapshots and case isolation
+        env:
+          B_CLOSURE_BASELINE: artifacts/e02-closure/base
+          B_CLOSURE_O0: artifacts/e02-closure/B/O0
+          B_CLOSURE_O1: artifacts/e02-closure/B/O1
+          B_CLOSURE_G1_OLD: artifacts/e02-closure/g1-old
+          B_CLOSURE_G1_NEW: artifacts/e02-closure/g1-new
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_b_native_close.py' -v
+      - name: Append authenticated native and both G1 vintages to a NEW ledger copy
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e02_b_native_close \
+            --baseline artifacts/e02-closure/base \
+            --o0 artifacts/e02-closure/B/O0 \
+            --o1 artifacts/e02-closure/B/O1 \
+            --g1-old artifacts/e02-closure/g1-old \
+            --g1-new artifacts/e02-closure/g1-new \
+            --out artifacts/e02-closure/final
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path('artifacts/e02-closure/final')
+          x=json.loads((base/'adjudication_report.json').read_text())
+          assert x['total_e02_b_provider_attempts']==4
+          assert x['original_b_native_revision_decisions']==0
+          assert x['new_provider_calls']==x['new_omc_runs']==0
+          assert x['G2']==x['G3']=='NOT_RUN'
+          assert set(x['conditions'])=={'O0','O1'}
+          assert len(x['dm_temporal_projections_preserved'])==4
+          assert all(x['conditions'][c]['memory']['snapshots'][-1]['g2_blocked_current_native'] for c in ('O0','O1'))
+          print('E02_B_TWO_REAL_NATIVES_APPENDED_AFTER_TIMEOUT_WITH_UPSTREAM_G1_V02_BLOCKERS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-e02-b-real-native-append-only-f1a-atms-closure
+          path: |
+            artifacts/e02-closure/final/adjudication_report.json
+            artifacts/e02-closure/final/combined_ledger_v2.sqlite
+          retention-days: 90
+          if-no-files-found: error
