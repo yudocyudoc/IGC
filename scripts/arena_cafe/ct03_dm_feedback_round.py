@@ -164,6 +164,20 @@ def _validate_frozen_initials(ten_root,ct02_root,reuse):
             }
     require(len(records)==12,
             "CT03_DM_FEEDBACK_ALL_TWELVE_ORIGINAL_INITIALS_REQUIRED")
+    # Every newly consumed OMC route must have one prior runner attempt;
+    # two D0/M0 slots are explicitly reused and never appear here.
+    attempts=(ten_root/"attempts.log").read_text(encoding="utf-8").splitlines()
+    expected_attempts=[]
+    ids=set()
+    for row in plan["rows"]:
+        prefix=row["csv_file"].split("/")[-1].removesuffix("_res.csv")
+        result=_load(ten_root/row["arm"]/(prefix+"-result.json"))
+        ids.add((result["run_id"],result["git_sha"]))
+        expected_attempts.append(
+            row["arm"]+str(row["index"])+" attempted; GitHub run "+
+            result["run_id"]+"; code "+result["git_sha"])
+    require(len(ids)==1 and attempts==expected_attempts,
+            "CT03_DM_FEEDBACK_TEN_CONSUMED_ATTEMPTS_NOT_PROVEN")
     return records
 
 def build(*,ten_root:Path,ct02_root:Path,reuse:dict,
