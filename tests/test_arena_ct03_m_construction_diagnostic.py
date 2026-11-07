@@ -35,8 +35,10 @@ def make_example(root: Path):
                          for t, y in ((0, 0), (1, .1), (2, .2), (4, .4))]}
     csv_path = root / "m00_res.csv"
     with csv_path.open("w", newline="") as f:
+        # OpenModelica native CSV convention (also seen in archived M2 CSV):
+        # quoted names, with ROOT name not class-prefixed.
+        f.write('"time","deliveredTotal"\\n')
         writer = csv.writer(f)
-        writer.writerow(["time", "deliveredTotal"])
         for i in range(65):
             t = i / 8
             writer.writerow([t, .3 * t])
@@ -74,7 +76,7 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
             self.assertEqual(diag["native_output_column"], "deliveredTotal")
             self.assertEqual(diag["native_output_filename"], "m00_res.csv")
             self.assertEqual(csv_path.read_text().splitlines()[0],
-                             "time,deliveredTotal")
+                             '"time","deliveredTotal"')
             db = root / "ct.sqlite"
             record_feedback(db, ctx, parent_hash=diag["parent_hash"],
                 diagnostic=diag, recorded_at=STAMP.isoformat())
@@ -161,6 +163,14 @@ class CT03MOwnDiagnosticTests(unittest.TestCase):
                        trace_csv=csv_path)
             self.assertEqual(ok["native_output_column"], "deliveredTotal")
             self.assertEqual(ok["native_output_filename"], csv_path.name)
+            # The same root-variable heading is also valid without CSV quotes.
+            csv_path.write_text(csv_path.read_text().replace(
+                '"time","deliveredTotal"', 'time,deliveredTotal', 1))
+            unquoted_receipt = {**r, "csv_sha256": sha_bytes(csv_path.read_bytes())}
+            self.assertEqual(build(c,manifest=m,parent=p,construction=o,
+                receipt=unquoted_receipt,modelica_file=n,
+                simulate_script_file=n.parent/"simulate.mos",
+                trace_csv=csv_path)["native_output_column"], "deliveredTotal")
             variants = [
                 ("csv_prefix", "m04"),
                 ("csv_filename", "m04_res.csv"),
