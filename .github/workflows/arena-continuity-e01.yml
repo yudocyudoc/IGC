@@ -105,6 +105,7 @@ jobs:
             test_arena_ct03_b_physical_result.py \
             test_arena_ct03_b_physical_outcome.py \
             test_arena_ct03_b_physical_feedback.py \
+            test_arena_ct03_b_runner_failures.py \
             test_arena_ct03_b_physical_execute_script.py \
             test_arena_ct03_m_revision_physical.py \
             test_arena_ct03_b_lock_projection.py \
