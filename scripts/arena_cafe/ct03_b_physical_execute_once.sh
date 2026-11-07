@@ -60,17 +60,21 @@ python -m scripts.arena_cafe.ct03_b_physical_outcome \
 # world count and all M/B prior physical attempts share the 19-run ceiling.
 : "${CT03_DM_COUNT_ONLY_BUDGET:?CT03_B_DM_COUNT_ONLY_RECEIPT_REQUIRED}"
 test -s "$CT03_DM_COUNT_ONLY_BUDGET"
+CT03_PUBLIC_CONSTRUCTION="${CT03_PUBLIC_CONSTRUCTION:-artifacts/ct03-public/construction.json}"
+test -s "$CT03_PUBLIC_CONSTRUCTION"
 # The B job never mounts or reads D/M native sources, CSV, or feedback.
 python -m scripts.arena_cafe.ct03_lot_budget verify \
   --receipt "$CT03_DM_COUNT_ONLY_BUDGET" \
+  --construction "$CT03_PUBLIC_CONSTRUCTION" \
   --run-id "$GITHUB_RUN_ID" --git-sha "$GITHUB_SHA"
-COUNT="$(python - "$CT03_DM_COUNT_ONLY_BUDGET" "$MODE" <<'PY'
+COUNT="$(python - "$CT03_DM_COUNT_ONLY_BUDGET" "$MODE" "$CT03_PUBLIC_CONSTRUCTION" <<'PY'
 from pathlib import Path
 import os,re,sys,json
 from scripts.arena_cafe.ct03_lot_budget import verify_receipt
 r=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 mode=sys.argv[2];run=os.environ["GITHUB_RUN_ID"];sha=os.environ["GITHUB_SHA"]
-before=verify_receipt(r,run_id=run,git_sha=sha)
+construction=json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+before=verify_receipt(r,run_id=run,git_sha=sha,construction=construction)
 p=Path("artifacts/ct03-producer/b-physical-attempts.log")
 prior=[] if not p.exists() else p.read_text(encoding="utf-8").splitlines()
 assert len(prior)<=1
