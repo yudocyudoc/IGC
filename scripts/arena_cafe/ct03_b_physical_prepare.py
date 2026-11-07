@@ -217,10 +217,20 @@ def main():
     p=argparse.ArgumentParser()
     for arg in ("native","receipt","construction","b-feedback","out"):
         p.add_argument("--"+arg,type=Path,required=True)
+    for arg in ("revision-parent-native","revision-parent-receipt","revision-packet"):
+        p.add_argument("--"+arg,type=Path)
     a=p.parse_args()
     def load(f):return json.loads(f.read_text(encoding="utf-8"))
+    extras=(a.revision_parent_native,a.revision_parent_receipt,a.revision_packet)
+    require(all(x is None for x in extras) or all(x is not None for x in extras),
+            "CT03_B_REVISION_ALL_PARENT_INPUTS_REQUIRED")
+    revision=({
+        "parent_native":load(a.revision_parent_native),
+        "parent_receipt":load(a.revision_parent_receipt),
+        "packet":load(a.revision_packet),
+    } if all(x is not None for x in extras) else None)
     result=prepare(load(a.native),load(a.receipt),load(a.construction),
-                   load(a.b_feedback),a.out)
+                   load(a.b_feedback),a.out,revision_provenance=revision)
     print(json.dumps({"status":result["status"],"new_omc":0,"provider":0}))
 
 if __name__=="__main__":
