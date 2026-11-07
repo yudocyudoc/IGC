@@ -11,12 +11,16 @@
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
-    "scientific_omc_new_simulations": 0,
+    "scientific_omc_new_simulations": 2,
     "des_new_simulations": 0,
     "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
     "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
     "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
-    "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46"
+    "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+    "ct02_technical_physical_run": "https://github.com/yudocyudoc/IGC/actions/runs/42409210062",
+    "ct02_technical_artifact_id": 13588621967,
+    "ct02_technical_artifact_zip_sha256": "sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac",
+    "ct02_technical_conformity": "PASS_TWO_ORIGINAL_NATIVE_MODELS_ONLY"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
@@ -42,7 +46,7 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "CT02_USER_AUTHORIZED_EXACTLY_TWO_TECHNICAL_OMC_PENDING_MANUAL_DISPATCH_NOT_EXECUTED",
+    "status": "TWO_ORIGINAL_TECHNICAL_OMC_RUNS_SUCCESSFULLY_VERIFIED_OTHER_CT02_SCIENTIFIC_GATES_NOT_CLOSED",
     "files": [
       "scripts/arena_cafe/ct03_public.py",
       "scripts/arena_cafe/ct03_d_prepare.py",
@@ -108,7 +112,8 @@
       "Minimal CT-02 manual-only physical workflow stages original D0+M0 without ranking; single simulate per D/M .mos; GitHub SHA gate + exact budget=2, no PR trigger, no Buffalo or hidden world; production OMC job NOT DISPATCHED.",
       "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
       "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC.",
-      "F172-07: exact-two CT02 workflow now checks each original arm's source/solver/CSV/horizon/conservation immediately after its OMC invocation, before proceeding D->M. Real workflow Bash replay with mock Docker verifies invalid D performs only D attempt and valid D performs D and M; no new solver/provider calls."
+      "F172-07: exact-two CT02 workflow now checks each original arm's source/solver/CSV/horizon/conservation immediately after its OMC invocation, before proceeding D->M. Real workflow Bash replay with mock Docker verifies invalid D performs only D attempt and valid D performs D and M; no new solver/provider calls.",
+      "CT-02 physical technical batch REAL run 42409210062 on SHA 6534ec6: original D0 and M0 OpenModelica 1.26.5 executed once each; steps and physical checks passed; GitHub artifact 13588621967 and original CSV/log/native hashes independently inspected. Scope two original models only, not 13 candidates or full prospective feedback cycle."
     ],
     "blockers": [
       "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
@@ -116,10 +121,10 @@
       "Prospective byte lock, signed runner/archivist verification and evaluator-private source preflight are CI-tested only with synthetic fixtures. No operator-owned runner/archivist independent keys, OS-level custody isolation, actual locked forecasts, independent G2 attestation or evaluator reveal have been performed.",
       "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
       "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement.",
-      "CT02 maximum two OMC now user-authorized, but the actual manual workflow has not been dispatched: GitHub integration has no dispatch action; artifact and scientific conformity not yet available."
+      "Two-run numerical technical conformity is DONE; full scientific CT02 acceptance still requires authentic feedback retrieval-to-policy loop/provenance in the selected world, and CT03 requires a separate user-authorized batch for live D/M/B and heldout scoring."
     ],
     "provider_new_calls": 0,
-    "omc_new_simulations": 0,
+    "omc_new_simulations": 2,
     "prospective_lock_increment": {
       "code": "scripts/arena_cafe/ct03_prospective_lock.py",
       "test": "tests/test_arena_ct03_prospective_lock.py",
@@ -187,8 +192,8 @@
       "ct02_selected_technical_candidates": "original D initial index 0 and original M full-AST initial index 0, fixed before seeing outputs; no ranking",
       "ct02_exact_budget_omc": 2,
       "ct02_currently_authorized_omc": 2,
-      "ct02_attempted_omc": 0,
-      "ct02_manual_dispatch_performed": false,
+      "ct02_attempted_omc": 2,
+      "ct02_manual_dispatch_performed": true,
       "cto2_stop": "D then immediate original per-arm native CSV/version/identity/horizon/mass check; no M attempt unless D passes; after M check M then aggregated final report, no retry.",
       "ct03_private_custody": "different operator account/runner required; config/private Modelica/CSV never mounted or uploaded to producer; local custody CLI rejects private paths in repo and incompatible frozen protocol",
       "ct03_public_release": "only t0,t1,t2,t4 and commitment; original private CSV plus t6,t8 kept with custodian",
@@ -210,11 +215,11 @@
       "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
       "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
       "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
-      "real_omc_runs": 0,
+      "real_omc_runs": 2,
       "provider_posts": 0,
       "des_runs": 0,
       "ct02_batch_authorization": {
-        "status": "USER_AUTHORIZED_ONCE_PENDING_GITHUB_WORKFLOW_DISPATCH",
+        "status": "USED_ONCE_EXACTLY_TWO_NO_RETRY_BALANCE_PASSED",
         "approved_technical_ceiling_new_omc": 2,
         "permitted_candidates": [
           "D index 0 original",
@@ -232,14 +237,84 @@
         "registered_entry_on_main": "2cef5f2f8a168e2b850371cf490798f8f2758575",
         "main_entry_is_no_physics_fail_closed": true,
         "execution_ref": "experiment/arena-ct00-ct02-20261107",
-        "dispatch_performed": false,
-        "dispatch_blocker": "Current GitHub connector lacks workflow_dispatch write action. Only operator-initiated GitHub Actions Run workflow / gh workflow run with freeze SHA can start batch.",
-        "use_github_run_artifact_for_actual_provenance": true
+        "dispatch_performed": true,
+        "dispatch_blocker": null,
+        "use_github_run_artifact_for_actual_provenance": true,
+        "executed_run_id": 42409210062
       }
+    },
+    "real_technical_batch": {
+      "state": "COMPLETED_SUCCESS_ORIGINAL_NATIVE_TWO_TECHNICAL_CHECKS_ONLY",
+      "source_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
+      "workflow_dispatch_run_id": 42409210062,
+      "workflow_url": "https://github.com/yudocyudoc/IGC/actions/runs/42409210062",
+      "executed_code_sha": "6534ec6bbbe0c48265d1e4eb0d1d243c7fe55b4d",
+      "git_ref": "experiment/arena-ct00-ct02-20261107",
+      "workflow_attempt": 1,
+      "jobs": [
+        {
+          "name": "ct02-physical-two-only",
+          "id": 128513469668,
+          "conclusion": "success"
+        }
+      ],
+      "artifact_id": 13588621967,
+      "artifact_name": "arena-ct02-technical-attempt-42409210062",
+      "artifact_zip_sha256": "sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac",
+      "artifact_sha256_verified_against_GitHub_metadata": true,
+      "runtime": {
+        "OpenModelica": "1.26.5",
+        "docker_image": "openmodelica/openmodelica@sha256:8993c8273224aeacbc018f351c00d60879c5aec386c77a58019318c44c938c9b",
+        "MSL_git_sha": "6626538a236a34a390655b55d5e8c906bfe31772",
+        "SystemDynamics_git_sha": "b986a2ea354ab550d627a392f857ad7c9997d961",
+        "method": "euler",
+        "start_h": 0,
+        "stop_h": 8,
+        "intervals": 64,
+        "dt_h": 0.125
+      },
+      "attempted_omc": 2,
+      "successful_omc": 2,
+      "provider_posts": 0,
+      "des_runs": 0,
+      "retries": 0,
+      "attempts_logged_in_order": [
+        "D",
+        "M"
+      ],
+      "confirmed": {
+        "D": {
+          "candidate_id": "D-5f8781847cb6",
+          "csv": "d00_res.csv",
+          "csv_rows": 68,
+          "csv_sha256": "sha256:41befc4227c2f1ec7d5c2dc60c2f2a478a7b0cf5d493bddcec53506b53c1c668",
+          "native_sha256": "sha256:4139d748b6fb91d755f0fb66fde25ed4909edb2c133c7c6be7af1a35d80af3df",
+          "t8_cumulative_delivered": 3.39753242195592,
+          "max_mass_balance_residual_items": 6.803024810153602e-10,
+          "per_arm_gate": "PASS_EXISTING_D_MASS_BALANCE"
+        },
+        "M": {
+          "candidate_id": "18247fc54a548b4149dcf6942e8a35eb3500677535e25188f4172b307af1b16e",
+          "original_full_AST_sha256": "sha256:e199feb807134b6bcbc83d52304360980f7b14655a4eb150f9696669d99ea79e",
+          "csv": "m00_res.csv",
+          "csv_rows": 68,
+          "csv_sha256": "sha256:e25fe09b2267f98debbc64a751240ac28507ed11bda3b68412682e1a2b23be3e",
+          "native_sha256": "sha256:8ebeaec94bedb53285ef5c8b7518b8a408b3ae61cea1d40e66811e3bb0d6b37e",
+          "t8_cumulative_delivered": 3.399984796863248,
+          "max_mass_balance_residual_items": 6.803033691937799e-10,
+          "per_arm_gate": "PASS_EXISTING_M_CSV_CONSTRUCTION_CUTS",
+          "extra_mass_residual_independent_check": "PASS_SPOT_CHECK_STOCKS_PLUS_DELIVERED_AT_EACH_ROW"
+        }
+      },
+      "note": "Both native CSV files contain 68 rows (64 intervals plus event/output rows), including duplicated near t2 and final t8; accepted by original CSV checks. M has nonfatal library loading notifications followed by automatic Modelica 4.0.0/SystemDynamics 2.1.2 load; solver success. Pre-execution batch.json authorized=false is a frozen PREPARATION manifest and not a statement that the manual run was unauthorized.",
+      "acceptance_scope": "CT02_TWO_CANDIDATE_NUMERICAL_CONFORMITY_PASSED_NOT_CT02_FULL_CLOSED_LOOP_OR_CT03_SCIENTIFIC_ACCEPTANCE",
+      "scientific_G2_for_all_13": false,
+      "heldout_evaluation_performed": false,
+      "world_CT03_selected": false
     }
   },
   "CT03": {
-    "status": "MINIMAL_PROCEDURAL_CUSTODY_AND_EVALUATION_PREPARED_NO_WORLD_NO_LIVE",
+    "status": "NOT_AUTHORIZED_WORLD_UNSELECTED_NO_LIVE_CT03_ONE_CT02_TECHNICAL_BATCH_COMPLETED",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
@@ -269,7 +344,10 @@
     "real_external_trust_anchors_registered": false,
     "actual_archived_lock_signatures": 0,
     "minimal_runbook": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
-    "live_producer_batch_connected": false
+    "live_producer_batch_connected": false,
+    "ct02_technical_prerequisite": "TWO_ORIGINAL_NATIVE_PHYSICAL_CHECKS_PASSED_NOT_FULL_CT02_ACCEPTANCE",
+    "heldout_opened": false,
+    "real_omc_runs": 0
   },
   "unchanged": [
     "D/B/M and original equations",
