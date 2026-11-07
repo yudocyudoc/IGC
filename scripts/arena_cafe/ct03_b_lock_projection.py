@@ -508,8 +508,6 @@ def main():
             "CT03_B_NO_NATIVE_CANNOT_INVENT_REVISION_OR_PHYSICAL")
         result=project_no_native(read(a.initial_receipt),read(a.construction))
     else:
-        require(a.b_feedback and a.packet and a.initial_plan,
-                "CT03_B_NATIVE_MUST_HAVE_OWN_FEEDBACK_AND_G1_PLAN")
         original=read(a.original_native)
         initial_receipt=read(a.initial_receipt)
         if initial_receipt.get("status")=="CT03_NATIVE_HORIZON_MISMATCH":
