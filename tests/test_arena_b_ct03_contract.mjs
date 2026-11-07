@@ -1,11 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
 import {digest} from "../scripts/arena_b_cf_protocol_adapter.mjs";
 import {validateCt03Visible,validateCt03Revision,classifyCt03NativeResult,
         CT03_SCHEMA,CT03_INPUT,CT03_OWN_FEEDBACK_SCHEMA}
   from "../scripts/arena_b_ct03_contract.mjs";
 
 const SHA="sha256:"+"a".repeat(64);
+const fixtureDiagnostic=parent=>({
+  arm:"B",condition:"C0",source_hash:SHA,parent_hash:parent,
+  evidence:"G3",trace_sha256:"sha256:"+"d".repeat(64),
+  own_evidence_only:true,no_future_truth:true,
+  observations:[{time:2,residual:0.3},{time:4,residual:0.4}]
+});
+const canonical=x=>JSON.stringify(Object.fromEntries(
+  Object.entries(x).sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>
+    [key,Array.isArray(value)?value.map(v=>typeof v==="object"?
+      Object.fromEntries(Object.entries(v).sort()):v):value])));
+const fixtureFeedback=(parent)=>{
+  const diag=fixtureDiagnostic(parent);
+  // Sorted-key fixture matches Python json.dumps(...,sort_keys=True,separators).
+  const bytes=Buffer.from(canonical(diag),"utf8");
+  return {schema:CT03_OWN_FEEDBACK_SCHEMA,arm:"B",
+    world_public_id:"W1",condition_id:"C0",source_snapshot_hash:SHA,
+    parent_result_sha256:parent,
+    own_diagnostic_sha256:"sha256:"+createHash("sha256").update(bytes).digest("hex"),
+    own_diagnostic_canonical_base64:bytes.toString("base64"),
+    retrieved_before_policy:{item_id:"ct-CT03-W1-R0-B-C0-parent-"+parent.slice(7)+":FEEDBACK",
+      projection_hash:"sha256:"+"c".repeat(64),
+      as_known_at:"2026-11-07T12:00:00.000000+00:00"},
+    own_diagnostic:diag};
+};
 const visible=(round="initial")=>({
   schema:CT03_SCHEMA,case_id:"CT-03",arm:"B",round_id:"ct03-b-"+round,
   source_snapshot_hash:SHA,world_public_id:"W1",condition_id:"C0",
@@ -40,12 +65,7 @@ test("CT03 B validates own currentModel parent exactly, never accepts other worl
   const receipt={case_id:"CT-03",world_public_id:"W1",condition_id:"C0",
     round_kind:"initial",source_snapshot_hash:SHA,model_returned:true,
     mode:"mock",provider_calls:0,result_sha256:digest(native)};
-  const feedback={schema:CT03_OWN_FEEDBACK_SCHEMA,arm:"B",
-    world_public_id:"W1",condition_id:"C0",source_snapshot_hash:SHA,
-    parent_result_sha256:receipt.result_sha256,
-    own_diagnostic_sha256:"sha256:"+"b".repeat(64),
-    retrieved_before_policy:{item_id:"W1:own",projection_hash:"sha256:"+"c".repeat(64)},
-    own_diagnostic:{construction_status:"mock_only"}};
+  const feedback=fixtureFeedback(receipt.result_sha256);
   const v=visible("revision");
   assert.equal(validateCt03Revision({native,receipt,feedback,visible:v,mode:"mock"}).model,
                native.model);
@@ -55,6 +75,40 @@ test("CT03 B validates own currentModel parent exactly, never accepts other worl
     visible:v,mode:"mock"}),/FEEDBACK_NOT_OWN/);
   assert.throws(()=>validateCt03Revision({native,receipt,feedback,
     visible:v,mode:"live"}),/PARENT_RECEIPT_MISMATCH/);
+});
+
+
+test("F172-02 rejects edited bytes, t6, empty retrieval and forged inner provenance",()=>{
+  const native={model:{specs:{stopTime:8},variables:[],relationships:[]}};
+  const receipt={case_id:"CT-03",world_public_id:"W1",condition_id:"C0",
+    round_kind:"initial",source_snapshot_hash:SHA,model_returned:true,
+    mode:"mock",provider_calls:0,result_sha256:digest(native)};
+  const original=fixtureFeedback(receipt.result_sha256);
+  const v=visible("revision");
+  const verify=f=>validateCt03Revision({native,receipt,feedback:f,visible:v,mode:"mock"});
+  assert.equal(verify(original).feedback.own_diagnostic.observations[0].residual,.3);
+  assert.throws(()=>verify({...original,own_diagnostic:{
+    ...original.own_diagnostic,observations:[{time:2,residual:999},{time:4,residual:.4}]
+  }}),/BODY_NOT_EXPORTED/);
+  const tamper=x=>({...original,own_diagnostic:x});
+  assert.throws(()=>verify(tamper({...original.own_diagnostic,
+    observations:[...original.own_diagnostic.observations,{time:6,residual:.1}]})),
+    /BODY_NOT_EXPORTED/);
+  assert.throws(()=>verify({...original,retrieved_before_policy:{}}),/LEDGER_RETRIEVAL_METADATA_INVALID/);
+  assert.throws(()=>verify(tamper({...original.own_diagnostic,source_hash:"sha256:"+"f".repeat(64),
+    own_evidence_only:false,no_future_truth:false})),/BODY_NOT_EXPORTED/);
+  const recanonical=x=>{
+    const raw=Buffer.from(canonical(x));
+    return {...original,own_diagnostic:x,
+      own_diagnostic_canonical_base64:raw.toString("base64"),
+      own_diagnostic_sha256:"sha256:"+createHash("sha256").update(raw).digest("hex")};
+  };
+  assert.throws(()=>verify(recanonical({...original.own_diagnostic,
+    observations:[...original.own_diagnostic.observations,{time:6,residual:.1}]})),
+    /OUTSIDE_CONSTRUCTION/);
+  assert.throws(()=>verify(recanonical({...original.own_diagnostic,
+    source_hash:"sha256:"+"f".repeat(64),own_evidence_only:false,no_future_truth:false})),
+    /OWN_SCOPE_OR_PROVENANCE/);
 });
 
 test("CT03 B has separate NONE vs malformed horizon statuses",()=>{
