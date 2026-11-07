@@ -178,6 +178,11 @@ class CT02Test(unittest.TestCase):
                              parent_sha)
             self.assertEqual(result["revision_feedback_packet"]["source_snapshot_hash"], SRC)
             self.assertEqual(result["provider_calls"], 0)
+            from scripts.arena_cafe.ct03_b_review_export import prepare as export_packet
+            packet = export_packet(db, ctx, original, receipt, later)
+            self.assertEqual(packet["schema"], "igc-ct03-b-own-feedback/1.0")
+            self.assertEqual(packet["parent_result_sha256"], parent_sha)
+            self.assertTrue(packet["retrieved_before_policy"]["projection_hash"])
             bad = {**receipt, "world_public_id": "W2"}
             self.assertEqual(b_review_envelope(db, ctx, original_native=original,
                       authenticated_receipt=bad, as_known_at=later)["status"],
