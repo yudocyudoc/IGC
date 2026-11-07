@@ -342,6 +342,8 @@ def main():
                  "revision-plan","revision-physical"):
         p.add_argument("--"+flag,type=Path)
     p.add_argument("--stop-reason",choices=sorted(STOP_REASONS))
+    p.add_argument("--review-feedback",type=Path)
+    p.add_argument("--review-packet",type=Path)
     a=p.parse_args()
     require(not a.out.exists(),"CT03_B_LOCK_REFUSE_OVERWRITE")
     def read(path):return json.loads(path.read_text(encoding="utf-8")) if path else None
@@ -349,7 +351,8 @@ def main():
         require(all(x is None for x in (
             a.b_feedback,a.packet,a.initial_plan,a.initial_physical,
             a.revision_native,a.revision_receipt,a.revision_plan,
-            a.revision_physical,a.stop_reason)),
+            a.revision_physical,a.stop_reason,
+            a.review_feedback,a.review_packet)),
             "CT03_B_NO_NATIVE_CANNOT_INVENT_REVISION_OR_PHYSICAL")
         result=project_no_native(read(a.initial_receipt),read(a.construction))
     else:
@@ -365,7 +368,9 @@ def main():
             revision_native=read(a.revision_native),
             revision_receipt=read(a.revision_receipt),
             revision_plan=read(a.revision_plan),
-            revision_physical=read(a.revision_physical),stop_reason=a.stop_reason)
+            revision_physical=read(a.revision_physical),stop_reason=a.stop_reason,
+            review_feedback=read(a.review_feedback),
+            review_packet=read(a.review_packet))
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_bytes(canonical(result)+b"\n")
     print(json.dumps({"status":result["status"],"B":1,
