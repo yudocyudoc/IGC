@@ -306,7 +306,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: arena-ct03-b-raw-one-lot-${{ github.run_id }}
-          path: artifacts/ct03-producer/B*/
+          path: |
+            artifacts/ct03-producer/B*/
+            artifacts/ct03-producer/b-provider-attempts.log
+            artifacts/ct03-producer/b-physical-attempts.log
           if-no-files-found: warn
           retention-days: 90
 
