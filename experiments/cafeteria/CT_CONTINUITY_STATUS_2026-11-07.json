@@ -6,13 +6,15 @@
   "branch": "experiment/arena-ct00-ct02-20261107",
   "draft_pr": 172,
   "evidence": {
-    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42346959826",
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42349359023",
     "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
     "archived_feedback": "PASS",
     "offline_tests": "PASS",
     "provider_new_calls": 0,
     "scientific_omc_new_simulations": 0,
-    "des_new_simulations": 0
+    "des_new_simulations": 0,
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42349359236",
+    "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED"
   },
   "CT00": {
     "status": "NUMERICAL_IDENTITY_GATE_IMPLEMENTED_AND_CI_VERIFIED",
@@ -38,38 +40,68 @@
     "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
   },
   "CT02": {
-    "status": "OFFLINE_FEEDBACK_BRIDGE_AND_UNIT_TESTS_PASS_NOT_END_TO_END_COMPLETE",
+    "status": "OFFLINE_THREE_ARM_PREPARATION_AND_B_ORIGINAL_ENGINE_MOCK_VERIFIED_NOT_LIVE_END_TO_END",
     "files": [
+      "scripts/arena_cafe/ct03_public.py",
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py",
+      "scripts/arena_cafe/ct03_m_construction_diagnostic.py",
+      "scripts/arena_cafe/ct03_m_revision_prepare.py",
+      "scripts/arena_cafe/ct03_b_visible.py",
+      "scripts/arena_cafe/ct03_b_review_export.py",
+      "scripts/arena_cafe/ct03_world_custody.py",
       "scripts/arena_cafe/ct_feedback_bridge.py",
-      "tests/test_arena_ct_feedback_bridge.py"
+      "scripts/arena_b_ct03_contract.mjs",
+      "scripts/arena_b_ct03_native_runner.mjs",
+      "tests/test_arena_ct_feedback_bridge.py",
+      "tests/test_arena_ct03_d_prepare.py",
+      "tests/test_arena_ct03_m_prepare.py",
+      "tests/test_arena_ct03_m_construction_diagnostic.py",
+      "tests/test_arena_ct03_m_revision_prepare.py",
+      "tests/test_arena_ct03_b_visible.py",
+      "tests/test_arena_b_ct03_contract.mjs",
+      "tests/test_arena_ct03_world_custody.py",
+      ".github/workflows/arena-continuity-e01.yml"
     ],
     "verified": [
-      "ledger append-only source/diagnostic/rule/knowledge",
-      "retrieve supported own feedback before own_policy",
-      "original M2 own_policy invoked on authenticated-shaped parent fixture",
-      "late overshoot changes parameters only",
-      "sign mismatch retains",
-      "retraction removes later support without rewriting prior cut",
-      "cross-case and cross-arm access denied",
-      "B staging blocked without authentic parent/receipt",
-      "disposition supported by actual feedback dependency"
+      "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
+      "Original Short E1 composer/renderer produces six full ASTs and three material projections, preserving all topology and information branches; Euler 0-8 h dt=.125 commands are generated but not run.",
+      "Construction-only M CSV diagnostic binds exact full AST, public source, native Modelica bytes, solver receipt and actual CSV bytes; fixtures test both valid and rejected paths, not real physical provenance.",
+      "Existing own_policy M2 consumes supported feedback retrieved from bitemporal ledger; one or zero bounded responseTime revisions and original native renderer produce a new version, not a second optimizer.",
+      "Subsequent retraction removes later ATMS decision support and preserves prior cuts and other case/arm isolation.",
+      "Buffalo CT03 original Engine.generate executes mock initial + mock own-currentModel revision through actual OpenRouter SDK request and effective Cloudflare schema adapter; no HTTP POST to provider.",
+      "New B revision packet is derived from scoped ledger feedback and exact own-native/receipt, with cross-world, altered parent and unauthorized live rejection.",
+      "Evaluator-only world source factory uses existing Short E1 classes and fixed pulse, two or three stages; only synthetic test fixtures were selected, never the actual CT03 world.",
+      "Existing cheap CI shows success; inherited M3 physical job is skipped."
     ],
     "blockers": [
-      "End-to-end new-case producer export and G2/G3 authenticity handoff not exercised",
-      "B 0-8h adapter to original Cloudflare live runner not yet implemented or byte-verified for CT03",
-      "six M parent render/conformity and actual new-case simulation not executed",
-      "CT03 world custodian and inaccessible future boundary not demonstrated"
+      "CT03 primary world and observed construction points are not yet generated; no new authentic OpenModelica CSVs, G2/G3 compliance or new-case numerical-model/observation map has been verified.",
+      "Buffalo has not been invoked live for CT03; no actual new-case provider/native/receipt or G1/G2 result exists. Native equation/function semantics remain to be adjudicated without Arena repair.",
+      "CT03 evaluator/producers still need independent job boundaries and a demonstrable forecast lock before opening reserved t6/t8 values; current isolation is procedural, not OS-level proof.",
+      "Exact numerical compatibility of rendered D/M world/revised models under prescribed Euler runtime remains untested; CT02 allows at most two distinct technical conformity calls only if separately authorized.",
+      "CT03 complete run budget and final custodian selection are not authorized; this stage does not claim scientific transfer or predictive improvement."
     ],
     "provider_new_calls": 0,
     "omc_new_simulations": 0
   },
   "CT03": {
-    "status": "PROTOCOL_PREPARED_NO_WORLD_LOCK_NO_LIVE_AUTHORIZATION",
+    "status": "METHOD_AND_PRIVATE_WORLD_FACTORIES_PREPARED_WORLD_UNSELECTED_NO_AUTHORIZATION",
     "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
     "current_provider_budget_authorized": 0,
     "current_omc_budget_authorized": 0,
     "proposed_ceiling_new_provider_calls": 2,
-    "proposed_ceiling_new_omc_simulations": 21
+    "proposed_ceiling_new_omc_simulations": 21,
+    "custody_source": "scripts/arena_cafe/ct03_world_custody.py",
+    "d_m_native_source": [
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py"
+    ],
+    "buffalo_original_runner": "scripts/arena_b_ct03_native_runner.mjs",
+    "private_world_selected": false,
+    "reserved_truth_opened": false,
+    "prospective_lock_performed": false,
+    "technical_omc_executed": 0,
+    "new_provider_posts": 0
   },
   "unchanged": [
     "D/B/M and original equations",
