@@ -7,7 +7,7 @@ import unittest
 from scripts.arena_v0_contract import digest
 from scripts.arena_cafe.ct_feedback_bridge import (
     make_context, record_feedback, recover_feedback, retract_feedback,
-    own_m_decision, d_fixed_decision, b_review_envelope,
+    own_m_decision, d_fixed_decision, b_review_envelope, persist_disposition,
 )
 
 
@@ -105,6 +105,45 @@ class CT02Test(unittest.TestCase):
             bctx = context(arm="B")
             self.assertEqual(b_review_envelope(db, bctx, original_native=None,
                              as_known_at=when)["status"], "NOT_EXECUTED_NO_AUTHENTIC_PARENT")
+
+
+    def test_disposition_supported_only_while_feedback_is_current(self):
+        from scripts.ledger import Ledger
+        from scripts.arena_atms import project, events_from_ledger
+        from scripts.arena_cafe.ct_feedback_bridge import MIGRATION
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "ledger.sqlite"
+            ctx, graph = context(), parent()
+            record_feedback(db, ctx, parent_hash=digest(graph),
+                            diagnostic=diag(ctx, digest(graph)), recorded_at=TIME.isoformat())
+            decision = own_m_decision(db, ctx, parent_graph=graph,
+                                     as_known_at=(TIME + timedelta(seconds=1)).isoformat(),
+                                     classes=CLASSES)
+            cut = (TIME + timedelta(seconds=2)).isoformat()
+            saved = persist_disposition(db, ctx, decision=decision, recorded_at=cut)
+            self.assertEqual(saved["model_change_count"], 1)
+            ledger = Ledger(db, MIGRATION)
+            old, _ = project(events_from_ledger(ledger.snapshot(
+                case_id=ctx["case_id"], as_known_at=cut)), as_known_at=cut,
+                lane="M", investigation_id=ctx["case_id"])
+            target = ctx["case_id"] + ":DECISION"
+            self.assertTrue(old.explain(target)["supported"])
+            retract_feedback(db, ctx, at=(TIME + timedelta(seconds=3)).isoformat())
+            later = (TIME + timedelta(seconds=4)).isoformat()
+            new, _ = project(events_from_ledger(ledger.snapshot(
+                case_id=ctx["case_id"], as_known_at=later)), as_known_at=later,
+                lane="M", investigation_id=ctx["case_id"])
+            self.assertFalse(new.explain(target)["supported"])
+            self.assertTrue(old.explain(target)["supported"])
+
+    def test_b_requires_original_model_shape_and_initial_receipt(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "ledger.sqlite"
+            ctx = context(arm="B")
+            payload = {"model": {"variables": [], "relationships": []}}
+            self.assertEqual(b_review_envelope(db, ctx, original_native=payload,
+                as_known_at=(TIME + timedelta(seconds=1)).isoformat())["status"],
+                "NOT_EXECUTED_UNAUTHENTICATED_B_NATIVE_OR_RECEIPT")
 
 
 if __name__ == "__main__":
