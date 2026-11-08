@@ -2,6 +2,9 @@
 
 **Estado (2026-11-07, posterior al run 42409210062):** **CT-02 aceptado como preparación y conformidad técnica acotada de D0/M0** (2 de 2 OMC consumidos, sin reintento). **CT-03 aún no autorizado ni ejecutado**; no hay mundo elegido, llamadas Buffalo, predicciones selladas, evaluación reservada ni resultado científico prospectivo. Basado en la hoja vigente `ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md`, sin cambiar métodos, métricas ni límites. El antiguo conjunto de firmas/atestaciones RSA es **opcional y no se invoca** en esta ruta piloto. Se conserva el PR #172 en Draft y el protocolo CT-03 actual.
 
+> **Actualización operativa posterior a F172-10/11, 7-nov-2026:** el workflow productor global **ya existe** y pasó CI offline. Las frases históricas de este documento que decían «pendiente cableado live» se refieren al corte anterior y no deben usarse como estado actual. El estado vigente de habilitación, sin datos privados, es [CT03_HABILITACION_OPERATIVA_LOTE_2026-11-07.md](CT03_HABILITACION_OPERATIVA_LOTE_2026-11-07.md): registrar los tres workflows en `main` (no presentes aún), acreditar environments/custodio y autorizar un único lote. No fusionar automáticamente #171/#172 ni gastar CT-03 por el mero hecho de que CI sea verde. **El workflow de freeze debe despacharse en la misma rama y SHA del productor, NO en `main`, porque ambos verifican SHA exacto.**
+
+
 ## 1. Congelar una única versión y habilitar un lote, no cada archivo
 
 La revisión se realiza **una vez por lote**, antes de seleccionar mundo o abrir resultados. Registrar el SHA completo del commit que contiene protocolo, D/B/M, adaptadores, fuente de mundo, métrica y workflow. El protocolo ya fija Euler 0–8 h, 64 intervalos (dt=0.125 h), OpenModelica 1.26.5, MSL 4.0.0 y SystemDynamics 2.1.2. No escoger otro solver según el resultado.
@@ -110,7 +113,7 @@ python -m scripts.arena_cafe.ct03_m_prepare --out producer-artifacts/M
 
 Las simulaciones CT-03 requieren una **autorización de lote independiente**: máximo **21 OMC** (1 mundo + 6 D + 6 M + 1 B inicial + hasta 6 M revisiones + 1 B revisión), y máximo **2 POST** Buffalo (inicial + revisión). D2 no se aplica sin ensayo reiniciado. Fallos G1/G2/timeout/ausencia de padre permanecen en el denominador; no se llenan con ceros, no se repiten o sustituyen llamadas, ni se repara un motor por la puntuación.
 
-**Pendiente operativo explícito:** el job productor CT-03 que encadena físicamente los 13 slots, Buffalo live con autorización propia y las revisiones reales todavía necesita cableado específico y aceptación CT-02; esta hoja no lo disfraza de ya ejecutado. No crear un artefacto `entries.json` sintético para ejecutar el piloto.
+**Estado actualizado tras el cierre independiente F172-10/11:** el job global CT-03 y sus rutas B/D/M/feedback/trece plazas están cableados y probados en CI con replays **offline**; CT-02 fue aceptado como preparación con las dos conformidades OMC originales. **Falta habilitación operativa real** (registro de workflow por defecto, custodia independiente, environments protegidos, autorización explícita y ejecución física auténtica). No crear un `entries.json` sintético para representar el piloto. Ver [hito operativo](CT03_HABILITACION_OPERATIVA_LOTE_2026-11-07.md).
 
 ## 4. Cierre prospectivo y puntuación (nunca en el mismo job)
 
@@ -129,7 +132,7 @@ python -m scripts.arena_cafe.ct03_prospective_lock \
 El paquete del productor para GitHub contiene **exactamente** `construction.json`, `world-commitment.json`, `D/manifest.json`, `M/manifest.json` y `entries.json`; no incluye datos del custodio. Tras subirlo como artefacto `arena-ct03-producer-public-and-forecasts`, cerrar mediante:
 
 ```bash
-gh workflow run arena-ct03-freeze-predictions.yml --ref main \
+gh workflow run arena-ct03-freeze-predictions.yml --ref experiment/arena-ct00-ct02-20261107 \
   -f freeze_sha=<SHA40> -f producer_run_id=<PRODUCER_RUN_ID>
 ```
 
