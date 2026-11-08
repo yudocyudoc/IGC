@@ -14,6 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 SCRIPT=ROOT/"scripts/arena_cafe/ct03_managed_custody_once.sh"
 WORK=ROOT/".github/workflows/arena-ct03-public-intake.yml"
 PRODUCER=ROOT/".github/workflows/arena-ct03-producer.yml"
+EVALUATE=ROOT/".github/workflows/arena-ct03-evaluate-postlock.yml"
 
 
 class ManagedCustodyTests(unittest.TestCase):
@@ -49,6 +50,22 @@ class ManagedCustodyTests(unittest.TestCase):
         for term in ("CT03_R2_SECRET_ACCESS_KEY","CT03_R2_ACCESS_KEY_ID",
                      "ct03_managed_custody_once", "world-config.json"):
             self.assertNotIn(term,p)
+
+    def test_postlock_uses_same_custody_but_verifies_archive_before_private_download(self):
+        s=EVALUATE.read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:",s)
+        self.assertIn("default: 'no'",s)
+        self.assertIn("environment: arena-ct03-custodian",s)
+        self.assertIn("CT03_ARCHIVE_VERIFIED_PUBLIC_BEFORE_PRIVATE_ACCESS",s)
+        self.assertIn("CT03_PUBLIC_LOCK_ARCHIVED_AND_SCOPED_BEFORE_PRIVATE_READ",s)
+        self.assertIn("ct03_minimal_score",s)
+        self.assertNotIn("simulate(",s)
+        self.assertNotIn("CLOUDFLARE_API_TOKEN",s)
+        a=s.index("CT03_PUBLIC_LOCK_ARCHIVED_AND_SCOPED_BEFORE_PRIVATE_READ")
+        b=s.index("Fetch full private world only")
+        self.assertLess(a,b)
+        self.assertIn("arena-ct03-postlock-score-",s)
+        self.assertNotIn("actions/upload-artifact@v4\n        with:\n          name: private",s)
 
     def test_script_default_denied_and_no_private_artifact(self):
         subprocess.run(["bash","-n",str(SCRIPT)],check=True)
