@@ -1,0 +1,972 @@
+{
+  "schema": "igc-ct-post-audit-implementation-status/1.0",
+  "updated_at": "2026-11-07",
+  "roadmap": "ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md",
+  "base_audited": "2d7678c985270eaaa9eb7ba8f6d63a80ddc43656",
+  "branch": "experiment/arena-ct00-ct02-20261107",
+  "draft_pr": 172,
+  "evidence": {
+    "cheap_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
+    "physical_m3": "SKIPPED_BY_NUMERIC_GATE",
+    "archived_feedback": "PASS",
+    "offline_tests": "PASS",
+    "provider_new_calls": 0,
+    "scientific_omc_new_simulations": 2,
+    "des_new_simulations": 0,
+    "full_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
+    "ct03_custody_fixture": "ONLY_UNIT_TEST_NEVER_WORLD_SELECTED",
+    "verified_revision_head_before_status": "b7efde0b0ffb1fd740cd28a2fa7e5c6ce87411e3",
+    "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+    "ct02_technical_physical_run": "https://github.com/yudocyudoc/IGC/actions/runs/42409210062",
+    "ct02_technical_artifact_id": 13588621967,
+    "ct02_technical_artifact_zip_sha256": "sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac",
+    "ct02_technical_conformity": "PASS_TWO_ORIGINAL_NATIVE_MODELS_ONLY",
+    "ct03_two_initial_reuse_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42411052819",
+    "ct03_two_initial_reuse_artifact_id": 13589342812,
+    "ct03_two_initial_reuse_status": "REUSABLE_CONSEQUENCES_TWO_ORIGINALS_NOT_FEEDBACK_OR_SCORES",
+    "recovered_offline_after_reuse": "https://github.com/yudocyudoc/IGC/actions/runs/42411052826",
+    "ct03_producer_advance_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
+    "ct03_producer_advance_scope": "ALL_NEW_D_M_B_BRIDGE_TESTS_OFFLINE_ONLY_NO_NEW_OMC",
+    "ct03_B_F172_08_ci": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+      "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+    },
+    "ct03_thirteen_entry_offline_CI": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42418374711",
+      "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42418374710",
+      "code_sha": "7e655b8922f8420d77a107cb079e5a0fea34ec13",
+      "scope": "synthetic M revision receipt/projection, B native+review+physical-shaped 13th slot, 13-entry assembly only; no CT03 live resources"
+    },
+    "ct03_B_F172_09_ci": {
+      "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42421388320",
+      "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318",
+      "code_sha": "75dd7eea5a6372c3eb584c62480fa627fe5c160d",
+      "scope": "F172-09 offline mock-only B initial/revision G2 failure, missing/tampered attempt rejection, 13-entry assembly; no provider or solver call"
+    },
+    "ct03_b_physical_own_feedback_and_freeze_handoff": {
+      "reviewed_code_sha": "0cdf91970acc9b0b9b2de2f90307f824a436ce2a",
+      "recovered_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42422819276",
+      "integration_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42422819259",
+      "result": "PASS_OFFLINE_WITH_SYNTHETIC_PROVIDER_AND_SOLVER_FIXTURES_NOT_CT03_LIVE",
+      "physical_m3": "SKIPPED",
+      "new_ct03_omc": 0,
+      "new_ct03_provider_posts": 0,
+      "new_ct03_des": 0
+    },
+    "ct03_manual_producer_code": {
+      "sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
+      "ci_recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
+      "ci_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673",
+      "note": "No CT03 live operation, private custodian, POST, OMC, DES, lock, or reserved evaluation"
+    }
+  },
+  "CT00": {
+    "status": "NUMERICAL_IDENTITY_FULL_PHYSICAL_JOB_FINGERPRINT_AND_REAL_GIT_ADVERSARIAL_PROBES_CI_PASS",
+    "files": [
+      "scripts/arena_ct_numeric_gate.py",
+      "tests/test_arena_ct_numeric_gate.py",
+      ".github/workflows/arena-recovered-capabilities.yml"
+    ],
+    "result": "Physical job effective shell+inline Python, original library remote URLs and refs, container image and invocation config are fingerprinted; changes to startTime or SystemDynamics origin block without exact budget; cosmetic workflow step names/artifact retention and tests/docs do not trigger physical reruns.",
+    "limitation": "This is an explicit fail-closed fingerprint of the current physical-m3 job. Changes in its grammar must trigger conservative review. No OMC run newly authorized."
+  },
+  "CT01": {
+    "status": "FOUR_SOURCE_BLOBS_VERIFIED_AND_SIX_ARCHIVE_DOWNLOADS_HASHED_WITH_SELECTED_INTERNAL_BYTES",
+    "files": [
+      "experiments/cafeteria/CT01_HISTORICAL_CAPABILITIES_2026-11-07.json",
+      "experiments/cafeteria/CT01_VERIFIED_ARCHIVE_DIGESTS_2026-11-07.json",
+      "scripts/arena_cafe/ct_capabilities.py",
+      "scripts/arena_cafe/ct_artifact_verify.py",
+      "tests/test_arena_ct_capabilities.py",
+      "tests/test_arena_ct_artifact_verify.py"
+    ],
+    "result": "D2/M2/B5/R4 source identity checked, six GitHub Actions ZIP and selected inner entry SHA256 recorded and locally verified; no historical rerun",
+    "limitation": "Historical ZIPs not copied to repository or CI; archive expiration still applies. One artifact verifier accepts ARTIFACT_NOT_MOUNTED as a distinct state."
+  },
+  "CT02": {
+    "status": "ACCEPTED_PREPARATORY_SCOPE_FEEDBACK_LINK_OFFLINE_AND_D0_M0_REAL_NUMERICAL_CONFORMITY;_NOT_CT03_PROSPECTIVE_RESULT",
+    "files": [
+      "scripts/arena_cafe/ct03_public.py",
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py",
+      "scripts/arena_cafe/ct03_m_construction_diagnostic.py",
+      "scripts/arena_cafe/ct03_m_revision_prepare.py",
+      "scripts/arena_cafe/ct03_b_visible.py",
+      "scripts/arena_cafe/ct03_b_review_export.py",
+      "scripts/arena_cafe/ct03_world_custody.py",
+      "scripts/arena_cafe/ct_feedback_bridge.py",
+      "scripts/arena_b_ct03_contract.mjs",
+      "scripts/arena_b_ct03_native_runner.mjs",
+      "tests/test_arena_ct_feedback_bridge.py",
+      "tests/test_arena_ct03_d_prepare.py",
+      "tests/test_arena_ct03_m_prepare.py",
+      "tests/test_arena_ct03_m_construction_diagnostic.py",
+      "tests/test_arena_ct03_m_revision_prepare.py",
+      "tests/test_arena_ct03_b_visible.py",
+      "tests/test_arena_b_ct03_contract.mjs",
+      "tests/test_arena_ct03_world_custody.py",
+      ".github/workflows/arena-continuity-e01.yml",
+      "scripts/arena_cafe/ct03_prospective_lock.py",
+      "tests/test_arena_ct03_prospective_lock.py",
+      "scripts/arena_cafe/ct03_execution_boundary.py",
+      "scripts/arena_cafe/ct03_evaluator_preflight.py",
+      "scripts/arena_cafe/ct03_prediction_attestation.py",
+      "tests/test_arena_ct03_execution_boundary.py",
+      "tests/test_arena_ct03_evaluator_preflight.py",
+      "tests/test_arena_ct03_prediction_attestation.py",
+      "scripts/arena_cafe/ct02_minimal_batch.py",
+      "scripts/arena_cafe/ct03_minimal_custody.py",
+      "scripts/arena_cafe/ct03_minimal_score.py",
+      "tests/test_arena_ct02_minimal_batch.py",
+      "tests/test_arena_ct03_minimal_custody.py",
+      "tests/test_arena_ct03_minimal_score.py",
+      ".github/workflows/arena-ct02-minimal-physical.yml",
+      ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+      "scripts/arena_cafe/ct03_reuse_ct02.py",
+      "tests/test_arena_ct03_reuse_ct02.py"
+    ],
+    "verified": [
+      "Original D0 grammar/renderer produces six native structures with nominal assumptions; D.generate consumes actual public construction only when supplied, without artificial values or D2 reset trial.",
+      "Original Short E1 composer/renderer produces six full ASTs and three material projections, preserving all topology and information branches; Euler 0-8 h dt=.125 commands are generated but not run.",
+      "Construction-only M CSV diagnostic binds exact full AST, public source, native Modelica bytes, solver receipt and actual CSV bytes; fixtures test both valid and rejected paths, not real physical provenance.",
+      "Existing own_policy M2 consumes supported feedback retrieved from bitemporal ledger; one or zero bounded responseTime revisions and original native renderer produce a new version, not a second optimizer.",
+      "Subsequent retraction removes later ATMS decision support and preserves prior cuts and other case/arm isolation.",
+      "Buffalo CT03 original Engine.generate executes mock initial + mock own-currentModel revision through actual OpenRouter SDK request and effective Cloudflare schema adapter; no HTTP POST to provider.",
+      "New B revision packet is derived from scoped ledger feedback and exact own-native/receipt, with cross-world, altered parent and unauthorized live rejection.",
+      "Evaluator-only world source factory uses existing Short E1 classes and fixed pulse, two or three stages; only synthetic test fixtures were selected, never the actual CT03 world.",
+      "Existing cheap CI shows success; inherited M3 physical job is skipped.",
+      "F172-01: all six original M full AST parents coexist under one world/round/condition with parent-hash typed ledger subcase; individual own_policy dispositions, per-parent retraction, and earlier time cuts are tested.",
+      "F172-02: Python canonical diagnostic bytes cross JS boundary as exact base64; digest, JSON content, own inner arm/condition/source/parent, construction times and exact ATMS item_id/temporal retrieval checked before original Buffalo SDK; mock Python-ledger-ATMS-to-B chain CI passed.",
+      "F172-04 (amended by follow-up): CSV output class is NOT encoded in root field name; class identity belongs in candidate/command/runner receipt, root deliveredTotal remains unprefixed.",
+      "F172-05: Python/JS construction validators reject +/- 0.5 at t0, excessive 3.0 at t1, and negative or unsupported cumulative delivery; valid four public cuts still accepted.",
+      "F172-04 follow-up: OpenModelica root variable CSV deliveredTotal admitted with and without native header quotes, correct candidate command/script/filename/manifest/receipt and exact source/csv SHA; distinct candidate dotted output, ambiguous root/dotted columns, missing construction cut and changed hashes/command rejected.",
+      "F172-06 CLI accepts own native fixture and produces byte-equivalent canonical JSON to direct M construction diagnostic; rejects changed simulate.mos before writing output; regression runs actual python -m CLI process.",
+      "CT03 prospective producer lock module now enforces all 13 original slots (6 D, 6 M, 1 B), six D and three M material groups; exact own-parent feedback retrieval, initial/final states PREDICTED vs G1/G2 failure vs NO_NATIVE vs NOT_EXECUTED, and only typed forecast predictions at t6/t8. Strictly rejects evaluator truth fields and swapped parents, multiple or missing slots, false zeros, tampered bytes and overwrite.",
+      "Locking binds public custody commitment to the current CT03 preexecution protocol canonical digest and no-run budgets; a wrong protocol commitment fails before sealing. Pure function and subprocess CLI regression are CI-tested; native physical execution and withheld truth were NOT used.",
+      "Signed witness verifier checks detached OpenSSL signatures against externally supplied pinned public-key fingerprints, exact original M AST/command/script/Modelica/CSV/log/receipt bytes and candidate scope. Runner claim and actual execution are NOT independently verified by a signature alone. No real trusted signer is configured.",
+      "Archival lock witness requires a separate signer ROLE and distinct key fingerprint from physical runner. A shared runner/archive key is rejected even under different authority names. Private trust registry/key and private world paths must be disjoint from producer workspace; full OS access isolation requires separately deployed jobs.",
+      "Evaluator preflight verifies detached lock signature BEFORE private-world manifest/source access, matches private manifest commitment, modelica/source and script hashes without opening reserved t6/t8. The CLI never exposes a truth-reveal or scoring command.",
+      "Signed M initial runner witness must match exact prospectively locked M parent and initial native/modelica, CSV, receipt hashes; missing, wrong world, altered trace, duplicates, D/B candidates and M revisions fail closed (different arm/revision attestors not yet implemented). Success explicitly does NOT grant G2 nor evaluator access. All tests use ephemeral RSA keys, synthetic outputs and fake runner logs.",
+      "Signed boundary subprocess CLI runner/archive tests pass with two distinct ephemeral signer keys; negative cases tampered log and report overwrite fail, no truth reveal, no provider/OMC. No actual operator key configured.",
+      "Minimal CT-02 manual-only physical workflow stages original D0+M0 without ranking; single simulate per D/M .mos; GitHub SHA gate + exact budget=2, no PR trigger, no Buffalo or hidden world; production OMC job NOT DISPATCHED.",
+      "CT03 private custodian CLI rejects private config/model paths under repository or producer checkout BEFORE reading config; only four public t0/1/2/4 observations and public commitment exported from private trace. Local custodian runner is procedural and still requires distinct real account/machine.",
+      "Producer 13-slot lock can be archived via manual Github job tied to exact producer SHA; evaluator CLI requires custodian archive ACK BEFORE private t6/t8, computes predefined paired metrics and denominator including failures. All runtime data so far synthetic unit fixtures, no real CT03 world, provider or OMC.",
+      "F172-07: exact-two CT02 workflow now checks each original arm's source/solver/CSV/horizon/conservation immediately after its OMC invocation, before proceeding D->M. Real workflow Bash replay with mock Docker verifies invalid D performs only D attempt and valid D performs D and M; no new solver/provider calls.",
+      "CT-02 physical technical batch REAL run 42409210062 on SHA 6534ec6: original D0 and M0 OpenModelica 1.26.5 executed once each; steps and physical checks passed; GitHub artifact 13588621967 and original CSV/log/native hashes independently inspected. Scope two original models only, not 13 candidates or full prospective feedback cycle.",
+      "Roadmap v4 §5 CT02 PREPARATORY_ACCEPTANCE: prospective cycle need not be complete at CT02 because CT03 is designed to measure it. No further CT02 solver reruns or independent RSA review required for this scope."
+    ],
+    "blockers": [],
+    "provider_new_calls": 0,
+    "omc_new_simulations": 2,
+    "prospective_lock_increment": {
+      "code": "scripts/arena_cafe/ct03_prospective_lock.py",
+      "test": "tests/test_arena_ct03_prospective_lock.py",
+      "ci_code_sha": "23f4d460cc17683bb0ccff6b5be5348a7789a69a",
+      "ci_runs": [
+        "42358155539",
+        "42358155570"
+      ],
+      "status": "BYTE_SEAL_CODE_VERIFIED_NO_WORLD_NO_FORECASTS_NO_REAL_LOCK",
+      "blocked_next": "independently verifiable runner provenance, actual construction and forecasts, segregated custodian and evaluator-only reveal after immutable lock. No live/OMC budget currently authorized.",
+      "cost": {
+        "provider_calls": 0,
+        "new_omc": 0,
+        "new_des": 0
+      }
+    },
+    "external_boundary_increment": {
+      "code": [
+        "scripts/arena_cafe/ct03_execution_boundary.py",
+        "scripts/arena_cafe/ct03_evaluator_preflight.py",
+        "scripts/arena_cafe/ct03_prediction_attestation.py"
+      ],
+      "tests": [
+        "tests/test_arena_ct03_execution_boundary.py",
+        "tests/test_arena_ct03_evaluator_preflight.py",
+        "tests/test_arena_ct03_prediction_attestation.py"
+      ],
+      "ci_code_sha": "d70334fcb87d39a6a0ad812eacd3e8c2b87131ce",
+      "ci_runs": [
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628359",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42359628378"
+      ],
+      "status": "OFFLINE_SIGNATURE_AND_BYTES_TESTED_NO_TRUSTED_DEPLOYMENT_NO_PHYSICAL_G2",
+      "cryptography": "Detached RSA/SHA256 OpenSSL verification with two distinct public key fingerprints pinned in external trust registry; test keys disposable under temporary directories, no keys committed.",
+      "isolation": "Refuses trusted registry/public key or evaluator private world in producer root and verifies archive before private-file read; independent service/job/OS ACL not instantiated or certified.",
+      "model_binding": "Signature candidate/source/command/CSV/log/receipt -> M initial PREDICTED exact lock fields. D/B and revised M require separate original attestors.",
+      "provenance_limits": "GitHub-run URL, job ID and solver execution are signed CLAIMS; verifier does not independently interrogate Actions or witness live OMC. No G2/G3 or withheld score conferred.",
+      "actual_world_selected": false,
+      "real_signatures_present": false,
+      "real_lock_archived": false,
+      "physical_omc_calls": 0,
+      "provider_calls": 0,
+      "des_calls": 0,
+      "cli": {
+        "module": "python -m scripts.arena_cafe.ct03_execution_boundary",
+        "modes": [
+          "runner",
+          "archive"
+        ],
+        "negative_checks": [
+          "tampered solver log",
+          "tampered signed statement",
+          "wrong pinned key",
+          "shared runner and archive key",
+          "overwrite existing report"
+        ],
+        "status": "REAL_CLI_SYNTHETIC_FIXTURES_VERIFIED_NOT_CERTIFIED_RUNNER_OR_ARCHIVE",
+        "no_private_key_or_solver_operation": true
+      }
+    },
+    "minimal_operational_batch": {
+      "governing_doc": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+      "freeze_commit_on_manual_dispatch": true,
+      "ct02_manual_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
+      "ct02_selected_technical_candidates": "original D initial index 0 and original M full-AST initial index 0, fixed before seeing outputs; no ranking",
+      "ct02_exact_budget_omc": 2,
+      "ct02_currently_authorized_omc": 2,
+      "ct02_attempted_omc": 2,
+      "ct02_manual_dispatch_performed": true,
+      "cto2_stop": "D then immediate original per-arm native CSV/version/identity/horizon/mass check; no M attempt unless D passes; after M check M then aggregated final report, no retry.",
+      "ct03_private_custody": "different operator account/runner required; config/private Modelica/CSV never mounted or uploaded to producer; local custody CLI rejects private paths in repo and incompatible frozen protocol",
+      "ct03_public_release": "only t0,t1,t2,t4 and commitment; original private CSV plus t6,t8 kept with custodian",
+      "ct03_prospective_lock": ".github/workflows/arena-ct03-freeze-predictions.yml manual dispatch after same SHA producer artifact, no secrets; prior existing 13-slot seal",
+      "ct03_post_lock_evaluation": "scripts/arena_cafe/ct03_minimal_score.py; check procedural Github artifact ACK before private t6/t8, all failures remain denominator",
+      "ct03_actual_producer_live_runner": "NOT_YET_WIRED_UNTIL_CT02_ACCEPTANCE_AND_CT03_BATCH_AUTHORIZATION",
+      "ct03_budget_proposed": {
+        "new_omc": 21,
+        "buffalo_posts": 2
+      },
+      "ct03_budget_authorized": {
+        "new_omc": 0,
+        "buffalo_posts": 0
+      },
+      "ct03_world_selected": false,
+      "reserved_truth_opened": false,
+      "special_simplification": "Existing RSA witness/archivist signing modules remain optional and are not imported or run by this minimal operation route",
+      "isolation_limit": "Procedural only until custodian uses actual distinct account/workspace/credentials; same-account folders insufficient",
+      "verified_code_sha": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+      "verified_offline_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
+      "verified_e01_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
+      "real_omc_runs": 2,
+      "provider_posts": 0,
+      "des_runs": 0,
+      "ct02_batch_authorization": {
+        "status": "USED_ONCE_EXACTLY_TWO_NO_RETRY_BALANCE_PASSED",
+        "approved_technical_ceiling_new_omc": 2,
+        "permitted_candidates": [
+          "D index 0 original",
+          "M index 0 full E1 AST original"
+        ],
+        "no_retries": true,
+        "stop_after_first_failed_arm": true,
+        "forbidden": [
+          "Buffalo provider POST",
+          "DES",
+          "CT03 world generation",
+          "CT03 live candidate runs",
+          "physical-m3 inherited 14-run job"
+        ],
+        "registered_entry_on_main": "2cef5f2f8a168e2b850371cf490798f8f2758575",
+        "main_entry_is_no_physics_fail_closed": true,
+        "execution_ref": "experiment/arena-ct00-ct02-20261107",
+        "dispatch_performed": true,
+        "dispatch_blocker": null,
+        "use_github_run_artifact_for_actual_provenance": true,
+        "executed_run_id": 42409210062
+      }
+    },
+    "real_technical_batch": {
+      "state": "COMPLETED_SUCCESS_ORIGINAL_NATIVE_TWO_TECHNICAL_CHECKS_ONLY",
+      "source_workflow": ".github/workflows/arena-ct02-minimal-physical.yml",
+      "workflow_dispatch_run_id": 42409210062,
+      "workflow_url": "https://github.com/yudocyudoc/IGC/actions/runs/42409210062",
+      "executed_code_sha": "6534ec6bbbe0c48265d1e4eb0d1d243c7fe55b4d",
+      "git_ref": "experiment/arena-ct00-ct02-20261107",
+      "workflow_attempt": 1,
+      "jobs": [
+        {
+          "name": "ct02-physical-two-only",
+          "id": 128513469668,
+          "conclusion": "success"
+        }
+      ],
+      "artifact_id": 13588621967,
+      "artifact_name": "arena-ct02-technical-attempt-42409210062",
+      "artifact_zip_sha256": "sha256:7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac",
+      "artifact_sha256_verified_against_GitHub_metadata": true,
+      "runtime": {
+        "OpenModelica": "1.26.5",
+        "docker_image": "openmodelica/openmodelica@sha256:8993c8273224aeacbc018f351c00d60879c5aec386c77a58019318c44c938c9b",
+        "MSL_git_sha": "6626538a236a34a390655b55d5e8c906bfe31772",
+        "SystemDynamics_git_sha": "b986a2ea354ab550d627a392f857ad7c9997d961",
+        "method": "euler",
+        "start_h": 0,
+        "stop_h": 8,
+        "intervals": 64,
+        "dt_h": 0.125
+      },
+      "attempted_omc": 2,
+      "successful_omc": 2,
+      "provider_posts": 0,
+      "des_runs": 0,
+      "retries": 0,
+      "attempts_logged_in_order": [
+        "D",
+        "M"
+      ],
+      "confirmed": {
+        "D": {
+          "candidate_id": "D-5f8781847cb6",
+          "csv": "d00_res.csv",
+          "csv_rows": 68,
+          "csv_sha256": "sha256:41befc4227c2f1ec7d5c2dc60c2f2a478a7b0cf5d493bddcec53506b53c1c668",
+          "native_sha256": "sha256:4139d748b6fb91d755f0fb66fde25ed4909edb2c133c7c6be7af1a35d80af3df",
+          "t8_cumulative_delivered": 3.39753242195592,
+          "max_mass_balance_residual_items": 6.803024810153602e-10,
+          "per_arm_gate": "PASS_EXISTING_D_MASS_BALANCE"
+        },
+        "M": {
+          "candidate_id": "18247fc54a548b4149dcf6942e8a35eb3500677535e25188f4172b307af1b16e",
+          "original_full_AST_sha256": "sha256:e199feb807134b6bcbc83d52304360980f7b14655a4eb150f9696669d99ea79e",
+          "csv": "m00_res.csv",
+          "csv_rows": 68,
+          "csv_sha256": "sha256:e25fe09b2267f98debbc64a751240ac28507ed11bda3b68412682e1a2b23be3e",
+          "native_sha256": "sha256:8ebeaec94bedb53285ef5c8b7518b8a408b3ae61cea1d40e66811e3bb0d6b37e",
+          "t8_cumulative_delivered": 3.399984796863248,
+          "max_mass_balance_residual_items": 6.803033691937799e-10,
+          "per_arm_gate": "PASS_EXISTING_M_CSV_CONSTRUCTION_CUTS",
+          "extra_mass_residual_independent_check": "PASS_SPOT_CHECK_STOCKS_PLUS_DELIVERED_AT_EACH_ROW"
+        }
+      },
+      "note": "Both native CSV files contain 68 rows (64 intervals plus event/output rows), including duplicated near t2 and final t8; accepted by original CSV checks. M has nonfatal library loading notifications followed by automatic Modelica 4.0.0/SystemDynamics 2.1.2 load; solver success. Pre-execution batch.json authorized=false is a frozen PREPARATION manifest and not a statement that the manual run was unauthorized.",
+      "acceptance_scope": "CT02_TWO_CANDIDATE_NUMERICAL_CONFORMITY_PASSED_NOT_CT02_FULL_CLOSED_LOOP_OR_CT03_SCIENTIFIC_ACCEPTANCE",
+      "scientific_G2_for_all_13": false,
+      "heldout_evaluation_performed": false,
+      "world_CT03_selected": false
+    },
+    "acceptance": {
+      "scope": "Roadmap v4 section 5: source-to-own-feedback-to-ATMS-retrieval-before-policy, six-parent M own_policy, D fixed, B original request/feedback mock contract, source and budget checks; two original D0/M0 real OMC technical conformities in run 42409210062.",
+      "decision": "ACCEPTED_WITHIN_PREPARATION_SCOPE_NO_CIRCULAR_CT03_REQUIREMENT",
+      "reviewer": "REVISION_PR172_EJECUCION_CT02_61D535D_2026-11-07.md",
+      "reviewed_cut": "61d535d72dac778a5fdb502d1b25c54847d85afd",
+      "physical_run_id": 42409210062,
+      "physical_artifact_id": 13588621967,
+      "physical_attempts_used": 2,
+      "physical_budget_remaining": 0,
+      "no_13_slots_claim": true,
+      "no_prospective_scores_claim": true,
+      "requires_new_world_to_accept_ct02": false
+    }
+  },
+  "CT03": {
+    "status": "MANUAL_CT03_PRODUCER_WORKFLOW_G0_AND_FAILED_SECOND_PROVIDER_RECEIPTS_WIRED_OFFLINE_NOT_AUTHORIZED",
+    "document": "experiments/cafeteria/CT03_PREEXECUTION_PROTOCOL_2026-11-07.json",
+    "current_provider_budget_authorized": 0,
+    "current_omc_budget_authorized": 0,
+    "proposed_ceiling_new_provider_calls": 2,
+    "proposed_ceiling_new_omc_simulations": 21,
+    "custody_source": "scripts/arena_cafe/ct03_world_custody.py",
+    "d_m_native_source": [
+      "scripts/arena_cafe/ct03_d_prepare.py",
+      "scripts/arena_cafe/ct03_m_prepare.py"
+    ],
+    "buffalo_original_runner": "scripts/arena_b_ct03_native_runner.mjs",
+    "private_world_selected": false,
+    "reserved_truth_opened": false,
+    "prospective_lock_performed": false,
+    "technical_omc_executed": 0,
+    "new_provider_posts": 0,
+    "prospective_lock_implementation": "scripts/arena_cafe/ct03_prospective_lock.py",
+    "prospective_lock_regression": "tests/test_arena_ct03_prospective_lock.py",
+    "prospective_lock_protocol_digest_bound": true,
+    "prospective_lock_13_slot_schema_tested": true,
+    "prospective_lock_real_seal_written": false,
+    "prospective_lock_status": "OFFLINE_CODE_AND_FIXTURE_TESTED_NO_REAL_FORECASTS_LOCKED",
+    "signed_runner_provenance_contract": "OFFLINE_VERIFIER_TESTED_NO_ACTUAL_TRUSTED_RUNNER",
+    "evaluator_private_preflight_contract": "OFFLINE_VERIFIER_TESTED_NO_TRUE_EVALUATOR_DEPLOYMENT",
+    "signed_own_prediction_mapping": "ORIGINAL_M_INITIAL_ONLY_NO_LIVE_FORECASTS",
+    "real_signed_solver_receipts": 0,
+    "real_external_trust_anchors_registered": false,
+    "actual_archived_lock_signatures": 0,
+    "minimal_runbook": "experiments/cafeteria/CT02_CT03_RECORRIDO_MINIMO_OPERATIVO_2026-11-07.md",
+    "live_producer_batch_connected": false,
+    "ct02_technical_prerequisite": "CT02_ACCEPTED_PREPARATORY_AND_D0_M0_NATIVE_CONFORMITY_CLOSED",
+    "heldout_opened": false,
+    "real_omc_runs": 0,
+    "real_initial_two_reuse": {
+      "status": "CONFIRMED_ELIGIBLE_REUSE_ONLY_NO_CT03_WORLD_NO_CONSTRUCTION_FEEDBACK_YET",
+      "origin_ct02_run": 42409210062,
+      "origin_artifact_id": 13588621967,
+      "verified_by_ci": "https://github.com/yudocyudoc/IGC/actions/runs/42411052819",
+      "reusable_initial_candidates": [
+        "D0",
+        "M0"
+      ],
+      "forecasts": {
+        "D0": {
+          "t6": 3.379100198824965,
+          "t8": 3.39753242195592
+        },
+        "M0": {
+          "t6": 3.398933866844736,
+          "t8": 3.399984796863248
+        }
+      },
+      "artifact_reuse_report": "arena-ct03-reuse-two-ct02-originals-no-omc",
+      "result_artifact_id": 13589342812,
+      "physical_ref_identity": "same source/initials/pulse/solver/libraries/model/operator; native sources bytewise match fresh frozen D/M generation",
+      "no_feedback_or_revision_reuse": true,
+      "provisional_max_new_omc_given_exact_two_reuses": 19,
+      "original_ct03_ceiling_new_omc_unchanged": 21,
+      "new_ct03_omc_spent": 0,
+      "new_ct03_provider_posts": 0,
+      "reserved_truth_read": false
+    },
+    "remaining_operational_gates": [
+      "Deploy effective CT03 custodian/producer account credential isolation, private one-world OMC, public release ONLY t0/t1/t2/t4; do not mount world params, heldout CSV or custodian tokens into producer workflows.",
+      "Integrate a SINGLE authorized CT03 manual workflow with shared cost counter, original Buffalo initial+review (max 2 POST), the existing D/M ten-once script, M revised-once script, and B original/revised conditional physical OMC; stop each route without retry and keep 13 slots.",
+      "Check actual Buffalo original/currentModel native receipt provenance and execution, revised/initial Modelica + native cumulative output operator, per-CSV full-trace monotonicity and conservation. Scripts exist but neither Buffalo live call nor B physical run has been performed for CT03.",
+      "Build B thirteenth row from real provider/native+solver evidence (or documented no-native/blocked), join with twelve D/M and archive the resulting entries as an immutable prospective 13-slot lock through GitHub before revealing t6/t8. Local entries file is NOT an archive.",
+      "Evaluator custodian verifies archive/disabled producer access then alone reads t6/t8, calculates original MAE/baselines, keeps failures in full denominator. No scoring or reveal to date."
+    ],
+    "d_m_producer_link": {
+      "status": "TEN_INITIAL_NEW_ORIGINALS_STAGED_ZERO_EXECUTED_AND_TWELVE_OWN_POLICIES_CONNECTED_OFFLINE",
+      "source_models": "D original six structures, M original six complete ASTs (not material-equivalent by assumption)",
+      "already_reusable_initial": [
+        "D0",
+        "M0"
+      ],
+      "new_original_attempts_planned": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5"
+      ],
+      "scripts": [
+        "scripts/arena_cafe/ct03_dm_initial_batch.py",
+        "scripts/arena_cafe/ct03_dm_execute_ten_once.sh",
+        "scripts/arena_cafe/ct03_dm_feedback_round.py",
+        "scripts/arena_cafe/ct03_dm_lock_projection.py"
+      ],
+      "exact_single_attempts_if_authorized": 10,
+      "actual_attempts_ct03": 0,
+      "production_shell_default": "DENIES_UNLESS_MANUAL_CT03_BATCH_AUTH_AND_GITHUB_REF_SHA_FIRST_ATTEMPT_19_LIMIT_AND_WORLD_ATTEMPT_ONE",
+      "numerical_gates": "Original D verify_csv and original M E1 queue waiting stocks + deliveredTotal material conservation",
+      "failure_path": "G2_FAILED_NATIVE_ATTEMPT_NO_FORECAST, actual attempt log once, no retry or fake zero; next candidates may continue",
+      "feedback_path": "12 parent-scoped D/M diagnostics only on t0,1,2,4; ledger->ATMS retrieval before D fixed and original M2 own_policy per full AST; only when physical initial succeeded",
+      "revisions": "M modelica rendered only on original own_policy REVISED; separate real OMC required before final lock rows",
+      "lock_projection": "12 D/M strict lock rows only; B missing, no seal, preserve G2 failed denominator",
+      "no_ct03_world_or_truth_selected": true,
+      "real_omc": 0,
+      "real_provider_posts": 0,
+      "CI_test_scope": "All new D/M tests synthetic fixture; real Bash replay against local fake Docker not real execution",
+      "verified_code_sha": "80ec5b95dce38cc355db1667c4fbff9748492ab0",
+      "verified_CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
+        "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188"
+      }
+    },
+    "b_producer_link": {
+      "status": "ORIGINAL_B_NATIVE_TO_G1_OWN_LEDGER_AND_REVISION_PACKET_IMPLEMENTED_NO_LIVE_B",
+      "files": [
+        "scripts/arena_cafe/ct03_b_own_feedback.py",
+        "tests/test_arena_ct03_b_own_feedback.py"
+      ],
+      "original_engine": "scripts/arena_b_ct03_native_runner.mjs",
+      "original_converter": "scripts/arena_b_native_to_modelica.py",
+      "proof_limit": "Requires real B original live native+receipt. Offline tests use synthetic live-shaped fixtures, not proof of provider call.",
+      "translation_failures": "G1_TRANSLATION_BLOCKED preserved and supported in B own ledger; no automatic engine repair",
+      "B_native_output_operator": "NOT_YET_AUTHENTICATED_AS_CUMULATIVE_DELIVERED",
+      "provider_calls_new": 0
+    },
+    "new_code_increment": {
+      "files": [
+        "scripts/arena_cafe/ct03_dm_initial_batch.py",
+        "scripts/arena_cafe/ct03_dm_execute_ten_once.sh",
+        "scripts/arena_cafe/ct03_dm_feedback_round.py",
+        "scripts/arena_cafe/ct03_dm_lock_projection.py",
+        "scripts/arena_cafe/ct03_b_own_feedback.py",
+        "tests/test_arena_ct03_dm_initial_batch.py",
+        "tests/test_arena_ct03_dm_execute_script.py",
+        "tests/test_arena_ct03_dm_feedback_round.py",
+        "tests/test_arena_ct03_dm_lock_projection.py",
+        "tests/test_arena_ct03_b_own_feedback.py",
+        "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
+        "scripts/arena_cafe/ct03_b_physical_prepare.py",
+        "scripts/arena_cafe/ct03_b_physical_result.py",
+        "tests/test_arena_ct03_b_physical_prepare.py",
+        "tests/test_arena_ct03_b_physical_result.py",
+        "scripts/arena_cafe/ct03_m_revision_physical.py",
+        "scripts/arena_cafe/ct03_m_revision_execute_once.sh",
+        "scripts/arena_cafe/ct03_b_lock_projection.py",
+        "scripts/arena_cafe/ct03_assemble_entries.py",
+        "tests/test_arena_ct03_m_revision_physical.py",
+        "tests/test_arena_ct03_b_lock_projection.py",
+        "tests/test_arena_ct03_assemble_entries.py",
+        "scripts/arena_cafe/ct03_b_physical_outcome.py",
+        "tests/test_arena_ct03_b_physical_outcome.py",
+        "scripts/arena_cafe/ct03_b_physical_feedback.py",
+        "scripts/arena_cafe/ct03_b_physical_execute_once.sh",
+        "scripts/arena_cafe/ct03_producer_freeze_handoff.py",
+        "tests/test_arena_ct03_b_physical_feedback.py",
+        "tests/test_arena_ct03_b_physical_execute_script.py",
+        "tests/test_arena_ct03_producer_freeze_handoff.py",
+        "scripts/arena_b_ct03_contract.mjs",
+        "tests/test_arena_b_ct03_contract.mjs",
+        "scripts/arena_cafe/ct03_lot_budget.py",
+        "scripts/arena_cafe/ct03_public_intake.py",
+        "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+        ".github/workflows/arena-ct03-public-intake.yml",
+        ".github/workflows/arena-ct03-producer.yml",
+        ".github/workflows/arena-ct03-freeze-predictions.yml",
+        "tests/test_arena_ct03_lot_budget.py",
+        "tests/test_arena_ct03_public_intake.py",
+        "tests/test_arena_ct03_global_workflow.py",
+        "tests/test_arena_ct03_b_runner_failures.py",
+        "tests/test_arena_ct03_b_producer_replay.py",
+        "scripts/arena_cafe/ct03_prospective_lock.py",
+        ".github/workflows/arena-continuity-e01.yml"
+      ],
+      "runbook": "experiments/cafeteria/CT03_ENLACE_PRODUCTORES_ORIGINALES_2026-11-07.md",
+      "safe_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641145",
+      "native_integration_ci_latest": "https://github.com/yudocyudoc/IGC/actions/runs/42413641188",
+      "consumes_no_omc_or_provider_by_tests": true,
+      "last_tested_code_sha": "484b5a6572d0f527136bd7b8cbf6ed02d104f393",
+      "last_verified_CI": {
+        "offline": "https://github.com/yudocyudoc/IGC/actions/runs/42426930590",
+        "integration": "https://github.com/yudocyudoc/IGC/actions/runs/42426930704"
+      }
+    },
+    "proposed_reduced_max_new_omc_given_two_verified_ct02_reuses": 19,
+    "review_received": {
+      "title": "REVISION_PR172_INTEGRACION_CT03_06347B6_2026-11-07.md",
+      "reviewed_commit": "06347b62c7c9484480860f2367cf50fadc8398cf",
+      "verdict": "ADVANCE_CONFORMANT_TO_V4_INTEGRATION_PARTIAL_NO_NEW_REPRODUCED_DEFECT",
+      "reviewer_ci": [
+        "https://github.com/yudocyudoc/IGC/actions/runs/42413905423",
+        "https://github.com/yudocyudoc/IGC/actions/runs/42413905419"
+      ],
+      "required_next_hinge": "B original physical observable and solve, own revisions, 13-slot archive, actual custodian environment and one authorized CT03 lot",
+      "new_general_audit_required": false,
+      "additional_CT02_OMC_needed": false
+    },
+    "b_physical_initial_link": {
+      "status": "B_INITIAL_ORIGINAL_NATIVE_PHYSICAL_SCRIPT_AND_POSTRUN_G2_GATE_PREPARED_OFFLINE_NOT_EXECUTED",
+      "implementation": [
+        "scripts/arena_cafe/ct03_b_physical_prepare.py",
+        "scripts/arena_cafe/ct03_b_physical_result.py"
+      ],
+      "offline_tests": [
+        "tests/test_arena_ct03_b_physical_prepare.py",
+        "tests/test_arena_ct03_b_physical_result.py"
+      ],
+      "no_change_to_original_buffalo_engine_or_translator": true,
+      "observable_method": "single native explicitly-delivered terminal stock, zero initial, one material input, no outflows, item units, no alternate material sink; conservative identification only",
+      "unrecognized_observable_status": "B_OBSERVABLE_UNRESOLVED_NO_OMC_NOT_AN_INTRINSIC_G1_FAILURE",
+      "intrinsic_G1_translation_fail_status": "B_NATIVE_G1_TRANSLATION_BLOCKED_NO_OMC",
+      "conditional_numerical_check": "one OMC 1.26.5 Euler 0..8 dt0.125 if and only if plan is grounded; original material stocks sum to 3.4 input, delivered stock CSV t6/t8 and raw log",
+      "independent_solver_runs_proven": false,
+      "original_B_live_posts_done": 0,
+      "new_B_OMC_done": 0,
+      "B_revision_native_and_second_OMC": "PENDING",
+      "exact_13_slot_final_lock": "PENDING",
+      "custody_mounted_separately": "NOT_ESTABLISHED",
+      "latest_test_code_sha": "a30b0c6e412350ba11855d39381958659bf51810",
+      "tested_with_synthetic_fixtures_only": true,
+      "cumulative_trace_gate": {
+        "status": "FIXED_F172_08",
+        "absolute_monotonicity_tolerance_items": 1e-8,
+        "event_duplicate_timestamp_tolerance_hours": 1e-9,
+        "event_duplicate_delivered_tolerance_items": 1e-8,
+        "comparison": "every CSV row, never only t6,t8; fail if delta delivered < -1e-8 or duplicate event values differ by >1e-8",
+        "mass_balance_tolerance_items_unchanged": 0.008,
+        "negative_example": "synthetic t=2.875 y=0.2875 then t=3.0 y=0.25 then t=3.125 y=0.3125; pending stock adjusted to keep mass and y6,y8 unchanged",
+        "no_native_repair_or_smoothing": true,
+        "independent_solver_run_proof": false
+      },
+      "ci_checked": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+      }
+    },
+    "review_received_latest": {
+      "review_file": "REVISION_PR172_B_FISICO_9C3A8EC_2026-11-07.md",
+      "reviewed_head": "9c3a8ec55fd12a37f9373f4c89c5c8c08dce841b",
+      "verdict": "ADVANCE_ON_PATH_WITH_ONE_LOCAL_P2_REPRODUCED",
+      "finding": "F172-08: midtrace t=3 B delivered cumulative decline accepted when t6,t8 and mass remain valid",
+      "correction": "scripts/arena_cafe/ct03_b_physical_result.py full-row consecutive cumulative checks with abs epsilon 1e-8 items and consistency for identical timestamps",
+      "regression": "tests/test_arena_ct03_b_physical_result.py mass conserving artificial drop at t3 rejected; valid CSV accepted; duplicated event timestamp small numeric rounding allowed, inconsistent duplicate increase rejected",
+      "code_sha": "a30b0c6e412350ba11855d39381958659bf51810",
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42416877943",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42416877780"
+      },
+      "new_omc": 0,
+      "new_buffalo_posts": 0,
+      "new_des": 0,
+      "CT03_authorized": false
+    },
+    "m_revision_physical_join": {
+      "status": "ORIGINAL_M2_SELECTED_REVISIONS_RECEIPTS_AND_SINGLE_SHOT_EXECUTOR_PREPARED_OFFLINE_NOT_RUN",
+      "verifier": "scripts/arena_cafe/ct03_m_revision_physical.py",
+      "executor": "scripts/arena_cafe/ct03_m_revision_execute_once.sh",
+      "physical_result_source": "original own_policy revised native Modelica and simulate.mos from ct03_m_revision_prepare",
+      "no_revised_parent_without_own_feedback": true,
+      "max_selected_revisions": 6,
+      "modelica_integrity_checked_before_first_omc": true,
+      "per_parent_omc_attempt_registered_before_execution": true,
+      "verdicts": [
+        "PREDICTED",
+        "G2_FAILED"
+      ],
+      "native_integrity_error_is_whole_batch_stop": true,
+      "numerical_failed_candidate_remains_in_denominator": true,
+      "outcomes_consumed_via_full_receipts": "scripts/arena_cafe/ct03_dm_lock_projection.py::project_from_revision_report",
+      "live_revision_attempts_ct03": 0,
+      "CI_tests_use_synthetic_csv_log": true
+    },
+    "b_revision_and_slot": {
+      "status": "B_SECOND_CURRENTMODEL_NATIVE_AND_13TH_ROW_READY_OFFLINE_NOT_RUN",
+      "original_engine_reused": "scripts/arena_b_ct03_native_runner.mjs",
+      "plan": "scripts/arena_cafe/ct03_b_physical_prepare.py::prepare(revision_provenance=...)",
+      "lock_projection": "scripts/arena_cafe/ct03_b_lock_projection.py",
+      "second_B_provider_response_requires": {
+        "original_parent_receipt": true,
+        "own_ATMS_diagnostic_packet": true,
+        "original_engine_revision_receipt": true,
+        "same_world_and_source": true
+      },
+      "unchanged_native_result": "RATIFIED with initial physical consequence, no repeat OMC",
+      "changed_native_result": "REVISED only with new G1/observable physical outcome or explicit blocked G1 state",
+      "original_provider_failure": "NO_NATIVE with own actual failure receipt retained in 13th slot; no fake zero",
+      "no_second_B_POST": "NOT_EXECUTED only when named stop reason is supplied, never silent ratification",
+      "original_B_initial_live_calls": 0,
+      "original_B_revision_live_calls": 0,
+      "real_B_OMC": 0,
+      "synthetic_tests_not_physical_evidence": true
+    },
+    "thirteen_entry_assembler": {
+      "status": "STRICT_13_ENTRIES_READY_ONLY_IF_ALL_REAL_EVIDENCE_CONTRACTS_MET_NOT_ARCHIVED",
+      "implementation": "scripts/arena_cafe/ct03_assemble_entries.py",
+      "exact_slots": {
+        "D": 6,
+        "M": 6,
+        "B": 1
+      },
+      "checks": "original frozen registry+validate_row, cross-world and source, no duplicate, no missing candidate or tampered B parent",
+      "output": "entries.json only, same schema as ct03_prospective_lock INPUT_SCHEMA",
+      "github_archive_still_required": true,
+      "evaluator_truth_still_private": true,
+      "archived_lock_created": false,
+      "source_dataset_world_selected": false,
+      "scientifically_scored": false
+    },
+    "b_physical_failed_attempt_link": {
+      "status": "F172_09_CORRECTED_SYNTHETIC_REPLAY_ONLY_NOT_LIVE",
+      "collector": "scripts/arena_cafe/ct03_b_physical_outcome.py",
+      "projection": "scripts/arena_cafe/ct03_b_lock_projection.py",
+      "regression": "tests/test_arena_ct03_b_physical_outcome.py",
+      "evidence_required": "Original B native+plan+script/source identity; exact first-attempt omc-exit.json tied to GitHub run and phase; nonempty OMC log; CSV bytes if present; typed failure; no trace or forecast",
+      "dispositions": [
+        "G2_FAILED initial with native, NOT_EXECUTED second provider",
+        "G2_FAILED revised with changed B native, REVISED recorded",
+        "G2_FAILED nonzero solver exit with attempted log and no CSV",
+        "PREDICTED unchanged success"
+      ],
+      "negative_tests": [
+        "missing attempt receipt",
+        "wrong round",
+        "tampered Modelica script",
+        "missing physical without failure receipt"
+      ],
+      "thirteen_slots_assembled_with_failed_B_fixture": true,
+      "provider_posts_new": 0,
+      "omc_runs_new": 0,
+      "des_runs_new": 0,
+      "production_B_runner_or_global_workflow_connected": false,
+      "independent_physical_execution_proven": false,
+      "heldout_opened": false,
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42421388320",
+        "E01": "https://github.com/yudocyudoc/IGC/actions/runs/42421388318"
+      }
+    },
+    "own_physical_feedback_link": {
+      "status": "PREPARED_AND_CI_TESTED_SYNTHETIC_ONLY",
+      "module": "scripts/arena_cafe/ct03_b_physical_feedback.py",
+      "source": "Original G1 parent-scoped ledger and exact B own physical attempt replay",
+      "success": "G3 diagnostic with four residuals at t0,t1,t2,t4, own CSV hash, initial G1 preserved in earlier ledger cut",
+      "failure": "G2 attempted-run diagnostic with no trace or fabricated forecasts, reason and attempt receipt, own parent/source",
+      "second_decision": "Buffalo currentModel can consume G1+G2/G3 packet, cross-language canonical diagnostic bytes checked by JS",
+      "original_engine_or_solver_changed": false,
+      "actual_second_B_provider_post": false,
+      "new_omc": 0,
+      "new_provider_posts": 0
+    },
+    "b_physical_one_shot_runner": {
+      "status": "DEFAULT_DENY_MANUAL_ONLY_SCRIPT_PREPARED_NOT_DISPATCHED",
+      "path": "scripts/arena_cafe/ct03_b_physical_execute_once.sh",
+      "preflight": "scripts/arena_cafe/ct03_b_physical_outcome.py --preflight-only",
+      "requires": "manual workflow_dispatch, frozen SHA, first run attempt, lot auth, same GitHub run, public producer path, original plan/native/script, shared attempt ceiling 19",
+      "caveat": "Checks on local prior attempt logs alone do not establish independent custodian or external solver authenticity",
+      "has_not_executed_solver": true
+    },
+    "public_freeze_handoff": {
+      "status": "FIVE_FILES_PACKAGED_IN_SYNTHETIC_TEST_ONLY_NOT_UPLOADED_OR_SEALED",
+      "module": "scripts/arena_cafe/ct03_producer_freeze_handoff.py",
+      "exact_files": [
+        "construction.json",
+        "world-commitment.json",
+        "D/manifest.json",
+        "M/manifest.json",
+        "entries.json"
+      ],
+      "freezes_via_existing_workflow": ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "actual_archive_run_id": null,
+      "reserved_truth_opened": false
+    },
+    "manual_ct03_lot": {
+      "status": "CODE_ONLY_NOT_AUTHORIZED_NOT_DISPATCHED_NOT_SCIENTIFICALLY_EXECUTED",
+      "public_intake_workflow": ".github/workflows/arena-ct03-public-intake.yml",
+      "producer_workflow": ".github/workflows/arena-ct03-producer.yml",
+      "separate_archive_workflow": ".github/workflows/arena-ct03-freeze-predictions.yml",
+      "public_intake_validator": "scripts/arena_cafe/ct03_public_intake.py",
+      "count_only_dm_budget": "scripts/arena_cafe/ct03_lot_budget.py",
+      "b_original_and_revision_runner": "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+      "no_cross_arm_model_handoff_to_B": true,
+      "limited_public_custody_files": [
+        "construction.json",
+        "world-commitment.json",
+        "release-status.json"
+      ],
+      "producer_freeze_files": [
+        "construction.json",
+        "world-commitment.json",
+        "D/manifest.json",
+        "M/manifest.json",
+        "entries.json"
+      ],
+      "theoretical_one_lot_omc_max_new": 19,
+      "slots": {
+        "private_world": 1,
+        "dm_new_initials": 10,
+        "m_revisions_max": 6,
+        "b_physical_max": 2
+      },
+      "two_B_provider_posts_max": 2,
+      "third_party_custodian_isolation_certified": false,
+      "active_environment_approvals_confirmed": false,
+      "registered_default_branch_confirmed": false,
+      "actual_public_release_run_id": null,
+      "actual_producer_run_id": null,
+      "actual_prospective_lock_run_id": null,
+      "read_reserved_truth": false,
+      "new_ct03_omc": 0,
+      "new_ct03_provider_posts": 0,
+      "new_ct03_des": 0,
+      "code_ci": {
+        "tested_sha": "52462e4054e19a96740cb3825379ed1730ee9dda",
+        "regression": "https://github.com/yudocyudoc/IGC/actions/runs/42424950686",
+        "original_engine_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42424950673",
+        "physical_m3": "SKIPPED"
+      },
+      "limitations": [
+        "GitHub environments require actual required reviewers and variables; names alone prove nothing",
+        "The public intake validates only public contents, not separate custodial machine/accounts",
+        "One-lot policy checks earlier GitHub dispatches but is not cryptographic proof of physically isolated operations",
+        "The separate prospective archive requires later workflow_dispatch; no producer job scores or reveals heldout truth",
+        "Provider/OMC live paths and multi-job handoffs have not been executed in CI; tests are offline and default-deny"
+      ]
+    },
+    "b_provider_failure_lifecycle": {
+      "review_source": "REVISION_PR172_WORKFLOW_GLOBAL_AE00F57A_2026-11-07.md",
+      "reviewed_sha": "ae00f57a486ad63f77238dea2ba98396c6f6711b",
+      "findings": [
+        "F172-10 P2 second failed POST was recorded as never launched",
+        "F172-11 P2 wrong native horizon aborted 13-slot assembly"
+      ],
+      "status": "FIXED_IN_PR_NOT_YET_REVIEWED_BY_ASTRA_OR_LIVE_EXECUTED",
+      "second_no_native": {
+        "statuses": [
+          "CT03_PROVIDER_ATTEMPT_NO_NATIVE",
+          "CT03_PREPROVIDER_NO_NATIVE"
+        ],
+        "second_receipt_sha256_kept": true,
+        "provider_post_observed_based_on_receipt_count": true,
+        "no_model_is_not_ratification": true,
+        "parent_feedback_and_world_integrity_fail_closed": true
+      },
+      "wrong_horizon": {
+        "status": "G0_REJECTED_NATIVE_EXISTS_NOT_TRANSLATED_OR_SIMULATED",
+        "phases": [
+          "initial",
+          "revision"
+        ],
+        "native_and_receipt_sha256_retained": true,
+        "no_forecast": true,
+        "non_B_g0_disallowed": true,
+        "13_slots_remain_assembling": true
+      },
+      "B_runner_script": "scripts/arena_cafe/ct03_b_producer_rounds_once.sh",
+      "tests": [
+        "tests/test_arena_ct03_b_runner_failures.py",
+        "tests/test_arena_ct03_b_producer_replay.py"
+      ],
+      "evidence_budget": "0 CT03 OMC / 0 CT03 provider posts / 0 CT03 DES",
+      "offline_replays_are_not_real_provider_or_solver": true,
+      "original_engines_modified": false,
+      "ct03_live_authorized": false,
+      "code_tested_sha": "484b5a6572d0f527136bd7b8cbf6ed02d104f393",
+      "offline_verified": {
+        "recovered_capabilities": "https://github.com/yudocyudoc/IGC/actions/runs/42426930590",
+        "continuity_e01": "https://github.com/yudocyudoc/IGC/actions/runs/42426930704",
+        "real_provider_calls": 0,
+        "real_new_omc": 0,
+        "physical_m3": "SKIPPED",
+        "bash_replays": "Bash original with synthetic local Node substitution (4), not live provider or physics"
+      }
+    }
+  },
+  "unchanged": [
+    "D/B/M and original equations",
+    "historical D2/M2/B5/R4",
+    "E03 closed",
+    "E04/E05 action blocked",
+    "E06 observed-source scope",
+    "E07 conditional process mining"
+  ],
+  "revision_pr172": {
+    "source_review": "REVISION_PR172_CONFORMIDAD_HOJA_V4_BB9CA2B_2026-11-07.md",
+    "reviewed_sha": "bb9ca2bfc1634cf34ce6e1242981937c6121e32b",
+    "fixes": [
+      {
+        "id": "F172-01",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "One full-parent-hash typed subcase per original M graph; six-coexistence and retraction regression"
+      },
+      {
+        "id": "F172-02",
+        "priority": "P1",
+        "status": "FIXED_TESTED",
+        "scope": "Python canonical bytes and JS byte/hash/inner-scope/retrieval verification; altered content/t6/empty retrieval rejected"
+      },
+      {
+        "id": "F172-03",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Full physical job numerical runtime contract; real local Git tests detect initial time and library origin"
+      },
+      {
+        "id": "F172-04",
+        "priority": "P2",
+        "status": "NATIVE_CSV_ROOT_CORRECTED_AND_CI_TESTED",
+        "scope": "Accept native root deliveredTotal (quoted/unquoted) with exact parent Modelica class, full AST, original simulation command and script SHA, candidate csv_prefix, actual _res.csv filename, CSV SHA and runtime in receipt; reject prefixed foreign/self outputs and ambiguous roots. Self-consistent receipt is not independent proof of solver execution."
+      },
+      {
+        "id": "F172-05",
+        "priority": "P2",
+        "status": "FIXED_TESTED",
+        "scope": "Initial zero, monotonic nonnegative finite and exogenous arrival bound in Python and JS"
+      },
+      {
+        "id": "F172-07",
+        "priority": "P2",
+        "status": "FIXED_OFFLINE_TESTED",
+        "scope": "D physical conformity gate inside exact-two D/M execution loop before any M OMC attempt; Bash mock-Docker invalid-D one attempt test and valid-D two attempts test."
+      },
+      {
+        "id": "F172-08",
+        "priority": "P2",
+        "status": "FIXED_TESTED_OFFLINE",
+        "scope": "B native physical cumulative delivery monotonicity checked at EVERY CSV row, independent of material mass, fixed abs tolerance 1e-8 items; consistent event-time duplicates accepted, inconsistent rejected; no smoothing, native model edits, new OMC or provider."
+      }
+    ],
+    "verified_ci": [
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059559",
+      "https://github.com/yudocyudoc/IGC/actions/runs/42352059474"
+    ],
+    "limitations": "No new CT03 world, producer/evaluator isolated deployment, authenticated new native solver CSV, live Buffalo or sealed prospective scoring. Passing offline regressions does not scientifically complete CT02 or activate CT03.",
+    "followup": {
+      "review_file": "REVISION_PR172_CORRECCIONES_ACD7814_2026-11-07.md",
+      "reviewed_head": "acd781410897d892ce8395cc2bd29305def109f5",
+      "finding": "F172-04 P2 was partially corrected but rejected the native OpenModelica root field deliveredTotal.",
+      "correction": "Root variable read as deliveredTotal; exact class/model identity is bound to candidate manifest and generated simulation command, original simulate.mos SHA, csv_prefix, native output filename mXX_res.csv and receipt hashes.",
+      "historical_evidence": {
+        "artifact_id": 12628124619,
+        "artifact_name": "arena-m2-own-feedback-real-openmodelica",
+        "archive_sha256": "14aae142aa8f16b80ef2f74ee592001509f490c79175d94ce2ffdf14993b36a6",
+        "member": "m2-visible_res.csv",
+        "member_sha256": "3babc3156dc2e55d30220994030ee323174039ba89bba2a3449046056e3fc724",
+        "observed_header_fields": [
+          "time",
+          "dispatch0.stock.Integrator1.y",
+          "preparation0.stock.Integrator1.y",
+          "receipt0.deliveries.Integrator1.y"
+        ],
+        "interpretation": "Historical M2 CSV uses native root-relative field names, without prefix of the simulated class. It is an independent historical format check, not a CT03 physical run nor direct proof of deliveredTotal for CT03."
+      },
+      "new_regressions": [
+        "Accept quoted native root header time,deliveredTotal and unquoted root equivalent",
+        "Reject dotted same candidate and different-candidate deliveredTotal headers",
+        "Reject ambiguous root plus dotted output; reject wrong candidate prefix, changed native CSV/script hash, changed command and wrong output filename",
+        "Retain missing exact time and altered source/parent tests"
+      ],
+      "code_ci_head": "cf6a02bdb9cb6ecd61bb223eed569e6a394c9afc",
+      "CI": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42354612212",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42354612232",
+        "physical_m3": "SKIPPED"
+      },
+      "limits": "No actual new CT03 solver CSV exists. Command and receipt provenance are checked for internal consistency, not independently authenticated as a solver execution. Custody, isolation and prospective lock remain outstanding."
+    },
+    "cli_followup": {
+      "review_file": "REVISION_PR172_CIERRE_F172_04_2761160_2026-11-07.md",
+      "reviewed_head": "276116003b2dacdcb62f374f4289b69b4e4db23d",
+      "finding": "F172-06 P2: CLI required --simulate-script but did not forward simulate_script_file to build().",
+      "status": "CORRECTED_VERIFIED_OFFLINE",
+      "implementation": "scripts/arena_cafe/ct03_m_construction_diagnostic.py::main forwards simulate_script_file=args.simulate_script to build(), preserving the existing signature and strict receipt/script checks.",
+      "regression": "tests/test_arena_ct03_m_construction_diagnostic.py::test_cli_accepts_native_fixture_and_rejects_changed_script invokes python -m with all fixture files; asserts exit 0, written JSON equals direct build(), no provider/new OMC; changed simulate.mos rejects without output file.",
+      "code_ci_head": "0d272d069ad4c939f61eb7f47a279985b8e5e2ab",
+      "verified_ci": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42355793988",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42355793979",
+        "physical_m3": "SKIPPED"
+      },
+      "scope": "Only caller wiring and offline CLI regression. F172-04 stays closed. No scientific CT02 end-to-end acceptance nor CT03 authorization."
+    },
+    "minimal_run_review": {
+      "review_file": "REVISION_PR172_RECORRIDO_MINIMO_8BC27E1_2026-11-07.md",
+      "reviewed_sha": "8bc27e1d03666823c1c506e2f08225202028cea8",
+      "finding": "F172-07 P2: D->M Bash loop checked only process exit/nonempty CSV; original physical conservation/identity checks occurred after both OMC runs.",
+      "status": "FIXED_OFFLINE_TESTED_NO_NEW_OMC",
+      "fix": "scripts/arena_cafe/ct02_minimal_batch.py exposes verify-arm with exact same per-arm checks used by aggregate verify. Physical workflow calls verify-arm immediately within loop after each OMC; set -euo pipefail stops before M if D fails.",
+      "test": "tests/test_arena_ct02_minimal_batch.py executes the actual YAML Bash step with temporary fake Docker (no physical runtime): bad D CSV with missing mass -> one D attempt and zero M; good D CSV -> both D/M attempts and successful final aggregate check.",
+      "operator_note": "workflow_dispatch must be registered on default branch; --ref experiment/arena-ct00-ct02-20261107 selects branch's SHA and no automatic merge of #171/#172 is implied.",
+      "code_sha_ci": "0a5ecb895d109943ab21e1e632cf6aac525a0d46",
+      "verified_ci": {
+        "recovered": "https://github.com/yudocyudoc/IGC/actions/runs/42407727473",
+        "e01": "https://github.com/yudocyudoc/IGC/actions/runs/42407727486",
+        "physical_m3": "SKIPPED"
+      },
+      "real_new_omc_simulations": 0,
+      "new_provider_posts": 0,
+      "new_des_simulations": 0,
+      "authorization": "NOT_GRANTED"
+    },
+    "latest_astra_review": {
+      "reviewed_sha": "d3cc94accb9a459562c0c71c54a421714696ec4a",
+      "finding": "F172-09 closed offline, no newly reproduced defect",
+      "next": "One global CT03 producer workflow + external custodian separated + prospective archive, not live authorized",
+      "resulting_manual_workflow_code_sha": "52462e4054e19a96740cb3825379ed1730ee9dda"
+    }
+  }
+}

@@ -1,0 +1,204 @@
+name: Arena CT-03 | procedural post-lock evaluator with private R2 read only
+on:
+  workflow_dispatch:
+    inputs:
+      authorized:
+        description: 'Release withheld t6/t8 ONLY after the original lock was archived'
+        required: true
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+      freeze_sha:
+        description: 'Same SHA40 as public intake, producer and lock'
+        required: true
+        type: string
+      public_release_run_id:
+        description: 'CT03 custody public release run ID, no private attachments'
+        required: true
+        type: string
+      producer_run_id:
+        description: 'CT03 original producer run ID'
+        required: true
+        type: string
+      lock_run_id:
+        description: 'Successful separate CT03 freeze-predictions run ID'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-ct03-single-postlock-evaluation
+  cancel-in-progress: false
+
+jobs:
+  verify-archive-then-evaluate-private:
+    environment: arena-ct03-custodian
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate lock really completed in a SEPARATE run before touching private R2
+        shell: bash
+        env:
+          AUTH: ${{ inputs.authorized }}
+          FROZEN: ${{ inputs.freeze_sha }}
+          SOURCE_RUN: ${{ inputs.public_release_run_id }}
+          PRODUCER_RUN: ${{ inputs.producer_run_id }}
+          LOCK_RUN: ${{ inputs.lock_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$AUTH" = yes
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/experiment/arena-ct00-ct02-20261107
+          [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
+          test "$FROZEN" = "$GITHUB_SHA"
+          [[ "$SOURCE_RUN" =~ ^[1-9][0-9]*$ ]]
+          [[ "$PRODUCER_RUN" =~ ^[1-9][0-9]*$ ]]
+          [[ "$LOCK_RUN" =~ ^[1-9][0-9]*$ ]]
+          test "$SOURCE_RUN" != "$PRODUCER_RUN"
+          test "$LOCK_RUN" != "$PRODUCER_RUN"
+          test "$LOCK_RUN" != "$SOURCE_RUN"
+          for record in "$SOURCE_RUN:.github/workflows/arena-ct03-public-intake.yml" \
+                        "$PRODUCER_RUN:.github/workflows/arena-ct03-producer.yml" \
+                        "$LOCK_RUN:.github/workflows/arena-ct03-freeze-predictions.yml"; do
+            id="${record%%:*}"
+            path="${record#*:}"
+            meta="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id")"
+            test "$(jq -r '.head_sha' <<< "$meta")" = "$FROZEN"
+            test "$(jq -r '.head_branch' <<< "$meta")" = experiment/arena-ct00-ct02-20261107
+            test "$(jq -r '.event' <<< "$meta")" = workflow_dispatch
+            test "$(jq -r '.conclusion' <<< "$meta")" = success
+            test "$(jq -r '.run_attempt' <<< "$meta")" = 1
+            test "$(jq -r '.path' <<< "$meta")" = "$path"
+            test "$(jq -r '.run_started_at' <<< "$meta")" != null
+          done
+          # GitHub run IDs are monotonically allocated; no lock before producer.
+          test "$SOURCE_RUN" -lt "$PRODUCER_RUN"
+          test "$PRODUCER_RUN" -lt "$LOCK_RUN"
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$LOCK_RUN/artifacts?per_page=100")"
+          expected="arena-ct03-prospective-lock-$LOCK_RUN"
+          artifact_id="$(jq -r --arg n "$expected" '[.artifacts[] | select(.name==$n and .expired==false) | .id] | if length==1 then .[0] else empty end' <<< "$artifacts")"
+          [[ "$artifact_id" =~ ^[1-9][0-9]*$ ]]
+          echo "CT03_ARCHIVE_VERIFIED_PUBLIC_BEFORE_PRIVATE_ACCESS"
+          echo "CT03_ARCHIVE_ARTIFACT_ID=$artifact_id" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-ct03-prospective-lock-${{ inputs.lock_run_id }}
+          run-id: ${{ inputs.lock_run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts/ct03-evaluator/public-lock
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-ct03-public-release-${{ inputs.public_release_run_id }}
+          run-id: ${{ inputs.public_release_run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts/ct03-evaluator/public-construction
+      - name: Verify independent archive metadata, immutable lock, and strict public file allowlists
+        shell: bash
+        env:
+          FROZEN: ${{ inputs.freeze_sha }}
+          LOCK_RUN: ${{ inputs.lock_run_id }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.arena_cafe.ct03_public_intake import FILES,validate
+          from scripts.arena_cafe.ct03_prospective_lock import verify_locked
+          root=Path("artifacts/ct03-evaluator")
+          pub=root/"public-construction"
+          arch=root/"public-lock"
+          assert not any(x.is_symlink() for x in root.rglob("*"))
+          assert {str(p.relative_to(pub)) for p in pub.rglob("*") if p.is_file()}==FILES
+          assert {p.name for p in arch.iterdir() if p.is_file()}=={"lock.json","archive-metadata.json"}
+          read=lambda p: json.loads(p.read_text(encoding="utf-8"))
+          c,k,s=[read(pub/name) for name in ("construction.json","world-commitment.json","release-status.json")]
+          validate(c,k,s)
+          lock=read(arch/"lock.json")
+          meta=read(arch/"archive-metadata.json")
+          verify_locked(lock)
+          assert lock["candidate_count"]==13
+          assert meta["lock_sha256"]==lock["lock_sha256"]
+          assert meta["github_lock_run_id"]==int(os.environ["LOCK_RUN"])
+          assert meta["frozen_code_sha"]==os.environ["FROZEN"]
+          assert meta["read_private_world"] is False
+          assert lock["construction_sha256"]==s["construction_sha256"]
+          assert lock["world_commitment_sha256"]==k["private_commitment_sha256"]
+          print("CT03_PUBLIC_LOCK_ARCHIVED_AND_SCOPED_BEFORE_PRIVATE_READ")
+          PY
+      - name: Fetch full private world only into evaluator workspace AFTER lock checks
+        shell: bash
+        env:
+          CT03_R2_ACCOUNT_ID: ${{ secrets.CT03_R2_ACCOUNT_ID }}
+          CT03_R2_ACCESS_KEY_ID: ${{ secrets.CT03_R2_ACCESS_KEY_ID }}
+          CT03_R2_SECRET_ACCESS_KEY: ${{ secrets.CT03_R2_SECRET_ACCESS_KEY }}
+          CT03_R2_BUCKET: igc-ct03-private-custody
+          SOURCE_RUN: ${{ inputs.public_release_run_id }}
+        run: |
+          set -euo pipefail
+          test -n "$CT03_R2_ACCOUNT_ID"
+          test -n "$CT03_R2_ACCESS_KEY_ID"
+          test -n "$CT03_R2_SECRET_ACCESS_KEY"
+          test "$CT03_R2_BUCKET" = igc-ct03-private-custody
+          export AWS_ACCESS_KEY_ID="$CT03_R2_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$CT03_R2_SECRET_ACCESS_KEY"
+          export AWS_DEFAULT_REGION=auto
+          export AWS_EC2_METADATA_DISABLED=true
+          private="$RUNNER_TEMP/ct03-evaluator-private"
+          test ! -e "$private"
+          mkdir -m 700 "$private"
+          aws --endpoint-url "https://${CT03_R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            s3 sync "s3://${CT03_R2_BUCKET}/ct03/run-${SOURCE_RUN}/" "$private/" \
+            --only-show-errors
+          test -s "$private/world-run/private-manifest.json"
+          test -s "$private/world-run/sealed_world_res.csv"
+          test -s "$private/world-run/world-omc.log"
+      - name: Procedural archive acknowledgement + post-lock paired score
+        shell: bash
+        env:
+          LOCK_RUN: ${{ inputs.lock_run_id }}
+          FROZEN: ${{ inputs.freeze_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/ct03-evaluator/results
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.arena_v0_contract import canonical
+          arch=Path("artifacts/ct03-evaluator/public-lock")
+          lock=json.loads((arch/"lock.json").read_text())
+          record={
+            "schema":"igc-ct03-procedural-archive-ack/1.0",
+            "lock_sha256":lock["lock_sha256"],
+            "github_run_id":int(os.environ["LOCK_RUN"]),
+            "github_artifact_id":int(os.environ["CT03_ARCHIVE_ARTIFACT_ID"]),
+            "frozen_code_sha":os.environ["FROZEN"],
+            "verified_by_custodian":"managed-github-postlock-job",
+            "archived_before_reveal":True,
+            "producer_write_disabled":True,
+            "custody_scope":"PROCEDURAL_HUMAN_NO_EXTERNAL_SIGNER"
+          }
+          out=Path("artifacts/ct03-evaluator/results/archive-record.json")
+          out.write_bytes(canonical(record)+b"\n")
+          PY
+          python -m scripts.arena_cafe.ct03_minimal_score \
+            --lock artifacts/ct03-evaluator/public-lock/lock.json \
+            --archive-record artifacts/ct03-evaluator/results/archive-record.json \
+            --construction artifacts/ct03-evaluator/public-construction/construction.json \
+            --commitment artifacts/ct03-evaluator/public-construction/world-commitment.json \
+            --producer-root "$GITHUB_WORKSPACE" \
+            --private-dir "$RUNNER_TEMP/ct03-evaluator-private/world-run" \
+            --out artifacts/ct03-evaluator/results/score-post-lock.json
+      - name: Publish only post-lock result and procedural archive record
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-postlock-score-${{ github.run_id }}
+          path: artifacts/ct03-evaluator/results/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,103 @@
+{
+  "schema": "igc-ct01-historical-capability-access/1.0",
+  "reference_commit": "5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "audit_head": "2d7678c985270eaaa9eb7ba8f6d63a80ddc43656",
+  "listed_at": "2026-11-07",
+  "artifact_evidence_limit": "ACTIONS_METADATA_LISTED_NOT_INTERNAL_BYTES_VERIFIED; historical results not reexecuted",
+  "capabilities": [
+    {
+      "id": "D2",
+      "run_id": 40248817463,
+      "method": "D1/D2 reset-trial update",
+      "source_path": "scripts/arena_d_v2_revision.py",
+      "source_git_blob": "ab3f98e87f49746371e7807a9d8e65bcc5089374",
+      "adapter": "scripts.arena_d_v2_revision.revise",
+      "contract": [
+        "authenticated D1 parent",
+        "declared uncertainty and grid",
+        "new reset-trial observation selected before measurement"
+      ],
+      "status": "AVAILABLE_METHOD_NOT_APPLICABLE_TO_CT03_MISSING_RESET_TRIAL",
+      "artifacts": [
+        {
+          "id": 12619352557,
+          "name": "arena-d-v1-screen-modelica-evidence",
+          "expires_at": "2026-11-25T00:20:18Z"
+        },
+        {
+          "id": 12619202899,
+          "name": "arena-d-v2-evaluator-only-synthetic-world",
+          "expires_at": "2026-11-25T00:20:17Z"
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "run_id": 40273515543,
+      "method": "Short E1 own late-overshoot feedback step",
+      "source_path": "scripts/arena_m2_feedback.py",
+      "source_git_blob": "916616e9472bf43478fff47ef40d5ae0a493a4ef",
+      "adapter": "scripts.arena_m2_feedback.own_policy",
+      "contract": [
+        "own exact parent graph",
+        "residual observations at t=2 and t=4 hours",
+        "two bounded responseTime edits"
+      ],
+      "status": "HISTORICAL_REPLAY_AVAILABLE_NEW_SIX_PARENT_WRAPPER_REQUIRED",
+      "artifacts": [
+        {
+          "id": 12628124619,
+          "name": "arena-m2-own-feedback-real-openmodelica",
+          "expires_at": "2026-12-10T05:18:58Z"
+        }
+      ]
+    },
+    {
+      "id": "B5",
+      "run_id": 40419170895,
+      "method": "Buffalo B4 to B5 own-native discrepancy self-correction",
+      "source_path": "scripts/arena_b5_own_discrepancy.py",
+      "source_git_blob": "e88a7417e79cc12991bda19ba543e83a0286af7e",
+      "adapter": "scripts/arena_b5_own_discrepancy.py (historical) / Engine.generate(currentModel) (future)",
+      "contract": [
+        "B4 exact native parent",
+        "own diagnostic and construction",
+        "original Buffalo generation not Arena repair"
+      ],
+      "status": "HISTORICAL_ONLY_NOT_PARENT_FOR_E02_OR_CT03",
+      "artifacts": [
+        {
+          "id": 12696426738,
+          "name": "buffalo-b5-self-review-real-raw-before-physical-adjudication",
+          "expires_at": "2026-12-10T23:22:52Z"
+        },
+        {
+          "id": 12696416795,
+          "name": "buffalo-b5-self-review-complete-audit",
+          "expires_at": "2026-12-10T23:23:03Z"
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "run_id": 40618493022,
+      "method": "Prospective sealed-before-opening prediction",
+      "source_path": "scripts/arena_r4_pt07_t2_forecast.py",
+      "source_git_blob": "af7164145e66cf57b918089174d6acbf43321c5a",
+      "adapter": "scripts/arena_r4_pt07_t2_forecast.py / scripts/arena_r4_pt07_t2_adjudicate.py",
+      "contract": [
+        "prediction and model hash locked before opening",
+        "separate evaluator truth",
+        "no replay of original world as new reserve"
+      ],
+      "status": "HISTORICAL_PROSPECTIVE_RESULT_PROTOCOL_REFERENCE_ONLY",
+      "artifacts": [
+        {
+          "id": 12785878357,
+          "name": "arena-r4-pt07-t2-one-authorized-world-original-outcome",
+          "expires_at": "2026-12-27T02:02:01Z"
+        }
+      ]
+    }
+  ]
+}

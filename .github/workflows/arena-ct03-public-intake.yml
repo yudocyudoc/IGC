@@ -1,0 +1,124 @@
+name: Arena CT-03 | intake public custodian four cuts only
+on:
+  workflow_dispatch:
+    inputs:
+      authorized:
+        description: 'Approve only after CT03 lot and SHA are authorized; no approval by default'
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+        required: true
+      mode:
+        description: 'managed: same-operator R2 custody; external: pre-released public-only JSON'
+        type: choice
+        options: ['managed', 'external']
+        default: 'managed'
+        required: true
+      freeze_sha:
+        description: 'Frozen CT03 producer/protocol commit SHA40'
+        type: string
+        required: true
+      construction_b64:
+        description: 'Base64 JSON of public construction.json ONLY'
+        type: string
+        required: false
+      commitment_b64:
+        description: 'Base64 JSON of public world-commitment.json ONLY'
+        type: string
+        required: false
+      release_status_b64:
+        description: 'Base64 JSON of public release-status.json ONLY'
+        type: string
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: arena-ct03-public-intake
+  cancel-in-progress: false
+jobs:
+  managed-private-custody-public-four-cuts:
+    if: ${{ inputs.mode == 'managed' }}
+    environment: arena-ct03-custodian
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Admit exact frozen code and a first single approved world attempt
+        shell: bash
+        env:
+          AUTH: ${{ inputs.authorized }}
+          FROZEN: ${{ inputs.freeze_sha }}
+          APPROVED: ${{ vars.CT03_APPROVED_FREEZE_SHA }}
+          CUSTODY_ONCE: ${{ vars.CT03_CUSTODY_ONE_WORLD_AUTH }}
+        run: |
+          set -euo pipefail
+          test "$AUTH" = yes
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = refs/heads/experiment/arena-ct00-ct02-20261107
+          [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
+          test "$FROZEN" = "$GITHUB_SHA"
+          test "$FROZEN" = "$APPROVED"
+          test "$CUSTODY_ONCE" = CT03_ONE_APPROVED_WORLD
+      - name: Select and simulate ONE private world; back up complete source and CSV to R2
+        shell: bash
+        env:
+          CT03_CUSTODIAN_MODE: CT03_ONE_APPROVED_WORLD
+          CT03_FROZEN_SHA: ${{ inputs.freeze_sha }}
+          CT03_R2_BUCKET: igc-ct03-private-custody
+          CT03_R2_ACCOUNT_ID: ${{ secrets.CT03_R2_ACCOUNT_ID }}
+          CT03_R2_ACCESS_KEY_ID: ${{ secrets.CT03_R2_ACCESS_KEY_ID }}
+          CT03_R2_SECRET_ACCESS_KEY: ${{ secrets.CT03_R2_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          bash scripts/arena_cafe/ct03_managed_custody_once.sh
+      - name: Upload ONLY 3 public JSON (construction/commitment/status)
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-public-release-${{ github.run_id }}
+          path: artifacts/ct03-public-release/
+          if-no-files-found: error
+          retention-days: 90
+
+  admit-only-public:
+    if: ${{ inputs.mode == 'external' }}
+    # Required reviewers must be configured separately; the name alone
+    # does not establish independent custodian or access control.
+    environment: arena-ct03-public-intake
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Check manual approval, branch, frozen SHA, first attempt
+        env:
+          AUTH: ${{ inputs.authorized }}
+          FROZEN: ${{ inputs.freeze_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$AUTH" = yes
+          test "$GITHUB_REF" = refs/heads/experiment/arena-ct00-ct02-20261107
+          [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
+          test "$FROZEN" = "$GITHUB_SHA"
+      - name: Admit strict three-file public release; NEVER touch private source
+        env:
+          CT03_PUBLIC_CONSTRUCTION_B64: ${{ inputs.construction_b64 }}
+          CT03_PUBLIC_COMMITMENT_B64: ${{ inputs.commitment_b64 }}
+          CT03_PUBLIC_RELEASE_STATUS_B64: ${{ inputs.release_status_b64 }}
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct03_public_intake --out artifacts/ct03-public-release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-public-release-${{ github.run_id }}
+          path: artifacts/ct03-public-release/
+          if-no-files-found: error
+          retention-days: 90
