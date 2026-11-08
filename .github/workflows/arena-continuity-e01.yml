@@ -114,6 +114,7 @@ jobs:
             test_arena_ct03_producer_freeze_handoff.py \
             test_arena_ct03_lot_budget.py \
             test_arena_ct03_public_intake.py \
+            test_arena_ct03_managed_custody.py \
             test_arena_ct03_global_workflow.py; do
             python -m unittest discover -s tests -p "$test" -v
           done
