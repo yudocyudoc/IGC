@@ -31,6 +31,13 @@ PUBLIC_BASE="$GITHUB_WORKSPACE/artifacts/ct03-public-release"
 PRODUCER_CHECKOUT="$GITHUB_WORKSPACE"
 R2_PREFIX="s3://${CT03_R2_BUCKET}/ct03/run-${GITHUB_RUN_ID}"
 umask 077
+# A failed world attempt is not a license to reselect or re-dispatch. The
+# dedicated bucket has no other CT03 experiments in this pilot.
+EXISTING_WORLD="$(aws --endpoint-url "$R2_ENDPOINT" s3 ls "s3://${CT03_R2_BUCKET}/ct03/")"
+if test -n "$EXISTING_WORLD"; then
+  echo "CT03_PRIVATE_WORLD_ALREADY_RESERVED_STOP_NO_RETRY" >&2
+  exit 1
+fi
 test ! -e "$PRIVATE_BASE"
 test ! -e "$PUBLIC_BASE"
 mkdir -m 700 "$PRIVATE_BASE"
