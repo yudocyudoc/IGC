@@ -1,0 +1,1772 @@
+<?xml version = "1.0" encoding="UTF-8"?>
+
+<!-- description of the model interface using an extention of the FMI standard -->
+<fmiModelDescription
+  fmiVersion                          = "1.0"
+
+  modelName                           = "ArenaCT03M.CT03M_18247fc54a54"
+  modelIdentifier                     = "ArenaCT03M_CT03M_18247fc54a54"
+
+  OPENMODELICAHOME                    = "/usr/bin/.."
+
+  guid                                = "{5d58c239-bfa1-42be-a095-d84e087563ab}"
+
+  description                         = ""
+  generationTool                      = "OpenModelica Compiler OpenModelica 1.26.5"
+  generationDateAndTime               = "2026-11-07T20:04:17Z"
+
+  variableNamingConvention            = "structured"
+
+  numberOfEventIndicators             = "1"  cmt_numberOfEventIndicators             = "NG:       number of zero crossings,                           FMI"
+  numberOfTimeEvents                  = "0"  cmt_numberOfTimeEvents                  = "NG_SAM:   number of zero crossings that are samples,          OMC"
+
+  numberOfInputVariables              = "0"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
+  numberOfOutputVariables             = "0"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
+
+  numberOfExternalObjects             = "0"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
+  numberOfFunctions                   = "0"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
+
+  numberOfContinuousStates            = "4"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
+  numberOfRealAlgebraicVariables      = "11"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+  numberOfRealAlgebraicAliasVariables = "77"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
+  numberOfRealParameters              = "31"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
+
+  numberOfIntegerAlgebraicVariables   = "0"  cmt_numberOfIntegerAlgebraicVariables   = "NYINT:    number of alg. int variables,                       OMC"
+  numberOfIntegerAliasVariables       = "0"  cmt_numberOfIntegerAliasVariables       = "NAINT:    number of alias int variables,                      OMC"
+  numberOfIntegerParameters           = "7"  cmt_numberOfIntegerParameters           = "NPINT:    number of int parameters,                           OMC"
+
+  numberOfStringAlgebraicVariables    = "0"  cmt_numberOfStringAlgebraicVariables    = "NYSTR:    number of alg. string variables,                    OMC"
+  numberOfStringAliasVariables        = "0"  cmt_numberOfStringAliasVariables        = "NASTR:    number of alias string variables,                   OMC"
+  numberOfStringParameters            = "0"  cmt_numberOfStringParameters            = "NPSTR:    number of string parameters,                        OMC"
+
+  numberOfBooleanAlgebraicVariables   = "3"  cmt_numberOfBooleanAlgebraicVariables   = "NYBOOL:   number of alg. bool variables,                      OMC"
+  numberOfBooleanAliasVariables       = "0"  cmt_numberOfBooleanAliasVariables       = "NABOOL:   number of alias bool variables,                     OMC"
+  numberOfBooleanParameters           = "8"  cmt_numberOfBooleanParameters           = "NPBOOL:   number of bool parameters,                          OMC" >
+
+
+  <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
+  <DefaultExperiment
+    startTime      = "0"
+    stopTime       = "8"
+    stepSize       = "0.125"
+    tolerance      = "1e-06"
+    solver         = "euler"
+    outputFormat   = "csv"
+    variableFilter = ".*" />
+
+  <!-- variables in the model -->
+  <ModelVariables>
+
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.y"
+    valueReference = "1000"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rSta"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.y"
+    valueReference = "1001"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rSta"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.y"
+    valueReference = "1002"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rSta"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.y"
+    valueReference = "1003"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rSta"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "der(dispatch0.stock.Integrator1.y)"
+    valueReference = "1004"
+    description = "der(Connector of Real output signal)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rDer"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "der(preparation0.stock.Integrator1.y)"
+    valueReference = "1005"
+    description = "der(Connector of Real output signal)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rDer"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "der(receipt0.deliveries.Integrator1.y)"
+    valueReference = "1006"
+    description = "der(Connector of Real output signal)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rDer"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "der(report0.reportFilter.y)"
+    valueReference = "1007"
+    description = "der(Connector of Real output signal)"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rDer"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "deliveryRate"
+    valueReference = "1008"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "13" startColumn = "5" endLine = "13" endColumn = "22" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.inflow.rate"
+    valueReference = "1009"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "902" startColumn = "7" endLine = "902" endColumn = "23" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.u"
+    valueReference = "1010"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "919" startColumn = "7" endLine = "919" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Add1.y"
+    valueReference = "1011"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "346" startColumn = "5" endLine = "347" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.local_set"
+    valueReference = "1012"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "rAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "37" startColumn = "5" endLine = "37" endColumn = "80" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "inTransit"
+    valueReference = "1013"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "14" startColumn = "5" endLine = "14" endColumn = "19" fileWritable = "true">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.inflow.rate"
+    valueReference = "1014"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "902" startColumn = "7" endLine = "902" endColumn = "23" fileWritable = "false">
+    <Real start="1.7" fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.u"
+    valueReference = "1015"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "919" startColumn = "7" endLine = "919" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Add1.y"
+    valueReference = "1016"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "8" classType = "rAlg"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "346" startColumn = "5" endLine = "347" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.local_set"
+    valueReference = "1017"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "9" classType = "rAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "37" startColumn = "5" endLine = "37" endColumn = "80" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.local_set"
+    valueReference = "1018"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "rAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "37" startColumn = "5" endLine = "37" endColumn = "80" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.maxThroughput"
+    valueReference = "1019"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "0" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "16" startColumn = "5" endLine = "16" endColumn = "40" fileWritable = "true">
+    <Real start="20.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.uMax"
+    valueReference = "1020"
+    description = "Upper limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "8" startColumn = "9" endLine = "8" endColumn = "69" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.uMin"
+    valueReference = "1021"
+    description = "Lower limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "9" startColumn = "9" endLine = "9" endColumn = "67" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.maxFlow"
+    valueReference = "1022"
+    description = "Largest allowed flow"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "917" startColumn = "7" endLine = "917" endColumn = "58" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.minFlow"
+    valueReference = "1023"
+    description = "Smallest allowed flow"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "4" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "916" startColumn = "7" endLine = "916" endColumn = "57" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.response.k"
+    valueReference = "1024"
+    description = "Gain value multiplied with input signal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "543" startColumn = "5" endLine = "544" endColumn = "48" fileWritable = "false">
+    <Real fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.responseTime"
+    valueReference = "1025"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "6" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "17" startColumn = "5" endLine = "17" endColumn = "42" fileWritable = "true">
+    <Real start="0.5" fixed="true" useNominal="false" min="1e-9" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Add1.k1"
+    valueReference = "1026"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "7" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "876" startColumn = "5" endLine = "876" endColumn = "50" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Add1.k2"
+    valueReference = "1027"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "8" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "877" startColumn = "5" endLine = "877" endColumn = "50" fileWritable = "false">
+    <Real start="-1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.k"
+    valueReference = "1028"
+    description = "Integrator gain"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "9" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "10" startColumn = "5" endLine = "10" endColumn = "51" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.y_start"
+    valueReference = "1029"
+    description = "Initial or guess value of output (= state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "10" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "22" startColumn = "5" endLine = "23" endColumn = "50" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.x0"
+    valueReference = "1030"
+    description = "Initial condition"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "11" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "585" startColumn = "7" endLine = "585" endColumn = "48" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.maxThroughput"
+    valueReference = "1031"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "12" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "16" startColumn = "5" endLine = "16" endColumn = "40" fileWritable = "true">
+    <Real start="20.0" fixed="true" useNominal="false" min="0.0" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.uMax"
+    valueReference = "1032"
+    description = "Upper limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "13" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "8" startColumn = "9" endLine = "8" endColumn = "69" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.uMin"
+    valueReference = "1033"
+    description = "Lower limits of input signals"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "14" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "9" startColumn = "9" endLine = "9" endColumn = "67" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.maxFlow"
+    valueReference = "1034"
+    description = "Largest allowed flow"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "15" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "917" startColumn = "7" endLine = "917" endColumn = "58" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.minFlow"
+    valueReference = "1035"
+    description = "Smallest allowed flow"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "16" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "916" startColumn = "7" endLine = "916" endColumn = "57" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.response.k"
+    valueReference = "1036"
+    description = "Gain value multiplied with input signal"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "17" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "543" startColumn = "5" endLine = "544" endColumn = "48" fileWritable = "false">
+    <Real fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.responseTime"
+    valueReference = "1037"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "18" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "17" startColumn = "5" endLine = "17" endColumn = "42" fileWritable = "true">
+    <Real start="0.5" fixed="true" useNominal="false" min="1e-9" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Add1.k1"
+    valueReference = "1038"
+    description = "Gain of input signal 1"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "19" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "876" startColumn = "5" endLine = "876" endColumn = "50" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Add1.k2"
+    valueReference = "1039"
+    description = "Gain of input signal 2"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "20" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "877" startColumn = "5" endLine = "877" endColumn = "50" fileWritable = "false">
+    <Real start="-1.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.k"
+    valueReference = "1040"
+    description = "Integrator gain"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "21" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "10" startColumn = "5" endLine = "10" endColumn = "51" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.y_start"
+    valueReference = "1041"
+    description = "Initial or guess value of output (= state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "22" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "22" startColumn = "5" endLine = "23" endColumn = "50" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.x0"
+    valueReference = "1042"
+    description = "Initial condition"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "23" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "585" startColumn = "7" endLine = "585" endColumn = "48" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.k"
+    valueReference = "1043"
+    description = "Integrator gain"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "24" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "10" startColumn = "5" endLine = "10" endColumn = "51" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.y_start"
+    valueReference = "1044"
+    description = "Initial or guess value of output (= state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "25" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "22" startColumn = "5" endLine = "23" endColumn = "50" fileWritable = "false">
+    <Real fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.x0"
+    valueReference = "1045"
+    description = "Initial condition"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "26" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "714" startColumn = "7" endLine = "714" endColumn = "48" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.T"
+    valueReference = "1046"
+    description = "Time Constant"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "27" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "354" startColumn = "5" endLine = "354" endColumn = "49" fileWritable = "false">
+    <Real fixed="true" useNominal="false" unit="s" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.k"
+    valueReference = "1047"
+    description = "Gain"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "28" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "353" startColumn = "5" endLine = "353" endColumn = "40" fileWritable = "false">
+    <Real start="1.0" fixed="true" useNominal="false" unit="1" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.y_start"
+    valueReference = "1048"
+    description = "Initial or guess value of output (= state)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "29" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "358" startColumn = "5" endLine = "359" endColumn = "50" fileWritable = "false">
+    <Real start="0.0" fixed="true" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportResponseTime"
+    valueReference = "1049"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "30" classType = "rPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCInformationMolecules.mo" startLine = "5" startColumn = "5" endLine = "5" endColumn = "52" fileWritable = "true">
+    <Real start="1.6" fixed="true" useNominal="false" min="1e-9" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "deliveredTotal"
+    valueReference = "1050"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "0" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "16" startColumn = "5" endLine = "16" endColumn = "24" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.arrival"
+    valueReference = "1051"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "1" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "18" startColumn = "5" endLine = "18" endColumn = "49" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.completed"
+    valueReference = "1052"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "2" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "19" startColumn = "5" endLine = "19" endColumn = "52" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.inflow.u"
+    valueReference = "1053"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "3" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "903" startColumn = "7" endLine = "903" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.inflow.y"
+    valueReference = "1054"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "4" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "904" startColumn = "7" endLine = "904" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.inflow.y1"
+    valueReference = "1055"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "5" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "905" startColumn = "7" endLine = "905" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.simplifiedExpr"
+    valueReference = "1056"
+    description = "Simplified expression for homotopy-based initialization"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.release.u" aliasVariableId="10"
+    classIndex = "6" classType = "rAli"
+    isProtected = "true" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "16" startColumn = "9" endLine = "16" endColumn = "86" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.u"
+    valueReference = "1057"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.release.u" aliasVariableId="10"
+    classIndex = "7" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.y"
+    valueReference = "1058"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "8" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.rate"
+    valueReference = "1059"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "9" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "918" startColumn = "7" endLine = "918" endColumn = "23" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.y"
+    valueReference = "1060"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "10" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "920" startColumn = "7" endLine = "920" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.y1"
+    valueReference = "1061"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "11" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "921" startColumn = "7" endLine = "921" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.response.u"
+    valueReference = "1062"
+    description = "Input signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "12" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "546" startColumn = "5" endLine = "547" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.response.y"
+    valueReference = "1063"
+    description = "Output signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.release.u" aliasVariableId="10"
+    classIndex = "13" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "548" startColumn = "5" endLine = "549" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Add1.u1"
+    valueReference = "1064"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "14" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "342" startColumn = "5" endLine = "343" endColumn = "57" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Add1.u2"
+    valueReference = "1065"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "15" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "344" startColumn = "5" endLine = "345" endColumn = "59" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.u"
+    valueReference = "1066"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Add1.y" aliasVariableId="11"
+    classIndex = "16" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.level"
+    valueReference = "1067"
+    description = "Continuous state variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "17" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "586" startColumn = "7" endLine = "586" endColumn = "52" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.u1"
+    valueReference = "1068"
+    description = "Inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "18" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "589" startColumn = "7" endLine = "589" endColumn = "288" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.u2"
+    valueReference = "1069"
+    description = "Outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "19" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "590" startColumn = "7" endLine = "590" endColumn = "287" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.y"
+    valueReference = "1070"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "20" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "591" startColumn = "7" endLine = "591" endColumn = "279" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.y1"
+    valueReference = "1071"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "21" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "592" startColumn = "7" endLine = "592" endColumn = "278" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.y2"
+    valueReference = "1072"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "22" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "593" startColumn = "7" endLine = "593" endColumn = "284" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.y3"
+    valueReference = "1073"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "23" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "594" startColumn = "7" endLine = "594" endColumn = "282" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.y4"
+    valueReference = "1074"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "24" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "595" startColumn = "7" endLine = "595" endColumn = "286" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.waiting"
+    valueReference = "1075"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.stock.Integrator1.y" aliasVariableId="0"
+    classIndex = "25" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "20" startColumn = "5" endLine = "20" endColumn = "50" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatchRate"
+    valueReference = "1076"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "26" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "12" startColumn = "5" endLine = "12" endColumn = "22" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.arrival"
+    valueReference = "1077"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "27" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "18" startColumn = "5" endLine = "18" endColumn = "49" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.completed"
+    valueReference = "1078"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "28" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "19" startColumn = "5" endLine = "19" endColumn = "52" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.inflow.u"
+    valueReference = "1079"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "29" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "903" startColumn = "7" endLine = "903" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.inflow.y"
+    valueReference = "1080"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "30" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "904" startColumn = "7" endLine = "904" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.inflow.y1"
+    valueReference = "1081"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "31" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "905" startColumn = "7" endLine = "905" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.simplifiedExpr"
+    valueReference = "1082"
+    description = "Simplified expression for homotopy-based initialization"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.release.u" aliasVariableId="15"
+    classIndex = "32" classType = "rAli"
+    isProtected = "true" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "16" startColumn = "9" endLine = "16" endColumn = "86" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.u"
+    valueReference = "1083"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.release.u" aliasVariableId="15"
+    classIndex = "33" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.y"
+    valueReference = "1084"
+    description = "Connector of Real output signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "34" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "329" startColumn = "5" endLine = "330" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.rate"
+    valueReference = "1085"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "35" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "918" startColumn = "7" endLine = "918" endColumn = "23" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.y"
+    valueReference = "1086"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "36" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "920" startColumn = "7" endLine = "920" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.y1"
+    valueReference = "1087"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "37" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "921" startColumn = "7" endLine = "921" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.response.u"
+    valueReference = "1088"
+    description = "Input signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "38" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "546" startColumn = "5" endLine = "547" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.response.y"
+    valueReference = "1089"
+    description = "Output signal connector"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.release.u" aliasVariableId="15"
+    classIndex = "39" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Math.mo" startLine = "548" startColumn = "5" endLine = "549" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Add1.u1"
+    valueReference = "1090"
+    description = "Connector of Real input signal 1"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "40" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "342" startColumn = "5" endLine = "343" endColumn = "57" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Add1.u2"
+    valueReference = "1091"
+    description = "Connector of Real input signal 2"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "41" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "344" startColumn = "5" endLine = "345" endColumn = "59" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.u"
+    valueReference = "1092"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Add1.y" aliasVariableId="16"
+    classIndex = "42" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.level"
+    valueReference = "1093"
+    description = "Continuous state variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "43" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "586" startColumn = "7" endLine = "586" endColumn = "52" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.u1"
+    valueReference = "1094"
+    description = "Inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "44" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "589" startColumn = "7" endLine = "589" endColumn = "288" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.u2"
+    valueReference = "1095"
+    description = "Outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="dispatch0.inflow.rate" aliasVariableId="9"
+    classIndex = "45" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "590" startColumn = "7" endLine = "590" endColumn = "287" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.y"
+    valueReference = "1096"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "46" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "591" startColumn = "7" endLine = "591" endColumn = "279" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.y1"
+    valueReference = "1097"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "47" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "592" startColumn = "7" endLine = "592" endColumn = "278" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.y2"
+    valueReference = "1098"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "48" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "593" startColumn = "7" endLine = "593" endColumn = "284" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.y3"
+    valueReference = "1099"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "49" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "594" startColumn = "7" endLine = "594" endColumn = "282" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.y4"
+    valueReference = "1100"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "50" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "595" startColumn = "7" endLine = "595" endColumn = "286" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.waiting"
+    valueReference = "1101"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.stock.Integrator1.y" aliasVariableId="1"
+    classIndex = "51" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "20" startColumn = "5" endLine = "20" endColumn = "50" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.arrival"
+    valueReference = "1102"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "52" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "37" startColumn = "5" endLine = "37" endColumn = "49" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.u"
+    valueReference = "1103"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "53" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.level"
+    valueReference = "1104"
+    description = "Continuous state variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "54" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "715" startColumn = "7" endLine = "715" endColumn = "52" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.u1"
+    valueReference = "1105"
+    description = "Inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "55" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "717" startColumn = "7" endLine = "717" endColumn = "288" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.y"
+    valueReference = "1106"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "56" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "718" startColumn = "7" endLine = "718" endColumn = "279" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.y1"
+    valueReference = "1107"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "57" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "719" startColumn = "7" endLine = "719" endColumn = "278" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.y2"
+    valueReference = "1108"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "58" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "720" startColumn = "7" endLine = "720" endColumn = "284" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.y3"
+    valueReference = "1109"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "59" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "721" startColumn = "7" endLine = "721" endColumn = "282" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.y4"
+    valueReference = "1110"
+    description = "State variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "60" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "722" startColumn = "7" endLine = "722" endColumn = "286" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.incoming.rate"
+    valueReference = "1111"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "61" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "902" startColumn = "7" endLine = "902" endColumn = "23" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.incoming.u"
+    valueReference = "1112"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "62" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "903" startColumn = "7" endLine = "903" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.incoming.y"
+    valueReference = "1113"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "63" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "904" startColumn = "7" endLine = "904" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.incoming.y1"
+    valueReference = "1114"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "64" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "905" startColumn = "7" endLine = "905" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.total"
+    valueReference = "1115"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="receipt0.deliveries.Integrator1.y" aliasVariableId="2"
+    classIndex = "65" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "38" startColumn = "5" endLine = "38" endColumn = "48" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.physicalArrivalRate"
+    valueReference = "1116"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "66" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCInformationMolecules.mo" startLine = "6" startColumn = "5" endLine = "6" endColumn = "61" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.u"
+    valueReference = "1117"
+    description = "Connector of Real input signal"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="deliveryRate" aliasVariableId="8"
+    classIndex = "67" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Interfaces.mo" startLine = "327" startColumn = "5" endLine = "328" endColumn = "58" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportedRate"
+    valueReference = "1118"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="report0.reportFilter.y" aliasVariableId="3"
+    classIndex = "68" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCInformationMolecules.mo" startLine = "7" startColumn = "5" endLine = "7" endColumn = "55" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "reportedDeliveryRate"
+    valueReference = "1119"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="report0.reportFilter.y" aliasVariableId="3"
+    classIndex = "69" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "15" startColumn = "5" endLine = "15" endColumn = "30" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.externalRate"
+    valueReference = "1120"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "70" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "6" startColumn = "5" endLine = "6" endColumn = "54" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.incoming.rate"
+    valueReference = "1121"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "71" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "902" startColumn = "7" endLine = "902" endColumn = "23" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.incoming.u"
+    valueReference = "1122"
+    description = "Signal inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "72" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "903" startColumn = "7" endLine = "903" endColumn = "292" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.incoming.y"
+    valueReference = "1123"
+    description = "Mass inflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "73" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "904" startColumn = "7" endLine = "904" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.incoming.y1"
+    valueReference = "1124"
+    description = "Mass outflow variable"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "74" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/systemdynamics/SystemDynamics/package.mo" startLine = "905" startColumn = "7" endLine = "905" endColumn = "291" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "source0.outflow"
+    valueReference = "1125"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "75" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/src/modelica/IGCMolecules.mo" startLine = "7" startColumn = "5" endLine = "7" endColumn = "50" fileWritable = "true">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "stimulus.y"
+    valueReference = "1126"
+    description = "Value of Real output"
+    variability = "continuous" isDiscrete = "false"
+    causality = "local" isValueChangeable = "false"
+    alias = "alias" aliasVariable="preparation0.inflow.rate" aliasVariableId="14"
+    classIndex = "76" classType = "rAli"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Sources.mo" startLine = "10" startColumn = "5" endLine = "12" endColumn = "56" fileWritable = "false">
+    <Real fixed="false" useNominal="false" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.homotopyType"
+    valueReference = "1127"
+    description = "Simplified model for homotopy-based initialization"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "12" startColumn = "9" endLine = "13" endColumn = "69" fileWritable = "false">
+    <Integer start="2" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.initType"
+    valueReference = "1128"
+    description = "Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "19" startColumn = "5" endLine = "21" endColumn = "40" fileWritable = "false">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.homotopyType"
+    valueReference = "1129"
+    description = "Simplified model for homotopy-based initialization"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "12" startColumn = "9" endLine = "13" endColumn = "69" fileWritable = "false">
+    <Integer start="2" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.initType"
+    valueReference = "1130"
+    description = "Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "19" startColumn = "5" endLine = "21" endColumn = "40" fileWritable = "false">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "probe"
+    valueReference = "1131"
+    variability = "parameter" isDiscrete = "true"
+    causality = "parameter" isValueChangeable = "true"
+    alias = "noAlias"
+    classIndex = "4" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/repo/artifacts/ct02-exact-two/M/native.mo" startLine = "4" startColumn = "5" endLine = "4" endColumn = "43" fileWritable = "true">
+    <Integer start="1" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.initType"
+    valueReference = "1132"
+    description = "Type of initialization (1: no init, 2: steady state, 3,4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "19" startColumn = "5" endLine = "21" endColumn = "40" fileWritable = "false">
+    <Integer start="3" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "report0.reportFilter.initType"
+    valueReference = "1133"
+    description = "Type of initialization (1: no init, 2: steady state, 3/4: initial output)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "iPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "355" startColumn = "5" endLine = "357" endColumn = "40" fileWritable = "false">
+    <Integer start="4" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.local_reset"
+    valueReference = "1134"
+    variability = "discrete" isDiscrete = "true"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "bAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "36" startColumn = "5" endLine = "36" endColumn = "85" fileWritable = "false">
+    <Boolean fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.local_reset"
+    valueReference = "1135"
+    variability = "discrete" isDiscrete = "true"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "bAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "36" startColumn = "5" endLine = "36" endColumn = "85" fileWritable = "false">
+    <Boolean fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.local_reset"
+    valueReference = "1136"
+    variability = "discrete" isDiscrete = "true"
+    causality = "local" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "bAlg"
+    isProtected = "true" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "36" startColumn = "5" endLine = "36" endColumn = "85" fileWritable = "false">
+    <Boolean fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.release.Limiter1.strict"
+    valueReference = "1137"
+    description = "= true, if strict limits with noEvent(..)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "0" classType = "bPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "10" startColumn = "9" endLine = "11" endColumn = "85" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.use_reset"
+    valueReference = "1138"
+    description = "= true, if reset port enabled"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "1" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "11" startColumn = "5" endLine = "12" endColumn = "73" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "dispatch0.stock.Integrator1.use_set"
+    valueReference = "1139"
+    description = "= true, if set port enabled and used as reinitialization value when reset"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "2" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "99" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.release.Limiter1.strict"
+    valueReference = "1140"
+    description = "= true, if strict limits with noEvent(..)"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "3" classType = "bPar"
+    isProtected = "false" hideResult = "" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Nonlinear.mo" startLine = "10" startColumn = "9" endLine = "11" endColumn = "85" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.use_reset"
+    valueReference = "1141"
+    description = "= true, if reset port enabled"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "4" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "11" startColumn = "5" endLine = "12" endColumn = "73" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "preparation0.stock.Integrator1.use_set"
+    valueReference = "1142"
+    description = "= true, if set port enabled and used as reinitialization value when reset"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "5" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "99" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.use_reset"
+    valueReference = "1143"
+    description = "= true, if reset port enabled"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "6" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "11" startColumn = "5" endLine = "12" endColumn = "73" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+  <ScalarVariable
+    name = "receipt0.deliveries.Integrator1.use_set"
+    valueReference = "1144"
+    description = "= true, if set port enabled and used as reinitialization value when reset"
+    variability = "parameter" isDiscrete = "true"
+    causality = "calculatedParameter" isValueChangeable = "false"
+    alias = "noAlias"
+    classIndex = "7" classType = "bPar"
+    isProtected = "false" hideResult = "true" isEncrypted = "false" initNonlinear = "false"
+    fileName = "/thirdparty/msl/Modelica/Blocks/Continuous.mo" startLine = "13" startColumn = "5" endLine = "14" endColumn = "99" fileWritable = "false">
+    <Boolean start="false" fixed="true" />
+  </ScalarVariable>
+
+
+
+  </ModelVariables>
+
+
+</fmiModelDescription>
+
