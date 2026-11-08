@@ -1,0 +1,68 @@
+name: One-time CT02 evidence export, no solver or provider
+on:
+  push:
+    branches: [migration/export-ct02-native-evidence]
+    paths: [.github/workflows/migration-export-ct02.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original GitHub artifact identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/$GITHUB_REPOSITORY/actions/runs/42409210062 > /tmp/ct02-original-run.json
+          gh api repos/$GITHUB_REPOSITORY/actions/artifacts/13588621967 > /tmp/ct02-original-artifact.json
+          python - <<'PY'
+          import json
+          run=json.load(open('/tmp/ct02-original-run.json'))
+          item=json.load(open('/tmp/ct02-original-artifact.json'))
+          assert run['head_sha']=='6534ec6bbbe0c48265d1e4eb0d1d243c7fe55b4d'
+          assert run['conclusion']=='success' and run['run_attempt']==1
+          assert item['workflow_run']['id']==42409210062 and not item['expired']
+          assert item['id']==13588621967
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-ct02-technical-attempt-42409210062
+          run-id: 42409210062
+          github-token: ${{ github.token }}
+          path: .migration/ct02-original
+      - name: Verify native evidence and record source; no new OMC
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.ct03_reuse_ct02 --original-artifact-dir .migration/ct02-original --out .migration/ct02-verification.json
+          cp /tmp/ct02-original-run.json .migration/source-run.json
+          cp /tmp/ct02-original-artifact.json .migration/source-artifact.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('.migration/ct02-original')
+          rows=[]
+          for p in sorted(root.rglob('*')):
+              if p.is_symlink(): raise SystemExit('Unexpected symlink')
+              if p.is_file():
+                  rows.append({'path':str(p.relative_to(root)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+          Path('.migration/ct02-transfer-manifest.json').write_text(json.dumps({
+              'source_repository':'yudocyudoc/IGC','source_run_id':42409210062,
+              'source_artifact_id':13588621967,
+              'source_zip_sha256':'7c77650e2d49a8e4dea64eeb0053e80da5b9137a3607a3b26edbf7c7b358ccac',
+              'new_omc':0,'provider_posts':0,'files':rows},indent=2)+'\n')
+          PY
+      - name: Preserve the public original evidence on this export branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- .migration/
+          git commit -m "Export original CT02 D0/M0 native evidence for one-time migration, no rerun"
+          git push origin HEAD:migration/export-ct02-native-evidence
