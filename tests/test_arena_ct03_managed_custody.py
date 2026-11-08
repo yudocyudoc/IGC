@@ -81,6 +81,9 @@ class ManagedCustodyTests(unittest.TestCase):
         self.assertIn("ct03_minimal_custody",s)
         self.assertIn("--network none",s)
         self.assertIn("world-attempt.log",s)
+        digest = "openmodelica/openmodelica@sha256:8993c8273224aeacbc018f351c00d60879c5aec386c77a58019318c44c938c9b"
+        self.assertIn(f"  {digest} omc simulate.mos",s)
+        self.assertNotIn("openmodelica/openmodelica:v1.26.5-minimal omc simulate.mos",s)
         self.assertNotIn("actions/upload-artifact",s)
 
 
