@@ -2,6 +2,39 @@
 
 **Estado verificado el 2026-11-07:** preparación offline, **NO READY FOR LIVE**. Fuente rectora: `ARENA_IGC_HOJA_DE_RUTA_V4_0_2026-11-07.md`, §§6, 8 y reglas R06/R12/R18/R19/R24; cierre externo de F172-10/11 en `REVISION_PR172_CIERRE_F172_10_11_A2E190B_2026-11-07.md`. **No es nueva hoja de ruta, rediseño ni solicitud de repetir las dos corridas CT-02.** El protocolo actual mantiene `currently_authorized_new_omc=0` y `currently_authorized_new_provider_post=0`.
 
+
+## Actualización vinculante: mismo operador y custodia automatizada (2026-11-07)
+
+**Sustituye cualquier exigencia de una segunda persona en el resto de esta ficha.** La persona que opera IGC puede ejecutar el proceso completo. La frontera es de **credenciales y bytes**, no de identidad humana. La custodia es **procedimental por jobs efímeros separados**, no independencia de operador ni ACL a nivel de cuenta Cloudflare compartida. Se conservan las reglas de parada, cuota y lock de la hoja v4.0.
+
+**Infraestructura creada y verificada:** bucket Cloudflare R2 **`igc-ct03-private-custody`**, clase Standard, dominio gestionado `r2.dev` **deshabilitado**; no es el bucket genérico `cei-igc-lab-v02`. Aún está **vacío de mundo** y no se han configurado las credenciales GitHub necesarias. El bucket mismo no equivale a control de acceso: limitar sus claves S3, y no asignarlas a jobs de productor.
+
+**Ruta operativa simplificada (misma persona):**
+
+1. Una sola vez, en GitHub, registrar los workflows manuales en `main` mediante decisión explícita sobre PR #171/#172, manteniendo el SHA40 de ejecución congelado en rama experimental. Crear `arena-ct03-custodian` con variables `CT03_APPROVED_FREEZE_SHA=<SHA40>` y `CT03_CUSTODY_ONE_WORLD_AUTH=CT03_ONE_APPROVED_WORLD`. Crear **secrets** SOLO en ese environment: `CT03_R2_ACCOUNT_ID`, `CT03_R2_ACCESS_KEY_ID`, `CT03_R2_SECRET_ACCESS_KEY`. Las últimas dos son **credenciales R2 S3 limitadas al bucket privado**, no el token de Buffalo ni la clave de administrador; acceso List/Read/Write para el script. No pegarlas en el chat, PR ni variables públicas. Los productores **nunca** reciben esas claves.
+2. Tras habilitación del lote CT-03 (19 OMC nuevos como máximo, incluido mundo, y dos POST), disparar **una vez** `arena-ct03-public-intake.yml` con `mode=managed`, `authorized=yes` y `freeze_sha=<SHA40>`. El job `managed-private-custody-public-four-cuts` genera un solo mundo en `$RUNNER_TEMP`, anota y respalda previamente el intento en R2, ejecuta un OMC sin red, guarda config/Modelica/script/log/CSV íntegros **solo en R2 y en ese runner efímero**, publica únicamente tres JSON con t0/t1/t2/t4. Se rechaza re-selección si el prefijo `ct03/` de R2 contiene otro intento. No imprime parámetros verdaderos.
+3. Configurar los environments productores y sus secretos Buffalo originales; otorgar al productor `CT03_APPROVED_FREEZE_SHA`, `CT03_APPROVED_RELEASE_RUN_ID=<intake_run_id>` y `CT03_EXTERNAL_CUSTODIAN_ACK=external_private_world_attempted_once` (etiqueta de recibo **procedimental**, no actor externo). Despachar **una vez** `arena-ct03-producer.yml` con los límites existentes. El productor lee **solo el artefacto público de tres JSON** y jamás credenciales/CSV de R2.
+4. Ejecutar `arena-ct03-freeze-predictions.yml` en **la misma rama y SHA**: archiva las 13 plazas independientemente y produce `lock.json`. Después, disparar **por separado y nunca antes** `arena-ct03-evaluate-postlock.yml`, con `freeze_sha`, `public_release_run_id`, `producer_run_id`, `lock_run_id`, `authorized=yes`. El evaluador verifica que intake/productor/freeze son runs completados, del mismo SHA, en orden y que el artifact del lock existe; valida el lock antes de acceder a R2. **Solo después** descarga CSV completo al runner evaluador, calcula MAE t6/t8 sin nuevos OMC/POST y publica el score post-lock. No sube el CSV como artefacto.
+
+**Límite técnico reconocido:** todos los jobs pertenecen a una sola cuenta/repositorio GitHub y una cuenta Cloudflare; quien administra ambas puede entrar a la reserva. Se evita acceso **desde los jobs y credenciales de productores**, no se certifica independencia del operador ni defensa ante un administrador que decida revelar los datos. El `archive-record.json` es una constatación procedimental de GH, no timestamp criptográfico ni firma externa.
+
+**Bloqueo restante específico, no humano:** los workflows CT-03 siguen ausentes en `main` y la conexión GitHub usada aquí no expone operaciones para configurar `Environment secrets`/required reviewers. Los secretos S3 **aún no están provisionados**; hasta cargarlos en GitHub, el job falla cerrado antes de elegir mundo. No es necesario designar otro custodio. R2 ya existe, está privado y la implementación de los scripts/workflows está en el PR, pendiente de CI y operación real.
+
+**Comandos de futuros despachos (NO ejecutados):**
+```bash
+gh workflow run arena-ct03-public-intake.yml -R yudocyudoc/IGC \
+  --ref experiment/arena-ct00-ct02-20261107 \
+  -f mode=managed -f authorized=yes -f freeze_sha='<SHA40_CONGELADO>'
+
+# Después del productor y de un freeze verdaderamente archivado:
+gh workflow run arena-ct03-evaluate-postlock.yml -R yudocyudoc/IGC \
+  --ref experiment/arena-ct00-ct02-20261107 \
+  -f authorized=yes -f freeze_sha='<MISMO_SHA40>' \
+  -f public_release_run_id='<INTAKE_RUN>' \
+  -f producer_run_id='<PRODUCER_RUN>' -f lock_run_id='<LOCK_RUN>'
+```
+
+
 ## Estado comprobado y condición de entrada
 
 - Repositorio `yudocyudoc/IGC`: **público**; rama por defecto `main`.
