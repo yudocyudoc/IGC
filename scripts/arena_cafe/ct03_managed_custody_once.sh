@@ -85,7 +85,7 @@ docker run --rm --network none --user "$(id -u):$(id -g)" \
   -v "$RUNNER_TEMP/ct03-omhome:/omhome" -e HOME=/omhome \
   -v "$RUNNER_TEMP/ct03-libs:/thirdparty:ro" \
   -e OPENMODELICALIBRARY=/thirdparty/msl:/thirdparty/systemdynamics \
-  openmodelica/openmodelica:v1.26.5-minimal omc simulate.mos \
+  openmodelica/openmodelica@sha256:8993c8273224aeacbc018f351c00d60879c5aec386c77a58019318c44c938c9b omc simulate.mos \
   > "$PRIVATE_BASE/world-run/world-omc.log" 2>&1
 
 # Keep the full CSV (including t6/t8) private; never upload as Actions artifact.
