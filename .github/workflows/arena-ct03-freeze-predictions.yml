@@ -1,0 +1,110 @@
+name: Arena CT-03 | freeze producer forecasts, no solver or provider
+on:
+  workflow_dispatch:
+    inputs:
+      freeze_sha:
+        description: '40-char same frozen commit as the CT03 producer run'
+        required: true
+        type: string
+      producer_run_id:
+        description: 'GitHub Actions run containing only public evidence and 13 producer slots'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-ct03-freeze-predictions
+  cancel-in-progress: false
+
+jobs:
+  lock-without-private-world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check same frozen producer code and explicit run ID
+        shell: bash
+        env:
+          FROZEN: ${{ inputs.freeze_sha }}
+          SOURCE_RUN: ${{ inputs.producer_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$FROZEN" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_RUN" =~ ^[1-9][0-9]*$ ]]
+          test "$FROZEN" = "$GITHUB_SHA"
+          META="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN")"
+          test "$(jq -r '.head_sha' <<< "$META")" = "$FROZEN"
+          test "$(jq -r '.event' <<< "$META")" = workflow_dispatch
+          test "$(jq -r '.conclusion' <<< "$META")" = success
+          test "$(jq -r '.run_attempt' <<< "$META")" = 1
+          test "$(jq -r '.path' <<< "$META")" = ".github/workflows/arena-ct03-producer.yml"
+          test "$(jq -r '.head_branch' <<< "$META")" = experiment/arena-ct00-ct02-20261107
+          test "$SOURCE_RUN" != "$GITHUB_RUN_ID"
+          echo "CT03_PRODUCER_AUTHORIZED_WORKFLOW_AND_SAME_FROZEN_SHA source=$SOURCE_RUN"
+      - name: Download ONLY source producer bundle, never custodian private world
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-ct03-producer-public-and-forecasts
+          run-id: ${{ inputs.producer_run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts/ct03-freeze/input
+      - name: Strictly reject unexpected private or extra files
+        run: |
+          set -euo pipefail
+          ROOT=artifacts/ct03-freeze/input
+          test -z "$(find "$ROOT" -type l -print -quit)"
+          python - <<'PY'
+          from pathlib import Path
+          root=Path("artifacts/ct03-freeze/input")
+          seen={str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
+          expected={
+              "construction.json", "world-commitment.json",
+              "D/manifest.json", "M/manifest.json", "entries.json"
+          }
+          if seen!=expected:
+              raise SystemExit(f"CT03_LOCK_BUNDLE_FIELDS_MISMATCH: {sorted(seen^expected)}")
+          print("CT03_NO_PRIVATE_WORLD_IN_PRODUCER_BUNDLE")
+          PY
+      - name: Create the 13-slot immutable-by-convention prospective lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=artifacts/ct03-freeze/input
+          mkdir -p artifacts/ct03-freeze/output
+          python -m scripts.arena_cafe.ct03_prospective_lock \
+            --construction "$ROOT/construction.json" \
+            --commitment "$ROOT/world-commitment.json" \
+            --d-manifest "$ROOT/D/manifest.json" \
+            --m-manifest "$ROOT/M/manifest.json" \
+            --entries "$ROOT/entries.json" \
+            --out artifacts/ct03-freeze/output/lock.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from scripts.arena_v0_contract import canonical
+          root=Path("artifacts/ct03-freeze/output")
+          lock=json.loads((root/"lock.json").read_text())
+          info={
+            "schema":"igc-ct03-lock-archive-actions-metadata/1.0",
+            "github_lock_run_id":int(os.environ["GITHUB_RUN_ID"]),
+            "frozen_code_sha":os.environ["GITHUB_SHA"],
+            "lock_sha256":lock["lock_sha256"],
+            "lock_candidate_count":lock["candidate_count"],
+            "read_private_world":False, "provider_calls":0, "new_omc":0
+          }
+          (root/"archive-metadata.json").write_bytes(canonical(info)+b"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-ct03-prospective-lock-${{ github.run_id }}
+          path: artifacts/ct03-freeze/output/
+          if-no-files-found: error
+          retention-days: 90
