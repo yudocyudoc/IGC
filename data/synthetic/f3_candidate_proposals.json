@@ -1,0 +1,33 @@
+{
+  "schema": "igc-atms-candidate-proposals/0.1",
+  "synthetic": true,
+  "assumptions": [
+    "mechanism-baseline",
+    "rate-baseline",
+    "mechanism-promotion",
+    "rate-promotion"
+  ],
+  "nogoods": [
+    ["mechanism-baseline", "rate-baseline"]
+  ],
+  "proposals": [
+    {
+      "candidate_id": "candidate-baseline-orders-001",
+      "mechanism_hypothesis_id": "mechanism-baseline-orders-001",
+      "mechanism_statement": "Synthetic baseline arrival mechanism.",
+      "assumption_ids": ["mechanism-baseline", "rate-baseline"],
+      "parameter_values": {
+        "assumption-arrival-rate-001": 3
+      }
+    },
+    {
+      "candidate_id": "candidate-promotion-orders-001",
+      "mechanism_hypothesis_id": "mechanism-promotion-orders-001",
+      "mechanism_statement": "Synthetic promotion variant with a higher arrival rate.",
+      "assumption_ids": ["mechanism-promotion", "rate-promotion"],
+      "parameter_values": {
+        "assumption-arrival-rate-001": 4
+      }
+    }
+  ]
+}
