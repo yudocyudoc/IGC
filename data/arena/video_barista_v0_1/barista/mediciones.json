@@ -1,0 +1,3201 @@
+{
+  "summary": {
+    "schema": "igc-barista-visible-time/0.1",
+    "source_video_sha256": "cd37c9d3f231f4d307c4f3353ce1dc096fad4185bbdf6ffab06266b9d41290c5",
+    "review_sha256": "9e764f2054204a176c6e8d5e3e42524ba7fcbddd0daef35c2af754f5cfde81b0",
+    "order_count": 52,
+    "selected_operation_count": 25,
+    "assembly_end_observed_count": 46,
+    "visible_cycle_statistics": {
+      "n_total": 52,
+      "n_with_two_finite_bounds": 51,
+      "n_censored_or_missing": 1,
+      "mean_lower_s": 85.96078431372548,
+      "mean_upper_s": 102.62745098039215,
+      "median_lower_s": 70,
+      "median_upper_s": 90
+    },
+    "elapsed_to_assembly_statistics": {
+      "n_total": 52,
+      "n_with_two_finite_bounds": 45,
+      "n_censored_or_missing": 7,
+      "mean_lower_s": 79.33333333333333,
+      "mean_upper_s": 96.31111111111112,
+      "median_lower_s": 64,
+      "median_upper_s": 80
+    },
+    "steaming_episode_statistics": {
+      "n_total": 16,
+      "n_with_two_finite_bounds": 16,
+      "n_censored_or_missing": 0,
+      "mean_lower_s": 11,
+      "mean_upper_s": 15.625,
+      "median_lower_s": 12.0,
+      "median_upper_s": 16.0
+    },
+    "physical_clock_verified": false,
+    "continuous_recording_verified": false,
+    "labor_utilization_identifiable": false,
+    "autonomous_espresso_duration_s": null,
+    "individual_drink_service_time_identifiable": false,
+    "exhaustive_operation_log": false,
+    "secondary_view_used": false,
+    "automatic_action_detection_used": false,
+    "review_method": "assistant_visual_review_of_primary_frame_samples; not independent audit",
+    "limitations": [
+      "Elapsed order cycle is not continuous labor time.",
+      "Order linkage contextual, not certified object tracking.",
+      "Assembly can be hidden; missing endpoints remain null.",
+      "Sampled operation episodes do not prove uninterrupted activity between frames.",
+      "No causal bottleneck, maximum capacity or intervention gain inferred."
+    ]
+  },
+  "orders": [
+    {
+      "order_id": "P001",
+      "start_visible_video_s": [
+        null,
+        2
+      ],
+      "assembly_end_video_s": [
+        56,
+        58
+      ],
+      "last_product_exit_video_s": [
+        104,
+        106
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Inicio ya en curso al abrir la toma; taza montada visible antes del trabajo posterior con jarras y limpieza.",
+      "evidence_contact_pages": [
+        "P001_01.jpg"
+      ],
+      "items_text": "1 x Cappuccino",
+      "all_evidence": [
+        "contactos/P001_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 54,
+        "upper_s": null,
+        "status": "left_censored"
+      },
+      "visible_cycle": {
+        "lower_s": 102,
+        "upper_s": null,
+        "status": "left_censored"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 46,
+        "upper_s": 50,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P002",
+      "start_visible_video_s": [
+        104,
+        110
+      ],
+      "assembly_end_video_s": [
+        360,
+        370
+      ],
+      "last_product_exit_video_s": [
+        380,
+        390
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Tanda de ocho productos. El tiempo incluye preparaciones en paralelo; no dividir entre ocho como servicio individual.",
+      "evidence_contact_pages": [
+        "P002_01.jpg",
+        "P002_02.jpg"
+      ],
+      "items_text": "3 x Iced Americano; 2 x Iced Americano (Decaf); 1 x Hot Americano; 2 x Hot Americano (Decaf)",
+      "all_evidence": [
+        "contactos/P002_01.jpg",
+        "contactos/P002_02.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 250,
+        "upper_s": 266,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 270,
+        "upper_s": 286,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 10,
+        "upper_s": 30,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P003",
+      "start_visible_video_s": [
+        380,
+        390
+      ],
+      "assembly_end_video_s": [
+        480,
+        490
+      ],
+      "last_product_exit_video_s": [
+        490,
+        500
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P003_01.jpg"
+      ],
+      "items_text": "3 x Iced Americano",
+      "all_evidence": [
+        "contactos/P003_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 90,
+        "upper_s": 110,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 100,
+        "upper_s": 120,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P004",
+      "start_visible_video_s": [
+        500,
+        510
+      ],
+      "assembly_end_video_s": [
+        560,
+        570
+      ],
+      "last_product_exit_video_s": [
+        570,
+        580
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P004_01.jpg"
+      ],
+      "items_text": "1 x Hot Latte",
+      "all_evidence": [
+        "contactos/P004_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P005",
+      "start_visible_video_s": [
+        570,
+        580
+      ],
+      "assembly_end_video_s": [
+        620,
+        630
+      ],
+      "last_product_exit_video_s": [
+        630,
+        640
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P005_01.jpg"
+      ],
+      "items_text": "1 x Hot Americano; 1 x Hot Lemon Ginger Tea",
+      "all_evidence": [
+        "contactos/P005_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P006",
+      "start_visible_video_s": [
+        630,
+        640
+      ],
+      "assembly_end_video_s": [
+        774,
+        778
+      ],
+      "last_product_exit_video_s": [
+        778,
+        780
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P006_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          770,
+          780
+        ],
+        "notes": "El ?ltimo vertido queda junto al borde izquierdo antes de desaparecer; fin del montaje no delimitado en las muestras de 10 s."
+      },
+      "fine_evidence": [
+        "finales/finales_01.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Hot Latte; 1 x Hot Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P006_01.jpg",
+        "finales/finales_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 134,
+        "upper_s": 148,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 138,
+        "upper_s": 150,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P007",
+      "start_visible_video_s": [
+        780,
+        790
+      ],
+      "assembly_end_video_s": [
+        850,
+        860
+      ],
+      "last_product_exit_video_s": [
+        860,
+        870
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P007_01.jpg"
+      ],
+      "items_text": "2 x Iced Americano",
+      "all_evidence": [
+        "contactos/P007_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P008",
+      "start_visible_video_s": [
+        860,
+        870
+      ],
+      "assembly_end_video_s": [
+        934,
+        938
+      ],
+      "last_product_exit_video_s": [
+        938,
+        940
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P008_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          930,
+          940
+        ],
+        "notes": "?ltimo vertido visible a 930 s; la taza ya no aparece a 940 s."
+      },
+      "fine_evidence": [
+        "finales/finales_01.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Hot Latte",
+      "all_evidence": [
+        "contactos/P008_01.jpg",
+        "finales/finales_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 64,
+        "upper_s": 78,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 68,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P009",
+      "start_visible_video_s": [
+        940,
+        950
+      ],
+      "assembly_end_video_s": [
+        980,
+        990
+      ],
+      "last_product_exit_video_s": [
+        990,
+        1000
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P009_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano",
+      "all_evidence": [
+        "contactos/P009_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 30,
+        "upper_s": 50,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P010",
+      "start_visible_video_s": [
+        990,
+        1000
+      ],
+      "assembly_end_video_s": [
+        1070,
+        1080
+      ],
+      "last_product_exit_video_s": [
+        1080,
+        1090
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "El producto anterior ya se retir? y comienza otra preparaci?n; aporta evidencia f?sica de separaci?n respecto a P009, sin acreditar transacciones POS.",
+      "evidence_contact_pages": [
+        "P010_01.jpg"
+      ],
+      "items_text": "2 x Iced Americano",
+      "all_evidence": [
+        "contactos/P010_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P011",
+      "start_visible_video_s": [
+        1080,
+        1090
+      ],
+      "assembly_end_video_s": [
+        1130,
+        1140
+      ],
+      "last_product_exit_video_s": [
+        1140,
+        1150
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P011_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano (Decaf)",
+      "all_evidence": [
+        "contactos/P011_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P012",
+      "start_visible_video_s": [
+        1140,
+        1150
+      ],
+      "assembly_end_video_s": [
+        1180,
+        1182
+      ],
+      "last_product_exit_video_s": [
+        1182,
+        1184
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P012_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1180,
+          1190
+        ],
+        "notes": "Vertido visible a 1180 s; producto ausente a 1190 s."
+      },
+      "fine_evidence": [
+        "finales/finales_01.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P012_01.jpg",
+        "finales/finales_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 30,
+        "upper_s": 42,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 32,
+        "upper_s": 44,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P013",
+      "start_visible_video_s": [
+        1180,
+        1190
+      ],
+      "assembly_end_video_s": [
+        1330,
+        1332
+      ],
+      "last_product_exit_video_s": [
+        1332,
+        1334
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P013_01.jpg",
+        "P013_02.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1330,
+          1340
+        ],
+        "notes": "Los productos salen por partes; ?ltimo vertido visible a 1330 s y ausencia a 1340 s."
+      },
+      "fine_evidence": [
+        "finales/finales_02.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano (Decaf); 1 x Iced Americano; 1 x Iced Americano (1 Shot); 1 x Iced Flat White",
+      "all_evidence": [
+        "contactos/P013_01.jpg",
+        "contactos/P013_02.jpg",
+        "finales/finales_02.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 140,
+        "upper_s": 152,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 142,
+        "upper_s": 154,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P014",
+      "start_visible_video_s": [
+        1350,
+        1360
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        1400,
+        1410
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Recipiente personal opaco; interior y final de montaje no visibles con claridad. El cart?n de leche de la transici?n no se asigna a este americano.",
+      "evidence_contact_pages": [
+        "P014_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano",
+      "all_evidence": [
+        "contactos/P014_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P015",
+      "start_visible_video_s": [
+        1400,
+        1410
+      ],
+      "assembly_end_video_s": [
+        1470,
+        1472
+      ],
+      "last_product_exit_video_s": [
+        1476,
+        1478
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P015_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1470,
+          1480
+        ],
+        "notes": "?ltimo vertido visible a 1470 s; ambos productos desaparecen antes de 1480 s."
+      },
+      "fine_evidence": [
+        "finales/finales_02.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano; 1 x Hot Americano (1 Shot)",
+      "all_evidence": [
+        "contactos/P015_01.jpg",
+        "finales/finales_02.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 72,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 66,
+        "upper_s": 78,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 4,
+        "upper_s": 8,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P016",
+      "start_visible_video_s": [
+        1470,
+        1480
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        1580,
+        1582
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. El fin del montaje sigue fuera de campo; solo se afin? la retirada.",
+      "evidence_contact_pages": [
+        "P016_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1580,
+          1590
+        ],
+        "notes": "La ?ltima bebida se vierte a 1580 s; ausencia a 1590 s."
+      },
+      "fine_evidence": [
+        "finales/finales_02.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "2 x Iced Americano; 1 x Iced Latte",
+      "all_evidence": [
+        "contactos/P016_01.jpg",
+        "finales/finales_02.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 100,
+        "upper_s": 112,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P017",
+      "start_visible_video_s": [
+        1580,
+        1590
+      ],
+      "assembly_end_video_s": [
+        1630,
+        1640
+      ],
+      "last_product_exit_video_s": [
+        1640,
+        1650
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P017_01.jpg"
+      ],
+      "items_text": "2 x Hot Americano",
+      "all_evidence": [
+        "contactos/P017_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P018",
+      "start_visible_video_s": [
+        1640,
+        1650
+      ],
+      "assembly_end_video_s": [
+        1720,
+        1722
+      ],
+      "last_product_exit_video_s": [
+        1724,
+        1726
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P018_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1720,
+          1730
+        ],
+        "notes": "A 1720 s todav?a se manipulan los vasos; a 1730 s ya no est?n."
+      },
+      "fine_evidence": [
+        "finales/finales_03.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "2 x Iced Latte",
+      "all_evidence": [
+        "contactos/P018_01.jpg",
+        "finales/finales_03.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 82,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 74,
+        "upper_s": 86,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P019",
+      "start_visible_video_s": [
+        1720,
+        1730
+      ],
+      "assembly_end_video_s": [
+        1930,
+        1932
+      ],
+      "last_product_exit_video_s": [
+        1936,
+        1938
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P019_01.jpg",
+        "P019_02.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          1930,
+          1940
+        ],
+        "notes": "Tanda mixta de bebida y postres; productos retirados por partes. ?ltima adici?n sobre el postre visible a 1930 s."
+      },
+      "fine_evidence": [
+        "finales/finales_03.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Latte; 2 x Affogato; 1 x Ice Cream with Strawberry Syrup; 2 x Red Bean Ice Cream",
+      "all_evidence": [
+        "contactos/P019_01.jpg",
+        "contactos/P019_02.jpg",
+        "finales/finales_03.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 200,
+        "upper_s": 212,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 206,
+        "upper_s": 218,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 4,
+        "upper_s": 8,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P020",
+      "start_visible_video_s": [
+        1930,
+        1940
+      ],
+      "assembly_end_video_s": [
+        2020,
+        2030
+      ],
+      "last_product_exit_video_s": [
+        2030,
+        2040
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P020_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano; 1 x Iced Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P020_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 90,
+        "upper_s": 110,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P021",
+      "start_visible_video_s": [
+        2030,
+        2040
+      ],
+      "assembly_end_video_s": [
+        2070,
+        2080
+      ],
+      "last_product_exit_video_s": [
+        2080,
+        2090
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P021_01.jpg"
+      ],
+      "items_text": "1 x Hot Americano",
+      "all_evidence": [
+        "contactos/P021_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 30,
+        "upper_s": 50,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P022",
+      "start_visible_video_s": [
+        2080,
+        2090
+      ],
+      "assembly_end_video_s": [
+        2126,
+        2128
+      ],
+      "last_product_exit_video_s": [
+        2128,
+        2130
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P022_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          2120,
+          2130
+        ],
+        "notes": "Las muestras no muestran inequ?vocamente el ?ltimo vertido antes de retirar el vaso."
+      },
+      "fine_evidence": [
+        "finales/finales_03.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano (Decaf)",
+      "all_evidence": [
+        "contactos/P022_01.jpg",
+        "finales/finales_03.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 36,
+        "upper_s": 48,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 38,
+        "upper_s": 50,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P023",
+      "start_visible_video_s": [
+        2130,
+        2140
+      ],
+      "assembly_end_video_s": [
+        2202,
+        2204
+      ],
+      "last_product_exit_video_s": [
+        2204,
+        2206
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P023_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          2200,
+          2210
+        ],
+        "notes": "Una bebida sigue clara a 2200 s; las dos desaparecen antes de 2210 s."
+      },
+      "fine_evidence": [
+        "finales/finales_04.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "2 x Iced Latte",
+      "all_evidence": [
+        "contactos/P023_01.jpg",
+        "finales/finales_04.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 62,
+        "upper_s": 74,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 64,
+        "upper_s": 76,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P024",
+      "start_visible_video_s": [
+        2210,
+        2220
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        2290,
+        2300
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Recipiente personal opaco; se conservan solo inicio visible y retirada.",
+      "evidence_contact_pages": [
+        "P024_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano (4 Shots)",
+      "all_evidence": [
+        "contactos/P024_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P025",
+      "start_visible_video_s": [
+        2290,
+        2300
+      ],
+      "assembly_end_video_s": [
+        2360,
+        2370
+      ],
+      "last_product_exit_video_s": [
+        2370,
+        2380
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P025_01.jpg"
+      ],
+      "items_text": "1 x Hot Latte",
+      "all_evidence": [
+        "contactos/P025_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P026",
+      "start_visible_video_s": [
+        2380,
+        2390
+      ],
+      "assembly_end_video_s": [
+        2450,
+        2460
+      ],
+      "last_product_exit_video_s": [
+        2460,
+        2470
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P026_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano (1 Shot); 1 x Hot Americano",
+      "all_evidence": [
+        "contactos/P026_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P027",
+      "start_visible_video_s": [
+        2460,
+        2470
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        2520,
+        2530
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "No se distingue con seguridad el fin del montaje en las muestras de 10 s.",
+      "evidence_contact_pages": [
+        "P027_01.jpg"
+      ],
+      "items_text": "1 x Hot Americano (Decaf)",
+      "all_evidence": [
+        "contactos/P027_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P028",
+      "start_visible_video_s": [
+        2520,
+        2530
+      ],
+      "assembly_end_video_s": [
+        2600,
+        2602
+      ],
+      "last_product_exit_video_s": [
+        2604,
+        2606
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P028_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          2600,
+          2610
+        ],
+        "notes": "Manipulaci?n final de vasos a 2600 s; ausencia a 2610 s."
+      },
+      "fine_evidence": [
+        "finales/finales_04.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Flat White; 1 x Iced Chocolate Latte",
+      "all_evidence": [
+        "contactos/P028_01.jpg",
+        "finales/finales_04.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 82,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 74,
+        "upper_s": 86,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P029",
+      "start_visible_video_s": [
+        2600,
+        2610
+      ],
+      "assembly_end_video_s": [
+        2680,
+        2690
+      ],
+      "last_product_exit_video_s": [
+        2690,
+        2700
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P029_01.jpg"
+      ],
+      "items_text": "1 x Hot Americano; 1 x Affogato",
+      "all_evidence": [
+        "contactos/P029_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P030",
+      "start_visible_video_s": [
+        2690,
+        2700
+      ],
+      "assembly_end_video_s": [
+        2740,
+        2750
+      ],
+      "last_product_exit_video_s": [
+        2750,
+        2760
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P030_01.jpg"
+      ],
+      "items_text": "1 x Iced Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P030_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P031",
+      "start_visible_video_s": [
+        2750,
+        2760
+      ],
+      "assembly_end_video_s": [
+        2880,
+        2890
+      ],
+      "last_product_exit_video_s": [
+        2890,
+        2900
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Preparaci?n de sabores y montaje en paralelo; no equivale a tiempos individuales de cada producto.",
+      "evidence_contact_pages": [
+        "P031_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano; 1 x Black Sesame Cream Latte; 1 x Green Tangerine Ade",
+      "all_evidence": [
+        "contactos/P031_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 120,
+        "upper_s": 140,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 130,
+        "upper_s": 150,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P032",
+      "start_visible_video_s": [
+        2890,
+        2900
+      ],
+      "assembly_end_video_s": [
+        2960,
+        2970
+      ],
+      "last_product_exit_video_s": [
+        2970,
+        2980
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P032_01.jpg"
+      ],
+      "items_text": "2 x Iced Americano",
+      "all_evidence": [
+        "contactos/P032_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P033",
+      "start_visible_video_s": [
+        2970,
+        2980
+      ],
+      "assembly_end_video_s": [
+        3040,
+        3050
+      ],
+      "last_product_exit_video_s": [
+        3050,
+        3060
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P033_01.jpg"
+      ],
+      "items_text": "1 x Iced Einspanner (Water Base)",
+      "all_evidence": [
+        "contactos/P033_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 60,
+        "upper_s": 80,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P034",
+      "start_visible_video_s": [
+        3050,
+        3060
+      ],
+      "assembly_end_video_s": [
+        3070,
+        3080
+      ],
+      "last_product_exit_video_s": [
+        3080,
+        3090
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Cold brew preparado mediante vertidos; no se atribuye extracci?n espresso.",
+      "evidence_contact_pages": [
+        "P034_01.jpg"
+      ],
+      "items_text": "1 x Iced Cold Brew Latte",
+      "all_evidence": [
+        "contactos/P034_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 10,
+        "upper_s": 30,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 20,
+        "upper_s": 40,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P035",
+      "start_visible_video_s": [
+        3080,
+        3090
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        3150,
+        3154
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. El fin del montaje sigue fuera de campo; solo se afin? la retirada.",
+      "evidence_contact_pages": [
+        "P035_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3150,
+          3160
+        ],
+        "notes": "?ltimo vertido junto al borde izquierdo; la toma principal no delimita el fin del montaje."
+      },
+      "fine_evidence": [
+        "finales/finales_04.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Hot Flat White",
+      "all_evidence": [
+        "contactos/P035_01.jpg",
+        "finales/finales_04.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 60,
+        "upper_s": 74,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P036",
+      "start_visible_video_s": [
+        3150,
+        3160
+      ],
+      "assembly_end_video_s": [
+        3260,
+        3270
+      ],
+      "last_product_exit_video_s": [
+        3272,
+        3274
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada. La separaci?n de tandas se apoya en la secuencia f?sica observada; no certifica transacciones POS.",
+      "evidence_contact_pages": [
+        "P036_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3270,
+          3280
+        ],
+        "notes": "Se observa otra secuencia de preparaci?n tras la salida del producto P035. Asociaci?n a panel contextual, no certificaci?n de nueva transacci?n POS."
+      },
+      "fine_evidence": [
+        "finales/finales_05.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Hot Flat White; 1 x Iced Matcha Latte",
+      "all_evidence": [
+        "contactos/P036_01.jpg",
+        "finales/finales_05.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 100,
+        "upper_s": 120,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 112,
+        "upper_s": 124,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 2,
+        "upper_s": 14,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P037",
+      "start_visible_video_s": [
+        3270,
+        3280
+      ],
+      "assembly_end_video_s": [
+        3390,
+        3400
+      ],
+      "last_product_exit_video_s": [
+        3400,
+        3410
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P037_01.jpg"
+      ],
+      "items_text": "2 x Iced Americano; 1 x Iced Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P037_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 110,
+        "upper_s": 130,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 120,
+        "upper_s": 140,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P038",
+      "start_visible_video_s": [
+        3410,
+        3420
+      ],
+      "assembly_end_video_s": [
+        3490,
+        3500
+      ],
+      "last_product_exit_video_s": [
+        3500,
+        3510
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P038_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano; 1 x Iced Latte",
+      "all_evidence": [
+        "contactos/P038_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P039",
+      "start_visible_video_s": [
+        3510,
+        3520
+      ],
+      "assembly_end_video_s": [
+        3692,
+        3694
+      ],
+      "last_product_exit_video_s": [
+        3696,
+        3698
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P039_01.jpg",
+        "P039_02.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3690,
+          3700
+        ],
+        "notes": "Los americanos salen por partes; ?ltimo vertido del latte junto al borde antes de desaparecer."
+      },
+      "fine_evidence": [
+        "finales/finales_05.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "2 x Hot Americano; 1 x Hot Americano (0.5 Shot); 1 x Hot Latte",
+      "all_evidence": [
+        "contactos/P039_01.jpg",
+        "contactos/P039_02.jpg",
+        "finales/finales_05.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 172,
+        "upper_s": 184,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 176,
+        "upper_s": 188,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P040",
+      "start_visible_video_s": [
+        3690,
+        3700
+      ],
+      "assembly_end_video_s": [
+        3804,
+        3806
+      ],
+      "last_product_exit_video_s": [
+        3806,
+        3808
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P040_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3800,
+          3810
+        ],
+        "notes": "El ?ltimo vaso sigue claro en las muestras; no se certifica el montaje final por el check del panel."
+      },
+      "fine_evidence": [
+        "finales/finales_05.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano; 1 x Iced Americano (Decaf); 1 x Iced Latte (Decaf)",
+      "all_evidence": [
+        "contactos/P040_01.jpg",
+        "finales/finales_05.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 104,
+        "upper_s": 116,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 106,
+        "upper_s": 118,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P041",
+      "start_visible_video_s": [
+        3800,
+        3810
+      ],
+      "assembly_end_video_s": [
+        3864,
+        3866
+      ],
+      "last_product_exit_video_s": [
+        3866,
+        3868
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P041_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3860,
+          3870
+        ],
+        "notes": "?ltimo vertido visible a 3860 s; producto ausente a 3870 s."
+      },
+      "fine_evidence": [
+        "finales/finales_06.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano (1 Shot)",
+      "all_evidence": [
+        "contactos/P041_01.jpg",
+        "finales/finales_06.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 54,
+        "upper_s": 66,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 56,
+        "upper_s": 68,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P042",
+      "start_visible_video_s": [
+        3860,
+        3870
+      ],
+      "assembly_end_video_s": [
+        3914,
+        3916
+      ],
+      "last_product_exit_video_s": [
+        3916,
+        3918
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P042_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          3910,
+          3920
+        ],
+        "notes": "El montaje final no se distingue con suficiente claridad en las muestras de 10 s."
+      },
+      "fine_evidence": [
+        "finales/finales_06.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Hot Americano",
+      "all_evidence": [
+        "contactos/P042_01.jpg",
+        "finales/finales_06.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 44,
+        "upper_s": 56,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 46,
+        "upper_s": 58,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P043",
+      "start_visible_video_s": [
+        3910,
+        3920
+      ],
+      "assembly_end_video_s": [
+        3960,
+        3970
+      ],
+      "last_product_exit_video_s": [
+        3970,
+        3980
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P043_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano",
+      "all_evidence": [
+        "contactos/P043_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P044",
+      "start_visible_video_s": [
+        3970,
+        3980
+      ],
+      "assembly_end_video_s": [
+        4014,
+        4016
+      ],
+      "last_product_exit_video_s": [
+        4018,
+        4020
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P044_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          4010,
+          4020
+        ],
+        "notes": "El ?ltimo vaso se est? manipulando a 4010 s y desaparece a 4020 s."
+      },
+      "fine_evidence": [
+        "finales/finales_06.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Flat White (Decaf)",
+      "all_evidence": [
+        "contactos/P044_01.jpg",
+        "finales/finales_06.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 34,
+        "upper_s": 46,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 38,
+        "upper_s": 50,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P045",
+      "start_visible_video_s": [
+        4020,
+        4030
+      ],
+      "assembly_end_video_s": [
+        4142,
+        4144
+      ],
+      "last_product_exit_video_s": [
+        4144,
+        4146
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P045_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          4140,
+          4150
+        ],
+        "notes": "Dos vaporizados/vertidos visibles; no se usa el recuadro secundario para completar el fin del segundo montaje."
+      },
+      "fine_evidence": [
+        "finales/finales_07.jpg",
+        "finales/P045_adicional.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "2 x Hot Latte",
+      "all_evidence": [
+        "contactos/P045_01.jpg",
+        "finales/finales_07.jpg",
+        "finales/P045_adicional.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 112,
+        "upper_s": 124,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 114,
+        "upper_s": 126,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P046",
+      "start_visible_video_s": [
+        4140,
+        4150
+      ],
+      "assembly_end_video_s": [
+        4220,
+        4230
+      ],
+      "last_product_exit_video_s": [
+        4230,
+        4240
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P046_01.jpg"
+      ],
+      "items_text": "2 x Iced Latte",
+      "all_evidence": [
+        "contactos/P046_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P047",
+      "start_visible_video_s": [
+        4230,
+        4240
+      ],
+      "assembly_end_video_s": [
+        4450,
+        4460
+      ],
+      "last_product_exit_video_s": [
+        4470,
+        4480
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Tanda de cuatro bebidas con operaciones paralelas; no dividir duraci?n de tanda entre cuatro como tiempo individual.",
+      "evidence_contact_pages": [
+        "P047_01.jpg",
+        "P047_02.jpg"
+      ],
+      "items_text": "2 x Iced Latte; 2 x Hot Vanilla Latte",
+      "all_evidence": [
+        "contactos/P047_01.jpg",
+        "contactos/P047_02.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 210,
+        "upper_s": 230,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 230,
+        "upper_s": 250,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 10,
+        "upper_s": 30,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P048",
+      "start_visible_video_s": [
+        4470,
+        4480
+      ],
+      "assembly_end_video_s": [
+        4520,
+        4530
+      ],
+      "last_product_exit_video_s": [
+        4530,
+        4540
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P048_01.jpg"
+      ],
+      "items_text": "1 x Iced Americano",
+      "all_evidence": [
+        "contactos/P048_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 40,
+        "upper_s": 60,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 50,
+        "upper_s": 70,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P049",
+      "start_visible_video_s": [
+        4530,
+        4540
+      ],
+      "assembly_end_video_s": null,
+      "last_product_exit_video_s": [
+        4678,
+        4680
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. El fin del montaje sigue fuera de campo; solo se afin? la retirada.",
+      "evidence_contact_pages": [
+        "P049_01.jpg",
+        "P049_02.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          4670,
+          4680
+        ],
+        "notes": "El caf? y el postre se retiran antes del ?ltimo latte; fin del ?ltimo vertido parcialmente fuera de campo."
+      },
+      "fine_evidence": [
+        "finales/finales_07.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Iced Americano; 1 x Affogato; 1 x Hot Latte",
+      "all_evidence": [
+        "contactos/P049_01.jpg",
+        "contactos/P049_02.jpg",
+        "finales/finales_07.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      },
+      "visible_cycle": {
+        "lower_s": 138,
+        "upper_s": 150,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": null,
+        "upper_s": null,
+        "status": "missing_endpoint"
+      }
+    },
+    {
+      "order_id": "P050",
+      "start_visible_video_s": [
+        4680,
+        4690
+      ],
+      "assembly_end_video_s": [
+        4814,
+        4816
+      ],
+      "last_product_exit_video_s": [
+        4816,
+        4818
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Final revisado entre fotogramas intermedios de la vista principal. Se recuper? el fin del montaje y la retirada.",
+      "evidence_contact_pages": [
+        "P050_01.jpg"
+      ],
+      "previous_coarse_review": {
+        "assembly_end_video_s": null,
+        "last_product_exit_video_s": [
+          4810,
+          4820
+        ],
+        "notes": "?ltimo vertido junto al borde; no se usa el recuadro secundario para completar el montaje."
+      },
+      "fine_evidence": [
+        "finales/finales_07.jpg"
+      ],
+      "refinement_sampling_s": 2,
+      "items_text": "1 x Black Sesame Cream Latte; 1 x Hot Chocolate Latte",
+      "all_evidence": [
+        "contactos/P050_01.jpg",
+        "finales/finales_07.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 124,
+        "upper_s": 136,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 126,
+        "upper_s": 138,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 4,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P051",
+      "start_visible_video_s": [
+        4810,
+        4820
+      ],
+      "assembly_end_video_s": [
+        4890,
+        4900
+      ],
+      "last_product_exit_video_s": [
+        4900,
+        4910
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "",
+      "evidence_contact_pages": [
+        "P051_01.jpg"
+      ],
+      "items_text": "1 x Hot Ginger Latte",
+      "all_evidence": [
+        "contactos/P051_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 70,
+        "upper_s": 90,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 80,
+        "upper_s": 100,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "order_id": "P052",
+      "start_visible_video_s": [
+        4900,
+        4910
+      ],
+      "assembly_end_video_s": [
+        5000,
+        5010
+      ],
+      "last_product_exit_video_s": [
+        5010,
+        5020
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "start_association": "contextual_visual_association_not_POS_traceability",
+      "notes": "Productos retirados por partes; la toma final vac?a delimita la ?ltima salida del encuadre.",
+      "evidence_contact_pages": [
+        "P052_01.jpg"
+      ],
+      "items_text": "1 x Hot Americano; 1 x Iced Americano; 1 x Hot Green Tangerine Tea",
+      "all_evidence": [
+        "contactos/P052_01.jpg"
+      ],
+      "elapsed_to_assembly": {
+        "lower_s": 90,
+        "upper_s": 110,
+        "status": "bounded"
+      },
+      "visible_cycle": {
+        "lower_s": 100,
+        "upper_s": 120,
+        "status": "bounded"
+      },
+      "after_assembly_until_exit": {
+        "lower_s": 0,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "event_id": "P001-op-01",
+      "order_id": "P001",
+      "activity": "preparacion_portafiltro",
+      "resource_type": "barista",
+      "start_video_s": [
+        null,
+        2
+      ],
+      "end_video_s": [
+        10,
+        12
+      ],
+      "sampling_s": 2,
+      "notes": "Trabajo inicial parcialmente fuera de campo; no se distingue molienda de distribuci?n.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 8,
+        "upper_s": null,
+        "status": "left_censored"
+      }
+    },
+    {
+      "event_id": "P001-op-02",
+      "order_id": "P001",
+      "activity": "acople_y_activacion_grupo",
+      "resource_type": "barista",
+      "start_video_s": [
+        10,
+        12
+      ],
+      "end_video_s": [
+        18,
+        20
+      ],
+      "sampling_s": 2,
+      "notes": "Manipulaci?n del grupo y colocaci?n de taza; no equivale a duraci?n de extracci?n.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 6,
+        "upper_s": 10,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-03",
+      "order_id": "P001",
+      "activity": "preparacion_jarra",
+      "resource_type": "barista",
+      "start_video_s": [
+        20,
+        22
+      ],
+      "end_video_s": [
+        24,
+        26
+      ],
+      "sampling_s": 2,
+      "notes": "Acercamiento y colocaci?n de jarra bajo lanza.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-04",
+      "order_id": "P001",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        24,
+        26
+      ],
+      "end_video_s": [
+        36,
+        38
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra sostenida por ambas manos. Es tiempo compartido de barista/lanza, no m?quina aut?noma.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 10,
+        "upper_s": 14,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-05",
+      "order_id": "P001",
+      "activity": "limpieza_lanza_y_acondicionamiento_jarra",
+      "resource_type": "barista",
+      "start_video_s": [
+        38,
+        40
+      ],
+      "end_video_s": [
+        42,
+        44
+      ],
+      "sampling_s": 2,
+      "notes": "Pa?o en lanza y manipulaci?n de jarra, observados sin descomponer tareas menores.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 2,
+        "upper_s": 6,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-06",
+      "order_id": "P001",
+      "activity": "vertido_montaje",
+      "resource_type": "barista",
+      "start_video_s": [
+        44,
+        46
+      ],
+      "end_video_s": [
+        56,
+        58
+      ],
+      "sampling_s": 2,
+      "notes": "Taza sostenida durante vertido; luego queda apoyada con montaje visible.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 10,
+        "upper_s": 14,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-07",
+      "order_id": "P001",
+      "activity": "manipulacion_portafiltro_posterior",
+      "resource_type": "barista",
+      "start_video_s": [
+        58,
+        60
+      ],
+      "end_video_s": [
+        64,
+        66
+      ],
+      "sampling_s": 2,
+      "notes": "Retiro y manipulaci?n del portafiltro despu?s de montar la bebida.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 4,
+        "upper_s": 8,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-08",
+      "order_id": "P001",
+      "activity": "trasvase_entre_jarras",
+      "resource_type": "barista",
+      "start_video_s": [
+        66,
+        68
+      ],
+      "end_video_s": [
+        72,
+        74
+      ],
+      "sampling_s": 2,
+      "notes": "Transferencia visible de l?quido entre jarras; no se afirma ingrediente, dosis o merma.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 4,
+        "upper_s": 8,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-09",
+      "order_id": "P001",
+      "activity": "limpieza_y_rearme_visible",
+      "resource_type": "barista",
+      "start_video_s": [
+        74,
+        76
+      ],
+      "end_video_s": [
+        92,
+        94
+      ],
+      "sampling_s": 2,
+      "notes": "Manipulaci?n de jarra, grupo y portafiltro; no se interpreta como espera.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 16,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P001-op-10",
+      "order_id": "P001",
+      "activity": "retiro_producto",
+      "resource_type": "barista",
+      "start_video_s": [
+        98,
+        100
+      ],
+      "end_video_s": [
+        104,
+        106
+      ],
+      "sampling_s": 2,
+      "notes": "Manipulaci?n de la taza y retirada del encuadre; no acredita entrega al cliente.",
+      "evidence": [
+        "P001_revision_01.jpg",
+        "P001_revision_02.jpg",
+        "P001_revision_03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "duration": {
+        "lower_s": 4,
+        "upper_s": 8,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P004-steam-01",
+      "order_id": "P004",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        526,
+        530
+      ],
+      "end_video_s": [
+        540,
+        542
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P004-steam-01.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          520,
+          530
+        ],
+        "end": [
+          540,
+          550
+        ]
+      },
+      "duration": {
+        "lower_s": 10,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P006-steam-02",
+      "order_id": "P006",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        660,
+        662
+      ],
+      "end_video_s": [
+        674,
+        676
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P006-steam-02.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          660,
+          670
+        ],
+        "end": [
+          670,
+          680
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P006-steam-03",
+      "order_id": "P006",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        738,
+        740
+      ],
+      "end_video_s": [
+        752,
+        754
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P006-steam-03.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          730,
+          740
+        ],
+        "end": [
+          750,
+          760
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P008-steam-04",
+      "order_id": "P008",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        896,
+        898
+      ],
+      "end_video_s": [
+        906,
+        910
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P008-steam-04.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          890,
+          900
+        ],
+        "end": [
+          900,
+          910
+        ]
+      },
+      "duration": {
+        "lower_s": 8,
+        "upper_s": 14,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P025-steam-05",
+      "order_id": "P025",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        2332,
+        2334
+      ],
+      "end_video_s": [
+        2346,
+        2348
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P025-steam-05.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          2330,
+          2340
+        ],
+        "end": [
+          2340,
+          2350
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P035-steam-06",
+      "order_id": "P035",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        3112,
+        3114
+      ],
+      "end_video_s": [
+        3122,
+        3124
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P035-steam-06.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          3110,
+          3120
+        ],
+        "end": [
+          3120,
+          3130
+        ]
+      },
+      "duration": {
+        "lower_s": 8,
+        "upper_s": 12,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P036-steam-07",
+      "order_id": "P036",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        3226,
+        3228
+      ],
+      "end_video_s": [
+        3234,
+        3236
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P036-steam-07.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          3220,
+          3230
+        ],
+        "end": [
+          3230,
+          3240
+        ]
+      },
+      "duration": {
+        "lower_s": 6,
+        "upper_s": 10,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P039-steam-08",
+      "order_id": "P039",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        3654,
+        3656
+      ],
+      "end_video_s": [
+        3668,
+        3670
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P039-steam-08.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          3650,
+          3660
+        ],
+        "end": [
+          3670,
+          3680
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P045-steam-09",
+      "order_id": "P045",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4066,
+        4068
+      ],
+      "end_video_s": [
+        4082,
+        4086
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P045-steam-09.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4060,
+          4070
+        ],
+        "end": [
+          4080,
+          4090
+        ]
+      },
+      "duration": {
+        "lower_s": 14,
+        "upper_s": 20,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P045-steam-10",
+      "order_id": "P045",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4110,
+        4112
+      ],
+      "end_video_s": [
+        4124,
+        4128
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P045-steam-10.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4110,
+          4120
+        ],
+        "end": [
+          4120,
+          4130
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 18,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P047-steam-11",
+      "order_id": "P047",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4366,
+        4368
+      ],
+      "end_video_s": [
+        4382,
+        4384
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P047-steam-11.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4360,
+          4370
+        ],
+        "end": [
+          4380,
+          4390
+        ]
+      },
+      "duration": {
+        "lower_s": 14,
+        "upper_s": 18,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P047-steam-12",
+      "order_id": "P047",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4420,
+        4422
+      ],
+      "end_video_s": [
+        4432,
+        4436
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P047-steam-12.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4420,
+          4430
+        ],
+        "end": [
+          4430,
+          4440
+        ]
+      },
+      "duration": {
+        "lower_s": 10,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P049-steam-13",
+      "order_id": "P049",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4640,
+        4642
+      ],
+      "end_video_s": [
+        4652,
+        4654
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P049-steam-13.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4640,
+          4650
+        ],
+        "end": [
+          4650,
+          4660
+        ]
+      },
+      "duration": {
+        "lower_s": 10,
+        "upper_s": 14,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P050-steam-14",
+      "order_id": "P050",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4768,
+        4770
+      ],
+      "end_video_s": [
+        4782,
+        4784
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P050-steam-14.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4760,
+          4770
+        ],
+        "end": [
+          4780,
+          4790
+        ]
+      },
+      "duration": {
+        "lower_s": 12,
+        "upper_s": 16,
+        "status": "bounded"
+      }
+    },
+    {
+      "event_id": "P051-steam-15",
+      "order_id": "P051",
+      "activity": "vaporizado_con_sujecion",
+      "resource_type": "barista_y_lanza",
+      "start_video_s": [
+        4846,
+        4848
+      ],
+      "end_video_s": [
+        4862,
+        4864
+      ],
+      "sampling_s": 2,
+      "notes": "Jarra bajo lanza, activaci?n/cierre de v?lvula y sujeci?n visibles en la toma principal. Intervalo de localizaci?n entre fotogramas; no calibraci?n t?rmica ni garant?a de continuidad entre muestras.",
+      "evidence": [
+        "vaporizados/P051-steam-15.jpg"
+      ],
+      "review_method": "assistant_visual_review_primary_view",
+      "previous_coarse_bounds": {
+        "start": [
+          4840,
+          4850
+        ],
+        "end": [
+          4860,
+          4870
+        ]
+      },
+      "duration": {
+        "lower_s": 14,
+        "upper_s": 18,
+        "status": "bounded"
+      }
+    }
+  ]
+}

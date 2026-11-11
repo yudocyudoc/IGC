@@ -1,0 +1,232 @@
+{
+  "catalog_version": "igc-arena-video-eventos/0.1",
+  "status": "propuesta_no_congelada",
+  "source_video_sha256": "cd37c9d3f231f4d307c4f3353ce1dc096fad4185bbdf6ffab06266b9d41290c5",
+  "categories": {
+    "estado": "Sólo una muestra o conjunto discreto, no un periodo continuo demostrado",
+    "accion": "Movimiento/acción observada, sin duración continua garantizada",
+    "transicion": "Cambio cuyo instante puede estar en una ventana temporal, no un conteo de flujos por defecto",
+    "episodio": "Operación con límites de inicio/fin acotados; continuidad sujeta a evidencia y cobertura"
+  },
+  "entries": [
+    {
+      "code": "objeto_visible_en_region",
+      "kind": "estado",
+      "label": "Objeto visible en región",
+      "definition": "Objeto discernible dentro de una región de observación en un fotograma",
+      "positive_evidence": "Silueta distinguible y región documentada",
+      "must_not_infer": "Inventario total, propiedad o identidad de pedido",
+      "scope": "base"
+    },
+    {
+      "code": "recipiente_con_contenido_visible",
+      "kind": "estado",
+      "label": "Recipiente con contenido visible",
+      "definition": "Recipiente y contenido aparente discernibles en una muestra",
+      "positive_evidence": "Contorno del recipiente y contenido visualmente apreciable",
+      "must_not_infer": "Ingrediente, volumen, receta o bebida finalizada",
+      "scope": "base"
+    },
+    {
+      "code": "recipiente_estacionado_muestra",
+      "kind": "estado",
+      "label": "Recipiente estacionado en muestra",
+      "definition": "Recipiente apoyado sobre superficie en al menos una imagen",
+      "positive_evidence": "Posición sobre barra sin sujeción aparente en la muestra",
+      "must_not_infer": "Inactividad entre fotogramas o permanencia continua",
+      "scope": "base"
+    },
+    {
+      "code": "superficie_montada_visible",
+      "kind": "estado",
+      "label": "Superficie montada visible",
+      "definition": "Acabado visual observable en superficie de una bebida",
+      "positive_evidence": "Forma/acabado observable desde la vista analizada",
+      "must_not_infer": "Último vertido registrado, montaje completo o entrega",
+      "scope": "base"
+    },
+    {
+      "code": "recipiente_bajo_grupo_visible",
+      "kind": "estado",
+      "label": "Recipiente debajo de grupo",
+      "definition": "Recipiente ubicado debajo de la zona visual del grupo",
+      "positive_evidence": "Ubicación espacial visible",
+      "must_not_infer": "Extracción automática, bomba activa, cantidad espresso",
+      "scope": "base"
+    },
+    {
+      "code": "jarra_proxima_a_lanza_visible",
+      "kind": "estado",
+      "label": "Jarra próxima a lanza",
+      "definition": "Jarra al lado o bajo la zona de lanza en muestra",
+      "positive_evidence": "Posición visible respecto a lanza",
+      "must_not_infer": "Vapor activo, temperatura, válvula abierta",
+      "scope": "base"
+    },
+    {
+      "code": "barista_visibilidad_parcial",
+      "kind": "estado",
+      "label": "Barista parcialmente no evaluable",
+      "definition": "Parte relevante del cuerpo o manos queda fuera u oculta",
+      "positive_evidence": "Frontera/oclusión visible",
+      "must_not_infer": "Ocio, tarea específica, ausencia laboral",
+      "scope": "base"
+    },
+    {
+      "code": "minimo_recipientes_con_contenido",
+      "kind": "estado",
+      "label": "Mínimo de recipientes con contenido",
+      "definition": "Conteo inferior de recipientes distinguibles con contenido en una misma región y muestra",
+      "positive_evidence": "Contar solo los inequívocamente visibles y declarar región",
+      "must_not_infer": "Capacidad máxima, stock continuo, productos acabados",
+      "scope": "base"
+    },
+    {
+      "code": "barista_manipula_objeto_visible",
+      "kind": "accion",
+      "label": "Manipulación manual visible",
+      "definition": "Contacto/alteración observable de posición de objeto por barista",
+      "positive_evidence": "Mano y objeto coinciden en muestras/movimiento discernible",
+      "must_not_infer": "Actividad continua o identidad del producto",
+      "scope": "base"
+    },
+    {
+      "code": "barista_interactua_con_equipo_visible",
+      "kind": "accion",
+      "label": "Interacción manual con equipo",
+      "definition": "Acción de mano sobre grupo, portafiltro, mando u otro elemento identificado",
+      "positive_evidence": "Contacto o manipulación distinguible",
+      "must_not_infer": "Activación de bomba, vapor, extracción efectiva",
+      "scope": "base"
+    },
+    {
+      "code": "liquido_vertido_visible",
+      "kind": "accion",
+      "label": "Vertido visible",
+      "definition": "Transferencia visual de líquido entre recipientes",
+      "positive_evidence": "Trayectoria líquida o cambio consistente visual comprobable",
+      "must_not_infer": "Ingrediente, g/ml, merma, salida de stock de insumos",
+      "scope": "base"
+    },
+    {
+      "code": "mezcla_manual_visible",
+      "kind": "accion",
+      "label": "Mezcla manual visible",
+      "definition": "Utensilio o recipiente manipulado dentro del vaso de forma compatible con mezcla",
+      "positive_evidence": "Movimiento observable del útil dentro del recipiente",
+      "must_not_infer": "Disolución completada, dosis, tiempo continuo",
+      "scope": "base"
+    },
+    {
+      "code": "accesorio_colocado_visible",
+      "kind": "accion",
+      "label": "Colocación visible de accesorio",
+      "definition": "Objeto accesorio incorporado/ajustado en vaso visible",
+      "positive_evidence": "Antes/después o movimiento de accesorio identificado",
+      "must_not_infer": "Montaje de todos los productos de un lote",
+      "scope": "base"
+    },
+    {
+      "code": "objeto_desplazado_visible",
+      "kind": "accion",
+      "label": "Desplazamiento visible",
+      "definition": "Objeto cambia posición identificablemente dentro del encuadre",
+      "positive_evidence": "Seguimiento local observable o fotogramas inequívocos",
+      "must_not_infer": "Salida de región si no se observa frontera",
+      "scope": "base"
+    },
+    {
+      "code": "objeto_aparece_en_region",
+      "kind": "transicion",
+      "label": "Aparece en región",
+      "definition": "Objeto no visible en muestra previa y visible en muestra siguiente",
+      "positive_evidence": "Misma región, muestras ordenadas, criterio de visibilidad",
+      "must_not_infer": "Objeto creado, inicio de producción, pedido nuevo",
+      "scope": "base"
+    },
+    {
+      "code": "objeto_deja_de_verse_en_region",
+      "kind": "transicion",
+      "label": "Deja de verse en región",
+      "definition": "Objeto/conjunto visible en muestra previa y no visible después",
+      "positive_evidence": "Misma región; describir oclusión posible",
+      "must_not_infer": "Objeto cruzó frontera, producto entregado, inventario cero",
+      "scope": "base"
+    },
+    {
+      "code": "objeto_cruza_frontera_region",
+      "kind": "transicion",
+      "label": "Cruza frontera de región",
+      "definition": "Movimiento del objeto atravesando la frontera espacial definida",
+      "positive_evidence": "Trayectoria visual cruzando frontera identificada",
+      "must_not_infer": "Entrega a cliente u operación POS",
+      "scope": "ampliado"
+    },
+    {
+      "code": "ultimo_vertido_visible",
+      "kind": "transicion",
+      "label": "Último vertido visible de objeto",
+      "definition": "Último vertido identificable antes de la siguiente etapa observada de un mismo objeto",
+      "positive_evidence": "Seguimiento de objeto suficiente para determinar último vertido dentro de cobertura declarada",
+      "must_not_infer": "Montaje completo, último vertido global sin cobertura",
+      "scope": "condicional"
+    },
+    {
+      "code": "montaje_completo_verificado",
+      "kind": "transicion",
+      "label": "Montaje completo según protocolo",
+      "definition": "Estado final según definición explícita y requisitos de producto definidos de antemano",
+      "positive_evidence": "Checklist de acabado fijada antes de revisar, cada requisito observable",
+      "must_not_infer": "Final de pedido, entrega, preparación exhaustiva",
+      "scope": "condicional"
+    },
+    {
+      "code": "jarra_sostenida_junto_a_lanza",
+      "kind": "episodio",
+      "label": "Sujeción de jarra junto a lanza",
+      "definition": "Secuencia de aproximación, sujeción y separación de jarra en zona de lanza",
+      "positive_evidence": "Inicio y fin acotados con imágenes de transición, más muestras de presencia",
+      "must_not_infer": "Vapor activo, tiempo físico de vaporización o utilización total de lanza",
+      "scope": "base"
+    },
+    {
+      "code": "manipulacion_equipo_delimitada",
+      "kind": "episodio",
+      "label": "Interacción con equipo delimitada",
+      "definition": "Serie acotada de manipulaciones del mismo equipo en un tramo revisado",
+      "positive_evidence": "Inicio y fin acotados; describir subacciones y oclusiones",
+      "must_not_infer": "Funcionamiento autónomo continuo del equipo",
+      "scope": "condicional"
+    },
+    {
+      "code": "vapor_activo_verificado",
+      "kind": "transicion",
+      "label": "Vapor activo verificado",
+      "definition": "Activación física comprobada por evidencia independiente de mera proximidad de jarra",
+      "positive_evidence": "Registro de mando/vapor inequívoco o señal instrumental validada",
+      "must_not_infer": "Derivarlo de jarra sostenida, inferir caudal/energía",
+      "scope": "reservado"
+    },
+    {
+      "code": "extraccion_activa_verificada",
+      "kind": "transicion",
+      "label": "Extracción activa verificada",
+      "definition": "Extracción acreditada por evidencia explícita",
+      "positive_evidence": "Flujo observable inequívoco de grupo o medición validada",
+      "must_not_infer": "Derivarla de taza bajo grupo o manos en portafiltro",
+      "scope": "reservado"
+    }
+  ],
+  "reserved_codes": [
+    "vapor_activo_verificado",
+    "extraccion_activa_verificada"
+  ],
+  "legacy_aliases_not_equivalences": {
+    "vaporizado_con_sujecion": "jarra_sostenida_junto_a_lanza",
+    "vertido_montaje": "liquido_vertido_visible; montaje_completo_verificado NO se infiere",
+    "retiro_producto": "objeto_deja_de_verse_en_region; objeto_cruza_frontera_region requiere evidencia extra",
+    "preparacion_portafiltro": "barista_manipula_objeto_visible / barista_interactua_con_equipo_visible según fotograma",
+    "producto_o_componente_estacionado": "recipiente_estacionado_muestra",
+    "montaje_fin": "solo tras decidir checklist; no migración automática"
+  }
+}

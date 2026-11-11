@@ -1,0 +1,85 @@
+order_id,line_number,product,quantity,quantity_support_samples,quantity_observations,raw_line,first_seen_video_s,review_status,evidence
+P001,1,Cappuccino,1,,,Cappuccino x1,10.0,visual_review_by_assistant,paneles/0001800.png
+P002,1,Iced Americano,3,,,IcedAmericanox3 | IcedAmericano(Decaf)x2 | HotAmericanoX | HotAmgricano (Decaf)x2,110.0,visual_review_by_assistant,paneles/0007500.png
+P002,2,Iced Americano (Decaf),2,,,IcedAmericanox3 | IcedAmericano(Decaf)x2 | HotAmericanoX | HotAmgricano (Decaf)x2,110.0,visual_review_by_assistant,paneles/0007500.png
+P002,3,Hot Americano,1,,,IcedAmericanox3 | IcedAmericano(Decaf)x2 | HotAmericanoX | HotAmgricano (Decaf)x2,110.0,visual_review_by_assistant,paneles/0007500.png
+P002,4,Hot Americano (Decaf),2,,,IcedAmericanox3 | IcedAmericano(Decaf)x2 | HotAmericanoX | HotAmgricano (Decaf)x2,110.0,visual_review_by_assistant,paneles/0007500.png
+P003,1,Iced Americano,3,,,IcedAmericanox3,390.0,visual_review_by_assistant,paneles/0012900.png
+P004,1,Hot Latte,1,,,Hot Latte x1,500.0,visual_review_by_assistant,paneles/0016200.png
+P005,1,Hot Americano,1,,,HotAmericanox1 | HotLemonCingerTea X1,580.0,visual_review_by_assistant,paneles/0018300.png
+P005,2,Hot Lemon Ginger Tea,1,,,HotAmericanox1 | HotLemonCingerTea X1,580.0,visual_review_by_assistant,paneles/0018300.png
+P006,1,Hot Latte,1,,,Hot Latte x1 | HotLatte (Decaf)x 1,640.0,visual_review_by_assistant,paneles/0021300.png
+P006,2,Hot Latte (Decaf),1,,,Hot Latte x1 | HotLatte (Decaf)x 1,640.0,visual_review_by_assistant,paneles/0021300.png
+P007,1,Iced Americano,2,,,IcedAmericanox2,790.0,visual_review_by_assistant,paneles/0024600.png
+P008,1,Hot Latte,1,,,Hot Latte x 1,870.0,visual_review_by_assistant,paneles/0027000.png
+P009,1,Iced Americano,1,,,Iced Americanox1,950.0,visual_review_by_assistant,paneles/0029100.png
+P010,1,Iced Americano,2,,,IcedAmericanox2,1000.0,visual_review_by_assistant,paneles/0031200.png
+P011,1,Iced Americano (Decaf),1,,,IcedAmericano(Decaf)x1,1090.0,visual_review_by_assistant,paneles/0033600.png
+P012,1,Iced Latte (Decaf),1,,,Iced Latte (Decaf)x1,1150.0,visual_review_by_assistant,paneles/0035100.png
+P013,1,Iced Americano (Decaf),1,,,IcedAmericano(Decaf)x1 | IcedAmericanox1 | IcedAmericanoShot)x1 | IcedFlatWhitex1,1190.0,visual_review_by_assistant,paneles/0037800.png
+P013,2,Iced Americano,1,,,IcedAmericano(Decaf)x1 | IcedAmericanox1 | IcedAmericanoShot)x1 | IcedFlatWhitex1,1190.0,visual_review_by_assistant,paneles/0037800.png
+P013,3,Iced Americano (1 Shot),1,,,IcedAmericano(Decaf)x1 | IcedAmericanox1 | IcedAmericanoShot)x1 | IcedFlatWhitex1,1190.0,visual_review_by_assistant,paneles/0037800.png
+P013,4,Iced Flat White,1,,,IcedAmericano(Decaf)x1 | IcedAmericanox1 | IcedAmericanoShot)x1 | IcedFlatWhitex1,1190.0,visual_review_by_assistant,paneles/0037800.png
+P014,1,Iced Americano,1,,,IcedAmericanox1,1340.0,visual_review_by_assistant,paneles/0041100.png
+P015,1,Iced Americano,1,,,IcedAmericanox1 | HotAmericano (1Shot)x1,1410.0,visual_review_by_assistant,paneles/0043200.png
+P015,2,Hot Americano (1 Shot),1,,,IcedAmericanox1 | HotAmericano (1Shot)x1,1410.0,visual_review_by_assistant,paneles/0043200.png
+P016,1,Iced Americano,2,,,Iced Americanox2 | IcedLattex1,1480.0,visual_review_by_assistant,paneles/0045900.png
+P016,2,Iced Latte,1,,,Iced Americanox2 | IcedLattex1,1480.0,visual_review_by_assistant,paneles/0045900.png
+P017,1,Hot Americano,2,,,HotAmericanox2,1590.0,visual_review_by_assistant,paneles/0048600.png
+P018,1,Iced Latte,2,,,Iced Lattex2,1650.0,visual_review_by_assistant,paneles/0050700.png
+P019,1,Iced Latte,1,,,IcedLattex1 | Affogatox2 | IceCreamwithStrawberrySyrupx1 | RedBeaniceCreamx2,1730.0,visual_review_by_assistant,paneles/0055200.png
+P019,2,Affogato,2,,,IcedLattex1 | Affogatox2 | IceCreamwithStrawberrySyrupx1 | RedBeaniceCreamx2,1730.0,visual_review_by_assistant,paneles/0055200.png
+P019,3,Ice Cream with Strawberry Syrup,1,,,IcedLattex1 | Affogatox2 | IceCreamwithStrawberrySyrupx1 | RedBeaniceCreamx2,1730.0,visual_review_by_assistant,paneles/0055200.png
+P019,4,Red Bean Ice Cream,2,,,IcedLattex1 | Affogatox2 | IceCreamwithStrawberrySyrupx1 | RedBeaniceCreamx2,1730.0,visual_review_by_assistant,paneles/0055200.png
+P020,1,Iced Americano,1,,,Iced Americanox1 | IcedLatte(Decaf)x1,1940.0,visual_review_by_assistant,paneles/0059700.png
+P020,2,Iced Latte (Decaf),1,,,Iced Americanox1 | IcedLatte(Decaf)x1,1940.0,visual_review_by_assistant,paneles/0059700.png
+P021,1,Hot Americano,1,,,HotAmericanoX1,2040.0,visual_review_by_assistant,paneles/0061800.png
+P022,1,Iced Americano (Decaf),1,,,IcedAmericano(Decaf)x1,2090.0,visual_review_by_assistant,paneles/0063300.png
+P023,1,Iced Latte,2,,,IcedLattex2,2140.0,visual_review_by_assistant,paneles/0065100.png
+P024,1,Iced Americano (4 Shots),1,,,IcedAmericano(4Shots)x1,2210.0,visual_review_by_assistant,paneles/0067500.png
+P025,1,Hot Latte,1,,,Hot Latte x1,2300.0,visual_review_by_assistant,paneles/0070200.png
+P026,1,Iced Americano (1 Shot),1,,,Iced Americano (1Shot)x1 | HotAmericanox1,2380.0,visual_review_by_assistant,paneles/0072600.png
+P026,2,Hot Americano,1,,,Iced Americano (1Shot)x1 | HotAmericanox1,2380.0,visual_review_by_assistant,paneles/0072600.png
+P027,1,Hot Americano (Decaf),1,,,HbtAmericano (Decaf)x1,2470.0,visual_review_by_assistant,paneles/0075600.png
+P028,1,Iced Flat White,1,,,IcediFlatWhitex1 | IcedchocolateLattex1,2530.0,visual_review_by_assistant,paneles/0076800.png
+P028,2,Iced Chocolate Latte,1,,,IcediFlatWhitex1 | IcedchocolateLattex1,2530.0,visual_review_by_assistant,paneles/0076800.png
+P029,1,Hot Americano,1,,,HotAmericanox1 | Affogatox1,2610.0,visual_review_by_assistant,paneles/0080400.png
+P029,2,Affogato,1,,,HotAmericanox1 | Affogatox1,2610.0,visual_review_by_assistant,paneles/0080400.png
+P030,1,Iced Latte (Decaf),1,,,Iced Latte (Decaf)x1,2700.0,visual_review_by_assistant,paneles/0081900.png
+P031,1,Iced Americano,1,,,IcedAmericanox1 | BlackSesameCreamLattex1 | CreenTangerineAdex1,2760.0,visual_review_by_assistant,paneles/0085200.png
+P031,2,Black Sesame Cream Latte,1,,,IcedAmericanox1 | BlackSesameCreamLattex1 | CreenTangerineAdex1,2760.0,visual_review_by_assistant,paneles/0085200.png
+P031,3,Green Tangerine Ade,1,,,IcedAmericanox1 | BlackSesameCreamLattex1 | CreenTangerineAdex1,2760.0,visual_review_by_assistant,paneles/0085200.png
+P032,1,Iced Americano,2,,,IcedAmeriaanox2,2900.0,visual_review_by_assistant,paneles/0087900.png
+P033,1,Iced Einspanner (Water Base),1,,,Iced Einspanner(WaterBase)x1,2980.0,visual_review_by_assistant,paneles/0090600.png
+P034,1,Iced Cold Brew Latte,1,,,IcedColdBrewLattex1,3060.0,visual_review_by_assistant,paneles/0092100.png
+P035,1,Hot Flat White,1,,,Hot Flat Whitex1,3090.0,visual_review_by_assistant,paneles/0093600.png
+P036,1,Hot Flat White,1,,,HotFlatWhitex1 | IcedMatchaLattex1,3160.0,visual_review_by_assistant,paneles/0096600.png
+P036,2,Iced Matcha Latte,1,,,HotFlatWhitex1 | IcedMatchaLattex1,3160.0,visual_review_by_assistant,paneles/0096600.png
+P037,1,Iced Americano,2,,,Iced Americanox2 | Icedatte(Decaf)x1,3280.0,visual_review_by_assistant,paneles/0099000.png
+P037,2,Iced Latte (Decaf),1,,,Iced Americanox2 | Icedatte(Decaf)x1,3280.0,visual_review_by_assistant,paneles/0099000.png
+P038,1,Iced Americano,1,,,IcedAmericanox1 | icedlattex7,3420.0,visual_review_by_assistant,paneles/0102600.png
+P038,2,Iced Latte,1,,,IcedAmericanox1 | icedlattex7,3420.0,visual_review_by_assistant,paneles/0102600.png
+P039,1,Hot Americano,2,,,HotAmericanox2 | HotAmericano (0.5Shot)x/1 | HouLattex1.,3520.0,visual_review_by_assistant,paneles/0105900.png
+P039,2,Hot Americano (0.5 Shot),1,,,HotAmericanox2 | HotAmericano (0.5Shot)x/1 | HouLattex1.,3520.0,visual_review_by_assistant,paneles/0105900.png
+P039,3,Hot Latte,1,,,HotAmericanox2 | HotAmericano (0.5Shot)x/1 | HouLattex1.,3520.0,visual_review_by_assistant,paneles/0105900.png
+P040,1,Iced Americano,1,,,IcedAmericanox1 | IcedAmericano(Decaf)x | IcepLhtte(Decaf)x1,3700.0,visual_review_by_assistant,paneles/0114000.png
+P040,2,Iced Americano (Decaf),1,,,IcedAmericanox1 | IcedAmericano(Decaf)x | IcepLhtte(Decaf)x1,3700.0,visual_review_by_assistant,paneles/0114000.png
+P040,3,Iced Latte (Decaf),1,,,IcedAmericanox1 | IcedAmericano(Decaf)x | IcepLhtte(Decaf)x1,3700.0,visual_review_by_assistant,paneles/0114000.png
+P041,1,Iced Americano (1 Shot),1,,,IcedAmericano (1Shot)x,3810.0,visual_review_by_assistant,paneles/0115200.png
+P042,1,Hot Americano,1,,,HotAmericano.x1,3870.0,visual_review_by_assistant,paneles/0116700.png
+P043,1,Iced Americano,1,,,IcedAmericano x1,3920.0,visual_review_by_assistant,paneles/0118500.png
+P044,1,Iced Flat White (Decaf),1,,,Iced FlatWhite (Decaf)x1,3980.0,visual_review_by_assistant,paneles/0120000.png
+P045,1,Hot Latte,2,,,Hot Latte x 2,4030.0,visual_review_by_assistant,paneles/0122700.png
+P046,1,Iced Latte,2,,,Iced Lattex2,4150.0,visual_review_by_assistant,paneles/0125700.png
+P047,1,Iced Latte,2,,,IcedLattex2 | Hot VanillaLatex2,4240.0,visual_review_by_assistant,paneles/0127800.png
+P047,2,Hot Vanilla Latte,2,,,IcedLattex2 | Hot VanillaLatex2,4240.0,visual_review_by_assistant,paneles/0127800.png
+P048,1,Iced Americano,1,,,IcedAmericanox1,4480.0,visual_review_by_assistant,paneles/0135300.png
+P049,1,Iced Americano,1,,,Iced Americano x1 | Affogatox1 | HotLattex1,4540.0,visual_review_by_assistant,paneles/0136800.png
+P049,2,Affogato,1,,,Iced Americano x1 | Affogatox1 | HotLattex1,4540.0,visual_review_by_assistant,paneles/0136800.png
+P049,3,Hot Latte,1,,,Iced Americano x1 | Affogatox1 | HotLattex1,4540.0,visual_review_by_assistant,paneles/0136800.png
+P050,1,Black Sesame Cream Latte,1,,,BlackSesameCreamLattex1 | HotChocolateLattex1,4690.0,visual_review_by_assistant,paneles/0142500.png
+P050,2,Hot Chocolate Latte,1,,,BlackSesameCreamLattex1 | HotChocolateLattex1,4690.0,visual_review_by_assistant,paneles/0142500.png
+P051,1,Hot Ginger Latte,1,,,Hot Ginger Latte x1,4820.0,visual_review_by_assistant,paneles/0145800.png
+P052,1,Hot Americano,1,,,HotAmericanox1 | IcedAmericanox1 | Hot Green Tangerine Tea x1,4910.0,visual_review_by_assistant,paneles/0148800.png
+P052,2,Iced Americano,1,,,HotAmericanox1 | IcedAmericanox1 | Hot Green Tangerine Tea x1,4910.0,visual_review_by_assistant,paneles/0148800.png
+P052,3,Hot Green Tangerine Tea,1,,,HotAmericanox1 | IcedAmericanox1 | Hot Green Tangerine Tea x1,4910.0,visual_review_by_assistant,paneles/0148800.png
