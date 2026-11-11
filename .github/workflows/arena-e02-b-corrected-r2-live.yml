@@ -1,0 +1,170 @@
+name: E02 Buffalo corrected R2 route LIVE — two initial calls only
+on:
+  push:
+    branches: [experiment/arena-continuity-e00-e01-20261106]
+    paths:
+      - 'data/diagnostics/ARENA_E02_B_CORRECTED_R2_ONESHOT_20261106.json'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-e02-b-corrected-r2-one-shot-20261106
+  cancel-in-progress: false
+jobs:
+  authorization:
+    runs-on: ubuntu-24.04
+    outputs:
+      permit: ${{ steps.gate.outputs.permit }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - id: gate
+        name: Single new marker, exact source pins, no retry, original overall budget
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = "refs/heads/experiment/arena-continuity-e00-e01-20261106"
+          git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+            grep -Fxq "data/diagnostics/ARENA_E02_B_CORRECTED_R2_ONESHOT_20261106.json"
+          test "$(git hash-object scripts/arena_b_ev01_native_runner.mjs)" = 2e976d9028ff5fd6f7162ef952c5faaae77dbfbe
+          test "$(git hash-object scripts/arena_b_ev01_cf_adapter.mjs)" = 20d45ca25993e02db9e38c48b92817889b0dd47c
+          test "$(git hash-object scripts/arena_b_cf_protocol_adapter.mjs)" = 724843043e699efbfc20fa79be3c0edb08a95c98
+          test "$(git hash-object scripts/arena_b_openrouter_cloudflare.mjs)" = 0a93a48d42e6b04c87e8dda3cf18e643785dfbc8
+          test "$(git hash-object scripts/arena_b_native_runner.mjs)" = 572656687ae2e6b6fce0031b7eb02dbab5868990
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('data/diagnostics/ARENA_E02_B_CORRECTED_R2_ONESHOT_20261106.json').read_text())
+          assert a=={
+            'schema':'igc-e02-b-corrected-r2-one-shot/0.1',
+            'authorization':'USER_EXECUTE_2026-11-06',
+            'reference_successful_run_id':40490534985,
+            'previous_failed_run_id':42319874751,
+            'previous_real_attempts':2,
+            'max_new_attempts':2,
+            'max_total_e02_b_attempts':4,
+            'conditions':['O0','O1'],
+            'per_condition_new_attempts':1,
+            'revisions':0,
+            'retries':0,
+            'provider_model':'@cf/zai-org/glm-5.3-flash',
+            'alias':'cloudflare/glm-5.3-flash',
+            'upstream_sha':'5199f7b45f3a7ae4a773cb0dd8542940aabe9edc',
+            'max_completion_tokens':16000,
+            'http_timeout_ms':360000,
+            'no_other_arms_or_evaluator':True,
+            'no_new_omc':True,
+            'preserve_original_failures':True,
+          },'E02_B_CORRECTED_AUTHORIZATION_NOT_EXACT'
+          PY
+          echo permit=true >> "$GITHUB_OUTPUT"
+  live-initial:
+    needs: authorization
+    if: ${{ needs.authorization.outputs.permit == 'true' && github.run_attempt == 1 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/b/public
+      - name: Prepare exact authorized condition and pinned original Buffalo upstream
+        env:
+          COND: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          mkdir -p "artifacts/b/$COND" upstream/sd-ai
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/b/public/$COND"_VISIBLE.json \
+            --condition "$COND" --kind initial --out "artifacts/b/$COND/staged"
+          git -C upstream/sd-ai init -q
+          git -C upstream/sd-ai remote add origin https://github.com/UB-IAD/sd-ai.git
+          git -C upstream/sd-ai fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git -C upstream/sd-ai checkout -q --detach FETCH_HEAD
+          test "$(git -C upstream/sd-ai rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --prefix upstream/sd-ai --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Exactly ONE real Cloudflare call through original Buffalo OpenRouter SDK
+        env:
+          COND: ${{ matrix.condition }}
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: live
+          BUFFALO_LIVE_AUTH: ONE_UPSTREAM_CALL
+          BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
+          BUFFALO_ROUND_KIND: initial
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          export BUFFALO_VISIBLE_INPUT="$PWD/artifacts/b/$COND/staged/b-visible.json"
+          export BUFFALO_OUTPUT="$PWD/artifacts/b/$COND/initial"
+          if node scripts/arena_b_ev01_native_runner.mjs >"artifacts/b/$COND/engine.log" 2>&1; then
+            echo 'PROCESS_EXIT_ZERO' >"artifacts/b/$COND/process-exit.txt"
+          else
+            echo 'PROCESS_EXIT_NONZERO' >"artifacts/b/$COND/process-exit.txt"
+          fi
+          cat "artifacts/b/$COND/engine.log"
+          test -s "artifacts/b/$COND/initial/receipt.json"
+      - name: Audit and preserve an actual result, including failures (no retry)
+        if: always()
+        env:
+          COND: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,os
+          base=Path('artifacts/b')/os.environ['COND']
+          base.mkdir(parents=True,exist_ok=True)
+          p=base/'initial/receipt.json'
+          r=json.loads(p.read_text()) if p.exists() else {}
+          n=r.get('provider_calls',0)
+          assert type(n) is int and 0<=n<=1,'NEW_CALL_CAP_BROKEN'
+          if r:
+            assert r['mode']=='live' and r['round_kind']=='initial'
+            assert r['condition_id']==os.environ['COND']
+            assert r['backend']=='OPEN_ROUTER'
+            assert r['backend_alias']=='cloudflare/glm-5.3-flash'
+            assert r['transport']=='CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA'
+            assert r['configured_http_timeout_ms']==360000
+            assert r['original_engine_max_tokens']==16000
+          outcome={
+            'schema':'igc-e02-b-corrected-route-result/0.1',
+            'condition':os.environ['COND'],
+            'previous_call_attempts':1,
+            'new_call_attempts':n,
+            'cumulative_attempts_this_condition':1+n,
+            'status':r.get('status','RECEIPT_UNAVAILABLE'),
+            'model_returned':r.get('model_returned',False),
+            'http_status':r.get('http_status'),
+            'provider_usage':r.get('provider_usage'),
+            'bridge_error':r.get('bridge_error'),
+            'runner_error':r.get('runner_error'),
+            'native_sha256':r.get('result_sha256'),
+            'revision_attempted':False,
+            'G2':'NOT_RUN','G3':'NOT_RUN',
+            'no_retries':True,
+          }
+          (base/'outcome.json').write_text(json.dumps(outcome,indent=2)+'\n')
+          print(json.dumps({'condition':outcome['condition'],
+            'status':outcome['status'],'new_calls':n,
+            'model_returned':outcome['model_returned']}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-e02-b-corrected-live-${{ matrix.condition }}
+          path: artifacts/b/${{ matrix.condition }}/
+          if-no-files-found: error
+          retention-days: 60

@@ -1,0 +1,75 @@
+{
+  "schema": "igc-arena-e02-b-current-natives-g1-v02-adjudication/0.1",
+  "date_local": "2026-11-06",
+  "source_historical_manifest": "experiments/cafeteria/E02_B_CORRECTED_CLOUDFLARE_REAL_RESULTS_2026-11-06.json",
+  "source_historical_manifest_preserved": true,
+  "prior_combined_ledger_run": 42322465960,
+  "source_corrected_live_run": 42331388032,
+  "source_g1_old_run": 42331727460,
+  "source_g1_corrected_run": 42335080421,
+  "source_upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "evidence_source": "IMMUTABLE_GITHUB_ACTIONS_ARTIFACTS_AND_PINNED_RAW_MEMBER_SHA256",
+  "experimental_scope": "EV-01_O0_O1_KNOWN_SYNTHETIC_DEVELOPMENT_NOT_HOLDOUT",
+  "provider": {
+    "alias": "cloudflare/glm-5.3-flash",
+    "backend": "OPEN_ROUTER",
+    "actual_model": "@cf/zai-org/glm-5.3-flash",
+    "success_http_status": 200,
+    "two_authentic_initial_natives": true,
+    "prior_transport_timeouts": 2,
+    "new_successful_initial_calls": 2,
+    "total_attempts": 4,
+    "budget": 4,
+    "native_revision_calls": 0
+  },
+  "conditions": {
+    "O0": {
+      "live_artifact_id": 13557641048,
+      "source_zip_sha256": "sha256:ee8ff514f1931ec8fe2d80e86193414f6f2c8f223d39bb9b06b58f2db6501da9",
+      "raw_native_serialized_object_sha256": "sha256:f090f082095bb21348c8d1313baf45beefab7422199cc9f62a34073973bd0c28",
+      "native_variable_count": 6,
+      "native_relationship_count": 5,
+      "old_g1_issue_count": 11,
+      "corrected_g1_issue_count": 3,
+      "one_point_markers_reclassified": 5,
+      "corrected_g1_codes": [
+        "GRAPHICAL_LOOKUP_NEEDS_ADAPTER",
+        "UPSTREAM_FLOW_LOOKUP_IGNORED",
+        "VARIABLE_CALLED_AS_FUNCTION"
+      ],
+      "block": "UPSTREAM_FLOW_LOOKUP_IGNORED_AND_VARIABLE_CALLED_AS_FUNCTION"
+    },
+    "O1": {
+      "live_artifact_id": 13557710707,
+      "source_zip_sha256": "sha256:481640697422ef25ca25f122308e1d853426298a30a3e9cac450b172c214d458",
+      "raw_native_serialized_object_sha256": "sha256:1c74cc6ea8476ec543d47e74e68ea60e61eec3e56d537b3c4976d20c77106eff",
+      "native_variable_count": 8,
+      "native_relationship_count": 6,
+      "old_g1_issue_count": 2,
+      "corrected_g1_issue_count": 3,
+      "one_point_markers_reclassified": 0,
+      "corrected_g1_codes": [
+        "GRAPHICAL_LOOKUP_NEEDS_ADAPTER",
+        "UNDECLARED_FUNCTION_CALL",
+        "UNRESOLVED_SYMBOL"
+      ],
+      "block": "UNDECLARED_ARRIVAL_INPUT_FUNCTION_NOT_SAME_AS_VARIABLE_NAME_NORMALIZATION"
+    }
+  },
+  "source_common_causal_kernel_sha256": "sha256:10170292eafd1f751247f03986ef4c0cd36fb36a9f3d1597b9bee9df7672e204",
+  "G0": "AUTHENTIC_MODELS_RETURNED_BUT_INPUT_REPRESENTATION_NOT_FIDELITY_VALIDATED",
+  "G1": "CORRECTED_UPSTREAM_DIAGNOSTIC_IDENTIFIES_CURRENT_STATIC_BLOCKERS",
+  "G2": "NOT_RUN",
+  "G3": "NOT_RUN",
+  "G4": "NOT_RUN",
+  "G5": "NOT_RUN",
+  "E05": "BLOCKED_LOCAL_ACTION_MAP_NOT_DEFENDABLE",
+  "no_native_repairs": true,
+  "no_b_second_decision_invented": true,
+  "no_provider_calls_for_adjudication": true,
+  "no_omc_runs_for_adjudication": true,
+  "temporal_ledger_status": "APPEND_ONLY_REPLAY_GENERATED_SEPARATELY_PRESERVES_PREVIOUS_CASE_HISTORY",
+  "interpretation": "THESE_TWO_GENERATIONS_NOT_ADMISSIBLE_UNDER_PINNED_UPSTREAM;NOT_GENERAL_BUFFALO_INABILITY",
+  "process_mining_independent_question": "MAY_CONTINUE_WITH_OWN_EVIDENCE_NOT_CONTINGENT_ON_E04_INTERVENTION_ADMISSIBILITY",
+  "hypothetical_area_illustration_not_used": true
+}

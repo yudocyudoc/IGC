@@ -1,0 +1,82 @@
+{
+  "schema": "igc-caf-l001-direct-hit-lineage/0.1",
+  "extraction_status": "TRANSCRIBED_FROM_2026_11_05_PLAN_AND_ROADMAP_PRIMARY_EVENT_FILES_NOT_MOUNTED",
+  "primary_locations": [
+    "video2/lote_L001_v2/eventos_detallados.csv",
+    "video2/lote_L001_v2/metricas.csv",
+    "video2/maestro_15m_v2/eventos_maestro.csv"
+  ],
+  "provenance_notices": [
+    "MASTER_V2_HASH_KNOWN_CONTENT_NOT_AVAILABLE_FOR_INDEPENDENT_CHECK",
+    "ORIGINAL_VIDEO_NOT_REANNOTATED",
+    "H01_H07_VIDEO_TIME_NOT_CERTIFIED_PHYSICAL"
+  ],
+  "raw_metrics_sha256": "f45e12578813f75ae6f201e5390f93e39bf115aed2849edd704072f09544fc28",
+  "master_v1_sha256": "2ab597aea3b381cccdd8b7bc06bb696c518977847130daf444b8aedb4866f958",
+  "master_v2_sha256": "1e81b5464d871cb621e18dd8880a99ccb33be714e458785e25cb345099336d72",
+  "h01_anchor_video_s": 178.414,
+  "hit_intervals_video_s": {
+    "H01": [
+      178.414,
+      178.414
+    ],
+    "H04": [
+      220.012,
+      221.4
+    ],
+    "H05": [
+      223.806,
+      224.408
+    ],
+    "H06": [
+      225.611,
+      226.012
+    ],
+    "H07": [
+      227.4,
+      228.402
+    ]
+  },
+  "master_revisions": [
+    {
+      "id": "MD-M001",
+      "old_bounds_s_video": [
+        31.003,
+        38.006
+      ],
+      "new_metric": "F01",
+      "new_bounds_s_video": [
+        41.598,
+        42.986
+      ],
+      "v1_source": "E132→E134",
+      "revision_kind": "REVISED_ANCHOR_NOT_INDEPENDENT_CONFLICT"
+    },
+    {
+      "id": "MD-M002",
+      "old_bounds_s_video": [
+        33.995,
+        40.011
+      ],
+      "new_metric": "F08",
+      "new_bounds_s_video": [
+        47.197,
+        47.598
+      ],
+      "v1_source": "E132→E136",
+      "revision_kind": "REVISED_ANCHOR_NOT_INDEPENDENT_CONFLICT"
+    }
+  ],
+  "external_review_attestation": {
+    "review_name": "REVISION_PR171_IMPLEMENTACION_Y_CONCLUSION_2026-11-06.md",
+    "review_scope": "REPORTED_LOCAL_COMPARISON_WITH_EVENTOS_DETALLADOS_AND_BOTH_MASTERS",
+    "direct_bounds_and_master_hashes_reported_matching": true,
+    "verified_by_this_repository_from_raw_csv": false,
+    "verdict": "SECONDARY_REVIEW_REPORT_NOT_RAW_CSV_REPRODUCTION",
+    "not_certified": [
+      "PHYSICAL_TIMEBASE",
+      "VIDEO_FRAME_IDENTITY",
+      "SERVICE_CAPACITY"
+    ]
+  }
+}

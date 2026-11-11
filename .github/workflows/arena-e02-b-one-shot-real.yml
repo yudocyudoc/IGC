@@ -1,0 +1,210 @@
+name: Arena E02 B two original native rounds per condition - ONE REAL AUTHORIZED RUN
+on:
+  push:
+    branches: [experiment/arena-continuity-e00-e01-20261106]
+    paths:
+      - 'data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: arena-e02-b-one-shot-20261106
+  cancel-in-progress: false
+jobs:
+  authorization:
+    runs-on: ubuntu-24.04
+    outputs:
+      permit: ${{ steps.gate.outputs.permit }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 2, persist-credentials: false}
+      - name: One-shot strict marker and no retry
+        id: gate
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = "refs/heads/experiment/arena-continuity-e00-e01-20261106"
+          git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD |
+            grep -Fxq 'data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json'
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('data/diagnostics/ARENA_E02_B_ONE_SHOT_RECOVERY_20261106.json').read_text())
+          assert x=={
+            'schema':'igc-arena-e02-b-one-shot-real/0.1',
+            'researcher_intent':'EXECUTE_ROADMAP_V3_CONTINUITY_V4',
+            'source_A1_public_artifact_run_id':41575917332,
+            'conditions':['O0','O1'],
+            'provider_model':'@cf/zai-org/glm-5.3-flash',
+            'native_upstream_sha':'5199f7b45f3a7ae4a773cb0dd8542940aabe9edc',
+            'output_tokens_cap_per_call':16000,
+            'max_provider_calls_total':4,
+            'max_provider_calls_per_condition':2,
+            'max_revision_per_condition':1,
+            'automatic_retries':0,
+            'no_cross_condition_or_arm_feedback':True,
+            'preserve_raw_provider_receipts':True,
+            'accept_negative_outcome':True,
+            'no_solver_or_modelicafication_by_control':True,
+            'scientific_status':'CONSTRUCTION_ATTEMPT_ONLY',
+            'preflight_recovery_run_id':42319641383,
+            'previous_provider_calls':0,
+          },'B_AUTHORIZATION_MARKER_NOT_EXACT'
+          PY
+          echo 'permit=true' >> "$GITHUB_OUTPUT"
+  real-native:
+    needs: authorization
+    if: ${{ needs.authorization.outputs.permit == 'true' && github.run_attempt == 1 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        condition: [O0, O1]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Download known public A1, WITHOUT evaluator or competitor artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e02/public
+      - name: Prepare original upstream bytes and exact per-condition B visible source
+        env:
+          COND: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          mkdir -p "artifacts/e02/$COND" upstream/sd-ai
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/e02/public/$COND"_VISIBLE.json \
+            --condition "$COND" \
+            --out "artifacts/e02/$COND/stage-initial"
+          git -C upstream/sd-ai init -q
+          git -C upstream/sd-ai remote add origin https://github.com/UB-IAD/sd-ai.git
+          git -C upstream/sd-ai fetch --depth 1 origin 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          git -C upstream/sd-ai checkout -q --detach FETCH_HEAD
+          test "$(git -C upstream/sd-ai rev-parse HEAD)" = 5199f7b45f3a7ae4a773cb0dd8542940aabe9edc
+          npm ci --prefix upstream/sd-ai --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Make exactly one REAL Cloudflare initial call - no retry
+        env:
+          COND: ${{ matrix.condition }}
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: live
+          BUFFALO_LIVE_AUTH: ONE_UPSTREAM_CALL
+          BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
+          BUFFALO_ROUND_KIND: initial
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          export BUFFALO_VISIBLE_INPUT="$PWD/artifacts/e02/$COND/stage-initial/b-visible.json"
+          export BUFFALO_OUTPUT="$PWD/artifacts/e02/$COND/initial"
+          if node scripts/arena_b_ev01_native_runner.mjs \
+            >"artifacts/e02/$COND/initial-stdout.log" 2>&1; then
+            echo "INITIAL_EXIT=0" >"artifacts/e02/$COND/initial-exit.txt"
+          else
+            echo "INITIAL_EXIT=NONZERO" >"artifacts/e02/$COND/initial-exit.txt"
+          fi
+          cat "artifacts/e02/$COND/initial-stdout.log"
+          test -s "artifacts/e02/$COND/initial/receipt.json"
+      - name: If and only if REAL native parent exists, send ONE own-G0 feedback review
+        env:
+          COND: ${{ matrix.condition }}
+          SDAI_ROOT: ${{ github.workspace }}/upstream/sd-ai
+          BUFFALO_MODE: live
+          BUFFALO_LIVE_AUTH: ONE_UPSTREAM_CALL
+          BUFFALO_EV01_LIVE_AUTH: EV01_ONE_ROUND_EXPRESS_AUTH
+          BUFFALO_ROUND_KIND: revision
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          ROOT="$PWD/artifacts/e02/$COND"
+          if [ ! -s "$ROOT/initial/native-engine-result.json" ]; then
+            echo 'NO_NATIVE_PARENT_NO_REVIEW' >"$ROOT/revision-status.txt"
+            exit 0
+          fi
+          if ! python -m scripts.arena_cafe.e02_b_feedback \
+            --native "$ROOT/initial/native-engine-result.json" \
+            --receipt "$ROOT/initial/receipt.json" \
+            --out "$ROOT/own-feedback.json" \
+            >"$ROOT/feedback-stdout.log" 2>&1; then
+            echo 'G0_PARENT_INVALID_NO_REVIEW' >"$ROOT/revision-status.txt"
+            cat "$ROOT/feedback-stdout.log"
+            exit 0
+          fi
+          python -m scripts.arena_cafe.buffalo_ev01_visible \
+            --input "artifacts/e02/public/$COND"_VISIBLE.json \
+            --condition "$COND" --kind revision \
+            --out "$ROOT/stage-revision"
+          export BUFFALO_VISIBLE_INPUT="$ROOT/stage-revision/b-visible.json"
+          export BUFFALO_PARENT_NATIVE="$ROOT/initial/native-engine-result.json"
+          export BUFFALO_PARENT_RECEIPT="$ROOT/initial/receipt.json"
+          export BUFFALO_OWN_FEEDBACK="$ROOT/own-feedback.json"
+          export BUFFALO_OUTPUT="$ROOT/revision"
+          if node scripts/arena_b_ev01_native_runner.mjs \
+            >"$ROOT/revision-stdout.log" 2>&1; then
+            echo 'REVISION_RETURNED_REAL_NATIVE' >"$ROOT/revision-status.txt"
+          else
+            echo 'REVISION_ATTEMPT_FAILED' >"$ROOT/revision-status.txt"
+          fi
+          cat "$ROOT/revision-stdout.log"
+          test -s "$ROOT/revision/receipt.json"
+      - name: Final scientific/non-scientific outcome and budget reconciliation
+        if: always()
+        env:
+          COND: ${{ matrix.condition }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('artifacts/e02')/os.environ['COND']
+          runs={}
+          for name in ('initial','revision'):
+            p=root/name/'receipt.json'
+            if p.is_file():
+              r=json.loads(p.read_text())
+              runs[name]={k:r.get(k) for k in (
+                'mode','status','provider_calls','http_status','native_error',
+                'runner_error','bridge_error','provider_finish_reason',
+                'provider_usage','result_sha256','model_returned',
+                'original_engine_max_tokens','horizon_matches_case',
+                'parent_native_sha256','own_feedback_sha256',
+                'source_snapshot_hash','arrival_signal_sha256')}
+          calls=sum(int(x.get('provider_calls') or 0) for x in runs.values())
+          assert calls<=2,'B_PAID_CALL_BUDGET_BROKEN'
+          assert all(x['mode']=='live' for x in runs.values())
+          assert all(x['original_engine_max_tokens']==16000 for x in runs.values())
+          outcome={
+            'schema':'igc-arena-e02-b-live-observed-attempts/0.1',
+            'condition':os.environ['COND'],
+            'status':'NATIVE_AND_REVIEW_ATTEMPTED' if 'revision' in runs
+                else 'NO_VALID_PARENT_OR_UNAVAILABLE_NO_REVISION',
+            'provider_calls_counted':calls,
+            'revision_attempted':'revision' in runs,
+            'G0':'ATTEMPTED_NOT_TRANSLATOR_CERTIFIED',
+            'G1':'NOT_RUN','G2':'NOT_RUN','G3':'NOT_RUN',
+            'G4':'NOT_RUN','G5':'NOT_RUN',
+            'native_decision': 'NOT_VALIDATED_IN_THIS_STAGE',
+            'no_cross_arm_or_evaluator_input':True,
+            'runs':runs}
+          root.mkdir(parents=True,exist_ok=True)
+          (root/'outcome.json').write_text(json.dumps(outcome,indent=2)+'\n')
+          print(json.dumps({k:outcome[k] for k in
+                            ('condition','status','provider_calls_counted')}))
+          PY
+      - name: Archive every raw B request/response/error and original native before translator
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-e02-b-real-${{ matrix.condition }}-original-native
+          path: artifacts/e02/${{ matrix.condition }}/
+          retention-days: 60
+          if-no-files-found: error

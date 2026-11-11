@@ -65,3 +65,32 @@ test("graphical function is adapter-obligation, not ignored or auto G1-pass",()=
    graphicalFunction:{points:[{x:0,y:1},{x:0,y:0}]}});
  assert(diagnose(bad).issues.some(x=>x.code==="MALFORMED_GRAPHICAL_FUNCTION"));
 });
+
+test("pinned Buffalo one-point placeholders are not malformed curves",()=>{
+ const m=base();m.model.variables[1].graphicalFunction={points:[{x:0,y:0}]};
+ const before=JSON.stringify(m),r=diagnose(m);
+ assert.equal(r.one_point_graphical_markers.length,1);
+ assert(!r.issues.some(x=>x.code==="MALFORMED_GRAPHICAL_FUNCTION"));
+ assert(!r.issues.some(x=>x.code==="GRAPHICAL_LOOKUP_NEEDS_ADAPTER"));
+ assert.equal(JSON.stringify(m),before);
+});
+test("native upstream ignores graphical functions on flows",()=>{
+ const m=base();m.model.variables[1].graphicalFunction={points:[{x:0,y:0},{x:1,y:1}]};
+ const r=diagnose(m);
+ assert(r.issues.some(x=>x.code==="UPSTREAM_FLOW_LOOKUP_IGNORED"&&x.category==="G1"));
+});
+test("normalized upstream variable references do not become callable functions",()=>{
+ const m=base();m.model.variables.push({name:"Arrival Input by Time",type:"variable",
+   equation:"0",graphicalFunction:{points:[]}});
+ m.model.variables[1].equation="arrival_input_by_time";
+ assert(!diagnose(m).issues.some(x=>x.code==="UNRESOLVED_SYMBOL"));
+ m.model.variables[1].equation="arrival_input_by_time(TIME)";
+ assert(diagnose(m).issues.some(x=>x.code==="VARIABLE_CALLED_AS_FUNCTION"));
+ m.model.variables[1].equation="unwritten_kernel(TIME)";
+ assert(diagnose(m).issues.some(x=>x.code==="UNDECLARED_FUNCTION_CALL"));
+});
+test("colliding upstream-folded names are rejected, not arbitrarily resolved",()=>{
+ const m=base();m.model.variables.push({name:"Arrival Rate",type:"variable",equation:"0"});
+ m.model.variables.push({name:"arrival_rate",type:"variable",equation:"0"});
+ assert(diagnose(m).issues.some(x=>x.code==="AMBIGUOUS_UPSTREAM_NORMALIZED_NAME"));
+});

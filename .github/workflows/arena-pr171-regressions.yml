@@ -1,0 +1,189 @@
+name: Arena PR171 cheap regressions - evidence causal input and ATMS
+on:
+  pull_request:
+    paths:
+      - 'scripts/arena_cafe/buffalo_ev01_visible.py'
+      - 'scripts/arena_cafe/continuity_round.py'
+      - 'scripts/arena_cafe/e03_cal_grid.py'
+      - 'scripts/arena_cafe/e04_action_capability.py'
+      - 'scripts/arena_cafe/e04_evaluator.py'
+      - 'tests/test_arena_cafe_buffalo_ev01_visible.py'
+      - 'tests/test_arena_cafe_e02_memory_bound.py'
+      - 'tests/test_arena_cafe_e02_b_feedback.py'
+      - 'scripts/arena_cafe/e02_b_feedback.py'
+      - 'tests/test_arena_cafe_e03_cal_grid.py'
+      - 'tests/test_arena_cafe_e03_accounting.py'
+      - 'scripts/arena_cafe/e03_execution_reconcile.py'
+      - 'experiments/cafeteria/E03_RECONCILED_OPERATIONAL_ACCOUNTING.json'
+      - 'tests/test_arena_cafe_e04_action.py'
+      - 'scripts/arena_cafe/e06_video2_fitness.py'
+      - 'tests/test_arena_cafe_e06_video2_fitness.py'
+      - 'experiments/cafeteria/E06_VIDEO2_SOURCE_FITNESS_2026-11-06.json'
+      - '.github/workflows/arena-pr171-regressions.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  cheap-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install dependencies of native adapters
+        run: python -m pip install --disable-pip-version-check numpy scipy
+      - name: Download historical public O0/O1
+        uses: actions/download-artifact@v4
+        with:
+          name: a1-cafe-public-evidence
+          run-id: 41575917332
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/public
+      - name: Buffalo preflight on both conditions, zero provider
+        env:
+          E01_PUBLIC_DIR: artifacts/public
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_buffalo_ev01_visible.py' -v
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/public/O0_VISIBLE.json --condition O0 --out artifacts/b-stage-O0
+          python -m scripts.arena_cafe.buffalo_ev01_visible --input artifacts/public/O1_VISIBLE.json --condition O1 --out artifacts/b-stage-O1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a,b=[json.loads((Path('artifacts')/('b-stage-'+c)/'b-visible.json').read_text())
+               for c in ('O0','O1')]
+          sa=a['construction']['declared_input_reconstruction']
+          sb=b['construction']['declared_input_reconstruction']
+          assert sa==sb
+          assert sa['mass_not_moved_before_event']
+          assert sa['policy']=='CAUSAL_RIGHT_RECTANGULAR_EVENT_KERNEL/0.1'
+          assert a['round_id']!=b['round_id']
+          print('BUFFALO_TWO_CONDITIONS_SAME_CAUSAL_SOURCE_NO_PROVIDER')
+          PY
+      - name: Actual ATMS feedback dependence and rollback tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_memory_bound.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_e02_b_feedback.py' -v
+          python -m unittest discover -s tests -p 'test_arena_cafe_continuity_round.py' -v
+      - name: E06 bounded observational source-fitness rules, OFFLINE (raw private ZIP not mounted)
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_cafe_e06_video2_fitness.py' -v
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('experiments/cafeteria/E06_VIDEO2_SOURCE_FITNESS_2026-11-06.json').read_text())
+          assert x['schema']=='igc-arena-e06-video2-observational-fitness/0.1'
+          assert x['status']=='SOURCE_NOT_FIT_FOR_THIS_QUESTION'
+          assert x['E07']=='NOT_TRIGGERED_NO_NEW_OBSERVED_INCREMENTAL_PROCESS_REGULARITY'
+          assert x['source']['video_original_present_in_archive'] is False
+          assert x['models_D_B_M_not_run_on_video2']
+          assert x['no_new_pm_des_omc_provider']
+          print('E06_RULES_TESTED_REAL_SOURCE_VERIFIED_ONLY_LOCALLY_NOT_REEXECUTED_IN_CI')
+          PY
+      - name: Cheap E03 native source and fixed grid guards
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_arena_native_provenance.py' -v
+          python - <<'PY'
+          from scripts.arena_cafe import e03_cal_grid as e
+          assert len(e.D_GRID['capacity_orders_min'])*len(e.D_GRID['response_minutes'])==9
+          assert len(e.M_GRID['maxThroughput_orders_hour'])*len(e.M_GRID['responseTime_hours'])==9
+          print('E03_STATIC_PARAMETER_BUDGET_CHECK_NO_OMC')
+          PY
+          python -m unittest discover -s tests -p 'test_arena_cafe_e03_accounting.py' -v
+
+  e04-producer-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Reuse frozen D81 original outputs, no solver
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-D
+          run-id: 42314519861
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/D
+      - name: Reuse frozen M54 original outputs, no solver
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-e03-external-grid-M
+          run-id: 42314268694
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/M
+      - name: Re-execute E04 source/action tests on CURRENT HEAD
+        env:
+          E04_D_DIR: artifacts/e04/D
+          E04_M_DIR: artifacts/e04/M
+          E04_F4_MOUNT: artifacts/e04/F4
+        run: |
+          set -euo pipefail
+          test ! -e artifacts/e04/F4
+          python -m unittest discover -s tests -p 'test_arena_cafe_e04_action.py' -v
+          python -m scripts.arena_cafe.e04_action_capability \
+            --d-manifest artifacts/e04/D/manifest.json \
+            --m-manifest artifacts/e04/M/manifest.json \
+            --d-score artifacts/e04/D/scores.json \
+            --m-score artifacts/e04/M/scores.json \
+            --out artifacts/e04/producer.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path('artifacts/e04/producer.json').read_text())
+          assert doc['arms']['D']['not_representable']==81
+          assert doc['arms']['M']['not_representable']==54
+          assert doc['B']['status']=='NATIVE_NOT_EXECUTED'
+          assert doc['E05_gate']=='BLOCKED_NO_ADMISSIBLE_LOCAL_ACTION_PREDICTION'
+          assert doc['new_OMC_runs']==doc['new_provider_calls']==0
+          print('E04_CHEAP_HEAD_REGRESSION_NO_NEW_OMC')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arena-pr171-e04-cheap-producer
+          path: artifacts/e04/producer.json
+          if-no-files-found: error
+
+  e04-evaluator-regression:
+    needs: e04-producer-regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: arena-pr171-e04-cheap-producer
+          path: artifacts/e04/producer
+      - name: F4 known truth mounted ONLY in evaluator regression job
+        uses: actions/download-artifact@v4
+        with:
+          name: f4-latent-downstream-symmetry-known-development
+          run-id: 41745340151
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/e04/F4
+      - name: Test evaluator identity and honest E05 block on CURRENT HEAD
+        run: |
+          set -euo pipefail
+          python -m scripts.arena_cafe.e04_evaluator \
+            --producer artifacts/e04/producer/producer.json \
+            --f4 artifacts/e04/F4/F4_LATENT_SYMMETRY_DEVELOPMENT.json \
+            --out artifacts/e04/evaluator.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/e04/evaluator.json').read_text())
+          assert r['status']=='KNOWN_F4_PAIR_VERIFIED_E04_REPRESENTATION_GAP_PARTIAL'
+          assert r['G4']==r['G5']=='NOT_RUN'
+          assert r['E05_gate']=='BLOCKED_NO_ADMISSIBLE_LOCAL_ACTION_PREDICTION'
+          assert r['known_difference_t10_orders']==2
+          print('E04_CHEAP_EVALUATOR_REGRESSION_NO_NEW_DES')
+          PY

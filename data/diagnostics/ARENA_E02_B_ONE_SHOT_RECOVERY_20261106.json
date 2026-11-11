@@ -1,0 +1,23 @@
+{
+  "schema": "igc-arena-e02-b-one-shot-real/0.1",
+  "researcher_intent": "EXECUTE_ROADMAP_V3_CONTINUITY_V4",
+  "source_A1_public_artifact_run_id": 41575917332,
+  "conditions": [
+    "O0",
+    "O1"
+  ],
+  "provider_model": "@cf/zai-org/glm-5.3-flash",
+  "native_upstream_sha": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "output_tokens_cap_per_call": 16000,
+  "max_provider_calls_total": 4,
+  "max_provider_calls_per_condition": 2,
+  "max_revision_per_condition": 1,
+  "automatic_retries": 0,
+  "no_cross_condition_or_arm_feedback": true,
+  "preserve_raw_provider_receipts": true,
+  "accept_negative_outcome": true,
+  "no_solver_or_modelicafication_by_control": true,
+  "scientific_status": "CONSTRUCTION_ATTEMPT_ONLY",
+  "preflight_recovery_run_id": 42319641383,
+  "previous_provider_calls": 0
+}

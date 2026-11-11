@@ -1,0 +1,99 @@
+{
+  "schema": "igc-arena-e02-b-corrected-live-verified/0.1",
+  "date_local": "2026-11-06",
+  "transport": "CLOUDFLARE_WORKERS_AI_DIRECT_REST_JSON_SCHEMA",
+  "upstream": "UB-IAD/sd-ai@5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "source_branch": "experiment/arena-continuity-e00-e01-20261106",
+  "live_run": {
+    "id": 42331388032,
+    "url": "https://github.com/yudocyudoc/IGC/actions/runs/42331388032"
+  },
+  "g1_audit_run": {
+    "id": 42331727460,
+    "url": "https://github.com/yudocyudoc/IGC/actions/runs/42331727460"
+  },
+  "prior_failed_transport_run_id": 42319874751,
+  "calls": {
+    "previous_attempted": 2,
+    "new_attempted": 2,
+    "all_attempted": 4,
+    "automatic_retries": 0,
+    "revisions": 0
+  },
+  "expected_provider_model": "@cf/zai-org/glm-5.3-flash",
+  "backend": "OPEN_ROUTER",
+  "backend_alias": "cloudflare/glm-5.3-flash",
+  "http_timeout_ms": 360000,
+  "max_completion_tokens_requested": 16000,
+  "source_kernel_sha256": "sha256:10170292eafd1f751247f03986ef4c0cd36fb36a9f3d1597b9bee9df7672e204",
+  "cases": {
+    "O0": {
+      "artifact_id": 13557641048,
+      "artifact_name": "arena-e02-b-corrected-live-O0",
+      "zip_sha256": "sha256:ee8ff514f1931ec8fe2d80e86193414f6f2c8f223d39bb9b06b58f2db6501da9",
+      "source_snapshot_hash": "sha256:a5e59ea478b59eb27d777eddd468d092f7affcdb73c394061d134193dc69f31c",
+      "native_sha256": "sha256:f090f082095bb21348c8d1313baf45beefab7422199cc9f62a34073973bd0c28",
+      "http_status": 200,
+      "provider_calls": 1,
+      "native_generated": true,
+      "variable_count": 6,
+      "relationship_count": 5,
+      "stop_time_hours": 0.16666666666666666,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3348,
+        "completion_tokens": 3874,
+        "total_tokens": 7222,
+        "neurons": 221.74546813964844
+      },
+      "g1_status": "G1_ISSUES_FOUND",
+      "g1_issue_count": 11,
+      "g1_note": "Six GRAPHICAL_LOOKUP_NEEDS_ADAPTER advisory flags and five MALFORMED_GRAPHICAL_FUNCTION single-point issues. Not certified.",
+      "g2": "NOT_RUN"
+    },
+    "O1": {
+      "artifact_id": 13557710707,
+      "artifact_name": "arena-e02-b-corrected-live-O1",
+      "zip_sha256": "sha256:481640697422ef25ca25f122308e1d853426298a30a3e9cac450b172c214d458",
+      "source_snapshot_hash": "sha256:28c5c9399f9e9cdbec041d07a4ca040d1391eb6439a324dc32c558eae99b9fb1",
+      "native_sha256": "sha256:1c74cc6ea8476ec543d47e74e68ea60e61eec3e56d537b3c4976d20c77106eff",
+      "http_status": 200,
+      "provider_calls": 1,
+      "native_generated": true,
+      "variable_count": 8,
+      "relationship_count": 6,
+      "stop_time_hours": 0.16666666666666666,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3478,
+        "completion_tokens": 3000,
+        "total_tokens": 6478,
+        "neurons": 183.79092407226562
+      },
+      "g1_status": "G1_ISSUES_FOUND",
+      "g1_issue_count": 2,
+      "g1_note": "GRAPHICAL_LOOKUP_NEEDS_ADAPTER (24 points), UNRESOLVED_SYMBOL arrival_input_by_time in flow input expression. Not certified.",
+      "g2": "NOT_RUN"
+    }
+  },
+  "audited": {
+    "provider_raw_preserved": true,
+    "effective_request_preserved": true,
+    "historical_source_blob_unchanged": true,
+    "adapter_translation": "REJECTED_BY_HISTORICAL_8_HOUR_G2_SCOPE",
+    "translator_error": "NATIVE_SPECS_OUTSIDE_PINNED_G2_SCOPE",
+    "new_omc_runs": 0,
+    "new_des_runs": 0,
+    "new_provider_calls_during_audit": 0
+  },
+  "epistemic": {
+    "G0": "GENUINE_LIVE_NATIVE_RETURNED_BOTH_CONDITIONS",
+    "G1": "ISSUES_FOUND_NOT_CERTIFIED",
+    "G2": "NOT_RUN",
+    "G3": "NOT_RUN",
+    "G4": "NOT_RUN",
+    "G5": "NOT_RUN",
+    "E05": "BLOCKED",
+    "interpretation": "Successful corrected transport and model generation, NOT validated mechanistic equivalence or physical prediction; two earlier timeouts preserved"
+  }
+}
