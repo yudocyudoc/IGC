@@ -27,6 +27,7 @@ const PHYSICAL=process.env.BUFFALO_PHYSICAL_FEEDBACK??null;
 const BLIND=process.env.BUFFALO_BLIND_FEEDBACK??null;
 const SELF=process.env.BUFFALO_SELF_DISCREPANCY??null;
 const R2=process.env.BUFFALO_R2_FEEDBACK??null;
+const R2_EXTENDED=process.env.BUFFALO_R2_EXTENDED==="AUTHORIZED_16000_20261027";
 const R1=process.env.BUFFALO_R1_COMMON==="AUTHORIZED_ONE_SHOT";
 const OWN_FEEDBACK=PHYSICAL||BLIND||SELF||R2;
 const PRIOR_SHA256=R2?"8097496d8033bfe8b5a93eeb7d391f7c98f6bb315bdfb9e63f62b6910b437eac":SELF?"c3662f90d7fb7a6211b62f35e13739000d2f6b90bcbb6d44cabc131dd45e7bbb":OWN_FEEDBACK?
@@ -44,6 +45,7 @@ const receipt={schema:"igc-b-openrouter-cloudflare/0.1",model:MODEL,
   intercepted_http_calls:0,original_upstream_modified:false,model_returned:false,
   structured_request_seen:false,status:"INITIALIZED",iteration:SELF?3:R2?1:OWN_FEEDBACK?2:PRIOR?1:0,
   r1_common_initial:R1,
+  r2_extended_budget:R2_EXTENDED,
   feedback_type:R2?"R2_OWN_R1_FAILED_MODEL":SELF?"B5_OWN_B4_EXPLANATION_VS_G2":BLIND?"BLIND_B2_CONSTRUCTION_ONLY":PHYSICAL?"OWN_B2_PHYSICAL_CONSTRUCTION":"G1_OR_INITIAL"};
 
 const syntheticModel={
@@ -74,16 +76,20 @@ try {
   if(R1&&(PRIOR||OWN_FEEDBACK))throw Error("R1_INITIAL_MUST_NOT_HAVE_PRIOR_OR_FEEDBACK");
   if(R2&&(PHYSICAL||BLIND||SELF))throw Error("R2_AND_HISTORICAL_FEEDBACK_MUTUALLY_EXCLUSIVE");
   if(R2&&!PRIOR)throw Error("R2_MISSING_R1_PARENT");
+  if(R2_EXTENDED&&!R2)throw Error("R2_16K_REQUIRES_R2_FEEDBACK");
   // Separately approved R2 one-shot: exact branch, first workflow attempt only.
-  if(R2&&SCENARIO==="live" && (
-     process.env.BUFFALO_R2_AUTH!=="RUN_SINGLE_CF_AI_R2_REVIEW_20261027" ||
-     process.env.GITHUB_REF!=="refs/heads/integration/arena-r2-b-one-authorized-20261027" ||
-     process.env.GITHUB_RUN_ATTEMPT!=="1"))
+  if(R2&&SCENARIO==="live" && (R2_EXTENDED ?
+     (process.env.BUFFALO_R2_AUTH!=="RUN_SINGLE_CF_AI_R2_16000_20261027" ||
+      process.env.GITHUB_REF!=="refs/heads/experiment/arena-b-16000-20261027" ||
+      process.env.GITHUB_RUN_ATTEMPT!=="1") :
+     (process.env.BUFFALO_R2_AUTH!=="RUN_SINGLE_CF_AI_R2_REVIEW_20261027" ||
+      process.env.GITHUB_REF!=="refs/heads/integration/arena-r2-b-one-authorized-20261027" ||
+      process.env.GITHUB_RUN_ATTEMPT!=="1")))
      throw Error("R2_LIVE_NEW_AUTHORIZATION_REQUIRED");
   if([PHYSICAL,BLIND,SELF].filter(Boolean).length>1)throw Error("MUTUALLY_EXCLUSIVE_PHYSICAL_FEEDBACK_VARIANTS");
   if(OWN_FEEDBACK && !PRIOR)throw Error("PHYSICAL_REQUIRES_PRIOR_NATIVE_MODEL");
   if(SCENARIO==="live" && (
-     process.env.BUFFALO_CF_AUTH!==(R2?"RUN_SINGLE_CF_AI_R2_REVIEW_20261027":R1?"RUN_SINGLE_CF_AI_R1_COMMON":SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
+     process.env.BUFFALO_CF_AUTH!==(R2_EXTENDED?"RUN_SINGLE_CF_AI_R2_16000_20261027":R2?"RUN_SINGLE_CF_AI_R2_REVIEW_20261027":R1?"RUN_SINGLE_CF_AI_R1_COMMON":SELF?CF_REAL_SELF_AUTH:BLIND?CF_REAL_BLIND_AUTH:PHYSICAL?CF_REAL_FEEDBACK_AUTH:"RUN_SINGLE_CF_AI_MODEL") ||
      process.env.GITHUB_RUN_ATTEMPT!=="1"))throw Error("CLOUDFLARE_LIVE_NOT_AUTHORIZED");
   const visible=JSON.parse(await readFile(INPUT,"utf8"));
   if(R2){
@@ -381,7 +387,7 @@ try {
       prompt_hashes:body.messages.map(m=>({role:m.role,sha256:hash(m.content)})),
       upstream_source_modified:false
     });
-    const cfBody=requestToCloudflare(body,{physicalRevision:Boolean(PHYSICAL||BLIND||SELF),r1Initial:R1,r2Revision:Boolean(R2)});
+    const cfBody=requestToCloudflare(body,{physicalRevision:Boolean(PHYSICAL||BLIND||SELF),r1Initial:R1,r2Revision:Boolean(R2&&!R2_EXTENDED),r2Extended:R2_EXTENDED});
     receipt.cloudflare_schema_sha256=hash(cfBody.response_format.json_schema);
     receipt.translated_body_sha256=hash(cfBody);
     await save("cf-request-metadata.json",{
@@ -410,7 +416,7 @@ try {
         date:new Date().toISOString()});
       const response=await originals.fetch(endpoint,{
         method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-        body:JSON.stringify(cfBody),signal:AbortSignal.timeout(OWN_FEEDBACK?240000:160000)
+        body:JSON.stringify(cfBody),signal:AbortSignal.timeout(R2_EXTENDED?360000:(OWN_FEEDBACK?240000:160000))
       });
       receipt.cf_http_status=response.status;
       const raw=await response.text();
@@ -439,7 +445,7 @@ try {
     problemStatement:visible.question,
     backgroundKnowledge:JSON.stringify({construction:visible.construction,
       observability:visible.observability}),
-    maxTokens:8000,timeoutMinutes:2
+    maxTokens:R2_EXTENDED?16000:8000,timeoutMinutes:2
   };
   const result=await engine.generate(userPrompt,parentModel,params);
   await save("native-output.json",result);
