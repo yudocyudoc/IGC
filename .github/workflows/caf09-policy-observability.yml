@@ -1,0 +1,65 @@
+name: CAF-09 policy vs observation ablation (exploratory)
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc02/caf07b_umbral_secuencial.py'
+      - 'experiments/cafeteria/pc02/caf09_policy_observability.py'
+      - 'experiments/cafeteria/pc02/test_caf09_policy_observability.py'
+      - 'experiments/cafeteria/pc02/CAF09_PROTOCOLO_Y_CRITERIOS.md'
+      - '.github/workflows/caf09-policy-observability.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare-policy-without-migrating-des:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate baseline CAF-07B equivalence and new rules
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 \
+            -p 'test_caf09_policy_observability.py' -v
+      - name: Run three policies on eleven known DES worlds
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python experiments/cafeteria/pc02/caf09_policy_observability.py \
+            --out artifacts/caf09_policy_comparison \
+            --checkout-sha "$GITHUB_SHA" \
+            --head-sha "$HEAD_SHA" | tee /tmp/caf09-output.json
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path('artifacts/caf09_policy_comparison')
+          r=json.loads((p/'02_RESULTADOS.json').read_text())
+          assert r['checkout_sha']==os.environ['GITHUB_SHA']
+          assert r['pr_head_sha']==os.environ['HEAD_SHA']
+          assert (r['n_worlds'],r['n_policy_evaluations'],
+                  r['n_paired_differences'])==(11,66,44)
+          assert r['promotion_gate']=='BLOCKED_RETROSPECTIVE_KNOWN_WORLDS'
+          assert not r['deployment_validated']
+          assert not r['causal_mechanism_identified']
+          assert len(list(p.glob('01_CHOICE_*.json')))==66
+          m=json.loads((p/'04_MANIFIESTO.json').read_text())
+          for filename,digest in m['files_sha256'].items():
+              assert digest=='sha256:'+hashlib.sha256((p/filename).read_bytes()).hexdigest()
+          print('CAF09_ENGINEERING_PASS_NO_CAUSAL_OR_DEPLOYMENT_PROMOTION')
+          print((p/'03_INFORME.md').read_text())
+          PY
+      - name: Publish all pre-second choices, observability scores and outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf09-policy-observability-full-audit
+          path: artifacts/caf09_policy_comparison/
+          if-no-files-found: warn
+          retention-days: 90
