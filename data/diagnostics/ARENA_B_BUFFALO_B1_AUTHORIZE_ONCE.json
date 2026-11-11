@@ -1,0 +1,10 @@
+{
+  "schema": "igc-buffalo-b1-authorization/0.1",
+  "authorization": "RUN_BUFFALO_B1_SINGLE_PROVIDER_CALL",
+  "upstream_commit": "5199f7b45f3a7ae4a773cb0dd8542940aabe9edc",
+  "model": "@cf/zai-org/glm-5.3-flash",
+  "max_provider_calls": 1,
+  "retries": 0,
+  "holdout_access": false,
+  "no_d_or_m_candidates": true
+}

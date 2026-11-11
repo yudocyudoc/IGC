@@ -1,0 +1,105 @@
+{
+  "origin": "HANDWRITTEN_SYNTHETIC_FIXTURE",
+  "source": "Synthetic adapter acceptance test authored inside IGC; NOT a Buffalo generation result",
+  "model": {
+    "variables": [
+      {
+        "name": "Pending Work",
+        "type": "stock",
+        "equation": "0",
+        "inflows": [
+          "Arrival Flow"
+        ],
+        "outflows": [
+          "Completion Flow"
+        ],
+        "units": "items"
+      },
+      {
+        "name": "Completed Work",
+        "type": "stock",
+        "equation": "0",
+        "inflows": [
+          "Completion Flow"
+        ],
+        "outflows": [],
+        "units": "items"
+      },
+      {
+        "name": "Arrival Flow",
+        "type": "flow",
+        "equation": "Arrivals_Per_Hour",
+        "uniflow": true,
+        "units": "items/hour"
+      },
+      {
+        "name": "Completion Flow",
+        "type": "flow",
+        "equation": "MIN(Service_Capacity, Pending_Work / Service_Time)",
+        "uniflow": true,
+        "units": "items/hour"
+      },
+      {
+        "name": "Arrivals Per Hour",
+        "type": "variable",
+        "equation": "1.7",
+        "units": "items/hour"
+      },
+      {
+        "name": "Service Capacity",
+        "type": "variable",
+        "equation": "2",
+        "units": "items/hour"
+      },
+      {
+        "name": "Service Time",
+        "type": "variable",
+        "equation": "1",
+        "units": "hour"
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Arrivals Per Hour",
+        "to": "Arrival Flow",
+        "polarity": "+"
+      },
+      {
+        "from": "Arrival Flow",
+        "to": "Pending Work",
+        "polarity": "+"
+      },
+      {
+        "from": "Pending Work",
+        "to": "Completion Flow",
+        "polarity": "+"
+      },
+      {
+        "from": "Service Capacity",
+        "to": "Completion Flow",
+        "polarity": "+"
+      },
+      {
+        "from": "Service Time",
+        "to": "Completion Flow",
+        "polarity": "-"
+      },
+      {
+        "from": "Completion Flow",
+        "to": "Pending Work",
+        "polarity": "-"
+      },
+      {
+        "from": "Completion Flow",
+        "to": "Completed Work",
+        "polarity": "+"
+      }
+    ],
+    "specs": {
+      "startTime": 0,
+      "stopTime": 2,
+      "dt": 0.05,
+      "timeUnits": "Hour"
+    }
+  }
+}

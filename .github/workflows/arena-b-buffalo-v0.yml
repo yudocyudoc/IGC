@@ -1,0 +1,132 @@
+name: Arena B0 Buffalo sd-json adapter independent smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/arena-b-buffalo-v0.yml'
+      - 'scripts/arena_b_sdai_v0.py'
+      - 'tests/test_arena_b_sdai_v0.py'
+      - 'data/buffalo-sdai/**'
+      - 'data/synthetic/arena_b_v0_*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  buffalo-contract-omc:
+    name: B0 original quantitative process contract and genuine OpenModelica translation smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    env:
+      OMC_IMAGE: openmodelica/openmodelica:v1.27.1-minimal@sha256:ac9a0223e69b8055d444b42f58ccb9680342b56848c68b81385bf83d7c0ba824
+    steps:
+      - name: Checkout immutable code without write credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Python pinned
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.16'
+      - name: Run negative and positive independent B tests
+        run: |
+          python -m py_compile scripts/arena_b_sdai_v0.py tests/test_arena_b_sdai_v0.py
+          python -m unittest discover -s tests -p 'test_arena_b_sdai_v0.py' -v
+      - name: Build original Buffalo methodology request (NO provider call)
+        run: |
+          mkdir -p artifacts/arena-b-v0
+          python -m scripts.arena_b_sdai_v0 prepare \
+            --input data/synthetic/arena_b_v0_visible.json \
+            --out artifacts/arena-b-v0/llm-request.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('artifacts/arena-b-v0/llm-request.json').read_text())
+          assert r['provider_status']=='NOT_CALLED_PREPARATION_ONLY'
+          assert r['arm_id']=='B'
+          assert r['currentModel']=={'variables':[],'relationships':[]}
+          assert 'Buffalo' not in str(r['input_hash'])
+          print('BUFFALO_REQUEST_PINNED_AND_PROVIDER_NOT_CALLED')
+          PY
+      - name: Translate HANDWRITTEN sd-json fixture; not a generated B model
+        run: |
+          python -m scripts.arena_b_sdai_v0 accept \
+            --input data/synthetic/arena_b_v0_visible.json \
+            --response data/synthetic/arena_b_v0_handwritten_sdjson.json \
+            --out artifacts/arena-b-v0/model
+          python - <<'PY'
+          from pathlib import Path
+          files=list(Path('artifacts/arena-b-v0/model').glob('BuffaloSFD_*.mo'))
+          assert len(files)==1
+          name=files[0].stem
+          commands=[
+            f'loadFile("/work/artifacts/arena-b-v0/model/{name}.mo");',
+            'print(getErrorString());',
+            f'checkModel({name});',
+            'print(getErrorString());',
+            f'simulate({name},stopTime=2,numberOfIntervals=80,outputFormat="csv");',
+            'print(getErrorString());']
+          Path('artifacts/arena-b-v0/model/test.mos').write_text('\n'.join(commands)+'\n')
+          PY
+      - name: Compile and simulate fixture in the SAME pinned OpenModelica as D
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work/artifacts/arena-b-v0/model \
+            "$OMC_IMAGE" omc test.mos 2>&1 | tee artifacts/arena-b-v0/omc.log
+          if grep -Eq 'Error:|Failed to load|Class .* not found|Simulation execution failed|Error occurred' artifacts/arena-b-v0/omc.log; then
+            echo 'OpenModelica compilation/simulation FAILED' >&2
+            exit 1
+          fi
+      - name: Check material conservation and output on genuine OpenModelica CSV
+        run: |
+          python - <<'PY'
+          import csv,json,math
+          from pathlib import Path
+          root=Path('artifacts/arena-b-v0/model')
+          files=list(root.glob('BuffaloSFD_*_res.csv'))
+          assert len(files)==1,'MODEL_NOT_SIMULATED'
+          rows=list(csv.DictReader(files[0].open()))
+          assert len(rows)>=20
+          before=-1.
+          out=[]
+          for r in rows:
+            t=float(r['time'])
+            pending=float(r['Pending_Work'])
+            done=float(r['Completed_Work'])
+            assert all(math.isfinite(x) for x in (t,pending,done))
+            assert pending >= -.001 and done>=-.001
+            assert done>=before-.001
+            assert abs(pending+done-1.7*t)<=.015,'GLOBAL_MASS_BALANCE_FAILURE'
+            before=done
+            out.append({'time':t,'pending':pending,'completed':done})
+          assert abs(out[-1]['time']-2.)<=1e-7
+          (root/'g2-buffalo-adapter-smoke.json').write_text(
+            json.dumps({'status':'G2_HANDWRITTEN_B_SD_JSON_TRANSLATION_PASS',
+                        'not_provider_generated':True,
+                        'rows':len(out),'last':out[-1]},indent=2)+'\n')
+          print('BUFFALO_B0_NATIVE_SD_JSON_TO_MODELICA_G2_SMOKE_PASS',
+                len(out))
+          PY
+      - name: Normalize permissions and curate only public artifacts
+        if: always()
+        run: |
+          if [ -d artifacts/arena-b-v0 ]; then
+            sudo chown -R "$(id -u):$(id -g)" artifacts/arena-b-v0
+            mkdir -p artifacts/arena-b-v0/evidence
+            shopt -s nullglob
+            for file in artifacts/arena-b-v0/llm-request.json artifacts/arena-b-v0/omc.log \
+              artifacts/arena-b-v0/model/*.json artifacts/arena-b-v0/model/*.mo \
+              artifacts/arena-b-v0/model/*_res.csv artifacts/arena-b-v0/model/*.mos; do
+              cp "$file" artifacts/arena-b-v0/evidence/
+            done
+          fi
+      - name: Retain honest B0 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: arena-buffalo-b0-handwritten-fixture-evidence
+          path: artifacts/arena-b-v0/evidence/
+          retention-days: 30
+          if-no-files-found: warn
