@@ -1,0 +1,28 @@
+name: CAF-L001 - three native arms and bounded physical reference
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/l001/**'
+      - '.github/workflows/caf-l001-three-arms.yml'
+  workflow_dispatch:
+
+jobs:
+  bounded_reference_and_D_B_M:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bounded LP solver
+        run: python -m pip install scipy
+      - name: Validate L001 and invoke the three existing native boundaries
+        run: |
+          python -m unittest discover -s experiments/cafeteria/l001 -p 'test_*.py' -v
+          python -m experiments.cafeteria.l001.three_arms --out artifacts/caf-l001
+      - name: Archive report, three arm submissions, ATMS and F1a ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf-l001-three-arms-native-boundaries
+          path: artifacts/caf-l001/
+          retention-days: 30
