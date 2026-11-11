@@ -1,0 +1,55 @@
+name: CAF-08 fluid vs native CAF-01 DES — independent review
+on:
+  pull_request:
+    paths:
+      - 'experiments/cafeteria/pc01/caf01_des_engine.py'
+      - 'experiments/cafeteria/pc02/caf08_fluid_des_pilot.py'
+      - 'experiments/cafeteria/pc02/test_caf08_fluid_des_pilot.py'
+      - 'experiments/cafeteria/pc02/CAF08_ESTUDIO_Y_REVISION.md'
+      - 'experiments/cafeteria/pc02/CAF08_BASELINE_LOCAL.json'
+      - '.github/workflows/caf08-fluid-des-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run all CAF-08 cross-checks against committed CAF-01 DES
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s experiments/cafeteria/pc02 -p 'test_caf08_fluid_des_pilot.py' -v
+      - name: Generate the complete 44-observation record
+        run: |
+          set -euo pipefail
+          python -m experiments.cafeteria.pc02.caf08_fluid_des_pilot --out artifacts/caf08_full_results.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('artifacts/caf08_full_results.json')
+          r = json.loads(p.read_bytes())
+          assert r['experimental_only'] is True
+          assert r['summary']['n_worlds'] == 11
+          assert r['summary']['n_observation_rows'] == 44
+          assert len(r['comparisons']) == 44
+          assert len(r['identifiability_pair']['passive']) == 3
+          assert len(r['identifiability_pair']['intervention']) == 2
+          print('CAF08_DES_NATIVE_REPRODUCED_NOT_VALIDATED')
+          print('SHA256:', hashlib.sha256(p.read_bytes()).hexdigest())
+          print('Metrics:', r['summary'])
+          PY
+      - name: Upload full event/observation comparison for other AI reviewers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caf08-native-des-full-observations
+          path: artifacts/caf08_full_results.json
+          if-no-files-found: warn
+          retention-days: 90
