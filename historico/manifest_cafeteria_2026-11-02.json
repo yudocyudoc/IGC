@@ -1,0 +1,954 @@
+{
+  "schema": "igc-historico-manifest/0.1",
+  "source_commit": "5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "source_tree": "ed704de221059e7b8530d4509b4ef913d1f086a6",
+  "scope": "primera reubicación CAF-01/CAF-02 del main; NO incluye ramas Draft ni R1-R4",
+  "copy_policy": "IDENTICAL_GIT_BLOB_SHA",
+  "replay": "git checkout 5e2b5505a9224effe1b5242a3af61663b53aaa5d",
+  "original_files": 137,
+  "workflows": 50,
+  "active_promotions": [
+    {
+      "from": "experiments/cafeteria/pc01/caf01_des_engine.py",
+      "to": "scripts/arena_physical/des_engine.py",
+      "git_blob_sha": "8cadbc1f9489c3e1cd7eecd020009978873822ba"
+    }
+  ],
+  "files": [
+    {
+      "from": ".github/workflows/caf01-b-local-specs.yml",
+      "to": "historico/workflows/cafeteria/caf01-b-local-specs.yml",
+      "blob": "19b8c33c6793df1b97d9678690f13a14553d1dfc"
+    },
+    {
+      "from": ".github/workflows/caf01-b-producer-admission.yml",
+      "to": "historico/workflows/cafeteria/caf01-b-producer-admission.yml",
+      "blob": "b9c82b1e11e9762443d402f8bcee2d581ab71fbd"
+    },
+    {
+      "from": ".github/workflows/caf01-b-two-one-shot.yml",
+      "to": "historico/workflows/cafeteria/caf01-b-two-one-shot.yml",
+      "blob": "bb3d57f78d03e53c1047dbd1f95eb5a20d94db91"
+    },
+    {
+      "from": ".github/workflows/caf01-b-two-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-b-two-preflight.yml",
+      "blob": "82d7ea0d49aea37cd90f63f6341ae8730dcace9a"
+    },
+    {
+      "from": ".github/workflows/caf01-construction-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-construction-preflight.yml",
+      "blob": "fbc85387a4b778e6ac4b8e14b7ab755dc85fdcbb"
+    },
+    {
+      "from": ".github/workflows/caf01-construction.yml",
+      "to": "historico/workflows/cafeteria/caf01-construction.yml",
+      "blob": "c7f64abc5706092f4fed315e72e022952801dac4"
+    },
+    {
+      "from": ".github/workflows/caf01-d-g2-native.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-g2-native.yml",
+      "blob": "c9825aada5133ef1986f1e6b2cdc338a1f015e90"
+    },
+    {
+      "from": ".github/workflows/caf01-d-g2-postonly-three.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-g2-postonly-three.yml",
+      "blob": "c4473b499b1ae48bd837d8420512e42724ba0e57"
+    },
+    {
+      "from": ".github/workflows/caf01-d-g2-postonly.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-g2-postonly.yml",
+      "blob": "d7df22d0d57a7e14a2bdf267d6f40499ffbf2708"
+    },
+    {
+      "from": ".github/workflows/caf01-d-g2-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-g2-preflight.yml",
+      "blob": "8871bbcf78f3a31970049e1b0f45d090cbdcfd08"
+    },
+    {
+      "from": ".github/workflows/caf01-d-g2-remainder.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-g2-remainder.yml",
+      "blob": "677d5fa6e6ac7870d979b4d6395faeb6edcb77d1"
+    },
+    {
+      "from": ".github/workflows/caf01-d-native-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-native-preflight.yml",
+      "blob": "4fdc2bbd4ec57a239dee1d741d22ca8ea0f20745"
+    },
+    {
+      "from": ".github/workflows/caf01-d-rk4-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-rk4-preflight.yml",
+      "blob": "8077310a34272f45c9b791a54da9cfa513b95406"
+    },
+    {
+      "from": ".github/workflows/caf01-d-rk4.yml",
+      "to": "historico/workflows/cafeteria/caf01-d-rk4.yml",
+      "blob": "08012b2cc4d48622cb15122f289d816122162bb7"
+    },
+    {
+      "from": ".github/workflows/caf01-des-engine-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-des-engine-preflight.yml",
+      "blob": "0dccb23fdadff694d18e279c0a024909c4acf5e7"
+    },
+    {
+      "from": ".github/workflows/caf01-evaluation-one-shot.yml",
+      "to": "historico/workflows/cafeteria/caf01-evaluation-one-shot.yml",
+      "blob": "af5dca3dbcaab2cddabc1ce1d367fe4265022176"
+    },
+    {
+      "from": ".github/workflows/caf01-evaluation-postonly.yml",
+      "to": "historico/workflows/cafeteria/caf01-evaluation-postonly.yml",
+      "blob": "562bdd71ee4495f3746a87885085270fc6ad331c"
+    },
+    {
+      "from": ".github/workflows/caf01-evaluation-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-evaluation-preflight.yml",
+      "blob": "46fe6ab7fe77611c2df806137f3533534255810e"
+    },
+    {
+      "from": ".github/workflows/caf01-g3-original-artifacts.yml",
+      "to": "historico/workflows/cafeteria/caf01-g3-original-artifacts.yml",
+      "blob": "16b7e455a68a5a759425ca6665eda99e171df2f0"
+    },
+    {
+      "from": ".github/workflows/caf01-g3.yml",
+      "to": "historico/workflows/cafeteria/caf01-g3.yml",
+      "blob": "ed23a5643eeda46056ed10915fdd090f64c7a416"
+    },
+    {
+      "from": ".github/workflows/caf01-g4-external-tsa.yml",
+      "to": "historico/workflows/cafeteria/caf01-g4-external-tsa.yml",
+      "blob": "a71c5151bdfd1c08715e6bfb5cd87421be335eb3"
+    },
+    {
+      "from": ".github/workflows/caf01-g4-first-native-once.yml",
+      "to": "historico/workflows/cafeteria/caf01-g4-first-native-once.yml",
+      "blob": "e532e9c29fc967b70f942dee8d68acdfbdd019fa"
+    },
+    {
+      "from": ".github/workflows/caf01-g4-model-forecast-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-g4-model-forecast-preflight.yml",
+      "blob": "416c06530ddaa5bc8cf6ad1acae57963d4bc950d"
+    },
+    {
+      "from": ".github/workflows/caf01-g4.yml",
+      "to": "historico/workflows/cafeteria/caf01-g4.yml",
+      "blob": "4a42af410a2d4cfe99c39eca6e258f0741798fcb"
+    },
+    {
+      "from": ".github/workflows/caf01-g5-seal.yml",
+      "to": "historico/workflows/cafeteria/caf01-g5-seal.yml",
+      "blob": "5b95e39878141a03079409a0c300789043880985"
+    },
+    {
+      "from": ".github/workflows/caf01-m-c00-representability.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-c00-representability.yml",
+      "blob": "9724380e9979f6d1b4b495dbdb94733dd31bbbe9"
+    },
+    {
+      "from": ".github/workflows/caf01-m-equivalence.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-equivalence.yml",
+      "blob": "dee24d1e9afc65791681e3c7433935d7b88dabe7"
+    },
+    {
+      "from": ".github/workflows/caf01-m-g2-postonly.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-g2-postonly.yml",
+      "blob": "0edae94d50e90ead0dedf70f1154efd7d9051360"
+    },
+    {
+      "from": ".github/workflows/caf01-m-g2-six-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-g2-six-preflight.yml",
+      "blob": "e5b8594ffc11f2faadbf0cf9f774f7e4b7cdc6fd"
+    },
+    {
+      "from": ".github/workflows/caf01-m-g2-six.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-g2-six.yml",
+      "blob": "a58c3dd7060b24a49dc9598d5796a2fe97e1ccde"
+    },
+    {
+      "from": ".github/workflows/caf01-m-native-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-native-preflight.yml",
+      "blob": "aff1de50cd285a34d44495246639390024a766e1"
+    },
+    {
+      "from": ".github/workflows/caf01-m-producer-admission.yml",
+      "to": "historico/workflows/cafeteria/caf01-m-producer-admission.yml",
+      "blob": "64e4c6feb729e22d6e993ec4d480aa7a9bd5203c"
+    },
+    {
+      "from": ".github/workflows/caf02-class-proposal-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf02-class-proposal-preflight.yml",
+      "blob": "78be1d32e0a95488183facd4d651d8a09594882a"
+    },
+    {
+      "from": ".github/workflows/caf02-d-offline-adapter.yml",
+      "to": "historico/workflows/cafeteria/caf02-d-offline-adapter.yml",
+      "blob": "9c284200fea620bd235bd4f672ce0d63dee1ab9a"
+    },
+    {
+      "from": ".github/workflows/caf02-des-g5-custody-offline-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf02-des-g5-custody-offline-preflight.yml",
+      "blob": "0d2baae9bdbd6e56819caeedbf660ade35bf26aa"
+    },
+    {
+      "from": ".github/workflows/caf02-g2-modelica-preflight.yml",
+      "to": "historico/workflows/cafeteria/caf02-g2-modelica-preflight.yml",
+      "blob": "fa0d99bab2d83e3d7f15b124ca71d037468fb7fd"
+    },
+    {
+      "from": ".github/workflows/caf02-g2-native-one-shot.yml",
+      "to": "historico/workflows/cafeteria/caf02-g2-native-one-shot.yml",
+      "blob": "382f1fe427be788959ca0efe7b2c9b038b83da89"
+    },
+    {
+      "from": ".github/workflows/caf02-independent-protocol-offline.yml",
+      "to": "historico/workflows/cafeteria/caf02-independent-protocol-offline.yml",
+      "blob": "5330ac42d9b2e20d4c0fd7b9809b5abb13e0d8a9"
+    },
+    {
+      "from": ".github/workflows/caf02-k0-poda-posthoc.yml",
+      "to": "historico/workflows/cafeteria/caf02-k0-poda-posthoc.yml",
+      "blob": "1d91ec1017198838bc6b02a3081716a6da1eff92"
+    },
+    {
+      "from": ".github/workflows/caf02-lab-exploratorio.yml",
+      "to": "historico/workflows/cafeteria/caf02-lab-exploratorio.yml",
+      "blob": "ec531d060e84678aa7b415c2ac8655df6c55121c"
+    },
+    {
+      "from": ".github/workflows/caf02-lab-matriz-cinco-mundos.yml",
+      "to": "historico/workflows/cafeteria/caf02-lab-matriz-cinco-mundos.yml",
+      "blob": "6230b6f8204640447f3a650edba682ff7934d371"
+    },
+    {
+      "from": ".github/workflows/caf02-staged-execution-firewall-offline.yml",
+      "to": "historico/workflows/cafeteria/caf02-staged-execution-firewall-offline.yml",
+      "blob": "608746cb9d8ccbd92aefe69a439e1076debc439e"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/.gitignore",
+      "to": "historico/campanas/cafeteria/pc01/.gitignore",
+      "blob": "8bf02b029a11b6a1d8d7dad3b843a3bcc3bb731a"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_CORREGIDO_v0_2_2026-10-28.json",
+      "to": "historico/campanas/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_CORREGIDO_v0_2_2026-10-28.json",
+      "blob": "85a0497c729b9907ee5c5d88b664f185b6495f89"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json",
+      "to": "historico/campanas/cafeteria/pc01/ARENA_PC01_CAF01_CONTRATO_REVISION_v0_3_2026-10-28.json",
+      "blob": "f7efa1439c6187b1b431cf84ea5353966d4dc82d"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/ARENA_PC01_CAF01_PROTOCOLO_REVISION_v0_3_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/ARENA_PC01_CAF01_PROTOCOLO_REVISION_v0_3_2026-10-28.md",
+      "blob": "2e3919b2e224d652f5ca87c65fabb75e8a6606de"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/CAF01_D_G2_POSTMORTEM_RECUPERACION_2026-10-29.md",
+      "to": "historico/campanas/cafeteria/pc01/CAF01_D_G2_POSTMORTEM_RECUPERACION_2026-10-29.md",
+      "blob": "7e73a594a05db758b6d1977cd8d33234b5432864"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/CAF01_EVALUACION_PRIMERA_RONDA_RESULTADOS_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc01/CAF01_EVALUACION_PRIMERA_RONDA_RESULTADOS_2026-10-30.md",
+      "blob": "1427574c64db5082c5e57ea6114a005074e2f628"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/CAF01_G5_HISTORICAL_WAIVER_AND_EVALUATION.md",
+      "to": "historico/campanas/cafeteria/pc01/CAF01_G5_HISTORICAL_WAIVER_AND_EVALUATION.md",
+      "blob": "e62bed7453b5bd636e039545b6385eaf3d98db42"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/CAF01_M_C00_REPRESENTABILIDAD_EXPLORATORIA_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc01/CAF01_M_C00_REPRESENTABILIDAD_EXPLORATORIA_2026-10-30.md",
+      "blob": "d6ed6be5a407d0ac385ed589145bcd3ca434af76"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/CRIBADO_D_GITHUB_2026-10-29.md",
+      "to": "historico/campanas/cafeteria/pc01/CRIBADO_D_GITHUB_2026-10-29.md",
+      "blob": "67a99e7e2a7b6095fce2f44e0f58395f75658aad"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/DES_PRIVATE_BOUNDARY_PREFLIGHT_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/DES_PRIVATE_BOUNDARY_PREFLIGHT_2026-10-28.md",
+      "blob": "6c49f6a2fd9c9546675f9a3fd8c57cc31fad6b2b"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/DICTAMEN_TECNICO_PC01_v0_3_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/DICTAMEN_TECNICO_PC01_v0_3_2026-10-28.md",
+      "blob": "fc8c524d2ecff4a281d58102fa54d3839febb3b1"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/D_G2_NATIVE_TRES_REPRESENTANTES_2026-10-29.md",
+      "to": "historico/campanas/cafeteria/pc01/D_G2_NATIVE_TRES_REPRESENTANTES_2026-10-29.md",
+      "blob": "9443571a85fad0d60601b4f9b2bfdc2706bc2ee0"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/ENMIENDA_B_SPECS_LOCAL_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/ENMIENDA_B_SPECS_LOCAL_2026-10-28.md",
+      "blob": "2e33fa7398faa156294a74a878f3f6dc7fccb95c"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/ENMIENDA_E1_IDENTIFICABILIDAD_M_PARA_ASTRA_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/ENMIENDA_E1_IDENTIFICABILIDAD_M_PARA_ASTRA_2026-10-28.md",
+      "blob": "6eed83e44673bc608178f32ab29a94fc70b96fe8"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/FICHA_DISENO_EXPERIMENTAL_CAF01_CAPACIDAD_2026-10-29.md",
+      "to": "historico/campanas/cafeteria/pc01/FICHA_DISENO_EXPERIMENTAL_CAF01_CAPACIDAD_2026-10-29.md",
+      "blob": "a4f2aeeb4b2a4480af55f95edcc2d2ca92b001a0"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/G3_POLITICA_SELECCION_Y_BLOQUEO_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/G3_POLITICA_SELECCION_Y_BLOQUEO_2026-10-28.md",
+      "blob": "e432fb914c0f7a4b439e00cfca0add632425cbc3"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/G4_REFERENCIAS_Y_CUSTODIA_PREHOLDOUT_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/G4_REFERENCIAS_Y_CUSTODIA_PREHOLDOUT_2026-10-28.md",
+      "blob": "ad1e6ffc341be587b76bce6bafbc315457c34b7a"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/G5_SELLADO_PRIVADO_Y_PRESUPUESTO_2026-10-28.md",
+      "to": "historico/campanas/cafeteria/pc01/G5_SELLADO_PRIVADO_Y_PRESUPUESTO_2026-10-28.md",
+      "blob": "880f44ba0164d45a4a4929b85ae481bdd1025ac7"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/GITHUB_SOLO_CONSTRUCCION_EJECUCION_2026-10-29.md",
+      "to": "historico/campanas/cafeteria/pc01/GITHUB_SOLO_CONSTRUCCION_EJECUCION_2026-10-29.md",
+      "blob": "a97acf684aa400ea21b537ffdd55b472f5aa5b60"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/MANIFIESTO_PAQUETE_PC01_v0_3.json",
+      "to": "historico/campanas/cafeteria/pc01/MANIFIESTO_PAQUETE_PC01_v0_3.json",
+      "blob": "9e5b47ca159004138590fe7dffa747ac1ce13fa5"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/PC01_V03_TESTS_OFFLINE_2026-10-28.log",
+      "to": "historico/campanas/cafeteria/pc01/PC01_V03_TESTS_OFFLINE_2026-10-28.log",
+      "blob": "41e5f501bc826ca66bf7ae12cf4fde922a4a3deb"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/README.md",
+      "to": "historico/campanas/cafeteria/pc01/README.md",
+      "blob": "1f35f3f48a777c37de8aa5213bb6a9b664920ded"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_b_buffalo_live_visible.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_b_buffalo_live_visible.py",
+      "blob": "d13c0b8b48efa6e89dba77667c14cb2dd1c05898"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_b_local_specs.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_b_local_specs.py",
+      "blob": "c09602516a7fa66d3f095e8f073beb7a1cc2d8b6"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_b_masked_diagnostic_cf.mjs",
+      "to": "historico/campanas/cafeteria/pc01/caf01_b_masked_diagnostic_cf.mjs",
+      "blob": "2b8c8a19094c6daa190ed08c76acf03e0cf043ec"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_b_producer_admission.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_b_producer_admission.py",
+      "blob": "af9d05f15ba1056d956f7402f68ec4d96c7b9789"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_construction_github.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_construction_github.py",
+      "blob": "3bf04da9b33e27c43d6a6bfa712a0c310914a162"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_d_g2_native.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_d_g2_native.py",
+      "blob": "d7ec536fd140a23bd9413a785b429fc3d2708436"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_d_g2_postonly_recovery.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_d_g2_postonly_recovery.py",
+      "blob": "ecc480eb8806c7d6742cca260b07aaf541337ca4"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_d_g2_postonly_three.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_d_g2_postonly_three.py",
+      "blob": "2e0ebadf68e12103bcea8a3a83adb1a4ff0d208a"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_d_native_preflight.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_d_native_preflight.py",
+      "blob": "ab97450c80e3f3decfa4db417c298a91383f5723"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_d_rk4_github.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_d_rk4_github.py",
+      "blob": "caf254ff4addb5770001d081e4605309d0cda48c"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_des_engine.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_des_engine.py",
+      "blob": "8cadbc1f9489c3e1cd7eecd020009978873822ba"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_evaluation_github.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_evaluation_github.py",
+      "blob": "1627ba5876ca66b0d03c8680d63a0549fe24d2c7"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_g3.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_g3.py",
+      "blob": "28e6ff21e8dcc1066b55f5df6b486c980438a837"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_g3_from_original_artifacts.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_g3_from_original_artifacts.py",
+      "blob": "f388d8151230bf8fa09375b3d01568cf9f0a2053"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_g4.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_g4.py",
+      "blob": "1b0bf58f1756ca975df9f1dfd459e86ccf00a966"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_g4_first_model_forecasts.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_g4_first_model_forecasts.py",
+      "blob": "bf0533aa300b23da978a7e80ff22a2be6cd21df6"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_g5_seal.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_g5_seal.py",
+      "blob": "cf4aab093075c955817f5738b6a76e93232c148b"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_c00_representability.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_c00_representability.py",
+      "blob": "32d33e93929aae1cbe43c1b1e08f51c07c93c8b2"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_equivalence.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_equivalence.py",
+      "blob": "70b1c497be03751297ff54339680775874b4da95"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_g2_postonly_recovery.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_g2_postonly_recovery.py",
+      "blob": "8c16a245bf0d3b2d509025881e3ec939ee31eb77"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_g2_six_native.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_g2_six_native.py",
+      "blob": "b8b8da50216c35303555440a9c8188a9c8fc985b"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_native_preflight.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_native_preflight.py",
+      "blob": "1149528306e52671c498d45a86f56573808a8fe3"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/caf01_m_producer_admission.py",
+      "to": "historico/campanas/cafeteria/pc01/caf01_m_producer_admission.py",
+      "blob": "1fbe736c1a1c9cb5c9f1f10f46fd887d14964621"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/fixtures/b_caf_local_synthetic_native.json",
+      "to": "historico/campanas/cafeteria/pc01/fixtures/b_caf_local_synthetic_native.json",
+      "blob": "c79cce1c18f759f469f0eede3a1c6b6dde1e0476"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json",
+      "to": "historico/campanas/cafeteria/pc01/public_inputs/run_40915090599/CAF01.json",
+      "blob": "85e4840c2b9b955637958aeb48a73d1097c7ab97"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/public_inputs/run_40915090599/CAFN.json",
+      "to": "historico/campanas/cafeteria/pc01/public_inputs/run_40915090599/CAFN.json",
+      "blob": "017bd45231e652923866fd6413be9f0299d69dbd"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/receipts/CAF01_G5_PRECOMMIT_PUBLIC_2026-10-29.json",
+      "to": "historico/campanas/cafeteria/pc01/receipts/CAF01_G5_PRECOMMIT_PUBLIC_2026-10-29.json",
+      "blob": "9325a2daa115684261c6116a29a90b06f76809fa"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_b_buffalo_live_visible.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_b_buffalo_live_visible.py",
+      "blob": "2b23b4a7ce4d510683936ca349d0768319856aa1"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_b_local_specs.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_b_local_specs.py",
+      "blob": "fa2b7b9bae40c3e02ce95551cdf9adf19f3a5e03"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_b_producer_admission.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_b_producer_admission.py",
+      "blob": "e19d84a111d681a212ed5ccf74d72c85b584745a"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_construction_github.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_construction_github.py",
+      "blob": "83280e27538e0dd0f1d9b7a831c58aa826b9ca75"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_d_g2_native.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_d_g2_native.py",
+      "blob": "888085b412e36834946c28f99e4c4e399c4d8198"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_d_native_preflight.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_d_native_preflight.py",
+      "blob": "52e0d369833331565c9510485288272b10c394ec"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_d_rk4_github.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_d_rk4_github.py",
+      "blob": "f986ddfb888745d7ca84a01ce2d66a88e05335e2"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_des_engine.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_des_engine.py",
+      "blob": "e45b9351b7e4b574f30ed129b1293e1257a93796"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_evaluation_github.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_evaluation_github.py",
+      "blob": "dd68e2fe6286f81410d075b2c51b5fa5a741e309"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_g3.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_g3.py",
+      "blob": "4674329d8c7d4dbbeb3bdf3331091b0f2000b235"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_g4.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_g4.py",
+      "blob": "e0f342ce28ed0b49564e9c0c4673b1a78fc6b55a"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_g5_seal.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_g5_seal.py",
+      "blob": "d21e3cd029ab732257bf5ad77f4da2d1568d94a4"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_m_c00_representability.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_m_c00_representability.py",
+      "blob": "acf99ac36db2889d7082628d02d71638f2158349"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_m_equivalence.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_m_equivalence.py",
+      "blob": "7aa17370f2ce02c9d1878927b0579c613842ee71"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_m_g2_six_native.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_m_g2_six_native.py",
+      "blob": "5a2e9e82fa9576fac4cf9a0e4209c0b731161a28"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_m_native_preflight.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_m_native_preflight.py",
+      "blob": "d9ea6c682cf1c8c7c1561a4d3cf771d8e41c66fa"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/test_caf01_m_producer_admission.py",
+      "to": "historico/campanas/cafeteria/pc01/test_caf01_m_producer_admission.py",
+      "blob": "24feacea175d794877930a29cc422749c1359043"
+    },
+    {
+      "from": "experiments/cafeteria/pc01/validar_pc01_v0_3_offline.py",
+      "to": "historico/campanas/cafeteria/pc01/validar_pc01_v0_3_offline.py",
+      "blob": "5f82a7cd4da4140b4553c6753ca3d5dec78fdb36"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_CORRECCION_ALCANZABILIDAD_K1_CONJUNTA_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_CORRECCION_ALCANZABILIDAD_K1_CONJUNTA_2026-10-30.md",
+      "blob": "c2c4d690087ccce22ba6d0e0935f0efaf7aa39b4"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_DES_G5_CUSTODIA_FUENTE_PREPARATORIA_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_DES_G5_CUSTODIA_FUENTE_PREPARATORIA_2026-10-30.md",
+      "blob": "3fd36c49cc61b4cc825ed8430a2fe7bc39d0220a"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_D_ADAPTACION_K0_K1_K2_2026-10-30.md",
+      "blob": "346eac0d94f1e3fb6be2dcca516ade643e0a7eba"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_G2_FUENTES_NATIVAS_15_CASOS_Y_EJECUTOR_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_G2_FUENTES_NATIVAS_15_CASOS_Y_EJECUTOR_2026-10-30.md",
+      "blob": "61e35be3875fd2a44b385eede751cf3645f1fd04"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_INDEPENDENT_K0K1K2_POLICY_PROPOSAL_2026-10-30.json",
+      "blob": "317dcbd0e445f54294f045612d9631c90b05aece"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_INFORME_DISCRIMINABILIDAD_ACOTADA_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_INFORME_DISCRIMINABILIDAD_ACOTADA_2026-10-30.md",
+      "blob": "7da72c71a5ddc5920580eeefb27a6e756d7faebf"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_LABORATORIO_EXPLORATORIO_PRIMER_MUNDO.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_LABORATORIO_EXPLORATORIO_PRIMER_MUNDO.md",
+      "blob": "ade016d43ed5806fc24e7a513ca9e58f48e5f234"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_LAB_MATRIZ_CINCO_MUNDOS.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_LAB_MATRIZ_CINCO_MUNDOS.md",
+      "blob": "b5d0a4113b0a69fbf028607dd394212b4c6534b9"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_PREPARACION_EJECUCION_G5_G4A_G4B_K2_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_PREPARACION_EJECUCION_G5_G4A_G4B_K2_2026-10-30.md",
+      "blob": "3ed7168354412a0664a03e961c675345e38a8bea"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_PROTOCOLO_CLASES_EQUIVALENTES_BORRADOR_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_PROTOCOLO_CLASES_EQUIVALENTES_BORRADOR_2026-10-30.md",
+      "blob": "9fefc390f9263c9795208799bcc9cba06d73c74c"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_PROTOCOLO_DISCRIMINACION_ESTRUCTURAL_K0_K1_K2_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_PROTOCOLO_DISCRIMINACION_ESTRUCTURAL_K0_K1_K2_2026-10-30.md",
+      "blob": "40d93816ea75dcca59b3336fd2f55047186e4d5a"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF02_PROTOCOLO_INDEPENDIENTE_K0_K1_K2_PROPUESTA_2026-10-30.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF02_PROTOCOLO_INDEPENDIENTE_K0_K1_K2_PROPUESTA_2026-10-30.md",
+      "blob": "977f464b9b07ed9489d3f20f02e7fdcd8440dc35"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF03_FGH_PODA_ORIGINAL_VS_ABSOLUTA.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF03_FGH_PODA_ORIGINAL_VS_ABSOLUTA.md",
+      "blob": "36f7138e19d0554258168b83dc18aa070d9e256f"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF04_OBSERVABILIDAD_CUELLOS_BCD.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF04_OBSERVABILIDAD_CUELLOS_BCD.md",
+      "blob": "e3ac4377faa2b740f9b220514d2c3f3a7d59e948"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF05_CONTRATO_STOCK_Y_TRANSFERENCIA_SENSOR.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF05_CONTRATO_STOCK_Y_TRANSFERENCIA_SENSOR.md",
+      "blob": "50724e91678e277a9e038351e4da325f9da9efbf"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF06_COLAS_TEMPORALES_CAPACIDAD.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF06_COLAS_TEMPORALES_CAPACIDAD.md",
+      "blob": "79db00f76e73d28229654eb879bc71c1f36a723c"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF07A_CORRECCION_SELECTOR_DECISION.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF07A_CORRECCION_SELECTOR_DECISION.md",
+      "blob": "53696ba4e73e1666068ef6add8d7657fd5a5865f"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF07B_UMBRAL_ESTRUCTURAS_OCULTAS.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF07B_UMBRAL_ESTRUCTURAS_OCULTAS.md",
+      "blob": "5476dcbe7f5b2122956be8ce8a19bd5d927901e3"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/CAF07_SELECTOR_EVIDENCIA_PROTOCOLO.md",
+      "to": "historico/campanas/cafeteria/pc02/CAF07_SELECTOR_EVIDENCIA_PROTOCOLO.md",
+      "blob": "5a928cba1ad7f0d4dc94791d53088037219de272"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_class_predictor.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_class_predictor.py",
+      "blob": "d894d438e57a3bd37208b80b06b907fcce31cacd"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_d_k0k1k2_adapter.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_d_k0k1k2_adapter.py",
+      "blob": "173b725bee9f60c0293fb2655541431a139d8194"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_des_evaluator_preflight.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_des_evaluator_preflight.py",
+      "blob": "8740d556ab7ebba772d7d9630b24dd71046d3af8"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_discriminability_map.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_discriminability_map.py",
+      "blob": "2c4f167187a752b4a98ed42855741e590a896fe2"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_external_witness_verify.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_external_witness_verify.py",
+      "blob": "4feda5fc06e60c9d24e37bc0773ae021a3fc16e3"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_g2_native_correspondence_plan.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_g2_native_correspondence_plan.py",
+      "blob": "b66e2f7cc035dce39aacf819c6c60cec7293e8d8"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_g2_native_executor.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_g2_native_executor.py",
+      "blob": "28ee4eb467b9dddffc4a9a0f147c26ca1aeaf97e"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_g2_native_modelica_sources.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_g2_native_modelica_sources.py",
+      "blob": "dc8f018371470cda443b89907b3d4c7c5eb9fc43"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_g5_local_precommit.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_g5_local_precommit.py",
+      "blob": "3ae187706b04eaaf196ab700c848321c2997941f"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_joint_md_k1_design.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_joint_md_k1_design.py",
+      "blob": "071ca3eace7829eb0d187a202edd2d69c56fa0f5"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_k0_limited_references.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_k0_limited_references.py",
+      "blob": "2d20f70c185c28e184a1f1cd0c63f221f1c7cba1"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_k0_poda_posthoc.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_k0_poda_posthoc.py",
+      "blob": "3ab588b13ea822cfebe2e138ef5716360cebf014"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_k2_adjudicator_boundary.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_k2_adjudicator_boundary.py",
+      "blob": "bf7f769a1e84f84b54224d6f009260c7dea7c2a9"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_k2_set_scoring.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_k2_set_scoring.py",
+      "blob": "94a792e4405a3d8aebb33b4a5228c86634df2bec"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_lab_exploratorio.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_lab_exploratorio.py",
+      "blob": "78873f39553683cd987afb166e8a69d4cd600317"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_lab_matriz_cinco_mundos.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_lab_matriz_cinco_mundos.py",
+      "blob": "1ce2568baf1307a4e2a8f2b5e94de08c1dcb20e5"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_numerical_margin_preflight.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_numerical_margin_preflight.py",
+      "blob": "f2459d7e7b74fe466e085d73be00088fdb0e2fc1"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_private_source_boundary.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_private_source_boundary.py",
+      "blob": "674c164dd0d777914de60328a47f5f925a488a14"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_public_cut_bridge.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_public_cut_bridge.py",
+      "blob": "96f37cd873ef11242103d449a439fa644cffcb25"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf02_structural_k0k1k2.py",
+      "to": "historico/campanas/cafeteria/pc02/caf02_structural_k0k1k2.py",
+      "blob": "fd7968be0cb13612b56c3870b101a186f3111e39"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf03_laboratorio_politicas.py",
+      "to": "historico/campanas/cafeteria/pc02/caf03_laboratorio_politicas.py",
+      "blob": "2fa97f96435a424940b4fdf3eb342d1dafb0a79f"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf04_observabilidad_bcd.py",
+      "to": "historico/campanas/cafeteria/pc02/caf04_observabilidad_bcd.py",
+      "blob": "adcdd025cdb2d76c0712a24acb835b0415a99464"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf05_contrato_y_sensor.py",
+      "to": "historico/campanas/cafeteria/pc02/caf05_contrato_y_sensor.py",
+      "blob": "5d6126952d67127af557d420b81086d6aa8ca19c"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf05_referencia_caf04_congelada.json",
+      "to": "historico/campanas/cafeteria/pc02/caf05_referencia_caf04_congelada.json",
+      "blob": "4f6f8cb42402d520207b1f18fdee3664dce27fea"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf06_colas_temporales_robustez.py",
+      "to": "historico/campanas/cafeteria/pc02/caf06_colas_temporales_robustez.py",
+      "blob": "f07ca0c713e3b3c5376af0c5b4686a7da776c399"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf07_selector_evidencia.py",
+      "to": "historico/campanas/cafeteria/pc02/caf07_selector_evidencia.py",
+      "blob": "160a6423a4d54b1dfcedb7194c9bbdffb33299d9"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf07a_auditoria_decision.py",
+      "to": "historico/campanas/cafeteria/pc02/caf07a_auditoria_decision.py",
+      "blob": "2d211652ac4af59b1881c97f8aa514ef77745cd5"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/caf07b_umbral_secuencial.py",
+      "to": "historico/campanas/cafeteria/pc02/caf07b_umbral_secuencial.py",
+      "blob": "b544d09ae1c084cdf64ec3d41e250b92ab8332fd"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/fixtures/caf02_policy_SYNTHETIC.json",
+      "to": "historico/campanas/cafeteria/pc02/fixtures/caf02_policy_SYNTHETIC.json",
+      "blob": "5398fb447bf04bce371bf5b3f6ad10953a3990cb"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_class_predictor.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_class_predictor.py",
+      "blob": "97db2c5de6a370d538486ac71f15dd902ee7eb7c"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_d_k0k1k2_adapter.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_d_k0k1k2_adapter.py",
+      "blob": "340a0018381df70f2e42a634b48a672ac6e012af"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_des_g5_witness_preflight.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_des_g5_witness_preflight.py",
+      "blob": "a84fb00f4f20214ea1b3da4a5d241484aabb29eb"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_discriminability_map.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_discriminability_map.py",
+      "blob": "1d85f526a46057954ccf46d832f1f622c23d9a2b"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_g2_native_correspondence_plan.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_g2_native_correspondence_plan.py",
+      "blob": "7a1a14f4b4a6f2c174b881214723bb0594c7053a"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_g2_native_modelica_executor.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_g2_native_modelica_executor.py",
+      "blob": "cb15765829aa6f6905f70f9dd9a922491549073d"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_independent_protocol_draft.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_independent_protocol_draft.py",
+      "blob": "772cab4090a2af9f10ccf95799a8531f5473a199"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_joint_md_k1_design.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_joint_md_k1_design.py",
+      "blob": "602bc297b24abaa4008f0deb4ccf09e5d7eb2782"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_k0_poda_posthoc.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_k0_poda_posthoc.py",
+      "blob": "dfbfcea3d9eac510ec153cd432463c16373ce967"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_k2_both_arms_postrelease.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_k2_both_arms_postrelease.py",
+      "blob": "404f1d77eca0d9f995a8a7597d55b21de3b89057"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_lab_exploratorio.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_lab_exploratorio.py",
+      "blob": "481d00a35d3c44cbec813a5d37feb3e92e7995d2"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_lab_matriz_cinco_mundos.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_lab_matriz_cinco_mundos.py",
+      "blob": "293874f06501102a0f68f32b34cf52e23f18121d"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_private_source_boundary.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_private_source_boundary.py",
+      "blob": "e32b02fa4eb0319ce0f93908a44795fca77a2737"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_public_cut_bridge.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_public_cut_bridge.py",
+      "blob": "afd2e7dca80806a3a117c369861342b97196f13c"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf02_structural_k0k1k2.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf02_structural_k0k1k2.py",
+      "blob": "64e7f713168c9ac9d8dc698dac87659ff7e76dbe"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf03_laboratorio_politicas.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf03_laboratorio_politicas.py",
+      "blob": "f30452920c4ad8902ac9b7ced7f6ea8788de499b"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf04_observabilidad_bcd.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf04_observabilidad_bcd.py",
+      "blob": "ed69831f6f549687dcec0ca94b3296d1ecb6d504"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf05_contrato_y_sensor.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf05_contrato_y_sensor.py",
+      "blob": "0c019170aebc457b9f6d5975cad01d50d97ae231"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf06_colas_temporales_robustez.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf06_colas_temporales_robustez.py",
+      "blob": "00e5dac5eaaebec00c4b1d85328b606913c0f3ff"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf07_selector_evidencia.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf07_selector_evidencia.py",
+      "blob": "bb1970e1b7678084d6d31fbdab65cb6055c2e531"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf07a_auditoria_decision.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf07a_auditoria_decision.py",
+      "blob": "2457f1279ac2334fc804dfd6c66c8bd5ad43ff74"
+    },
+    {
+      "from": "experiments/cafeteria/pc02/test_caf07b_umbral_secuencial.py",
+      "to": "historico/campanas/cafeteria/pc02/test_caf07b_umbral_secuencial.py",
+      "blob": "95bf1ba3e150e9ddc6d4d02981dbbba2e167cee2"
+    },
+    {
+      "from": ".github/workflows/arena-cafeteria-pc01-static.yml",
+      "to": "historico/workflows/cafeteria/arena-cafeteria-pc01-static.yml",
+      "blob": "15be347ce0118e9cada361485c65cdb704ee219e"
+    },
+    {
+      "from": ".github/workflows/caf03-fgh-poda-k0.yml",
+      "to": "historico/workflows/cafeteria/caf03-fgh-poda-k0.yml",
+      "blob": "79259769d18bc997a2a1a693219eda158eae2a82"
+    },
+    {
+      "from": ".github/workflows/caf04-observabilidad-bcd.yml",
+      "to": "historico/workflows/cafeteria/caf04-observabilidad-bcd.yml",
+      "blob": "f8b0667addde79610225079b2b76d9d683a0788c"
+    },
+    {
+      "from": ".github/workflows/caf05-contrato-sensor.yml",
+      "to": "historico/workflows/cafeteria/caf05-contrato-sensor.yml",
+      "blob": "f7449065a9d20553b469642f235acf24dc5326e4"
+    },
+    {
+      "from": ".github/workflows/caf06-colas-capacidades.yml",
+      "to": "historico/workflows/cafeteria/caf06-colas-capacidades.yml",
+      "blob": "ad6a5045ef62545b63d00cdf6aafbd4b398a1dff"
+    },
+    {
+      "from": ".github/workflows/caf07-selector-evidencia.yml",
+      "to": "historico/workflows/cafeteria/caf07-selector-evidencia.yml",
+      "blob": "b75f40849bcc4f7f7906dd2f804ea5ff942d8679"
+    },
+    {
+      "from": ".github/workflows/caf07a-auditoria-decision.yml",
+      "to": "historico/workflows/cafeteria/caf07a-auditoria-decision.yml",
+      "blob": "ae998af9c2c2c9e0ef39028c2677a9af86468fc3"
+    },
+    {
+      "from": ".github/workflows/caf07b-umbral-secuencial.yml",
+      "to": "historico/workflows/cafeteria/caf07b-umbral-secuencial.yml",
+      "blob": "9c88eff2de90ac4f1a9ccacd8eb6a939ba94cea6"
+    }
+  ]
+}
